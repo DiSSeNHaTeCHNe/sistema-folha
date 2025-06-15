@@ -1,0 +1,566 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Sistema Folha",
+		"description": "Coleção de testes para o Sistema de Folha de Pagamento",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autenticação",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"admin\",\n    \"senha\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Realiza o login no sistema"
+					}
+				}
+			]
+		},
+		{
+			"name": "Usuários",
+			"item": [
+				{
+					"name": "Listar Usuários",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/usuarios",
+							"host": ["{{baseUrl}}"],
+							"path": ["usuarios"]
+						},
+						"description": "Lista todos os usuários"
+					}
+				},
+				{
+					"name": "Criar Usuário",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"novo.usuario\",\n    \"senha\": \"senha123\",\n    \"nome\": \"Novo Usuário\",\n    \"centroCusto\": \"CC001\",\n    \"permissoes\": [\"ADMIN\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios",
+							"host": ["{{baseUrl}}"],
+							"path": ["usuarios"]
+						},
+						"description": "Cria um novo usuário"
+					}
+				},
+				{
+					"name": "Atualizar Usuário",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1,\n    \"login\": \"usuario.atualizado\",\n    \"nome\": \"Usuário Atualizado\",\n    \"centroCusto\": \"CC002\",\n    \"permissoes\": [\"USER\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["usuarios", "1"]
+						},
+						"description": "Atualiza um usuário existente"
+					}
+				},
+				{
+					"name": "Remover Usuário",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/usuarios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["usuarios", "1"]
+						},
+						"description": "Remove um usuário (soft delete)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Funcionários",
+			"item": [
+				{
+					"name": "Listar Funcionários",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/funcionarios",
+							"host": ["{{baseUrl}}"],
+							"path": ["funcionarios"]
+						},
+						"description": "Lista todos os funcionários"
+					}
+				},
+				{
+					"name": "Criar Funcionário",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"João Silva\",\n    \"cargo\": \"Desenvolvedor\",\n    \"centroCusto\": \"CC001\",\n    \"linhaNegocio\": \"TI\",\n    \"idExterno\": \"F001\",\n    \"dataAdmissao\": \"2024-01-01\",\n    \"sexo\": \"M\",\n    \"tipoSalario\": \"MENSAL\",\n    \"funcao\": \"DESENVOLVEDOR\",\n    \"depIrrf\": 0,\n    \"depSalFamilia\": 0,\n    \"vinculo\": \"CLT\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/funcionarios",
+							"host": ["{{baseUrl}}"],
+							"path": ["funcionarios"]
+						},
+						"description": "Cria um novo funcionário"
+					}
+				},
+				{
+					"name": "Atualizar Funcionário",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1,\n    \"nome\": \"João Silva Atualizado\",\n    \"cargo\": \"Desenvolvedor Senior\",\n    \"centroCusto\": \"CC002\",\n    \"linhaNegocio\": \"TI\",\n    \"idExterno\": \"F001\",\n    \"dataAdmissao\": \"2024-01-01\",\n    \"sexo\": \"M\",\n    \"tipoSalario\": \"MENSAL\",\n    \"funcao\": \"DESENVOLVEDOR\",\n    \"depIrrf\": 1,\n    \"depSalFamilia\": 1,\n    \"vinculo\": \"CLT\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/funcionarios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["funcionarios", "1"]
+						},
+						"description": "Atualiza um funcionário existente"
+					}
+				},
+				{
+					"name": "Remover Funcionário",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/funcionarios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["funcionarios", "1"]
+						},
+						"description": "Remove um funcionário (soft delete)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Folha de Pagamento",
+			"item": [
+				{
+					"name": "Listar Folha de Pagamento",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/folha-pagamento",
+							"host": ["{{baseUrl}}"],
+							"path": ["folha-pagamento"]
+						},
+						"description": "Lista todos os registros de folha de pagamento"
+					}
+				},
+				{
+					"name": "Criar Folha de Pagamento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"funcionarioId\": 1,\n    \"rubricaId\": 1,\n    \"dataInicio\": \"2024-01-01\",\n    \"dataFim\": \"2024-01-31\",\n    \"valor\": 5000.00,\n    \"quantidade\": 1,\n    \"baseCalculo\": 5000.00\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/folha-pagamento",
+							"host": ["{{baseUrl}}"],
+							"path": ["folha-pagamento"]
+						},
+						"description": "Cria um novo registro de folha de pagamento"
+					}
+				},
+				{
+					"name": "Atualizar Folha de Pagamento",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1,\n    \"funcionarioId\": 1,\n    \"rubricaId\": 1,\n    \"dataInicio\": \"2024-01-01\",\n    \"dataFim\": \"2024-01-31\",\n    \"valor\": 5500.00,\n    \"quantidade\": 1,\n    \"baseCalculo\": 5500.00\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/folha-pagamento/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["folha-pagamento", "1"]
+						},
+						"description": "Atualiza um registro de folha de pagamento existente"
+					}
+				},
+				{
+					"name": "Remover Folha de Pagamento",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/folha-pagamento/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["folha-pagamento", "1"]
+						},
+						"description": "Remove um registro de folha de pagamento (soft delete)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Benefícios",
+			"item": [
+				{
+					"name": "Listar Benefícios",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/beneficios",
+							"host": ["{{baseUrl}}"],
+							"path": ["beneficios"]
+						},
+						"description": "Lista todos os benefícios"
+					}
+				},
+				{
+					"name": "Criar Benefício",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"funcionarioId\": 1,\n    \"descricao\": \"Vale Refeição\",\n    \"valor\": 500.00,\n    \"dataInicio\": \"2024-01-01\",\n    \"dataFim\": \"2024-12-31\",\n    \"observacao\": \"Benefício mensal\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/beneficios",
+							"host": ["{{baseUrl}}"],
+							"path": ["beneficios"]
+						},
+						"description": "Cria um novo benefício"
+					}
+				},
+				{
+					"name": "Atualizar Benefício",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1,\n    \"funcionarioId\": 1,\n    \"descricao\": \"Vale Refeição Atualizado\",\n    \"valor\": 600.00,\n    \"dataInicio\": \"2024-01-01\",\n    \"dataFim\": \"2024-12-31\",\n    \"observacao\": \"Benefício mensal atualizado\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/beneficios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["beneficios", "1"]
+						},
+						"description": "Atualiza um benefício existente"
+					}
+				},
+				{
+					"name": "Remover Benefício",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/beneficios/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["beneficios", "1"]
+						},
+						"description": "Remove um benefício (soft delete)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Relatórios",
+			"item": [
+				{
+					"name": "Gerar Relatório de Folha",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mes\": 1,\n    \"ano\": 2024\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/relatorios/folha",
+							"host": ["{{baseUrl}}"],
+							"path": ["relatorios", "folha"]
+						},
+						"description": "Gera um relatório de folha de pagamento"
+					}
+				},
+				{
+					"name": "Listar Relatórios de Folha",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/relatorios/folha",
+							"host": ["{{baseUrl}}"],
+							"path": ["relatorios", "folha"]
+						},
+						"description": "Lista todos os relatórios de folha de pagamento"
+					}
+				},
+				{
+					"name": "Download Relatório de Folha",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/relatorios/folha/1/download",
+							"host": ["{{baseUrl}}"],
+							"path": ["relatorios", "folha", "1", "download"]
+						},
+						"description": "Faz o download de um relatório de folha de pagamento"
+					}
+				},
+				{
+					"name": "Gerar Relatório de Benefícios",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mes\": 1,\n    \"ano\": 2024\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/relatorios/beneficio",
+							"host": ["{{baseUrl}}"],
+							"path": ["relatorios", "beneficio"]
+						},
+						"description": "Gera um relatório de benefícios"
+					}
+				},
+				{
+					"name": "Listar Relatórios de Benefícios",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/relatorios/beneficio",
+							"host": ["{{baseUrl}}"],
+							"path": ["relatorios", "beneficio"]
+						},
+						"description": "Lista todos os relatórios de benefícios"
+					}
+				},
+				{
+					"name": "Download Relatório de Benefícios",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/relatorios/beneficio/1/download",
+							"host": ["{{baseUrl}}"],
+							"path": ["relatorios", "beneficio", "1", "download"]
+						},
+						"description": "Faz o download de um relatório de benefícios"
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+} 
