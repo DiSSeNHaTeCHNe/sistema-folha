@@ -1,12 +1,26 @@
 package br.com.techne.sistemafolha.dto;
 
-import java.util.Set;
+import br.com.techne.sistemafolha.model.Usuario;
+import java.util.List;
 
 public record UsuarioDTO(
     Long id,
     String login,
+    String senha,
     String nome,
-    String centroCusto,
-    Set<String> permissoes,
-    boolean primeiroAcesso
-) {} 
+    Long centroCustoId,
+    String centroCustoDescricao,
+    List<String> permissoes
+) {
+    public static UsuarioDTO fromEntity(Usuario usuario) {
+        return new UsuarioDTO(
+            usuario.getId(),
+            usuario.getLogin(),
+            null, // Não retornamos a senha no DTO
+            usuario.getNome(),
+            usuario.getCentroCusto().getId(),
+            usuario.getCentroCusto().getDescricao(),
+            usuario.getPermissoes()
+        );
+    }
+} 

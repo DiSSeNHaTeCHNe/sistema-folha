@@ -1,0 +1,1008 @@
+{
+  "info": {
+    "name": "Sistema Folha de Pagamento",
+    "description": "API do Sistema de Folha de Pagamento",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.token) {",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    console.log('Token JWT configurado com sucesso!');",
+                  "} else {",
+                  "    console.error('Token não encontrado na resposta');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"admin\",\n    \"senha\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Realiza o login do usuário e retorna um token JWT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuários",
+      "item": [
+        {
+          "name": "Listar Usuários",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios"]
+            },
+            "description": "Lista todos os usuários ativos"
+          }
+        },
+        {
+          "name": "Buscar Usuário por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios", "1"]
+            },
+            "description": "Busca um usuário pelo ID"
+          }
+        },
+        {
+          "name": "Buscar Usuário por Login",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/login/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios", "login", "admin"]
+            },
+            "description": "Busca um usuário pelo login"
+          }
+        },
+        {
+          "name": "Cadastrar Usuário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"novo.usuario\",\n    \"senha\": \"senha123\",\n    \"nome\": \"Novo Usuário\",\n    \"centroCustoId\": 1,\n    \"permissoes\": [\"ADMIN\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios"]
+            },
+            "description": "Cadastra um novo usuário"
+          }
+        },
+        {
+          "name": "Atualizar Usuário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"usuario.atualizado\",\n    \"nome\": \"Usuário Atualizado\",\n    \"centroCustoId\": 1,\n    \"permissoes\": [\"ADMIN\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios", "1"]
+            },
+            "description": "Atualiza um usuário existente"
+          }
+        },
+        {
+          "name": "Remover Usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios", "1"]
+            },
+            "description": "Remove um usuário"
+          }
+        },
+        {
+          "name": "Alterar Senha",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/1/alterar-senha?senhaAtual=senha123&novaSenha=novaSenha123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios", "1", "alterar-senha"],
+              "query": [
+                {
+                  "key": "senhaAtual",
+                  "value": "senha123"
+                },
+                {
+                  "key": "novaSenha",
+                  "value": "novaSenha123"
+                }
+              ]
+            },
+            "description": "Altera a senha de um usuário"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Funcionários",
+      "item": [
+        {
+          "name": "Listar Funcionários",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/funcionarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["funcionarios"]
+            },
+            "description": "Lista todos os funcionários ativos"
+          }
+        },
+        {
+          "name": "Buscar Funcionário por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/funcionarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["funcionarios", "1"]
+            },
+            "description": "Busca um funcionário ativo pelo ID"
+          }
+        },
+        {
+          "name": "Cadastrar Funcionário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"João da Silva\",\n    \"cpf\": \"12345678900\",\n    \"dataAdmissao\": \"2024-01-01\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"idExterno\": \"12345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/funcionarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["funcionarios"]
+            },
+            "description": "Cadastra um novo funcionário"
+          }
+        },
+        {
+          "name": "Atualizar Funcionário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"João da Silva Atualizado\",\n    \"cpf\": \"12345678900\",\n    \"dataAdmissao\": \"2024-01-01\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"idExterno\": \"12345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/funcionarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["funcionarios", "1"]
+            },
+            "description": "Atualiza um funcionário existente"
+          }
+        },
+        {
+          "name": "Remover Funcionário",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/funcionarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["funcionarios", "1"]
+            },
+            "description": "Remove um funcionário (soft delete)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cargos",
+      "item": [
+        {
+          "name": "Listar Cargos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cargos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cargos"]
+            },
+            "description": "Lista todos os cargos ativos"
+          }
+        },
+        {
+          "name": "Buscar Cargo por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cargos/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cargos", "1"]
+            },
+            "description": "Busca um cargo pelo ID"
+          }
+        },
+        {
+          "name": "Cadastrar Cargo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Desenvolvedor\",\n    \"linhaNegocioId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cargos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cargos"]
+            },
+            "description": "Cadastra um novo cargo"
+          }
+        },
+        {
+          "name": "Atualizar Cargo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Desenvolvedor Senior\",\n    \"linhaNegocioId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cargos/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cargos", "1"]
+            },
+            "description": "Atualiza um cargo existente"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Centros de Custo",
+      "item": [
+        {
+          "name": "Listar Centros de Custo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/centros-custo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "centros-custo"]
+            },
+            "description": "Lista todos os centros de custo ativos"
+          }
+        },
+        {
+          "name": "Listar por Linha de Negócio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/centros-custo/linha-negocio/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "centros-custo", "linha-negocio", "1"]
+            },
+            "description": "Lista centros de custo por linha de negócio"
+          }
+        },
+        {
+          "name": "Buscar Centro de Custo por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/centros-custo/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "centros-custo", "1"]
+            },
+            "description": "Busca um centro de custo pelo ID"
+          }
+        },
+        {
+          "name": "Cadastrar Centro de Custo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Centro de Custo 1\",\n    \"linhaNegocioId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/centros-custo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "centros-custo"]
+            },
+            "description": "Cadastra um novo centro de custo"
+          }
+        },
+        {
+          "name": "Atualizar Centro de Custo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Centro de Custo 1 Atualizado\",\n    \"linhaNegocioId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/centros-custo/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "centros-custo", "1"]
+            },
+            "description": "Atualiza um centro de custo existente"
+          }
+        },
+        {
+          "name": "Remover Centro de Custo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/centros-custo/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "centros-custo", "1"]
+            },
+            "description": "Remove um centro de custo"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Linhas de Negócio",
+      "item": [
+        {
+          "name": "Listar Linhas de Negócio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/linhas-negocio",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "linhas-negocio"]
+            },
+            "description": "Lista todas as linhas de negócio ativas"
+          }
+        },
+        {
+          "name": "Buscar Linha de Negócio por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/linhas-negocio/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "linhas-negocio", "1"]
+            },
+            "description": "Busca uma linha de negócio pelo ID"
+          }
+        },
+        {
+          "name": "Cadastrar Linha de Negócio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Linha de Negócio 1\",\n    \"codigo\": \"LN1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/linhas-negocio",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "linhas-negocio"]
+            },
+            "description": "Cadastra uma nova linha de negócio"
+          }
+        },
+        {
+          "name": "Atualizar Linha de Negócio",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Linha de Negócio 1 Atualizada\",\n    \"codigo\": \"LN1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/linhas-negocio/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "linhas-negocio", "1"]
+            },
+            "description": "Atualiza uma linha de negócio existente"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rubricas",
+      "item": [
+        {
+          "name": "Listar Rubricas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rubricas",
+              "host": ["{{baseUrl}}"],
+              "path": ["rubricas"]
+            },
+            "description": "Lista todas as rubricas ativas"
+          }
+        },
+        {
+          "name": "Buscar Rubrica por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rubricas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["rubricas", "1"]
+            },
+            "description": "Busca uma rubrica ativa pelo ID"
+          }
+        },
+        {
+          "name": "Cadastrar Rubrica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"codigo\": \"SAL\",\n    \"descricao\": \"Salário Base\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rubricas",
+              "host": ["{{baseUrl}}"],
+              "path": ["rubricas"]
+            },
+            "description": "Cadastra uma nova rubrica"
+          }
+        },
+        {
+          "name": "Atualizar Rubrica",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"codigo\": \"SAL\",\n    \"descricao\": \"Salário Base Atualizado\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rubricas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["rubricas", "1"]
+            },
+            "description": "Atualiza uma rubrica existente"
+          }
+        },
+        {
+          "name": "Remover Rubrica",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rubricas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["rubricas", "1"]
+            },
+            "description": "Remove uma rubrica (soft delete)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Folha de Pagamento",
+      "item": [
+        {
+          "name": "Consultar por Funcionário",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento/funcionario/1?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento", "funcionario", "1"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta folha de pagamento ativa por funcionário"
+          }
+        },
+        {
+          "name": "Consultar por Centro de Custo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento/centro-custo/1?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento", "centro-custo", "1"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta folha de pagamento ativa por centro de custo"
+          }
+        },
+        {
+          "name": "Consultar por Linha de Negócio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento/linha-negocio/ADMIN?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento", "linha-negocio", "ADMIN"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta folha de pagamento ativa por linha de negócio"
+          }
+        },
+        {
+          "name": "Consultar por Período",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta folha de pagamento ativa por período"
+          }
+        },
+        {
+          "name": "Remover Folha de Pagamento",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento", "1"]
+            },
+            "description": "Remove um registro de folha de pagamento (soft delete)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Benefícios",
+      "item": [
+        {
+          "name": "Consultar por Funcionário",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/beneficios/funcionario/1?data=2024-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["beneficios", "funcionario", "1"],
+              "query": [
+                {
+                  "key": "data",
+                  "value": "2024-01-01"
+                }
+              ]
+            },
+            "description": "Consulta benefícios ativos por funcionário"
+          }
+        },
+        {
+          "name": "Consultar por Centro de Custo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/beneficios/centro-custo/1?data=2024-01-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["beneficios", "centro-custo", "1"],
+              "query": [
+                {
+                  "key": "data",
+                  "value": "2024-01-01"
+                }
+              ]
+            },
+            "description": "Consulta benefícios ativos por centro de custo"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Importação",
+      "item": [
+        {
+          "name": "Importar Folha de Pagamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "arquivo",
+                  "type": "file",
+                  "src": "/path/to/file.txt"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/importacao/folha",
+              "host": ["{{baseUrl}}"],
+              "path": ["importacao", "folha"]
+            },
+            "description": "Importa arquivo de folha de pagamento"
+          }
+        },
+        {
+          "name": "Importar Benefícios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "arquivo",
+                  "type": "file",
+                  "src": "/path/to/file.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/importacao/beneficios",
+              "host": ["{{baseUrl}}"],
+              "path": ["importacao", "beneficios"]
+            },
+            "description": "Importa arquivo de benefícios"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "seu-token-jwt-aqui",
+      "type": "string"
+    }
+  ]
+} 

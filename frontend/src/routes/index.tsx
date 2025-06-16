@@ -1,86 +1,65 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { CircularProgress, Box } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { Login } from '../pages/Login';
-import { Layout } from '../components/Layout';
 import { Dashboard } from '../pages/Dashboard';
+import { Usuarios } from '../pages/Usuarios';
 import { Funcionarios } from '../pages/Funcionarios';
 import { FolhaPagamento } from '../pages/FolhaPagamento';
+import { Rubricas } from '../pages/Rubricas';
 import { Beneficios } from '../pages/Beneficios';
+import { Importacao } from '../pages/Importacao';
 import { Relatorios } from '../pages/Relatorios';
-import { Example } from '../pages/Example';
+import { AuthProvider } from '../contexts/AuthContext';
+import { Layout } from '../components/Layout';
 
-interface PrivateRouteProps {
-  children: React.ReactNode;
-}
-
-function PrivateRoute({ children }: PrivateRouteProps) {
+function PrivateRoute() {
   const { user, loading } = useAuth();
+  console.log('PrivateRoute - Estado:', { user, loading });
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  return <Layout>{children}</Layout>;
+  return <Outlet />;
 }
 
-export function AppRoutes() {
+// Componente que envolve tudo com o BrowserRouter
+export function RouterWithAuth() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/funcionarios"
-          element={
-            <PrivateRoute>
-              <Funcionarios />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/folha-pagamento"
-          element={
-            <PrivateRoute>
-              <FolhaPagamento />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/beneficios"
-          element={
-            <PrivateRoute>
-              <Beneficios />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/relatorios"
-          element={
-            <PrivateRoute>
-              <Relatorios />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/exemplo"
-          element={
-            <PrivateRoute>
-              <Example />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route element={<PrivateRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/usuarios" element={<Usuarios />} />
+              <Route path="/funcionarios" element={<Funcionarios />} />
+              <Route path="/folha-pagamento" element={<FolhaPagamento />} />
+              <Route path="/rubricas" element={<Rubricas />} />
+              <Route path="/beneficios" element={<Beneficios />} />
+              <Route path="/importacao" element={<Importacao />} />
+              <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+          </Route>
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
+}
+
+// Mantendo o AppRoutes para compatibilidade
+export function AppRoutes() {
+  return <RouterWithAuth />;
 } 

@@ -2,7 +2,10 @@ package br.com.techne.sistemafolha.controller;
 
 import br.com.techne.sistemafolha.dto.FolhaPagamentoDTO;
 import br.com.techne.sistemafolha.model.FolhaPagamento;
+import br.com.techne.sistemafolha.model.CentroCusto;
 import br.com.techne.sistemafolha.repository.FolhaPagamentoRepository;
+import br.com.techne.sistemafolha.repository.CentroCustoRepository;
+import br.com.techne.sistemafolha.exception.CentroCustoNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Folha de Pagamento", description = "API para consulta de folha de pagamento")
 public class FolhaPagamentoController {
     private final FolhaPagamentoRepository folhaPagamentoRepository;
+    private final CentroCustoRepository centroCustoRepository;
 
     @GetMapping("/funcionario/{funcionarioId}")
     @Operation(summary = "Consulta folha de pagamento ativa por funcionário")
@@ -35,18 +39,55 @@ public class FolhaPagamentoController {
         return ResponseEntity.ok(folha);
     }
 
-    @GetMapping("/centro-custo/{centroCusto}")
+    @GetMapping("/centro-custo/{centroCustoId}")
     @Operation(summary = "Consulta folha de pagamento ativa por centro de custo")
     public ResponseEntity<List<FolhaPagamentoDTO>> consultarPorCentroCusto(
-            @PathVariable String centroCusto,
+            @PathVariable Long centroCustoId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+        CentroCusto centroCusto = centroCustoRepository.findById(centroCustoId)
+            .orElseThrow(() -> new CentroCustoNotFoundException(centroCustoId));
+            
         List<FolhaPagamentoDTO> folha = folhaPagamentoRepository
             .findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(centroCusto, dataInicio, dataFim)
             .stream()
             .map(this::toDTO)
             .collect(Collectors.toList());
         return ResponseEntity.ok(folha);
+    }
+
+    @GetMapping("/linha-negocio/{codigoLinhaNegocio}")
+    @Operation(summary = "Consulta folha de pagamento ativa por linha de negócio")
+    public ResponseEntity<List<FolhaPagamentoDTO>> buscarPorLinhaNegocio(
+            @PathVariable String codigoLinhaNegocio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+        List<FolhaPagamento> folhas = folhaPagamentoRepository
+                .findByFuncionarioCargoLinhaNegocioCodigoAndDataInicioBetweenAndAtivoTrue(codigoLinhaNegocio, dataInicio, dataFim);
+        return ResponseEntity.ok(folhas.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList()));
+    }
+
+    @GetMapping
+    @Operation(summary = "Consulta folha de pagamento ativa por período (mês/ano)")
+    public ResponseEntity<List<FolhaPagamentoDTO>> consultarPorPeriodo(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+        if (dataInicio != null && dataFim != null) {
+            List<FolhaPagamentoDTO> folha = folhaPagamentoRepository
+                .findByDataInicioBetweenAndAtivoTrue(dataInicio, dataFim)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(folha);
+        } else {
+            // Se não houver filtro, retorna tudo
+            List<FolhaPagamentoDTO> folha = folhaPagamentoRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(folha);
+        }
     }
 
     @DeleteMapping("/{id}")

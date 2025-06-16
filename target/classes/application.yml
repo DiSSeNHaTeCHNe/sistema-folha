@@ -2,12 +2,12 @@ spring:
   application:
     name: sistema-folha
   datasource:
-    url: jdbc:postgresql://localhost:5432/sistema_folha
+    url: jdbc:postgresql://localhost:5433/sistema_folha
     username: postgres
     password: postgres
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -19,7 +19,7 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8080
+  port: 8083
   servlet:
     context-path: /api
 
@@ -31,5 +31,10 @@ springdoc:
     operationsSorter: method
 
 jwt:
-  secret: ${JWT_SECRET:techne_engenharia_sistemas_ltda_50_737_766_0001_21}
-  expiration: 86400000 # 24 horas em milissegundos 
+  secret: ${JWT_SECRET:techne_engenharia_sistemas_ltda_50_737_766_0001_21_2024_2025_2026_2027_2028_2029_2030}
+  expiration: 86400000 # 24 horas em milissegundos
+
+logging:
+  level:
+    root: INFO
+    br.com.techne.sistemafolha: DEBUG 

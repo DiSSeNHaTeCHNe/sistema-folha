@@ -96,8 +96,8 @@ public class JwtService {
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = secretKey.getBytes();
-        if (keyBytes.length < 256) {
-            throw new IllegalStateException("A chave secreta deve ter pelo menos 256 bits (32 caracteres)");
+        if (keyBytes.length < 32) { // 256 bits = 32 bytes
+            throw new IllegalStateException("A chave secreta deve ter pelo menos 256 bits (32 bytes)");
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }

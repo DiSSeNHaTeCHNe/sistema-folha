@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   Container,
@@ -8,10 +9,14 @@ import {
   Button,
   Paper,
   Alert,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
-import { LoginRequest } from '../../types';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import type { LoginRequest } from '../../types';
 
 export function Login() {
+  const navigate = useNavigate();
   const { login } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,6 +24,7 @@ export function Login() {
     login: '',
     senha: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +33,7 @@ export function Login() {
 
     try {
       await login(formData);
+      navigate('/');
     } catch (err) {
       setError('Usuário ou senha inválidos');
     } finally {
@@ -37,6 +44,10 @@ export function Login() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -86,11 +97,24 @@ export function Login() {
               fullWidth
               name="senha"
               label="Senha"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="senha"
               autoComplete="current-password"
               value={formData.senha}
               onChange={handleChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Button
               type="submit"

@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as apiLogin, logout as apiLogout } from '../services/api';
-import { LoginRequest, LoginResponse, Usuario } from '../types';
+import type { LoginRequest, LoginResponse, Usuario } from '../types';
 
 interface AuthContextData {
   user: Usuario | null;

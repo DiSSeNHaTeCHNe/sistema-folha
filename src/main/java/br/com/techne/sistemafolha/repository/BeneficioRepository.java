@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.repository;
 
 import br.com.techne.sistemafolha.model.Beneficio;
+import br.com.techne.sistemafolha.model.CentroCusto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,7 +16,8 @@ public interface BeneficioRepository extends JpaRepository<Beneficio, Long> {
     @Query("SELECT b FROM Beneficio b " +
            "WHERE b.funcionario.id = :funcionarioId " +
            "AND b.dataInicio <= :data " +
-           "AND (b.dataFim IS NULL OR b.dataFim >= :data)")
+           "AND (b.dataFim IS NULL OR b.dataFim >= :data) " +
+           "AND b.ativo = true")
     List<Beneficio> findBeneficiosAtivosByFuncionario(
         @Param("funcionarioId") Long funcionarioId,
         @Param("data") LocalDate data);
@@ -23,13 +25,11 @@ public interface BeneficioRepository extends JpaRepository<Beneficio, Long> {
     @Query("SELECT b FROM Beneficio b " +
            "WHERE b.funcionario.centroCusto = :centroCusto " +
            "AND b.dataInicio <= :data " +
-           "AND (b.dataFim IS NULL OR b.dataFim >= :data)")
+           "AND (b.dataFim IS NULL OR b.dataFim >= :data) " +
+           "AND b.ativo = true")
     List<Beneficio> findBeneficiosAtivosByCentroCusto(
-        @Param("centroCusto") String centroCusto,
+        @Param("centroCusto") CentroCusto centroCusto,
         @Param("data") LocalDate data);
-
-    List<Beneficio> findByFuncionarioIdAndDataAndAtivoTrue(Long funcionarioId, LocalDate data);
-    List<Beneficio> findByFuncionarioCentroCustoAndDataAndAtivoTrue(String centroCusto, LocalDate data);
     
     @Modifying
     @Query("UPDATE Beneficio b SET b.ativo = false WHERE b.id = :id")

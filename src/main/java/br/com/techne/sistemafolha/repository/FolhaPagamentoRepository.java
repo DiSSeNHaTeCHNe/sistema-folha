@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.repository;
 
 import br.com.techne.sistemafolha.model.FolhaPagamento;
+import br.com.techne.sistemafolha.model.CentroCusto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -16,13 +17,20 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
     List<FolhaPagamento> findByFuncionarioAndPeriodo(Long funcionarioId, LocalDate dataInicio, LocalDate dataFim);
     
     @Query("SELECT f FROM FolhaPagamento f WHERE f.funcionario.centroCusto = :centroCusto AND f.dataInicio = :dataInicio AND f.dataFim = :dataFim")
-    List<FolhaPagamento> findByCentroCustoAndPeriodo(String centroCusto, LocalDate dataInicio, LocalDate dataFim);
+    List<FolhaPagamento> findByCentroCustoAndPeriodo(CentroCusto centroCusto, LocalDate dataInicio, LocalDate dataFim);
     
     boolean existsByFuncionarioIdAndRubricaIdAndDataInicioAndDataFim(
         Long funcionarioId, Long rubricaId, LocalDate dataInicio, LocalDate dataFim);
 
     List<FolhaPagamento> findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(Long funcionarioId, LocalDate dataInicio, LocalDate dataFim);
-    List<FolhaPagamento> findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(String centroCusto, LocalDate dataInicio, LocalDate dataFim);
+    List<FolhaPagamento> findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(CentroCusto centroCusto, LocalDate dataInicio, LocalDate dataFim);
+    
+    List<FolhaPagamento> findByFuncionarioCargoLinhaNegocioCodigoAndDataInicioBetweenAndAtivoTrue(
+        String codigoLinhaNegocio, 
+        LocalDate dataInicio, 
+        LocalDate dataFim
+    );
+    List<FolhaPagamento> findByDataInicioBetweenAndAtivoTrue(LocalDate dataInicio, LocalDate dataFim);
     
     @Modifying
     @Query("UPDATE FolhaPagamento f SET f.ativo = false WHERE f.id = :id")
