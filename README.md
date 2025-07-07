@@ -229,17 +229,22 @@ npm run dev
 ### API
 1. Importe a coleção do Postman:
 ```
-postman/Sistema Folha.postman_collection.json
+postman/sistema-folha.postman_collection.json
 ```
 
 2. Importe o ambiente:
 ```
-postman/Sistema Folha.postman_environment.json
+postman/sistema-folha.postman_environment.json
 ```
 
 3. Execute os testes:
 ```bash
 ./scripts/test-api.sh
+```
+
+4. Consulte a documentação das collections:
+```
+postman/README.md
 ```
 
 ## Próximos Passos

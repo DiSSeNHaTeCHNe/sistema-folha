@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import type { FolhaPagamento } from '../../types';
 import { folhaPagamentoService } from '../../services/folhaPagamentoService';
+import { resumoFolhaPagamentoService, type ResumoFolhaPagamento } from '../../services/resumoFolhaPagamentoService';
 
 const initialForm: Omit<FolhaPagamento, 'id'> = {
   funcionarioId: 0,
@@ -56,7 +57,24 @@ interface FuncionarioResumo {
   dataFim: string;
   totalRubricas: number;
   valorTotal: number;
+  cargoDescricao?: string;
+  centroCustoDescricao?: string;
+  linhaNegocioDescricao?: string;
 }
+
+// Função utilitária para formatar datas do backend (formato ISO)
+const formatarDataCompetencia = (dataString: string): string => {
+  if (!dataString) return '';
+  
+  // Se a data já está no formato ISO (YYYY-MM-DD), converte para DD/MM/YYYY
+  if (dataString.includes('-')) {
+    const [ano, mes, dia] = dataString.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+  
+  // Se já está no formato DD/MM/YYYY, retorna como está
+  return dataString;
+};
 
 export function FolhaPagamento() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,6 +85,7 @@ export function FolhaPagamento() {
   const [linhaNegocio, setLinhaNegocio] = useState('');
   const [folha, setFolha] = useState<FolhaPagamento[]>([]);
   const [funcionariosResumo, setFuncionariosResumo] = useState<FuncionarioResumo[]>([]);
+  const [resumosFolha, setResumosFolha] = useState<ResumoFolhaPagamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -78,6 +97,8 @@ export function FolhaPagamento() {
   const [saving, setSaving] = useState(false);
   const [funcionarioSelecionado, setFuncionarioSelecionado] = useState<FuncionarioResumo | null>(null);
   const [rubricasFuncionario, setRubricasFuncionario] = useState<FolhaPagamento[]>([]);
+  const [resumoSelecionado, setResumoSelecionado] = useState<ResumoFolhaPagamento | null>(null);
+  const [mostrarFuncionarios, setMostrarFuncionarios] = useState(false);
 
   const getPeriodo = () => {
     if (mes && ano) {
@@ -94,6 +115,8 @@ export function FolhaPagamento() {
     try {
       let data: FolhaPagamento[] = [];
       const { dataInicio, dataFim } = getPeriodo();
+      
+      // Buscar dados da folha
       if (funcionarioId) {
         data = await folhaPagamentoService.buscarPorFuncionario(Number(funcionarioId), dataInicio, dataFim);
       } else if (centroCusto) {
@@ -107,6 +130,20 @@ export function FolhaPagamento() {
       }
       setFolha(data);
       
+      // Buscar todos os resumos da folha
+      try {
+        const resumos = await resumoFolhaPagamentoService.listarTodos();
+        // Ordenar por competência em ordem decrescente (mais novo primeiro)
+        const resumosOrdenados = resumos.sort((a, b) => {
+          const dataA = new Date(a.competenciaInicio).getTime();
+          const dataB = new Date(b.competenciaInicio).getTime();
+          return dataB - dataA; // Ordem decrescente
+        });
+        setResumosFolha(resumosOrdenados);
+      } catch (err) {
+        console.log('Nenhum resumo encontrado');
+      }
+      
       // Criar resumo por funcionário
       const resumo = data.reduce((acc, item) => {
         const key = `${item.funcionarioId}-${item.dataInicio}-${item.dataFim}`;
@@ -118,6 +155,9 @@ export function FolhaPagamento() {
             dataFim: item.dataFim,
             totalRubricas: 0,
             valorTotal: 0,
+            cargoDescricao: item.cargoDescricao,
+            centroCustoDescricao: item.centroCustoDescricao,
+            linhaNegocioDescricao: item.linhaNegocioDescricao,
           };
         }
         acc[key].totalRubricas += 1;
@@ -141,7 +181,9 @@ export function FolhaPagamento() {
         return acc;
       }, {} as Record<string, FuncionarioResumo>);
       
-      setFuncionariosResumo(Object.values(resumo));
+      setFuncionariosResumo(Object.values(resumo).sort((a, b) => 
+        a.funcionarioNome.localeCompare(b.funcionarioNome)
+      ));
     } catch (err) {
       setError('Erro ao buscar registros');
     } finally {
@@ -229,35 +271,33 @@ export function FolhaPagamento() {
     setOpenDetalhesDialog(true);
   };
 
-  const filteredFuncionarios = funcionariosResumo.filter((item) =>
-    item.funcionarioNome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleVerFuncionarios = (resumo: ResumoFolhaPagamento) => {
+    setResumoSelecionado(resumo);
+    setMostrarFuncionarios(true);
+  };
+
+  const handleVoltarParaResumos = () => {
+    setMostrarFuncionarios(false);
+    setResumoSelecionado(null);
+  };
+
+  const filteredFuncionarios = funcionariosResumo.filter((item) => {
+    const nomeMatch = item.funcionarioNome.toLowerCase().includes(searchTerm.toLowerCase());
+    if (mostrarFuncionarios && resumoSelecionado) {
+      // Filtra também por competência
+      return (
+        nomeMatch &&
+        item.dataInicio === resumoSelecionado.competenciaInicio &&
+        item.dataFim === resumoSelecionado.competenciaFim
+      );
+    }
+    return nomeMatch;
+  });
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography component="h1" variant="h4">
-          Folha de Pagamento
-        </Typography>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<UploadIcon />}
-            onClick={() => {
-              // Implementar importação
-            }}
-            sx={{ mr: 2 }}
-          >
-            Importar
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-          >
-            Novo Registro
-          </Button>
-        </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4">Folha de Pagamento</Typography>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
@@ -317,20 +357,39 @@ export function FolhaPagamento() {
         <Typography>Carregando...</Typography>
       ) : error ? (
         <Typography color="error">{error}</Typography>
-      ) : (
-        <Grid container spacing={2}>
-          {filteredFuncionarios.map((funcionario) => (
-            <Grid item xs={12} sm={6} md={4} key={`${funcionario.funcionarioId}-${funcionario.dataInicio}`}>
-              <Card>
+      ) : mostrarFuncionarios ? (
+        <>
+          {/* Lista de Funcionários */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={handleVoltarParaResumos}
+              sx={{ mr: 2 }}
+            >
+              ← Voltar para Resumos
+            </Button>
+            <Typography variant="h5">
+              Funcionários - Competência: {resumoSelecionado && (
+                `${formatarDataCompetencia(resumoSelecionado.competenciaInicio)} a ${formatarDataCompetencia(resumoSelecionado.competenciaFim)}`
+              )}
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
+            {filteredFuncionarios.map((funcionario) => (
+              <Card key={`${funcionario.funcionarioId}-${funcionario.dataInicio}`}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     {funcionario.funcionarioNome}
                   </Typography>
                   <Typography color="textSecondary" gutterBottom>
-                    Período: {new Date(funcionario.dataInicio).toLocaleDateString()} a {new Date(funcionario.dataFim).toLocaleDateString()}
+                    Cargo: {funcionario.cargoDescricao || '-'}
                   </Typography>
                   <Typography color="textSecondary" gutterBottom>
-                    Rubricas: {funcionario.totalRubricas}
+                    Centro de Custo: {funcionario.centroCustoDescricao || '-'}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Linha de Negócio: {funcionario.linhaNegocioDescricao || '-'}
                   </Typography>
                   <Typography color="textSecondary" gutterBottom>
                     Total: {new Intl.NumberFormat('pt-BR', {
@@ -350,9 +409,93 @@ export function FolhaPagamento() {
                   </Box>
                 </CardContent>
               </Card>
-            </Grid>
-          ))}
-        </Grid>
+            ))}
+          </Box>
+          
+          {filteredFuncionarios.length === 0 && (
+            <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
+              Nenhum funcionário encontrado para este período.
+            </Typography>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Lista de Resumos da Folha */}
+          <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
+            Resumos da Folha de Pagamento
+          </Typography>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Competência</TableCell>
+                  <TableCell align="right">Total Empregados</TableCell>
+                  <TableCell align="right">Total Encargos</TableCell>
+                  <TableCell align="right">Total Pagamentos</TableCell>
+                  <TableCell align="right">Total Descontos</TableCell>
+                  <TableCell align="right">Total Líquido</TableCell>
+                  <TableCell>Data Importação</TableCell>
+                  <TableCell align="center">Ações</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {resumosFolha.map((resumo) => (
+                  <TableRow key={resumo.id || Math.random()}>
+                    <TableCell>
+                      {formatarDataCompetencia(resumo.competenciaInicio)} a {formatarDataCompetencia(resumo.competenciaFim)}
+                    </TableCell>
+                    <TableCell align="right">{resumo.totalEmpregados}</TableCell>
+                    <TableCell align="right">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(resumo.totalEncargos)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(resumo.totalPagamentos)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(resumo.totalDescontos)}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography color="primary" variant="h6">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(resumo.totalLiquido)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(resumo.dataImportacao).toLocaleString()}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Button
+                        variant="outlined"
+                        startIcon={<VisibilityIcon />}
+                        onClick={() => handleVerFuncionarios(resumo)}
+                        size="small"
+                      >
+                        Ver Funcionários
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          
+          {resumosFolha.length === 0 && (
+            <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
+              Nenhum resumo de folha de pagamento encontrado.
+            </Typography>
+          )}
+        </>
       )}
 
       <Snackbar
@@ -366,7 +509,7 @@ export function FolhaPagamento() {
       <Dialog open={openDetalhesDialog} onClose={() => setOpenDetalhesDialog(false)} maxWidth="lg" fullWidth>
         <DialogTitle>
           Rubricas de {funcionarioSelecionado?.funcionarioNome} - 
-          Período: {funcionarioSelecionado?.dataInicio} a {funcionarioSelecionado?.dataFim}
+          Período: {formatarDataCompetencia(funcionarioSelecionado?.dataInicio || '')} a {formatarDataCompetencia(funcionarioSelecionado?.dataFim || '')}
         </DialogTitle>
         <DialogContent>
           <TableContainer component={Paper}>
@@ -378,7 +521,6 @@ export function FolhaPagamento() {
                   <TableCell>Valor</TableCell>
                   <TableCell>Quantidade</TableCell>
                   <TableCell>Base de Cálculo</TableCell>
-                  <TableCell>Ações</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -402,20 +544,6 @@ export function FolhaPagamento() {
                         style: 'currency',
                         currency: 'BRL',
                       }).format(item.baseCalculo)}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpenDialog(item)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Sistema Folha de Pagamento",
-    "description": "API para gerenciamento de folha de pagamento",
+    "description": "API completa para gerenciamento de folha de pagamento, funcionários, benefícios, importações e relatórios",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -173,7 +173,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "usuarios", "1"]
             },
-            "description": "Remove um usuário"
+            "description": "Remove um usuário (soft delete)"
           }
         },
         {
@@ -220,9 +220,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/funcionarios",
+              "raw": "{{baseUrl}}/funcionarios",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "funcionarios"]
+              "path": ["funcionarios"]
             },
             "description": "Lista todos os funcionários ativos"
           }
@@ -238,11 +238,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/funcionarios/1",
+              "raw": "{{baseUrl}}/funcionarios/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "funcionarios", "1"]
+              "path": ["funcionarios", "1"]
             },
-            "description": "Busca um funcionário ativo pelo ID"
+            "description": "Busca um funcionário pelo ID"
           }
         },
         {
@@ -261,12 +261,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"João da Silva\",\n    \"cpf\": \"12345678900\",\n    \"dataAdmissao\": \"2024-01-01\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"idExterno\": \"12345\"\n}"
+              "raw": "{\n    \"nome\": \"João Silva\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"linhaNegocioId\": 1,\n    \"idExterno\": \"FUNC001\",\n    \"dataAdmissao\": \"2024-01-15\",\n    \"sexo\": \"M\",\n    \"tipoSalario\": \"MENSAL\",\n    \"funcao\": \"Desenvolvedor\",\n    \"dependentesIrrf\": 2,\n    \"dependentesSalarioFamilia\": 1,\n    \"vinculo\": \"CLT\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/funcionarios",
+              "raw": "{{baseUrl}}/funcionarios",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "funcionarios"]
+              "path": ["funcionarios"]
             },
             "description": "Cadastra um novo funcionário"
           }
@@ -287,12 +287,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"João da Silva Atualizado\",\n    \"cpf\": \"12345678900\",\n    \"dataAdmissao\": \"2024-01-01\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"idExterno\": \"12345\"\n}"
+              "raw": "{\n    \"nome\": \"João Silva Atualizado\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"linhaNegocioId\": 1,\n    \"idExterno\": \"FUNC001\",\n    \"dataAdmissao\": \"2024-01-15\",\n    \"sexo\": \"M\",\n    \"tipoSalario\": \"MENSAL\",\n    \"funcao\": \"Desenvolvedor Senior\",\n    \"dependentesIrrf\": 2,\n    \"dependentesSalarioFamilia\": 1,\n    \"vinculo\": \"CLT\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/funcionarios/1",
+              "raw": "{{baseUrl}}/funcionarios/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "funcionarios", "1"]
+              "path": ["funcionarios", "1"]
             },
             "description": "Atualiza um funcionário existente"
           }
@@ -308,9 +308,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/funcionarios/1",
+              "raw": "{{baseUrl}}/funcionarios/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "funcionarios", "1"]
+              "path": ["funcionarios", "1"]
             },
             "description": "Remove um funcionário (soft delete)"
           }
@@ -331,9 +331,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/cargos",
+              "raw": "{{baseUrl}}/cargos",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cargos"]
+              "path": ["cargos"]
             },
             "description": "Lista todos os cargos ativos"
           }
@@ -349,9 +349,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/cargos/1",
+              "raw": "{{baseUrl}}/cargos/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cargos", "1"]
+              "path": ["cargos", "1"]
             },
             "description": "Busca um cargo pelo ID"
           }
@@ -372,12 +372,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"descricao\": \"Desenvolvedor\",\n    \"linhaNegocioId\": 1\n}"
+              "raw": "{\n    \"codigo\": \"DEV001\",\n    \"descricao\": \"Desenvolvedor Java\",\n    \"salarioBase\": 5000.00\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cargos",
+              "raw": "{{baseUrl}}/cargos",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cargos"]
+              "path": ["cargos"]
             },
             "description": "Cadastra um novo cargo"
           }
@@ -398,14 +398,32 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"descricao\": \"Desenvolvedor Senior\",\n    \"linhaNegocioId\": 1\n}"
+              "raw": "{\n    \"codigo\": \"DEV001\",\n    \"descricao\": \"Desenvolvedor Java Senior\",\n    \"salarioBase\": 6000.00\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cargos/1",
+              "raw": "{{baseUrl}}/cargos/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "cargos", "1"]
+              "path": ["cargos", "1"]
             },
             "description": "Atualiza um cargo existente"
+          }
+        },
+        {
+          "name": "Remover Cargo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cargos/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["cargos", "1"]
+            },
+            "description": "Remove um cargo (soft delete)"
           }
         }
       ]
@@ -424,29 +442,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/centros-custo",
+              "raw": "{{baseUrl}}/centros-custo",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "centros-custo"]
+              "path": ["centros-custo"]
             },
             "description": "Lista todos os centros de custo ativos"
-          }
-        },
-        {
-          "name": "Listar por Linha de Negócio",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/centros-custo/linha-negocio/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "centros-custo", "linha-negocio", "1"]
-            },
-            "description": "Lista centros de custo por linha de negócio"
           }
         },
         {
@@ -460,9 +460,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/centros-custo/1",
+              "raw": "{{baseUrl}}/centros-custo/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "centros-custo", "1"]
+              "path": ["centros-custo", "1"]
             },
             "description": "Busca um centro de custo pelo ID"
           }
@@ -483,12 +483,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"descricao\": \"Desenvolvimento\",\n    \"linhaNegocioId\": 1\n}"
+              "raw": "{\n    \"codigo\": \"CC001\",\n    \"descricao\": \"Centro de Custo TI\",\n    \"responsavel\": \"João Silva\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/centros-custo",
+              "raw": "{{baseUrl}}/centros-custo",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "centros-custo"]
+              "path": ["centros-custo"]
             },
             "description": "Cadastra um novo centro de custo"
           }
@@ -509,12 +509,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"descricao\": \"Desenvolvimento e Inovação\",\n    \"linhaNegocioId\": 1\n}"
+              "raw": "{\n    \"codigo\": \"CC001\",\n    \"descricao\": \"Centro de Custo TI Atualizado\",\n    \"responsavel\": \"João Silva\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/centros-custo/1",
+              "raw": "{{baseUrl}}/centros-custo/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "centros-custo", "1"]
+              "path": ["centros-custo", "1"]
             },
             "description": "Atualiza um centro de custo existente"
           }
@@ -530,11 +530,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/centros-custo/1",
+              "raw": "{{baseUrl}}/centros-custo/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "centros-custo", "1"]
+              "path": ["centros-custo", "1"]
             },
-            "description": "Remove um centro de custo"
+            "description": "Remove um centro de custo (soft delete)"
           }
         }
       ]
@@ -553,9 +553,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/linhas-negocio",
+              "raw": "{{baseUrl}}/linhas-negocio",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "linhas-negocio"]
+              "path": ["linhas-negocio"]
             },
             "description": "Lista todas as linhas de negócio ativas"
           }
@@ -571,9 +571,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/linhas-negocio/1",
+              "raw": "{{baseUrl}}/linhas-negocio/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "linhas-negocio", "1"]
+              "path": ["linhas-negocio", "1"]
             },
             "description": "Busca uma linha de negócio pelo ID"
           }
@@ -594,12 +594,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"descricao\": \"Tecnologia da Informação\"\n}"
+              "raw": "{\n    \"codigo\": \"LN001\",\n    \"descricao\": \"Desenvolvimento de Software\",\n    \"responsavel\": \"Maria Santos\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/linhas-negocio",
+              "raw": "{{baseUrl}}/linhas-negocio",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "linhas-negocio"]
+              "path": ["linhas-negocio"]
             },
             "description": "Cadastra uma nova linha de negócio"
           }
@@ -620,14 +620,32 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"descricao\": \"Tecnologia da Informação e Inovação\"\n}"
+              "raw": "{\n    \"codigo\": \"LN001\",\n    \"descricao\": \"Desenvolvimento de Software Atualizado\",\n    \"responsavel\": \"Maria Santos\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/linhas-negocio/1",
+              "raw": "{{baseUrl}}/linhas-negocio/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "linhas-negocio", "1"]
+              "path": ["linhas-negocio", "1"]
             },
             "description": "Atualiza uma linha de negócio existente"
+          }
+        },
+        {
+          "name": "Remover Linha de Negócio",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/linhas-negocio/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["linhas-negocio", "1"]
+            },
+            "description": "Remove uma linha de negócio (soft delete)"
           }
         }
       ]
@@ -668,7 +686,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["rubricas", "1"]
             },
-            "description": "Busca uma rubrica ativa pelo ID"
+            "description": "Busca uma rubrica pelo ID"
           }
         },
         {
@@ -687,7 +705,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"codigo\": \"SAL\",\n    \"descricao\": \"Salário Base\"\n}"
+              "raw": "{\n    \"codigo\": \"SAL001\",\n    \"descricao\": \"Salário Base\",\n    \"tipoRubricaId\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/rubricas",
@@ -713,7 +731,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"codigo\": \"SAL\",\n    \"descricao\": \"Salário Base Atualizado\"\n}"
+              "raw": "{\n    \"codigo\": \"SAL001\",\n    \"descricao\": \"Salário Base Atualizado\",\n    \"tipoRubricaId\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/rubricas/1",
@@ -747,6 +765,24 @@
       "name": "Folha de Pagamento",
       "item": [
         {
+          "name": "Listar Folha de Pagamento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento"]
+            },
+            "description": "Lista todos os registros de folha de pagamento"
+          }
+        },
+        {
           "name": "Consultar por Funcionário",
           "request": {
             "method": "GET",
@@ -757,11 +793,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/folha-pagamento/funcionario/1",
+              "raw": "{{baseUrl}}/folha-pagamento/funcionario/1?dataInicio=2024-01-01&dataFim=2024-01-31",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "folha-pagamento", "funcionario", "1"]
+              "path": ["folha-pagamento", "funcionario", "1"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
             },
-            "description": "Consulta a folha de pagamento de um funcionário"
+            "description": "Consulta folha de pagamento por funcionário e período"
           }
         },
         {
@@ -775,29 +821,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/folha-pagamento/centro-custo/1",
+              "raw": "{{baseUrl}}/folha-pagamento/centro-custo/1?dataInicio=2024-01-01&dataFim=2024-01-31",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "folha-pagamento", "centro-custo", "1"]
+              "path": ["folha-pagamento", "centro-custo", "1"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
             },
-            "description": "Consulta a folha de pagamento por centro de custo"
-          }
-        },
-        {
-          "name": "Consultar por Linha de Negócio",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/folha-pagamento/linha-negocio/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "folha-pagamento", "linha-negocio", "1"]
-            },
-            "description": "Consulta a folha de pagamento por linha de negócio"
+            "description": "Consulta folha de pagamento por centro de custo e período"
           }
         },
         {
@@ -811,9 +849,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/folha-pagamento?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "raw": "{{baseUrl}}/folha-pagamento?dataInicio=2024-01-01&dataFim=2024-01-31",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "folha-pagamento"],
+              "path": ["folha-pagamento"],
               "query": [
                 {
                   "key": "dataInicio",
@@ -825,11 +863,11 @@
                 }
               ]
             },
-            "description": "Consulta a folha de pagamento por período"
+            "description": "Consulta folha de pagamento por período"
           }
         },
         {
-          "name": "Remover Folha de Pagamento",
+          "name": "Remover Registro",
           "request": {
             "method": "DELETE",
             "header": [
@@ -862,11 +900,17 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/beneficios/funcionario/1",
+              "raw": "{{baseUrl}}/beneficios/funcionario/1?data=2024-01-15",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "beneficios", "funcionario", "1"]
+              "path": ["beneficios", "funcionario", "1"],
+              "query": [
+                {
+                  "key": "data",
+                  "value": "2024-01-15"
+                }
+              ]
             },
-            "description": "Consulta os benefícios de um funcionário"
+            "description": "Consulta benefícios por funcionário e data"
           }
         },
         {
@@ -880,11 +924,132 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/beneficios/centro-custo/1",
+              "raw": "{{baseUrl}}/beneficios/centro-custo/1?data=2024-01-15",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "beneficios", "centro-custo", "1"]
+              "path": ["beneficios", "centro-custo", "1"],
+              "query": [
+                {
+                  "key": "data",
+                  "value": "2024-01-15"
+                }
+              ]
             },
-            "description": "Consulta os benefícios por centro de custo"
+            "description": "Consulta benefícios por centro de custo e data"
+          }
+        },
+        {
+          "name": "Remover Benefício",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/beneficios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["beneficios", "1"]
+            },
+            "description": "Remove um benefício (soft delete)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resumo Folha de Pagamento",
+      "item": [
+        {
+          "name": "Listar Todos os Resumos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resumo-folha-pagamento",
+              "host": ["{{baseUrl}}"],
+              "path": ["resumo-folha-pagamento"]
+            },
+            "description": "Lista todos os resumos de folha de pagamento ativos"
+          }
+        },
+        {
+          "name": "Consultar por Período",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resumo-folha-pagamento/periodo?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["resumo-folha-pagamento", "periodo"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta resumos por período"
+          }
+        },
+        {
+          "name": "Consultar por Competência",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resumo-folha-pagamento/competencia?competenciaInicio=2024-01-01&competenciaFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["resumo-folha-pagamento", "competencia"],
+              "query": [
+                {
+                  "key": "competenciaInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "competenciaFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta resumo por competência específica"
+          }
+        },
+        {
+          "name": "Listar Mais Recentes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resumo-folha-pagamento/latest",
+              "host": ["{{baseUrl}}"],
+              "path": ["resumo-folha-pagamento", "latest"]
+            },
+            "description": "Lista os resumos mais recentes"
           }
         }
       ]
@@ -908,16 +1073,44 @@
                 {
                   "key": "arquivo",
                   "type": "file",
-                  "src": "/path/to/folha.csv"
+                  "src": []
                 }
               ]
             },
             "url": {
-              "raw": "{{baseUrl}}/api/importacao/folha",
+              "raw": "{{baseUrl}}/importacao/folha",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "importacao", "folha"]
+              "path": ["importacao", "folha"]
             },
-            "description": "Importa dados da folha de pagamento"
+            "description": "Importa arquivo de folha de pagamento (formato .txt)"
+          }
+        },
+        {
+          "name": "Importar Folha de Pagamento ADP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "arquivo",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/importacao/folha-adp",
+              "host": ["{{baseUrl}}"],
+              "path": ["importacao", "folha-adp"]
+            },
+            "description": "Importa arquivo de folha de pagamento ADP (formato .txt)"
           }
         },
         {
@@ -936,16 +1129,16 @@
                 {
                   "key": "arquivo",
                   "type": "file",
-                  "src": "/path/to/beneficios.csv"
+                  "src": []
                 }
               ]
             },
             "url": {
-              "raw": "{{baseUrl}}/api/importacao/beneficios",
+              "raw": "{{baseUrl}}/importacao/beneficios",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "importacao", "beneficios"]
+              "path": ["importacao", "beneficios"]
             },
-            "description": "Importa dados de benefícios"
+            "description": "Importa arquivo de benefícios (formato .txt)"
           }
         }
       ]
@@ -955,10 +1148,6 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:8083"
-    },
-    {
-      "key": "token",
-      "value": ""
     }
   ]
 } 

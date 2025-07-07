@@ -27,6 +27,7 @@ export interface Rubrica {
   codigo: string;
   descricao: string;
   tipo: 'PROVENTO' | 'DESCONTO' | 'INFORMATIVO';
+  tipoRubricaDescricao?: string;
   porcentagem?: number;
   ativo: boolean;
 }
@@ -50,6 +51,12 @@ export interface FolhaPagamento {
   rubricaCodigo: string;
   rubricaDescricao: string;
   rubricaTipo: string;
+  cargoId?: number;
+  cargoDescricao?: string;
+  centroCustoId?: number;
+  centroCustoDescricao?: string;
+  linhaNegocioId?: number;
+  linhaNegocioDescricao?: string;
   dataInicio: string;
   dataFim: string;
   valor: number;

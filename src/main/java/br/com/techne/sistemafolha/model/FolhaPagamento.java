@@ -26,6 +26,18 @@ public class FolhaPagamento {
     @JoinColumn(name = "rubrica_id", nullable = false)
     private Rubrica rubrica;
 
+    @ManyToOne
+    @JoinColumn(name = "cargo_id")
+    private Cargo cargo;
+
+    @ManyToOne
+    @JoinColumn(name = "centro_custo_id")
+    private CentroCusto centroCusto;
+
+    @ManyToOne
+    @JoinColumn(name = "linha_negocio_id")
+    private LinhaNegocio linhaNegocio;
+
     @Column(name = "data_inicio", nullable = false)
     private LocalDate dataInicio;
 

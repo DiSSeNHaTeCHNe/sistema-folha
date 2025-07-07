@@ -357,6 +357,9 @@ public class ImportacaoFolhaAdpService {
                     FolhaPagamento folha = new FolhaPagamento();
                     folha.setFuncionario(funcionario);
                     folha.setRubrica(rubrica);
+                    folha.setCargo(funcionario.getCargo());
+                    folha.setCentroCusto(funcionario.getCentroCusto());
+                    folha.setLinhaNegocio(funcionario.getCentroCusto().getLinhaNegocio());
                     folha.setDataInicio(dataInicio);
                     folha.setDataFim(dataFim);
                     folha.setValor(valorBD);

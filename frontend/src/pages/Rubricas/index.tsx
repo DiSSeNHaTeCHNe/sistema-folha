@@ -23,7 +23,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { rubricaService } from '../../services/rubricaService';
 import type { Rubrica } from '../../types';
@@ -31,7 +31,7 @@ import type { Rubrica } from '../../types';
 interface RubricaFormData {
   codigo: string;
   descricao: string;
-  tipo: 'PROVENTO' | 'DESCONTO' | 'INFORMATIVO';
+  tipo: string;
   porcentagem?: number;
 }
 
@@ -45,7 +45,7 @@ export default function Rubricas() {
   const [rubricas, setRubricas] = useState<Rubrica[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedRubrica, setSelectedRubrica] = useState<Rubrica | null>(null);
-  const { register, handleSubmit, reset, setValue, watch } = useForm<RubricaFormData>();
+  const { register, handleSubmit, reset, setValue, watch, control } = useForm<RubricaFormData>();
   const tipoSelecionado = watch('tipo');
 
   useEffect(() => {
@@ -66,7 +66,13 @@ export default function Rubricas() {
       setSelectedRubrica(rubrica);
       setValue('codigo', rubrica.codigo);
       setValue('descricao', rubrica.descricao);
-      setValue('tipo', rubrica.tipo);
+      // Mapeia a descrição para o valor correto do dropdown
+      const tipoValue = rubrica.tipoRubricaDescricao || rubrica.tipo;
+      let mappedTipo = 'INFORMATIVO'; // valor padrão
+      if (tipoValue === 'PROVENTO') mappedTipo = 'PROVENTO';
+      else if (tipoValue === 'DESCONTO') mappedTipo = 'DESCONTO';
+      else if (tipoValue === 'INFORMATIVO') mappedTipo = 'INFORMATIVO';
+      setValue('tipo', mappedTipo);
       setValue('porcentagem', rubrica.porcentagem);
     } else {
       setSelectedRubrica(null);
@@ -144,7 +150,7 @@ export default function Rubricas() {
                     <TableCell>{rubrica.codigo}</TableCell>
                     <TableCell>{rubrica.descricao}</TableCell>
                     <TableCell>
-                      {rubrica.tipo ? tiposRubrica.find(t => t.value === rubrica.tipo)?.label || rubrica.tipo : '-'}
+                      {rubrica.tipoRubricaDescricao || rubrica.tipo || '-'}
                     </TableCell>
                     <TableCell>
                       {rubrica.porcentagem ? `${rubrica.porcentagem}%` : '-'}
@@ -184,6 +190,7 @@ export default function Rubricas() {
               fullWidth
               margin="normal"
               required
+              disabled={!!selectedRubrica}
             />
             <TextField
               {...register('descricao', { required: 'Descrição é obrigatória' })}
@@ -194,30 +201,35 @@ export default function Rubricas() {
             />
             <FormControl fullWidth margin="normal" required>
               <InputLabel>Tipo</InputLabel>
-              <Select
-                {...register('tipo', { required: 'Tipo é obrigatório' })}
-                label="Tipo"
-              >
-                {tiposRubrica.map((tipo) => (
-                  <MenuItem key={tipo.value} value={tipo.value}>
-                    {tipo.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            {(tipoSelecionado === 'PROVENTO' || tipoSelecionado === 'DESCONTO') && (
-              <TextField
-                {...register('porcentagem', {
-                  min: { value: 0, message: 'Porcentagem deve ser maior ou igual a 0' },
-                  max: { value: 100, message: 'Porcentagem deve ser menor ou igual a 100' }
-                })}
-                label="Porcentagem (%)"
-                type="number"
-                fullWidth
-                margin="normal"
-                inputProps={{ min: 0, max: 100, step: 0.01 }}
+              <Controller
+                name="tipo"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <Select
+                    label="Tipo"
+                    {...field}
+                    value={field.value || ''}
+                  >
+                    {tiposRubrica.map((tipo) => (
+                      <MenuItem key={tipo.value} value={tipo.value}>
+                        {tipo.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
               />
-            )}
+            </FormControl>
+            <TextField
+              {...register('porcentagem', {
+                min: { value: 0, message: 'Porcentagem deve ser maior ou igual a 0' }
+              })}
+              label="Porcentagem (%)"
+              type="number"
+              fullWidth
+              margin="normal"
+              inputProps={{ min: 0, step: 0.01 }}
+            />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancelar</Button>

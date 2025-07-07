@@ -69,6 +69,16 @@ interface Filtros {
   linhaNegocioId: number | '';
 }
 
+// Função utilitária para formatar datas do backend (formato ISO)
+const formatarDataCompetencia = (dataString: string): string => {
+  if (!dataString) return '';
+  if (dataString.includes('-')) {
+    const [ano, mes, dia] = dataString.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+  return dataString;
+};
+
 export default function Funcionarios() {
   const [funcionarios, setFuncionarios] = useState<FuncionarioLocal[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
@@ -280,7 +290,7 @@ export default function Funcionarios() {
                 <Typography variant="h6">{funcionario.nome}</Typography>
                 <Typography color="textSecondary">CPF: {funcionario.cpf}</Typography>
                 <Typography color="textSecondary">
-                  Data de Admissão: {new Date(funcionario.dataAdmissao).toLocaleDateString()}
+                  Data de Admissão: {formatarDataCompetencia(funcionario.dataAdmissao)}
                 </Typography>
                 <Typography color="textSecondary">Cargo: {funcionario.cargoDescricao || 'N/A'}</Typography>
                 <Typography color="textSecondary">

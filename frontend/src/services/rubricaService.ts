@@ -4,7 +4,7 @@ import type { Rubrica } from '../types';
 interface RubricaFormData {
   codigo: string;
   descricao: string;
-  tipo: 'PROVENTO' | 'DESCONTO' | 'INFORMATIVO';
+  tipo: string;
   porcentagem?: number;
 }
 
@@ -14,7 +14,8 @@ const rubricaService = {
     // Mapeia os dados para garantir compatibilidade
     return response.data.map((item: any) => ({
       ...item,
-      tipo: item.tipo || item.tipoRubricaDescricao
+      tipo: item.tipoRubricaDescricao || item.tipo,
+      tipoRubricaDescricao: item.tipoRubricaDescricao
     }));
   },
 
@@ -23,17 +24,26 @@ const rubricaService = {
     const item = response.data;
     return {
       ...item,
-      tipo: item.tipo || item.tipoRubricaDescricao
+      tipo: item.tipoRubricaDescricao || item.tipo,
+      tipoRubricaDescricao: item.tipoRubricaDescricao
     };
   },
 
   cadastrar: async (data: RubricaFormData): Promise<Rubrica> => {
-    const response = await api.post('/rubricas', data);
+    const payload = {
+      ...data,
+      tipoRubricaDescricao: data.tipo
+    };
+    const response = await api.post('/rubricas', payload);
     return response.data;
   },
 
   atualizar: async (id: number, data: RubricaFormData): Promise<Rubrica> => {
-    const response = await api.put(`/rubricas/${id}`, data);
+    const payload = {
+      ...data,
+      tipoRubricaDescricao: data.tipo
+    };
+    const response = await api.put(`/rubricas/${id}`, payload);
     return response.data;
   },
 
