@@ -71,6 +71,8 @@ export default function Rubricas() {
     } else {
       setSelectedRubrica(null);
       reset();
+      // Define valor padrão de 100 para nova rubrica
+      setValue('porcentagem', 100);
     }
     setOpen(true);
   };
@@ -142,7 +144,7 @@ export default function Rubricas() {
                     <TableCell>{rubrica.codigo}</TableCell>
                     <TableCell>{rubrica.descricao}</TableCell>
                     <TableCell>
-                      {tiposRubrica.find(t => t.value === rubrica.tipo)?.label}
+                      {rubrica.tipo ? tiposRubrica.find(t => t.value === rubrica.tipo)?.label || rubrica.tipo : '-'}
                     </TableCell>
                     <TableCell>
                       {rubrica.porcentagem ? `${rubrica.porcentagem}%` : '-'}

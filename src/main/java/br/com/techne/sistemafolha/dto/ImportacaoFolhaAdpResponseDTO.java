@@ -20,6 +20,7 @@ public record ImportacaoFolhaAdpResponseDTO(
                 folha.getRubrica().getId(),
                 folha.getRubrica().getCodigo(),
                 folha.getRubrica().getDescricao(),
+                folha.getRubrica().getTipoRubrica().getDescricao(),
                 folha.getDataInicio(),
                 folha.getDataFim(),
                 folha.getValor(),

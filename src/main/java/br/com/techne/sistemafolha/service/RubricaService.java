@@ -66,11 +66,13 @@ public class RubricaService {
     }
 
     private RubricaDTO toDTO(Rubrica rubrica) {
+        String tipoDescricao = rubrica.getTipoRubrica() != null ? rubrica.getTipoRubrica().getDescricao() : null;
         return new RubricaDTO(
             rubrica.getId(),
             rubrica.getCodigo(),
             rubrica.getDescricao(),
-            rubrica.getTipoRubrica() != null ? rubrica.getTipoRubrica().getDescricao() : null,
+            tipoDescricao,
+            tipoDescricao,
             rubrica.getPorcentagem(),
             rubrica.getAtivo()
         );

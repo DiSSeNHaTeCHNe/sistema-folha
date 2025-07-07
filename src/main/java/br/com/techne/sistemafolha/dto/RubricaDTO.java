@@ -5,14 +5,16 @@ public class RubricaDTO {
     private String codigo;
     private String descricao;
     private String tipoRubricaDescricao;
+    private String tipo;
     private Double porcentagem;
     private Boolean ativo;
 
-    public RubricaDTO(Long id, String codigo, String descricao, String tipoRubricaDescricao, Double porcentagem, Boolean ativo) {
+    public RubricaDTO(Long id, String codigo, String descricao, String tipoRubricaDescricao, String tipo, Double porcentagem, Boolean ativo) {
         this.id = id;
         this.codigo = codigo;
         this.descricao = descricao;
         this.tipoRubricaDescricao = tipoRubricaDescricao;
+        this.tipo = tipo;
         this.porcentagem = porcentagem;
         this.ativo = ativo;
     }
@@ -26,6 +28,8 @@ public class RubricaDTO {
     public void setDescricao(String descricao) { this.descricao = descricao; }
     public String getTipoRubricaDescricao() { return tipoRubricaDescricao; }
     public void setTipoRubricaDescricao(String tipoRubricaDescricao) { this.tipoRubricaDescricao = tipoRubricaDescricao; }
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
     public Double getPorcentagem() { return porcentagem; }
     public void setPorcentagem(Double porcentagem) { this.porcentagem = porcentagem; }
     public Boolean getAtivo() { return ativo; }

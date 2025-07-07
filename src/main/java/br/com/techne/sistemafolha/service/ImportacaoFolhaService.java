@@ -40,6 +40,8 @@ public class ImportacaoFolhaService {
     private static final Pattern FUNCIONARIO_PATTERN = Pattern.compile("(\\d+)\\s+([A-Z\\s\\-]+)\\s+(\\d+)\\s+([A-Z\\s]+)");
     private static final Pattern RUBRICA_PATTERN = Pattern.compile("(\\d{4})\\s+([A-Z\\s\\-]+)\\s+(\\d+,\\d+)\\s+(\\d+,\\d+)\\s+([\\d.,]+)([+-])?");
     private static final Pattern CENTRO_CUSTO_PATTERN = Pattern.compile("(\\d+)\\s+([A-Z\\s\\-]+)");
+    
+
 
     private static class DadosFuncionario {
         String idExterno;
@@ -141,6 +143,7 @@ public class ImportacaoFolhaService {
                             novaRubrica.setCodigo(codigoRubrica);
                             novaRubrica.setDescricao(descricaoRubrica);
                             novaRubrica.setTipoRubrica(determinarTipoRubrica(tipo));
+                            novaRubrica.setPorcentagem(100.0); // Valor padrão de 100%
                             contadores[2]++;
                             return rubricaRepository.save(novaRubrica);
                         });

@@ -49,6 +49,7 @@ export interface FolhaPagamento {
   rubricaId: number;
   rubricaCodigo: string;
   rubricaDescricao: string;
+  rubricaTipo: string;
   dataInicio: string;
   dataFim: string;
   valor: number;

@@ -96,6 +96,7 @@ public class FolhaPagamentoController {
             folha.getRubrica().getId(),
             folha.getRubrica().getCodigo(),
             folha.getRubrica().getDescricao(),
+            folha.getRubrica().getTipoRubrica().getDescricao(),
             folha.getDataInicio(),
             folha.getDataFim(),
             folha.getValor(),

@@ -2,10 +2,12 @@ package br.com.techne.sistemafolha.service;
 
 import br.com.techne.sistemafolha.model.FolhaPagamento;
 import br.com.techne.sistemafolha.model.Funcionario;
+import br.com.techne.sistemafolha.model.ResumoFolhaPagamento;
 import br.com.techne.sistemafolha.model.Rubrica;
 import br.com.techne.sistemafolha.model.TipoRubrica;
 import br.com.techne.sistemafolha.repository.FolhaPagamentoRepository;
 import br.com.techne.sistemafolha.repository.FuncionarioRepository;
+import br.com.techne.sistemafolha.repository.ResumoFolhaPagamentoRepository;
 import br.com.techne.sistemafolha.repository.RubricaRepository;
 import br.com.techne.sistemafolha.repository.TipoRubricaRepository;
 import org.slf4j.Logger;
@@ -20,6 +22,7 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +41,7 @@ public class ImportacaoFolhaAdpService {
     private final RubricaRepository rubricaRepository;
     private final FolhaPagamentoRepository folhaPagamentoRepository;
     private final TipoRubricaRepository tipoRubricaRepository;
+    private final ResumoFolhaPagamentoRepository resumoFolhaPagamentoRepository;
 
     // Lista de rubricas para ignorar (substituir por "--")
     private final List<String> rubricasIgnore = List.of(
@@ -46,16 +50,25 @@ public class ImportacaoFolhaAdpService {
 
     // Mapa de empresas/centros de custo
     private final Map<String, String> empresa = new HashMap<>();
+    
+    // Padrões para extrair dados de resumo
+    private static final Pattern TOTAL_EMPREGADOS_PATTERN = Pattern.compile("Total de Empregados\\s*:\\s*(\\d+)");
+    private static final Pattern TOTAL_ENCARGOS_PATTERN = Pattern.compile("Total de Encargos\\s*:\\s*([\\d.,]+)");
+    private static final Pattern TOTAL_PAGAMENTOS_PATTERN = Pattern.compile("Total de Pagamentos\\s*:\\s*([\\d.,]+)");
+    private static final Pattern TOTAL_DESCONTOS_PATTERN = Pattern.compile("Total de Descontos\\s*:\\s*([\\d.,]+)");
+    private static final Pattern TOTAL_LIQUIDO_PATTERN = Pattern.compile("Total Líquido\\s*:\\s*([\\d.,]+)");
 
     public ImportacaoFolhaAdpService(
             FuncionarioRepository funcionarioRepository,
             RubricaRepository rubricaRepository,
             FolhaPagamentoRepository folhaPagamentoRepository,
-            TipoRubricaRepository tipoRubricaRepository) {
+            TipoRubricaRepository tipoRubricaRepository,
+            ResumoFolhaPagamentoRepository resumoFolhaPagamentoRepository) {
         this.funcionarioRepository = funcionarioRepository;
         this.rubricaRepository = rubricaRepository;
         this.folhaPagamentoRepository = folhaPagamentoRepository;
         this.tipoRubricaRepository = tipoRubricaRepository;
+        this.resumoFolhaPagamentoRepository = resumoFolhaPagamentoRepository;
         
         // Inicializar mapa de empresas
         inicializarMapaEmpresas();
@@ -79,6 +92,13 @@ public class ImportacaoFolhaAdpService {
         
         Funcionario funcionarioAtual = null;
         List<String> rubricasProcessadas = new ArrayList<>();
+        
+        // Variáveis para dados de resumo
+        Integer totalEmpregados = null;
+        BigDecimal totalEncargos = null;
+        BigDecimal totalPagamentos = null;
+        BigDecimal totalDescontos = null;
+        BigDecimal totalLiquido = null;
 
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(arquivo.getInputStream(), Charset.forName("WINDOWS-1252")))) {
@@ -133,16 +153,19 @@ public class ImportacaoFolhaAdpService {
                         continue;
                     }
 
+                    if(linha.length() == 130)
+                        linha += " ";
+
                     // Processa primeira rubrica da linha
                     // Formato: "0010 Salário Base           200,00         0,00        13.250,54+"
                     processarRubrica(linha, 0, 31, 32, 65, funcionarioAtual, dataInicio, dataFim, folhasPagamento);
                     
                     // Processa segunda rubrica da linha (se existir)
                     // Verifica se a linha tem comprimento suficiente e se há conteúdo na segunda rubrica
-                    if (linha.length() > 130 && 
+                    if (linha.length() > 130 &&
                         !linha.substring(66, 97).trim().isEmpty() && 
                         !linha.substring(66, 70).isBlank()) {
-                        
+
                         // Verifica se há valores válidos para a segunda rubrica
                         String segundaRubrica = linha.substring(66, 97).trim();
                         String segundaValores = linha.substring(98, 131).trim();
@@ -157,11 +180,86 @@ public class ImportacaoFolhaAdpService {
                         logger.debug("Linha não tem segunda rubrica ou comprimento insuficiente");
                     }
                 }
+                
+                // Processa dados de resumo no final do arquivo
+                Matcher totalEmpregadosMatcher = TOTAL_EMPREGADOS_PATTERN.matcher(linha);
+                if (totalEmpregadosMatcher.find()) {
+                    try {
+                        totalEmpregados = Integer.parseInt(totalEmpregadosMatcher.group(1));
+                        logger.info("Total de Empregados identificado: {}", totalEmpregados);
+                    } catch (Exception e) {
+                        logger.error("Erro ao processar total de empregados na linha: {}", linha);
+                    }
+                }
+                
+                Matcher totalEncargosMatcher = TOTAL_ENCARGOS_PATTERN.matcher(linha);
+                if (totalEncargosMatcher.find()) {
+                    try {
+                        totalEncargos = parseBigDecimal(totalEncargosMatcher.group(1));
+                        logger.info("Total de Encargos identificado: {}", totalEncargos);
+                    } catch (Exception e) {
+                        logger.error("Erro ao processar total de encargos na linha: {}", linha);
+                    }
+                }
+                
+                Matcher totalPagamentosMatcher = TOTAL_PAGAMENTOS_PATTERN.matcher(linha);
+                if (totalPagamentosMatcher.find()) {
+                    try {
+                        totalPagamentos = parseBigDecimal(totalPagamentosMatcher.group(1));
+                        logger.info("Total de Pagamentos identificado: {}", totalPagamentos);
+                    } catch (Exception e) {
+                        logger.error("Erro ao processar total de pagamentos na linha: {}", linha);
+                    }
+                }
+                
+                Matcher totalDescontosMatcher = TOTAL_DESCONTOS_PATTERN.matcher(linha);
+                if (totalDescontosMatcher.find()) {
+                    try {
+                        totalDescontos = parseBigDecimal(totalDescontosMatcher.group(1));
+                        logger.info("Total de Descontos identificado: {}", totalDescontos);
+                    } catch (Exception e) {
+                        logger.error("Erro ao processar total de descontos na linha: {}", linha);
+                    }
+                }
+                
+                Matcher totalLiquidoMatcher = TOTAL_LIQUIDO_PATTERN.matcher(linha);
+                if (totalLiquidoMatcher.find()) {
+                    try {
+                        totalLiquido = parseBigDecimal(totalLiquidoMatcher.group(1));
+                        logger.info("Total Líquido identificado: {}", totalLiquido);
+                    } catch (Exception e) {
+                        logger.error("Erro ao processar total líquido na linha: {}", linha);
+                    }
+                }
             }
 
             // Salva todas as folhas de pagamento no banco
             for (FolhaPagamento folha : folhasPagamento) {
                 folhaPagamentoRepository.save(folha);
+            }
+            
+            // Salva o resumo se todos os dados foram encontrados
+            if (dataInicio != null && dataFim != null && totalEmpregados != null && 
+                totalEncargos != null && totalPagamentos != null && totalDescontos != null && totalLiquido != null) {
+                try {
+                    ResumoFolhaPagamento resumo = new ResumoFolhaPagamento();
+                    resumo.setTotalEmpregados(totalEmpregados);
+                    resumo.setTotalEncargos(totalEncargos);
+                    resumo.setTotalPagamentos(totalPagamentos);
+                    resumo.setTotalDescontos(totalDescontos);
+                    resumo.setTotalLiquido(totalLiquido);
+                    resumo.setCompetenciaInicio(dataInicio);
+                    resumo.setCompetenciaFim(dataFim);
+                    resumo.setDataImportacao(LocalDateTime.now());
+                    resumo.setAtivo(true);
+                    
+                    resumoFolhaPagamentoRepository.save(resumo);
+                    logger.info("Resumo da folha de pagamento ADP salvo com sucesso");
+                } catch (Exception e) {
+                    logger.error("Erro ao salvar resumo da folha de pagamento ADP: {}", e.getMessage());
+                }
+            } else {
+                logger.warn("Dados de resumo incompletos - não foi possível salvar o resumo");
             }
 
         } catch (Exception e) {
@@ -247,6 +345,7 @@ public class ImportacaoFolhaAdpService {
                         novaRubrica.setCodigo(codigoRubrica);
                         novaRubrica.setDescricao(descricaoRubrica);
                         novaRubrica.setTipoRubrica(determinarTipoRubrica(tipo));
+                        novaRubrica.setPorcentagem(100.0); // Valor padrão de 100%
                         return rubricaRepository.save(novaRubrica);
                     });
 

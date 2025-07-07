@@ -40,11 +40,13 @@ const initialForm: Omit<FolhaPagamento, 'id'> = {
   rubricaId: 0,
   rubricaCodigo: '',
   rubricaDescricao: '',
+  rubricaTipo: '',
   dataInicio: '',
   dataFim: '',
   valor: 0,
   quantidade: 1,
   baseCalculo: 0,
+  ativo: true,
 };
 
 interface FuncionarioResumo {
@@ -119,7 +121,23 @@ export function FolhaPagamento() {
           };
         }
         acc[key].totalRubricas += 1;
-        acc[key].valorTotal += item.valor;
+        
+        // Calcula o total baseado no tipo da rubrica
+        switch (item.rubricaTipo) {
+          case 'PROVENTO':
+            acc[key].valorTotal += item.valor;
+            break;
+          case 'DESCONTO':
+            acc[key].valorTotal -= item.valor;
+            break;
+          case 'INFORMATIVO':
+            // Ignora rubricas informativas no cálculo
+            break;
+          default:
+            // Fallback: soma o valor
+            acc[key].valorTotal += item.valor;
+        }
+        
         return acc;
       }, {} as Record<string, FuncionarioResumo>);
       
@@ -356,6 +374,7 @@ export function FolhaPagamento() {
               <TableHead>
                 <TableRow>
                   <TableCell>Rubrica</TableCell>
+                  <TableCell>Tipo</TableCell>
                   <TableCell>Valor</TableCell>
                   <TableCell>Quantidade</TableCell>
                   <TableCell>Base de Cálculo</TableCell>
@@ -367,6 +386,9 @@ export function FolhaPagamento() {
                   <TableRow key={item.id}>
                     <TableCell>
                       {item.rubricaCodigo} - {item.rubricaDescricao}
+                    </TableCell>
+                    <TableCell>
+                      {item.rubricaTipo}
                     </TableCell>
                     <TableCell>
                       {new Intl.NumberFormat('pt-BR', {
@@ -444,6 +466,13 @@ export function FolhaPagamento() {
             label="Descrição da Rubrica"
             name="rubricaDescricao"
             value={form.rubricaDescricao}
+            onChange={handleChangeForm}
+            required
+          />
+          <TextField
+            label="Tipo da Rubrica"
+            name="rubricaTipo"
+            value={form.rubricaTipo}
             onChange={handleChangeForm}
             required
           />

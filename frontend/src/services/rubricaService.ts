@@ -11,12 +11,20 @@ interface RubricaFormData {
 const rubricaService = {
   listarTodos: async (): Promise<Rubrica[]> => {
     const response = await api.get('/rubricas');
-    return response.data;
+    // Mapeia os dados para garantir compatibilidade
+    return response.data.map((item: any) => ({
+      ...item,
+      tipo: item.tipo || item.tipoRubricaDescricao
+    }));
   },
 
   buscarPorId: async (id: number): Promise<Rubrica> => {
     const response = await api.get(`/rubricas/${id}`);
-    return response.data;
+    const item = response.data;
+    return {
+      ...item,
+      tipo: item.tipo || item.tipoRubricaDescricao
+    };
   },
 
   cadastrar: async (data: RubricaFormData): Promise<Rubrica> => {

@@ -10,6 +10,7 @@ public record FolhaPagamentoDTO(
     Long rubricaId,
     String rubricaCodigo,
     String rubricaDescricao,
+    String rubricaTipo,
     LocalDate dataInicio,
     LocalDate dataFim,
     BigDecimal valor,
