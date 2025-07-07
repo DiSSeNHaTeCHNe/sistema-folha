@@ -19,22 +19,21 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
-import { api } from '../../services/api';
+import api from "../../services/api";
 import { toast } from 'react-toastify';
 
-interface Funcionario {
+interface FuncionarioLocal {
   id: number;
   nome: string;
   cpf: string;
   dataAdmissao: string;
-  cargo: {
-    id: number;
-    descricao: string;
-  };
-  centroCusto: {
-    id: number;
-    descricao: string;
-  };
+  cargoId: number;
+  cargoDescricao: string;
+  centroCustoId: number;
+  centroCustoDescricao: string;
+  linhaNegocioId: number;
+  linhaNegocioDescricao: string;
+  idExterno?: string;
   ativo: boolean;
 }
 
@@ -63,18 +62,20 @@ interface LinhaNegocio {
 
 interface Filtros {
   nome: string;
+  cpf: string;
+  dataAdmissao: string;
   cargoId: number | '';
   centroCustoId: number | '';
   linhaNegocioId: number | '';
 }
 
 export default function Funcionarios() {
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [funcionarios, setFuncionarios] = useState<FuncionarioLocal[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
   const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([]);
   const [linhasNegocio, setLinhasNegocio] = useState<LinhaNegocio[]>([]);
   const [open, setOpen] = useState(false);
-  const [selectedFuncionario, setSelectedFuncionario] = useState<Funcionario | null>(null);
+  const [selectedFuncionario, setSelectedFuncionario] = useState<FuncionarioLocal | null>(null);
   const { register, handleSubmit, reset, setValue, watch } = useForm<Filtros>();
   const linhaNegocioId = watch('linhaNegocioId');
 
@@ -123,14 +124,14 @@ export default function Funcionarios() {
     }
   };
 
-  const handleOpen = (funcionario?: Funcionario) => {
+  const handleOpen = (funcionario?: FuncionarioLocal) => {
     if (funcionario) {
       setSelectedFuncionario(funcionario);
       setValue('nome', funcionario.nome);
       setValue('cpf', funcionario.cpf);
       setValue('dataAdmissao', funcionario.dataAdmissao);
-      setValue('cargoId', funcionario.cargo.id);
-      setValue('centroCustoId', funcionario.centroCusto.id);
+      setValue('cargoId', funcionario.cargoId);
+      setValue('centroCustoId', funcionario.centroCustoId);
     } else {
       setSelectedFuncionario(null);
       reset();
@@ -281,9 +282,12 @@ export default function Funcionarios() {
                 <Typography color="textSecondary">
                   Data de Admissão: {new Date(funcionario.dataAdmissao).toLocaleDateString()}
                 </Typography>
-                <Typography color="textSecondary">Cargo: {funcionario.cargo.descricao}</Typography>
+                <Typography color="textSecondary">Cargo: {funcionario.cargoDescricao || 'N/A'}</Typography>
                 <Typography color="textSecondary">
-                  Centro de Custo: {funcionario.centroCusto.descricao}
+                  Centro de Custo: {funcionario.centroCustoDescricao || 'N/A'}
+                </Typography>
+                <Typography color="textSecondary">
+                  Linha de Negócio: {funcionario.linhaNegocioDescricao || 'N/A'}
                 </Typography>
                 <Box display="flex" justifyContent="flex-end" mt={2}>
                   <IconButton onClick={() => handleOpen(funcionario)}>

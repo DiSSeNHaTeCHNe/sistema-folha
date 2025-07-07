@@ -13,7 +13,6 @@ import java.util.Optional;
 
 @Repository
 public interface CentroCustoRepository extends JpaRepository<CentroCusto, Long> {
-    boolean existsByCodigo(String codigo);
     boolean existsByDescricao(String descricao);
 
     @Modifying
@@ -22,7 +21,5 @@ public interface CentroCustoRepository extends JpaRepository<CentroCusto, Long> 
     void softDelete(@Param("id") Long id);
 
     List<CentroCusto> findByAtivoTrue();
-    Optional<CentroCusto> findByCodigoAndAtivoTrue(String codigo);
-    boolean existsByCodigoAndAtivoTrue(String codigo);
     List<CentroCusto> findByLinhaNegocioIdAndAtivoTrue(Long linhaNegocioId);
 } 

@@ -22,19 +22,13 @@ public class Rubrica {
     @Column(nullable = false)
     private String descricao;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TipoRubrica tipo;
+    @ManyToOne
+    @JoinColumn(name = "tipo_rubrica_id", nullable = false)
+    private TipoRubrica tipoRubrica;
 
     @Column
     private Double porcentagem;
 
     @Column(nullable = false)
     private Boolean ativo = true;
-
-    public enum TipoRubrica {
-        PROVENTO,
-        DESCONTO,
-        INFORMATIVO
-    }
 } 

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Sistema Folha de Pagamento",
-    "description": "API do Sistema de Folha de Pagamento",
+    "description": "API para gerenciamento de folha de pagamento",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -10,23 +10,6 @@
       "item": [
         {
           "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData && jsonData.token) {",
-                  "    pm.environment.set('token', jsonData.token);",
-                  "    console.log('Token JWT configurado com sucesso!');",
-                  "} else {",
-                  "    console.error('Token não encontrado na resposta');",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -37,15 +20,32 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"login\": \"admin\",\n    \"senha\": \"admin123\"\n}"
+              "raw": "{\n    \"login\": \"admin\",\n    \"senha\": \"admin\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
             },
-            "description": "Realiza o login do usuário e retorna um token JWT"
-          }
+            "description": "Realiza o login e retorna o token JWT"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    console.log('Token configurado com sucesso');",
+                  "} else {",
+                  "    console.error('Token não encontrado na resposta');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         }
       ]
     },
@@ -220,9 +220,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/funcionarios",
+              "raw": "{{baseUrl}}/api/funcionarios",
               "host": ["{{baseUrl}}"],
-              "path": ["funcionarios"]
+              "path": ["api", "funcionarios"]
             },
             "description": "Lista todos os funcionários ativos"
           }
@@ -238,9 +238,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/funcionarios/1",
+              "raw": "{{baseUrl}}/api/funcionarios/1",
               "host": ["{{baseUrl}}"],
-              "path": ["funcionarios", "1"]
+              "path": ["api", "funcionarios", "1"]
             },
             "description": "Busca um funcionário ativo pelo ID"
           }
@@ -264,9 +264,9 @@
               "raw": "{\n    \"nome\": \"João da Silva\",\n    \"cpf\": \"12345678900\",\n    \"dataAdmissao\": \"2024-01-01\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"idExterno\": \"12345\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/funcionarios",
+              "raw": "{{baseUrl}}/api/funcionarios",
               "host": ["{{baseUrl}}"],
-              "path": ["funcionarios"]
+              "path": ["api", "funcionarios"]
             },
             "description": "Cadastra um novo funcionário"
           }
@@ -290,9 +290,9 @@
               "raw": "{\n    \"nome\": \"João da Silva Atualizado\",\n    \"cpf\": \"12345678900\",\n    \"dataAdmissao\": \"2024-01-01\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"idExterno\": \"12345\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/funcionarios/1",
+              "raw": "{{baseUrl}}/api/funcionarios/1",
               "host": ["{{baseUrl}}"],
-              "path": ["funcionarios", "1"]
+              "path": ["api", "funcionarios", "1"]
             },
             "description": "Atualiza um funcionário existente"
           }
@@ -308,9 +308,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/funcionarios/1",
+              "raw": "{{baseUrl}}/api/funcionarios/1",
               "host": ["{{baseUrl}}"],
-              "path": ["funcionarios", "1"]
+              "path": ["api", "funcionarios", "1"]
             },
             "description": "Remove um funcionário (soft delete)"
           }
@@ -372,7 +372,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Desenvolvedor\",\n    \"linhaNegocioId\": 1\n}"
+              "raw": "{\n    \"descricao\": \"Desenvolvedor\",\n    \"linhaNegocioId\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/cargos",
@@ -398,7 +398,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Desenvolvedor Senior\",\n    \"linhaNegocioId\": 1\n}"
+              "raw": "{\n    \"descricao\": \"Desenvolvedor Senior\",\n    \"linhaNegocioId\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/cargos/1",
@@ -483,7 +483,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Centro de Custo 1\",\n    \"linhaNegocioId\": 1\n}"
+              "raw": "{\n    \"descricao\": \"Desenvolvimento\",\n    \"linhaNegocioId\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/centros-custo",
@@ -509,7 +509,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Centro de Custo 1 Atualizado\",\n    \"linhaNegocioId\": 1\n}"
+              "raw": "{\n    \"descricao\": \"Desenvolvimento e Inovação\",\n    \"linhaNegocioId\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/centros-custo/1",
@@ -594,7 +594,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Linha de Negócio 1\",\n    \"codigo\": \"LN1\"\n}"
+              "raw": "{\n    \"descricao\": \"Tecnologia da Informação\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/linhas-negocio",
@@ -620,7 +620,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Linha de Negócio 1 Atualizada\",\n    \"codigo\": \"LN1\"\n}"
+              "raw": "{\n    \"descricao\": \"Tecnologia da Informação e Inovação\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/linhas-negocio/1",
@@ -757,21 +757,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/folha-pagamento/funcionario/1?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "raw": "{{baseUrl}}/api/folha-pagamento/funcionario/1",
               "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento", "funcionario", "1"],
-              "query": [
-                {
-                  "key": "dataInicio",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "dataFim",
-                  "value": "2024-01-31"
-                }
-              ]
+              "path": ["api", "folha-pagamento", "funcionario", "1"]
             },
-            "description": "Consulta folha de pagamento ativa por funcionário"
+            "description": "Consulta a folha de pagamento de um funcionário"
           }
         },
         {
@@ -785,21 +775,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/folha-pagamento/centro-custo/1?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "raw": "{{baseUrl}}/api/folha-pagamento/centro-custo/1",
               "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento", "centro-custo", "1"],
-              "query": [
-                {
-                  "key": "dataInicio",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "dataFim",
-                  "value": "2024-01-31"
-                }
-              ]
+              "path": ["api", "folha-pagamento", "centro-custo", "1"]
             },
-            "description": "Consulta folha de pagamento ativa por centro de custo"
+            "description": "Consulta a folha de pagamento por centro de custo"
           }
         },
         {
@@ -813,21 +793,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/folha-pagamento/linha-negocio/ADMIN?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "raw": "{{baseUrl}}/api/folha-pagamento/linha-negocio/1",
               "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento", "linha-negocio", "ADMIN"],
-              "query": [
-                {
-                  "key": "dataInicio",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "dataFim",
-                  "value": "2024-01-31"
-                }
-              ]
+              "path": ["api", "folha-pagamento", "linha-negocio", "1"]
             },
-            "description": "Consulta folha de pagamento ativa por linha de negócio"
+            "description": "Consulta a folha de pagamento por linha de negócio"
           }
         },
         {
@@ -841,9 +811,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/folha-pagamento?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "raw": "{{baseUrl}}/api/folha-pagamento?dataInicio=2024-01-01&dataFim=2024-01-31",
               "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento"],
+              "path": ["api", "folha-pagamento"],
               "query": [
                 {
                   "key": "dataInicio",
@@ -855,7 +825,7 @@
                 }
               ]
             },
-            "description": "Consulta folha de pagamento ativa por período"
+            "description": "Consulta a folha de pagamento por período"
           }
         },
         {
@@ -892,17 +862,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/beneficios/funcionario/1?data=2024-01-01",
+              "raw": "{{baseUrl}}/api/beneficios/funcionario/1",
               "host": ["{{baseUrl}}"],
-              "path": ["beneficios", "funcionario", "1"],
-              "query": [
-                {
-                  "key": "data",
-                  "value": "2024-01-01"
-                }
-              ]
+              "path": ["api", "beneficios", "funcionario", "1"]
             },
-            "description": "Consulta benefícios ativos por funcionário"
+            "description": "Consulta os benefícios de um funcionário"
           }
         },
         {
@@ -916,17 +880,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/beneficios/centro-custo/1?data=2024-01-01",
+              "raw": "{{baseUrl}}/api/beneficios/centro-custo/1",
               "host": ["{{baseUrl}}"],
-              "path": ["beneficios", "centro-custo", "1"],
-              "query": [
-                {
-                  "key": "data",
-                  "value": "2024-01-01"
-                }
-              ]
+              "path": ["api", "beneficios", "centro-custo", "1"]
             },
-            "description": "Consulta benefícios ativos por centro de custo"
+            "description": "Consulta os benefícios por centro de custo"
           }
         }
       ]
@@ -950,16 +908,16 @@
                 {
                   "key": "arquivo",
                   "type": "file",
-                  "src": "/path/to/file.txt"
+                  "src": "/path/to/folha.csv"
                 }
               ]
             },
             "url": {
-              "raw": "{{baseUrl}}/importacao/folha",
+              "raw": "{{baseUrl}}/api/importacao/folha",
               "host": ["{{baseUrl}}"],
-              "path": ["importacao", "folha"]
+              "path": ["api", "importacao", "folha"]
             },
-            "description": "Importa arquivo de folha de pagamento"
+            "description": "Importa dados da folha de pagamento"
           }
         },
         {
@@ -978,16 +936,16 @@
                 {
                   "key": "arquivo",
                   "type": "file",
-                  "src": "/path/to/file.csv"
+                  "src": "/path/to/beneficios.csv"
                 }
               ]
             },
             "url": {
-              "raw": "{{baseUrl}}/importacao/beneficios",
+              "raw": "{{baseUrl}}/api/importacao/beneficios",
               "host": ["{{baseUrl}}"],
-              "path": ["importacao", "beneficios"]
+              "path": ["api", "importacao", "beneficios"]
             },
-            "description": "Importa arquivo de benefícios"
+            "description": "Importa dados de benefícios"
           }
         }
       ]
@@ -996,13 +954,11 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080",
-      "type": "string"
+      "value": "http://localhost:8083"
     },
     {
       "key": "token",
-      "value": "seu-token-jwt-aqui",
-      "type": "string"
+      "value": ""
     }
   ]
 } 

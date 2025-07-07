@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/cargos")
+@RequestMapping("/cargos")
 @RequiredArgsConstructor
 @Tag(name = "Cargos", description = "API para gerenciamento de cargos")
 public class CargoController {
@@ -21,8 +21,8 @@ public class CargoController {
 
     @GetMapping
     @Operation(summary = "Lista todos os cargos ativos")
-    public ResponseEntity<List<CargoDTO>> listarTodas() {
-        return ResponseEntity.ok(cargoService.listarTodas());
+    public ResponseEntity<List<CargoDTO>> listarTodos() {
+        return ResponseEntity.ok(cargoService.listarTodos());
     }
 
     @GetMapping("/{id}")

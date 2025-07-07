@@ -32,9 +32,21 @@ public record FuncionarioDTO(
     @Schema(description = "ID do cargo do funcionário", example = "1", required = true)
     Long cargoId,
 
+    @Schema(description = "Descrição do cargo do funcionário", example = "Analista de Sistemas")
+    String cargoDescricao,
+
     @NotNull(message = "O centro de custo é obrigatório")
     @Schema(description = "ID do centro de custo do funcionário", example = "1", required = true)
     Long centroCustoId,
+
+    @Schema(description = "Descrição do centro de custo do funcionário", example = "Tecnologia da Informação")
+    String centroCustoDescricao,
+
+    @Schema(description = "ID da linha de negócio", example = "1")
+    Long linhaNegocioId,
+
+    @Schema(description = "Descrição da linha de negócio", example = "Desenvolvimento de Software")
+    String linhaNegocioDescricao,
 
     @Schema(description = "ID externo do funcionário", example = "12345")
     String idExterno,

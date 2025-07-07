@@ -2,12 +2,11 @@ package br.com.techne.sistemafolha.service;
 
 import br.com.techne.sistemafolha.dto.CargoDTO;
 import br.com.techne.sistemafolha.exception.CargoNotFoundException;
-import br.com.techne.sistemafolha.exception.LinhaNegocioNotFoundException;
 import br.com.techne.sistemafolha.model.Cargo;
-import br.com.techne.sistemafolha.model.LinhaNegocio;
 import br.com.techne.sistemafolha.repository.CargoRepository;
-import br.com.techne.sistemafolha.repository.LinhaNegocioRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,68 +16,49 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CargoService {
+    private static final Logger logger = LoggerFactory.getLogger(CargoService.class);
+
     private final CargoRepository cargoRepository;
-    private final LinhaNegocioRepository linhaNegocioRepository;
 
-    public List<CargoDTO> listarTodas() {
-        return cargoRepository.findByAtivoTrue().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    public List<CargoDTO> listarPorLinhaNegocio(Long linhaNegocioId) {
-        return cargoRepository.findByLinhaNegocioIdAndAtivoTrue(linhaNegocioId).stream()
+    public List<CargoDTO> listarTodos() {
+        logger.info("Listando todos os cargos");
+        return cargoRepository.findAll().stream()
+                .filter(c -> c.isAtivo())
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
     public CargoDTO buscarPorId(Long id) {
+        logger.info("Buscando cargo por ID: {}", id);
         return cargoRepository.findById(id)
-                .filter(Cargo::getAtivo)
+                .filter(c -> c.isAtivo())
                 .map(this::toDTO)
                 .orElseThrow(() -> new CargoNotFoundException(id));
     }
 
     @Transactional
     public CargoDTO cadastrar(CargoDTO dto) {
-        if (cargoRepository.existsByCodigoAndAtivoTrue(dto.codigo())) {
-            throw new IllegalArgumentException("Já existe um cargo ativo com este código");
-        }
-
-        LinhaNegocio linhaNegocio = linhaNegocioRepository.findById(dto.linhaNegocioId())
-                .filter(ln -> ln.isAtivo())
-                .orElseThrow(() -> new LinhaNegocioNotFoundException(dto.linhaNegocioId()));
-
+        logger.info("Cadastrando novo cargo: {}", dto.descricao());
         Cargo cargo = toEntity(dto);
-        cargo.setLinhaNegocio(linhaNegocio);
         return toDTO(cargoRepository.save(cargo));
     }
 
     @Transactional
     public CargoDTO atualizar(Long id, CargoDTO dto) {
+        logger.info("Atualizando cargo ID: {}", id);
         Cargo cargo = cargoRepository.findById(id)
-                .filter(Cargo::getAtivo)
+                .filter(c -> c.isAtivo())
                 .orElseThrow(() -> new CargoNotFoundException(id));
 
-        if (!cargo.getCodigo().equals(dto.codigo()) && 
-            cargoRepository.existsByCodigoAndAtivoTrue(dto.codigo())) {
-            throw new IllegalArgumentException("Já existe um cargo ativo com este código");
-        }
-
-        LinhaNegocio linhaNegocio = linhaNegocioRepository.findById(dto.linhaNegocioId())
-                .filter(ln -> ln.isAtivo())
-                .orElseThrow(() -> new LinhaNegocioNotFoundException(dto.linhaNegocioId()));
-
-        cargo.setCodigo(dto.codigo());
         cargo.setDescricao(dto.descricao());
-        cargo.setLinhaNegocio(linhaNegocio);
         return toDTO(cargoRepository.save(cargo));
     }
 
     @Transactional
     public void remover(Long id) {
+        logger.info("Removendo cargo ID: {}", id);
         Cargo cargo = cargoRepository.findById(id)
-                .filter(Cargo::getAtivo)
+                .filter(c -> c.isAtivo())
                 .orElseThrow(() -> new CargoNotFoundException(id));
         cargo.setAtivo(false);
         cargoRepository.save(cargo);
@@ -87,16 +67,13 @@ public class CargoService {
     private CargoDTO toDTO(Cargo cargo) {
         return new CargoDTO(
             cargo.getId(),
-            cargo.getCodigo(),
             cargo.getDescricao(),
-            cargo.getAtivo(),
-            cargo.getLinhaNegocio().getId()
+            cargo.isAtivo()
         );
     }
 
     private Cargo toEntity(CargoDTO dto) {
         Cargo cargo = new Cargo();
-        cargo.setCodigo(dto.codigo());
         cargo.setDescricao(dto.descricao());
         cargo.setAtivo(true);
         return cargo;

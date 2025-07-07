@@ -56,19 +56,6 @@ public class FolhaPagamentoController {
         return ResponseEntity.ok(folha);
     }
 
-    @GetMapping("/linha-negocio/{codigoLinhaNegocio}")
-    @Operation(summary = "Consulta folha de pagamento ativa por linha de negócio")
-    public ResponseEntity<List<FolhaPagamentoDTO>> buscarPorLinhaNegocio(
-            @PathVariable String codigoLinhaNegocio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
-        List<FolhaPagamento> folhas = folhaPagamentoRepository
-                .findByFuncionarioCargoLinhaNegocioCodigoAndDataInicioBetweenAndAtivoTrue(codigoLinhaNegocio, dataInicio, dataFim);
-        return ResponseEntity.ok(folhas.stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList()));
-    }
-
     @GetMapping
     @Operation(summary = "Consulta folha de pagamento ativa por período (mês/ano)")
     public ResponseEntity<List<FolhaPagamentoDTO>> consultarPorPeriodo(

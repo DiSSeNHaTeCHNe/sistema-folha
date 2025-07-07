@@ -1,0 +1,37 @@
+TECHNE ENGENHARIA E SISTEMAS LTDA                                      Folha de Pagamento                                     Página
+50.737.766/0001-21                                                                                                                 1
+------------------------------------------------------------------------------------------------------------------------------------
+Seleção Geral:                                                                            Referente: MENSAL
+                                                                                        Competência:        01/10/2023 a 31/10/2023
+
+Evt  Denominação               Qtd Base Cálculo         V A L O R Evt  Denominação               Qtd Base Cálculo         V A L O R
+¯¯¯¯ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ ¯¯¯¯¯¯¯¯¯ ¯¯¯¯¯¯¯¯¯¯¯¯ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ ¯¯¯¯ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ ¯¯¯¯¯¯¯¯¯ ¯¯¯¯¯¯¯¯¯¯¯¯ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+258             SERVICOS - EDU                      273  RENATO AMANCIO DA SILVA                Admissão: 01/01/2011
+         Sexo: M      Tipo de Salário: M (220,00 Hrs)   Salário: 132.505,40               Função: ANALISTA DE ERP SENIOR
+     Dep.IRRF:  2         Dep.Sal.Fam:  0               Vínculo: Trabalhador CLT
+
+0010 Salário Base           200,00         0,00        13.250,54+ 5560 INSS                    14,00         0,00           876,95-
+3027 Ajuda de Custo Tele      0,00         0,00            80,00+ 5610 Vale Refeição            0,00         0,00             1,00-
+3524 Assi Medic Dep-GNDI      0,00         0,00         1.326,56- 9920 FGTS                     8,00         0,00         1.060,04
+5500 IR Retido                4,00         0,00         2.413,50-
+Tot.Pagamentos: 13.330,54          Tot.Descontos: 4.618,01           Líquido: 8.712,53
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+149             SUPORTE EDU                         301  THIAGO MESQUITA RIBEIRO                Admissão: 23/01/2012
+         Sexo: M      Tipo de Salário: M (220,00 Hrs)   Salário: 155.000,00               Função: LIDER TECNICO
+     Dep.IRRF:  0         Dep.Sal.Fam:  0               Vínculo: Trabalhador CLT
+
+0010 Salário Base           200,00         0,00        15.500,00+ 5500 IR Retido                4,00         0,00         3.186,43-
+0502 DSR (H.E./Adic.Not.      0,07         0,00             2,98+ 5560 INSS                    14,00         0,00           876,95-
+1809 Adicional Noturno 3      0,32         0,00            12,40+ 5610 Vale Refeição            0,00         0,00             1,00-
+3001 Pagto Hora Interjor      1,26         0,00           166,63+ 9920 FGTS                     8,00         0,00         1.254,56
+3027 Ajuda de Custo Tele      0,00         0,00            80,00+
+Tot.Pagamentos: 15.762,01          Tot.Descontos: 4.064,38           Líquido: 11.697,63
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+245             SERVICOS - GOV                      316  MARCOS VINICIUS DE LIMA VOLPI          Admissão: 16/07/2012
+         Sexo: M      Tipo de Salário: M (220,00 Hrs)   Salário: 123.531,80               Função: ANALISTA DE ERP SENIOR
+     Dep.IRRF:  0         Dep.Sal.Fam:  0               Vínculo: Trabalhador CLT
+
+0010 Salário Base           200,00         0,00        12.353,18+ 5560 INSS                    14,00         0,00           876,95-
+3027 Ajuda de Custo Tele      0,00         0,00            80,00+ 5610 Vale Refeição            0,00         0,00             1,00-
+5500 IR Retido                4,00         0,00         2.271,00- 9920 FGTS                     8,00         0,00           988,25
+Tot.Pagamentos: 12.433,18          Tot.Descontos: 3.148,95           Líquido: 9.284,23 

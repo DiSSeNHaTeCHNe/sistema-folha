@@ -9,14 +9,9 @@ public record LinhaNegocioDTO(
     @Schema(description = "Identificador único da linha de negócio", example = "1")
     Long id,
 
-    @NotBlank(message = "O código é obrigatório")
-    @Size(min = 3, max = 10, message = "O código deve ter entre 3 e 10 caracteres")
-    @Schema(description = "Código único da linha de negócio", example = "TEC", required = true)
-    String codigo,
-
     @NotBlank(message = "A descrição é obrigatória")
     @Size(min = 3, max = 100, message = "A descrição deve ter entre 3 e 100 caracteres")
-    @Schema(description = "Descrição da linha de negócio", example = "Tecnologia", required = true)
+    @Schema(description = "Descrição da linha de negócio", example = "Tecnologia da Informação", required = true)
     String descricao,
 
     @Schema(description = "Indica se a linha de negócio está ativa", example = "true")

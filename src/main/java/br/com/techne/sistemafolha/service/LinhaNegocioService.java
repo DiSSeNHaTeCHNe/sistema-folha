@@ -24,17 +24,13 @@ public class LinhaNegocioService {
 
     public LinhaNegocioDTO buscarPorId(Long id) {
         return linhaNegocioRepository.findById(id)
-                .filter(ln -> ln.isAtivo())
+                .filter(ln -> ln.getAtivo())
                 .map(this::toDTO)
                 .orElseThrow(() -> new LinhaNegocioNotFoundException(id));
     }
 
     @Transactional
     public LinhaNegocioDTO cadastrar(LinhaNegocioDTO dto) {
-        if (linhaNegocioRepository.existsByCodigoAndAtivoTrue(dto.codigo())) {
-            throw new IllegalArgumentException("Já existe uma linha de negócio ativa com este código");
-        }
-
         LinhaNegocio linhaNegocio = toEntity(dto);
         return toDTO(linhaNegocioRepository.save(linhaNegocio));
     }
@@ -42,15 +38,9 @@ public class LinhaNegocioService {
     @Transactional
     public LinhaNegocioDTO atualizar(Long id, LinhaNegocioDTO dto) {
         LinhaNegocio linhaNegocio = linhaNegocioRepository.findById(id)
-                .filter(ln -> ln.isAtivo())
+                .filter(ln -> ln.getAtivo())
                 .orElseThrow(() -> new LinhaNegocioNotFoundException(id));
 
-        if (!linhaNegocio.getCodigo().equals(dto.codigo()) && 
-            linhaNegocioRepository.existsByCodigoAndAtivoTrue(dto.codigo())) {
-            throw new IllegalArgumentException("Já existe uma linha de negócio ativa com este código");
-        }
-
-        linhaNegocio.setCodigo(dto.codigo());
         linhaNegocio.setDescricao(dto.descricao());
         return toDTO(linhaNegocioRepository.save(linhaNegocio));
     }
@@ -58,7 +48,7 @@ public class LinhaNegocioService {
     @Transactional
     public void remover(Long id) {
         LinhaNegocio linhaNegocio = linhaNegocioRepository.findById(id)
-                .filter(ln -> ln.isAtivo())
+                .filter(ln -> ln.getAtivo())
                 .orElseThrow(() -> new LinhaNegocioNotFoundException(id));
         linhaNegocio.setAtivo(false);
         linhaNegocioRepository.save(linhaNegocio);
@@ -67,15 +57,13 @@ public class LinhaNegocioService {
     private LinhaNegocioDTO toDTO(LinhaNegocio linhaNegocio) {
         return new LinhaNegocioDTO(
             linhaNegocio.getId(),
-            linhaNegocio.getCodigo(),
             linhaNegocio.getDescricao(),
-            linhaNegocio.isAtivo()
+            linhaNegocio.getAtivo()
         );
     }
 
     private LinhaNegocio toEntity(LinhaNegocioDTO dto) {
         LinhaNegocio linhaNegocio = new LinhaNegocio();
-        linhaNegocio.setCodigo(dto.codigo());
         linhaNegocio.setDescricao(dto.descricao());
         linhaNegocio.setAtivo(true);
         return linhaNegocio;

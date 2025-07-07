@@ -2,7 +2,9 @@ package br.com.techne.sistemafolha.service;
 
 import br.com.techne.sistemafolha.dto.RubricaDTO;
 import br.com.techne.sistemafolha.model.Rubrica;
+import br.com.techne.sistemafolha.model.TipoRubrica;
 import br.com.techne.sistemafolha.repository.RubricaRepository;
+import br.com.techne.sistemafolha.repository.TipoRubricaRepository;
 import br.com.techne.sistemafolha.exception.RubricaNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RubricaService {
     private final RubricaRepository rubricaRepository;
+    private final TipoRubricaRepository tipoRubricaRepository;
 
     public List<RubricaDTO> listarTodas() {
         return rubricaRepository.findByAtivoTrue().stream()
@@ -30,8 +33,8 @@ public class RubricaService {
 
     @Transactional
     public RubricaDTO cadastrar(RubricaDTO dto) {
-        if (rubricaRepository.existsByCodigo(dto.codigo())) {
-            throw new IllegalArgumentException("Já existe uma rubrica com o código: " + dto.codigo());
+        if (rubricaRepository.existsByCodigo(dto.getCodigo())) {
+            throw new IllegalArgumentException("Já existe uma rubrica com o código: " + dto.getCodigo());
         }
 
         Rubrica rubrica = toEntity(dto);
@@ -44,8 +47,8 @@ public class RubricaService {
         Rubrica rubrica = rubricaRepository.findByIdAndAtivoTrue(id)
             .orElseThrow(() -> new RubricaNotFoundException("Rubrica não encontrada com ID: " + id));
 
-        if (!rubrica.getCodigo().equals(dto.codigo()) && rubricaRepository.existsByCodigo(dto.codigo())) {
-            throw new IllegalArgumentException("Já existe uma rubrica com o código: " + dto.codigo());
+        if (!rubrica.getCodigo().equals(dto.getCodigo()) && rubricaRepository.existsByCodigo(dto.getCodigo())) {
+            throw new IllegalArgumentException("Já existe uma rubrica com o código: " + dto.getCodigo());
         }
 
         Rubrica rubricaAtualizada = toEntity(dto);
@@ -67,18 +70,23 @@ public class RubricaService {
             rubrica.getId(),
             rubrica.getCodigo(),
             rubrica.getDescricao(),
-            rubrica.getTipo(),
-            rubrica.getPorcentagem()
+            rubrica.getTipoRubrica() != null ? rubrica.getTipoRubrica().getDescricao() : null,
+            rubrica.getPorcentagem(),
+            rubrica.getAtivo()
         );
     }
 
     private Rubrica toEntity(RubricaDTO dto) {
         Rubrica rubrica = new Rubrica();
-        rubrica.setCodigo(dto.codigo());
-        rubrica.setDescricao(dto.descricao());
-        rubrica.setTipo(dto.tipo());
-        rubrica.setPorcentagem(dto.porcentagem());
-        rubrica.setAtivo(true);
+        rubrica.setCodigo(dto.getCodigo());
+        rubrica.setDescricao(dto.getDescricao());
+        if (dto.getTipoRubricaDescricao() != null) {
+            TipoRubrica tipo = tipoRubricaRepository.findByDescricao(dto.getTipoRubricaDescricao())
+                .orElseThrow(() -> new IllegalArgumentException("Tipo de rubrica não encontrado: " + dto.getTipoRubricaDescricao()));
+            rubrica.setTipoRubrica(tipo);
+        }
+        rubrica.setPorcentagem(dto.getPorcentagem());
+        rubrica.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
         return rubrica;
     }
 } 

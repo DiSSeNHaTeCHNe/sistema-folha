@@ -1,11 +1,8 @@
 package br.com.techne.sistemafolha.service;
 
 import br.com.techne.sistemafolha.dto.UsuarioDTO;
-import br.com.techne.sistemafolha.exception.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.exception.UsuarioNotFoundException;
-import br.com.techne.sistemafolha.model.CentroCusto;
 import br.com.techne.sistemafolha.model.Usuario;
-import br.com.techne.sistemafolha.repository.CentroCustoRepository;
 import br.com.techne.sistemafolha.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -23,7 +20,6 @@ public class UsuarioService {
     private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
 
     private final UsuarioRepository usuarioRepository;
-    private final CentroCustoRepository centroCustoRepository;
     private final PasswordEncoder passwordEncoder;
 
     public List<UsuarioDTO> listarTodos() {
@@ -57,12 +53,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Já existe um usuário ativo com este login");
         }
 
-        CentroCusto centroCusto = centroCustoRepository.findById(dto.centroCustoId())
-                .filter(cc -> cc.isAtivo())
-                .orElseThrow(() -> new CentroCustoNotFoundException(dto.centroCustoId()));
-
         Usuario usuario = toEntity(dto);
-        usuario.setCentroCusto(centroCusto);
         usuario.setSenha(passwordEncoder.encode(dto.senha()));
         return toDTO(usuarioRepository.save(usuario));
     }
@@ -79,13 +70,8 @@ public class UsuarioService {
             throw new IllegalArgumentException("Já existe um usuário ativo com este login");
         }
 
-        CentroCusto centroCusto = centroCustoRepository.findById(dto.centroCustoId())
-                .filter(cc -> cc.isAtivo())
-                .orElseThrow(() -> new CentroCustoNotFoundException(dto.centroCustoId()));
-
         usuario.setLogin(dto.login());
         usuario.setNome(dto.nome());
-        usuario.setCentroCusto(centroCusto);
         if (dto.senha() != null && !dto.senha().isEmpty()) {
             usuario.setSenha(passwordEncoder.encode(dto.senha()));
         }
@@ -108,8 +94,6 @@ public class UsuarioService {
             usuario.getLogin(),
             null, // Não retornamos a senha no DTO
             usuario.getNome(),
-            usuario.getCentroCusto().getId(),
-            usuario.getCentroCusto().getDescricao(),
             usuario.getPermissoes()
         );
     }

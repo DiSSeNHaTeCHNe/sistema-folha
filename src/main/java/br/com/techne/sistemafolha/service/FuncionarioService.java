@@ -44,11 +44,11 @@ public class FuncionarioService {
         }
 
         Cargo cargo = cargoRepository.findById(dto.cargoId())
-                .filter(Cargo::getAtivo)
+                .filter(c -> c.isAtivo())
                 .orElseThrow(() -> new CargoNotFoundException(dto.cargoId()));
 
         CentroCusto centroCusto = centroCustoRepository.findById(dto.centroCustoId())
-                .filter(cc -> cc.isAtivo())
+                .filter(cc -> cc.getAtivo())
                 .orElseThrow(() -> new CentroCustoNotFoundException(dto.centroCustoId()));
 
         Funcionario funcionario = toEntity(dto);
@@ -69,11 +69,11 @@ public class FuncionarioService {
         }
 
         Cargo cargo = cargoRepository.findById(dto.cargoId())
-                .filter(Cargo::getAtivo)
+                .filter(c -> c.isAtivo())
                 .orElseThrow(() -> new CargoNotFoundException(dto.cargoId()));
 
         CentroCusto centroCusto = centroCustoRepository.findById(dto.centroCustoId())
-                .filter(cc -> cc.isAtivo())
+                .filter(cc -> cc.getAtivo())
                 .orElseThrow(() -> new CentroCustoNotFoundException(dto.centroCustoId()));
 
         funcionario.setNome(dto.nome());
@@ -101,7 +101,11 @@ public class FuncionarioService {
             funcionario.getCpf(),
             funcionario.getDataAdmissao(),
             funcionario.getCargo().getId(),
+            funcionario.getCargo().getDescricao(),
             funcionario.getCentroCusto().getId(),
+            funcionario.getCentroCusto().getDescricao(),
+            funcionario.getCentroCusto().getLinhaNegocio().getId(),
+            funcionario.getCentroCusto().getLinhaNegocio().getDescricao(),
             funcionario.getIdExterno(),
             funcionario.getAtivo()
         );

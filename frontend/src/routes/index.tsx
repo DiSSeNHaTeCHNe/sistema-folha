@@ -4,14 +4,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { Login } from '../pages/Login';
 import { Dashboard } from '../pages/Dashboard';
 import { Usuarios } from '../pages/Usuarios';
-import { Funcionarios } from '../pages/Funcionarios';
+import Funcionarios from '../pages/Funcionarios';
 import { FolhaPagamento } from '../pages/FolhaPagamento';
-import { Rubricas } from '../pages/Rubricas';
+import Rubricas from '../pages/Rubricas';
 import { Beneficios } from '../pages/Beneficios';
-import { Importacao } from '../pages/Importacao';
+import Importacao from '../pages/Importacao';
 import { Relatorios } from '../pages/Relatorios';
 import { AuthProvider } from '../contexts/AuthContext';
 import { Layout } from '../components/Layout';
+import Cargos from '../pages/Cargos';
+import CentrosCusto from '../pages/CentrosCusto';
+import LinhasNegocio from '../pages/LinhasNegocio';
 
 function PrivateRoute() {
   const { user, loading } = useAuth();
@@ -49,6 +52,9 @@ export function RouterWithAuth() {
               <Route path="/beneficios" element={<Beneficios />} />
               <Route path="/importacao" element={<Importacao />} />
               <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/cargos" element={<Cargos />} />
+              <Route path="/centros-custo" element={<CentrosCusto />} />
+              <Route path="/linhas-negocio" element={<LinhasNegocio />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Route>

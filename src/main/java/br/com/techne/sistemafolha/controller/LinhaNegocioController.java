@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/linhas-negocio")
+@RequestMapping("/linhas-negocio")
 @RequiredArgsConstructor
 @Tag(name = "Linhas de Negócio", description = "API para gerenciamento de linhas de negócio")
 public class LinhaNegocioController {

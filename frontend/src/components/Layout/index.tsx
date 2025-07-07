@@ -17,6 +17,7 @@ import {
   Typography,
   Menu,
   MenuItem,
+  Collapse,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -26,6 +27,14 @@ import {
   CardGiftcard,
   Assessment,
   AccountCircle,
+  ExpandLess,
+  ExpandMore,
+  Settings,
+  Business,
+  Work,
+  AccountTree,
+  Receipt,
+  CloudUpload,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -35,6 +44,7 @@ export function Layout() {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [cadastroOpen, setCadastroOpen] = useState(false);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -53,12 +63,24 @@ export function Layout() {
     logout();
   };
 
+  const handleCadastroClick = () => {
+    setCadastroOpen(!cadastroOpen);
+  };
+
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
     { text: 'Funcionários', icon: <People />, path: '/funcionarios' },
     { text: 'Folha de Pagamento', icon: <AttachMoney />, path: '/folha-pagamento' },
     { text: 'Benefícios', icon: <CardGiftcard />, path: '/beneficios' },
+    { text: 'Importação', icon: <CloudUpload />, path: '/importacao' },
     { text: 'Relatórios', icon: <Assessment />, path: '/relatorios' },
+  ];
+
+  const cadastroItems = [
+    { text: 'Linhas de Negócio', icon: <AccountTree />, path: '/linhas-negocio' },
+    { text: 'Centros de Custo', icon: <Business />, path: '/centros-custo' },
+    { text: 'Cargos', icon: <Work />, path: '/cargos' },
+    { text: 'Rubricas', icon: <Receipt />, path: '/rubricas' },
   ];
 
   const drawer = (
@@ -78,6 +100,26 @@ export function Layout() {
             </ListItemButton>
           </ListItem>
         ))}
+        <Divider />
+        <ListItem disablePadding>
+          <ListItemButton onClick={handleCadastroClick}>
+            <ListItemIcon><Settings /></ListItemIcon>
+            <ListItemText primary="Cadastros" />
+            {cadastroOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+        <Collapse in={cadastroOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {cadastroItems.map((item) => (
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton sx={{ pl: 4 }} onClick={() => navigate(item.path)}>
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Collapse>
       </List>
     </div>
   );

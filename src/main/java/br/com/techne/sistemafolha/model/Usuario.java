@@ -36,10 +36,6 @@ public class Usuario implements UserDetails {
     @Size(max = 100)
     private String nome;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "centro_custo_id", nullable = false)
-    private CentroCusto centroCusto;
-
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_permissoes", joinColumns = @JoinColumn(name = "usuario_id"))
     @Column(name = "permissao")

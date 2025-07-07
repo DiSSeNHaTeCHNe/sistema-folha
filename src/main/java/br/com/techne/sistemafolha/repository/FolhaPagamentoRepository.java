@@ -24,12 +24,6 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
 
     List<FolhaPagamento> findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(Long funcionarioId, LocalDate dataInicio, LocalDate dataFim);
     List<FolhaPagamento> findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(CentroCusto centroCusto, LocalDate dataInicio, LocalDate dataFim);
-    
-    List<FolhaPagamento> findByFuncionarioCargoLinhaNegocioCodigoAndDataInicioBetweenAndAtivoTrue(
-        String codigoLinhaNegocio, 
-        LocalDate dataInicio, 
-        LocalDate dataFim
-    );
     List<FolhaPagamento> findByDataInicioBetweenAndAtivoTrue(LocalDate dataInicio, LocalDate dataFim);
     
     @Modifying

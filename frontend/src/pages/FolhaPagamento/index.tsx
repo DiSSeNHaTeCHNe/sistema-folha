@@ -20,6 +20,8 @@ import {
   DialogContent,
   DialogActions,
   MenuItem,
+  Card,
+  CardContent,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,6 +29,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Upload as UploadIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import type { FolhaPagamento } from '../../types';
 import { folhaPagamentoService } from '../../services/folhaPagamentoService';
@@ -44,6 +47,15 @@ const initialForm: Omit<FolhaPagamento, 'id'> = {
   baseCalculo: 0,
 };
 
+interface FuncionarioResumo {
+  funcionarioId: number;
+  funcionarioNome: string;
+  dataInicio: string;
+  dataFim: string;
+  totalRubricas: number;
+  valorTotal: number;
+}
+
 export function FolhaPagamento() {
   const [searchTerm, setSearchTerm] = useState('');
   const [mes, setMes] = useState('');
@@ -52,14 +64,18 @@ export function FolhaPagamento() {
   const [centroCusto, setCentroCusto] = useState('');
   const [linhaNegocio, setLinhaNegocio] = useState('');
   const [folha, setFolha] = useState<FolhaPagamento[]>([]);
+  const [funcionariosResumo, setFuncionariosResumo] = useState<FuncionarioResumo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
+  const [openDetalhesDialog, setOpenDetalhesDialog] = useState(false);
   const [form, setForm] = useState<Omit<FolhaPagamento, 'id'>>(initialForm);
   const [editId, setEditId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [funcionarioSelecionado, setFuncionarioSelecionado] = useState<FuncionarioResumo | null>(null);
+  const [rubricasFuncionario, setRubricasFuncionario] = useState<FolhaPagamento[]>([]);
 
   const getPeriodo = () => {
     if (mes && ano) {
@@ -88,6 +104,26 @@ export function FolhaPagamento() {
         data = await folhaPagamentoService.listar();
       }
       setFolha(data);
+      
+      // Criar resumo por funcionário
+      const resumo = data.reduce((acc, item) => {
+        const key = `${item.funcionarioId}-${item.dataInicio}-${item.dataFim}`;
+        if (!acc[key]) {
+          acc[key] = {
+            funcionarioId: item.funcionarioId,
+            funcionarioNome: item.funcionarioNome,
+            dataInicio: item.dataInicio,
+            dataFim: item.dataFim,
+            totalRubricas: 0,
+            valorTotal: 0,
+          };
+        }
+        acc[key].totalRubricas += 1;
+        acc[key].valorTotal += item.valor;
+        return acc;
+      }, {} as Record<string, FuncionarioResumo>);
+      
+      setFuncionariosResumo(Object.values(resumo));
     } catch (err) {
       setError('Erro ao buscar registros');
     } finally {
@@ -164,7 +200,18 @@ export function FolhaPagamento() {
     }
   };
 
-  const filteredFolha = folha.filter((item) =>
+  const handleDetalharRubricas = async (funcionario: FuncionarioResumo) => {
+    setFuncionarioSelecionado(funcionario);
+    const rubricas = folha.filter(item => 
+      item.funcionarioId === funcionario.funcionarioId &&
+      item.dataInicio === funcionario.dataInicio &&
+      item.dataFim === funcionario.dataFim
+    );
+    setRubricasFuncionario(rubricas);
+    setOpenDetalhesDialog(true);
+  };
+
+  const filteredFuncionarios = funcionariosResumo.filter((item) =>
     item.funcionarioNome.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -232,73 +279,134 @@ export function FolhaPagamento() {
         }}>Limpar</Button>
       </Box>
 
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          fullWidth
+          label="Buscar por funcionário"
+          value={searchTerm}
+          onChange={handleSearch}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       {loading ? (
         <Typography>Carregando...</Typography>
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Funcionário</TableCell>
-                <TableCell>Rubrica</TableCell>
-                <TableCell>Período</TableCell>
-                <TableCell>Valor</TableCell>
-                <TableCell>Quantidade</TableCell>
-                <TableCell>Base de Cálculo</TableCell>
-                <TableCell>Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredFolha.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.funcionarioNome}</TableCell>
-                  <TableCell>
-                    {item.rubricaCodigo} - {item.rubricaDescricao}
-                  </TableCell>
-                  <TableCell>
-                    {item.dataInicio} a {item.dataFim}
-                  </TableCell>
-                  <TableCell>
-                    {new Intl.NumberFormat('pt-BR', {
+        <Grid container spacing={2}>
+          {filteredFuncionarios.map((funcionario) => (
+            <Grid item xs={12} sm={6} md={4} key={`${funcionario.funcionarioId}-${funcionario.dataInicio}`}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    {funcionario.funcionarioNome}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Período: {new Date(funcionario.dataInicio).toLocaleDateString()} a {new Date(funcionario.dataFim).toLocaleDateString()}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Rubricas: {funcionario.totalRubricas}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Total: {new Intl.NumberFormat('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
-                    }).format(item.valor)}
-                  </TableCell>
-                  <TableCell>{item.quantidade}</TableCell>
-                  <TableCell>
-                    {new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }).format(item.baseCalculo)}
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpenDialog(item)}
+                    }).format(funcionario.valorTotal)}
+                  </Typography>
+                  <Box sx={{ mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => handleDetalharRubricas(funcionario)}
+                      fullWidth
                     >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                      Ver Rubricas
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
+
       <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={() => setOpenSnackbar(false)}
         message={snackbarMsg}
       />
+
+      {/* Dialog para detalhes das rubricas */}
+      <Dialog open={openDetalhesDialog} onClose={() => setOpenDetalhesDialog(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>
+          Rubricas de {funcionarioSelecionado?.funcionarioNome} - 
+          Período: {funcionarioSelecionado?.dataInicio} a {funcionarioSelecionado?.dataFim}
+        </DialogTitle>
+        <DialogContent>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Rubrica</TableCell>
+                  <TableCell>Valor</TableCell>
+                  <TableCell>Quantidade</TableCell>
+                  <TableCell>Base de Cálculo</TableCell>
+                  <TableCell>Ações</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rubricasFuncionario.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      {item.rubricaCodigo} - {item.rubricaDescricao}
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(item.valor)}
+                    </TableCell>
+                    <TableCell>{item.quantidade}</TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(item.baseCalculo)}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleOpenDialog(item)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDetalhesDialog(false)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog para edição/criação */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{editId ? 'Editar Registro' : 'Novo Registro'}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>

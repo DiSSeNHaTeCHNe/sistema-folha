@@ -20,7 +20,4 @@ public interface LinhaNegocioRepository extends JpaRepository<LinhaNegocio, Long
     @Transactional
     @Query("UPDATE LinhaNegocio l SET l.ativo = false WHERE l.id = :id")
     void softDelete(@Param("id") Long id);
-
-    Optional<LinhaNegocio> findByCodigoAndAtivoTrue(String codigo);
-    boolean existsByCodigoAndAtivoTrue(String codigo);
 } 

@@ -8,8 +8,6 @@ public record UsuarioDTO(
     String login,
     String senha,
     String nome,
-    Long centroCustoId,
-    String centroCustoDescricao,
     List<String> permissoes
 ) {
     public static UsuarioDTO fromEntity(Usuario usuario) {
@@ -18,8 +16,6 @@ public record UsuarioDTO(
             usuario.getLogin(),
             null, // Não retornamos a senha no DTO
             usuario.getNome(),
-            usuario.getCentroCusto().getId(),
-            usuario.getCentroCusto().getDescricao(),
             usuario.getPermissoes()
         );
     }

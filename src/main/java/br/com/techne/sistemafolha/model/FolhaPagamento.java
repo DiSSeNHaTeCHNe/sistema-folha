@@ -32,6 +32,9 @@ public class FolhaPagamento {
     @Column(name = "data_fim", nullable = false)
     private LocalDate dataFim;
 
+    @Column(name = "valor_total", nullable = false)
+    private BigDecimal valorTotal;
+
     @Column(nullable = false)
     private BigDecimal valor;
 

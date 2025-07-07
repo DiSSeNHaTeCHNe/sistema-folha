@@ -10,25 +10,25 @@ export interface Usuario {
 export interface Funcionario {
   id: number;
   nome: string;
-  cargo: string;
-  centroCusto: string;
-  linhaNegocio: string;
-  idExterno: string;
+  cpf: string;
   dataAdmissao: string;
-  sexo: string;
-  tipoSalario: string;
-  funcao: string;
-  depIrrf: number;
-  depSalFamilia: number;
-  vinculo: string;
+  cargoId: number;
+  cargoDescricao: string;
+  centroCustoId: number;
+  centroCustoDescricao: string;
+  linhaNegocioId: number;
+  linhaNegocioDescricao: string;
+  idExterno?: string;
+  ativo: boolean;
 }
 
 export interface Rubrica {
   id: number;
   codigo: string;
   descricao: string;
-  tipo: 'PROVENTO' | 'DESCONTO';
-  porcentagem: number | null;
+  tipo: 'PROVENTO' | 'DESCONTO' | 'INFORMATIVO';
+  porcentagem?: number;
+  ativo: boolean;
 }
 
 export interface Beneficio {
@@ -54,6 +54,7 @@ export interface FolhaPagamento {
   valor: number;
   quantidade: number;
   baseCalculo: number;
+  ativo: boolean;
 }
 
 export interface LoginRequest {
@@ -63,5 +64,38 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  login: string;
+  user: {
+    id: number;
+    login: string;
+    nome: string;
+    permissoes: string[];
+  };
+}
+
+export interface Cargo {
+  id: number;
+  descricao: string;
+  ativo: boolean;
+}
+
+export interface CentroCusto {
+  id: number;
+  descricao: string;
+  ativo: boolean;
+  linhaNegocioId: number;
+}
+
+export interface LinhaNegocio {
+  id: number;
+  descricao: string;
+  ativo: boolean;
+}
+
+export interface ImportacaoResponse {
+  success: boolean;
+  message: string;
+  arquivo?: string;
+  tamanho?: number;
+  registrosProcessados?: number;
+  erros?: string[];
 } 

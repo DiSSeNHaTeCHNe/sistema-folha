@@ -34,19 +34,15 @@ public class CentroCustoService {
 
     public CentroCustoDTO buscarPorId(Long id) {
         return centroCustoRepository.findById(id)
-                .filter(cc -> cc.isAtivo())
+                .filter(cc -> cc.getAtivo())
                 .map(this::toDTO)
                 .orElseThrow(() -> new CentroCustoNotFoundException(id));
     }
 
     @Transactional
     public CentroCustoDTO cadastrar(CentroCustoDTO dto) {
-        if (centroCustoRepository.existsByCodigoAndAtivoTrue(dto.codigo())) {
-            throw new IllegalArgumentException("Já existe um centro de custo ativo com este código");
-        }
-
         LinhaNegocio linhaNegocio = linhaNegocioRepository.findById(dto.linhaNegocioId())
-                .filter(ln -> ln.isAtivo())
+                .filter(ln -> ln.getAtivo())
                 .orElseThrow(() -> new LinhaNegocioNotFoundException(dto.linhaNegocioId()));
 
         CentroCusto centroCusto = toEntity(dto);
@@ -57,19 +53,13 @@ public class CentroCustoService {
     @Transactional
     public CentroCustoDTO atualizar(Long id, CentroCustoDTO dto) {
         CentroCusto centroCusto = centroCustoRepository.findById(id)
-                .filter(cc -> cc.isAtivo())
+                .filter(cc -> cc.getAtivo())
                 .orElseThrow(() -> new CentroCustoNotFoundException(id));
 
-        if (!centroCusto.getCodigo().equals(dto.codigo()) && 
-            centroCustoRepository.existsByCodigoAndAtivoTrue(dto.codigo())) {
-            throw new IllegalArgumentException("Já existe um centro de custo ativo com este código");
-        }
-
         LinhaNegocio linhaNegocio = linhaNegocioRepository.findById(dto.linhaNegocioId())
-                .filter(ln -> ln.isAtivo())
+                .filter(ln -> ln.getAtivo())
                 .orElseThrow(() -> new LinhaNegocioNotFoundException(dto.linhaNegocioId()));
 
-        centroCusto.setCodigo(dto.codigo());
         centroCusto.setDescricao(dto.descricao());
         centroCusto.setLinhaNegocio(linhaNegocio);
         return toDTO(centroCustoRepository.save(centroCusto));
@@ -78,7 +68,7 @@ public class CentroCustoService {
     @Transactional
     public void remover(Long id) {
         CentroCusto centroCusto = centroCustoRepository.findById(id)
-                .filter(cc -> cc.isAtivo())
+                .filter(cc -> cc.getAtivo())
                 .orElseThrow(() -> new CentroCustoNotFoundException(id));
         centroCusto.setAtivo(false);
         centroCustoRepository.save(centroCusto);
@@ -87,16 +77,14 @@ public class CentroCustoService {
     private CentroCustoDTO toDTO(CentroCusto centroCusto) {
         return new CentroCustoDTO(
             centroCusto.getId(),
-            centroCusto.getCodigo(),
             centroCusto.getDescricao(),
-            centroCusto.isAtivo(),
+            centroCusto.getAtivo(),
             centroCusto.getLinhaNegocio().getId()
         );
     }
 
     private CentroCusto toEntity(CentroCustoDTO dto) {
         CentroCusto centroCusto = new CentroCusto();
-        centroCusto.setCodigo(dto.codigo());
         centroCusto.setDescricao(dto.descricao());
         centroCusto.setAtivo(true);
         return centroCusto;
