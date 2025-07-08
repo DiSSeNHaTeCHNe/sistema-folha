@@ -6,7 +6,7 @@ interface Option {
   label: string;
 }
 
-interface AutocompleteFieldProps extends Omit<AutocompleteProps<Option, false, false, false>, 'value' | 'onChange'> {
+interface AutocompleteFieldProps extends Omit<AutocompleteProps<Option, false, false, false>, 'value' | 'onChange' | 'renderInput'> {
   label: string;
   value: Option | null;
   onChange: (value: Option | null) => void;
@@ -16,6 +16,7 @@ interface AutocompleteFieldProps extends Omit<AutocompleteProps<Option, false, f
 export function AutocompleteField({ label, value, onChange, options, ...props }: AutocompleteFieldProps) {
   return (
     <Autocomplete
+      {...props}
       value={value}
       onChange={(_event, newValue) => onChange(newValue)}
       options={options}
@@ -23,7 +24,6 @@ export function AutocompleteField({ label, value, onChange, options, ...props }:
       isOptionEqualToValue={(option, value) => option.value === value.value}
       renderInput={(params) => <TextField {...params} label={label} />}
       fullWidth
-      {...props}
     />
   );
 } 

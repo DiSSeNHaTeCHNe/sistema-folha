@@ -1,4 +1,5 @@
-import { FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, RadioGroupProps } from '@mui/material';
+import { FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import type { RadioGroupProps } from '@mui/material/RadioGroup';
 
 interface Option {
   value: string;

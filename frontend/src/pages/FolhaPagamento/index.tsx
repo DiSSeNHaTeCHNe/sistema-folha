@@ -10,25 +10,18 @@ import {
   TableHead,
   TableRow,
   Typography,
-  IconButton,
   TextField,
   InputAdornment,
-  Grid,
   Snackbar,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
   Card,
   CardContent,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Search as SearchIcon,
-  Upload as UploadIcon,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import type { FolhaPagamento } from '../../types';
@@ -204,18 +197,6 @@ export function FolhaPagamento() {
     await fetchFolha();
   };
 
-  const handleOpenDialog = (registro?: FolhaPagamento) => {
-    if (registro) {
-      const { id, ...rest } = registro;
-      setForm(rest);
-      setEditId(id);
-    } else {
-      setForm(initialForm);
-      setEditId(null);
-    }
-    setOpenDialog(true);
-  };
-
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setForm(initialForm);
@@ -243,19 +224,6 @@ export function FolhaPagamento() {
       setSnackbarMsg('Erro ao salvar registro');
     } finally {
       setSaving(false);
-      setOpenSnackbar(true);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Tem certeza que deseja remover este registro?')) return;
-    try {
-      await folhaPagamentoService.remover(id);
-      setSnackbarMsg('Registro removido com sucesso!');
-      await fetchFolha();
-    } catch (err) {
-      setSnackbarMsg('Erro ao remover registro');
-    } finally {
       setOpenSnackbar(true);
     }
   };

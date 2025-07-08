@@ -1,4 +1,5 @@
-import { FormControl, InputLabel, Select, MenuItem, SelectProps } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import type { SelectProps } from '@mui/material';
 
 interface Option {
   value: string | number;
@@ -19,7 +20,7 @@ export function SelectField({ label, value, onChange, options, ...props }: Selec
       <Select
         value={value}
         label={label}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => onChange(event.target.value as string | number)}
         {...props}
       >
         {options.map((option) => (

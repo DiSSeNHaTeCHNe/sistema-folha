@@ -2,9 +2,7 @@ export interface Usuario {
   id: number;
   login: string;
   nome: string;
-  centroCusto: string;
   permissoes: string[];
-  primeiroAcesso: boolean;
 }
 
 export interface Funcionario {
@@ -72,12 +70,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: {
-    id: number;
-    login: string;
-    nome: string;
-    permissoes: string[];
-  };
+  login: string;
 }
 
 export interface Cargo {

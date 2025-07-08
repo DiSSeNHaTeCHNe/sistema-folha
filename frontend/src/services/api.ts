@@ -24,4 +24,9 @@ export const logout = () => {
   localStorage.removeItem('user');
 };
 
+export const getUserByLogin = async (login: string) => {
+  const response = await api.get(`/usuarios/login/${login}`);
+  return response.data;
+};
+
 export default api; 

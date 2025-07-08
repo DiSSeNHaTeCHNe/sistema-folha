@@ -7,21 +7,24 @@ import {
   Button,
   Alert,
   CircularProgress,
-  Divider,
-  Grid,
   Paper,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
-  CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   Description as DescriptionIcon,
   AttachMoney as AttachMoneyIcon,
   CardGiftcard as CardGiftcardIcon,
+  HelpOutline as HelpOutlineIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { importacaoService } from '../../services/importacaoService';
@@ -59,6 +62,12 @@ export default function Importacao() {
   const folhaFileRef = useRef<HTMLInputElement>(null);
   const beneficiosFileRef = useRef<HTMLInputElement>(null);
   const folhaAdpFileRef = useRef<HTMLInputElement>(null);
+
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const [folhaFileName, setFolhaFileName] = useState('');
+  const [beneficiosFileName, setBeneficiosFileName] = useState('');
+  const [folhaAdpFileName, setFolhaAdpFileName] = useState('');
 
   const handleFileUpload = async (
     file: File | null,
@@ -124,7 +133,11 @@ export default function Importacao() {
           error: response.message,
           arquivo: response.arquivo,
         });
-        toast.error(response.message);
+        if (response.message && response.message.startsWith('Funcionários não encontrados:')) {
+          alert(response.message);
+        } else {
+          toast.error(response.message);
+        }
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Erro ao importar arquivo';
@@ -133,8 +146,30 @@ export default function Importacao() {
         success: false,
         error: errorMessage,
       });
-      toast.error(errorMessage);
+      if (errorMessage.startsWith('Funcionários não encontrados:')) {
+        alert(errorMessage);
+      } else {
+        toast.error(errorMessage);
+      }
     }
+  };
+
+  const handleFolhaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setFolhaFileName(file ? file.name : '');
+    setFolhaState(prev => ({ ...prev, success: false, error: null }));
+  };
+
+  const handleBeneficiosFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setBeneficiosFileName(file ? file.name : '');
+    setBeneficiosState(prev => ({ ...prev, success: false, error: null }));
+  };
+
+  const handleFolhaAdpFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setFolhaAdpFileName(file ? file.name : '');
+    setFolhaAdpState(prev => ({ ...prev, success: false, error: null }));
   };
 
   const handleFolhaUpload = () => {
@@ -158,6 +193,7 @@ export default function Importacao() {
       success: false,
       error: null,
     });
+    setFolhaFileName('');
     if (folhaFileRef.current) {
       folhaFileRef.current.value = '';
     }
@@ -169,6 +205,7 @@ export default function Importacao() {
       success: false,
       error: null,
     });
+    setBeneficiosFileName('');
     if (beneficiosFileRef.current) {
       beneficiosFileRef.current.value = '';
     }
@@ -180,6 +217,7 @@ export default function Importacao() {
       success: false,
       error: null,
     });
+    setFolhaAdpFileName('');
     if (folhaAdpFileRef.current) {
       folhaAdpFileRef.current.value = '';
     }
@@ -187,10 +225,28 @@ export default function Importacao() {
 
   return (
     <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        Importação de Dados
-      </Typography>
-      
+      <Box display="flex" alignItems="center" gap={1}>
+        <Typography variant="h4" gutterBottom>
+          Importação de Dados
+        </Typography>
+        <IconButton size="small" onClick={() => setHelpOpen(true)}>
+          <HelpOutlineIcon fontSize="small" />
+        </IconButton>
+      </Box>
+      <Dialog open={helpOpen} onClose={() => setHelpOpen(false)}>
+        <DialogTitle>Ajuda - Importação de Dados</DialogTitle>
+        <DialogContent>
+          <Typography gutterBottom>
+            Faça upload dos arquivos de folha de pagamento (.txt) ou benefícios (.csv).<br/>
+            O sistema irá processar os dados e exibir o resultado da importação.<br/>
+            Caso algum funcionário não seja encontrado, será exibida uma lista ao final.<br/>
+            Utilize o campo abaixo para visualizar o retorno detalhado da importação.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHelpOpen(false)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
       <Typography variant="body1" color="text.secondary" paragraph>
         Faça upload dos arquivos para importar dados de folha de pagamento e benefícios no sistema.
       </Typography>
@@ -217,9 +273,7 @@ export default function Importacao() {
                   type="file"
                   accept=".txt"
                   style={{ display: 'none' }}
-                  onChange={() => {
-                    setFolhaState(prev => ({ ...prev, success: false, error: null }));
-                  }}
+                  onChange={handleFolhaFileChange}
                 />
                 <Button
                   variant="outlined"
@@ -231,11 +285,9 @@ export default function Importacao() {
                   Selecionar Arquivo (.txt)
                 </Button>
                 
-                {folhaFileRef.current?.files?.[0] && (
-                  <Typography variant="body2" color="primary">
-                    Arquivo selecionado: {folhaFileRef.current.files[0].name}
-                  </Typography>
-                )}
+                <Typography variant="body2" color="primary">
+                  Arquivo selecionado: {folhaFileName || ''}
+                </Typography>
               </Box>
 
               <Box display="flex" gap={1}>
@@ -259,64 +311,6 @@ export default function Importacao() {
                   </Button>
                 )}
               </Box>
-
-              {/* Status da importação */}
-              {folhaState.loading && (
-                <Box display="flex" alignItems="center" mt={2}>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  <Typography variant="body2">Processando arquivo...</Typography>
-                </Box>
-              )}
-
-              {folhaState.success && (
-                <Alert severity="success" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    Importação realizada com sucesso!
-                    {folhaState.arquivo && (
-                      <>
-                        <br />
-                        Arquivo: {folhaState.arquivo}
-                      </>
-                    )}
-                    {folhaState.tamanho && (
-                      <>
-                        <br />
-                        Tamanho: {(folhaState.tamanho / 1024).toFixed(2)} KB
-                      </>
-                    )}
-                    {folhaState.registrosProcessados && (
-                      <>
-                        <br />
-                        Registros processados: {folhaState.registrosProcessados}
-                      </>
-                    )}
-                  </Typography>
-                </Alert>
-              )}
-
-              {folhaState.error && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  <Typography variant="body2">{folhaState.error}</Typography>
-                </Alert>
-              )}
-
-              {folhaState.erros && folhaState.erros.length > 0 && (
-                <Paper sx={{ mt: 2, p: 2, maxHeight: 200, overflow: 'auto' }}>
-                  <Typography variant="subtitle2" color="error" gutterBottom>
-                    Erros encontrados:
-                  </Typography>
-                  <List dense>
-                    {folhaState.erros.map((erro, index) => (
-                      <ListItem key={index}>
-                        <ListItemIcon>
-                          <ErrorIcon color="error" fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary={erro} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
             </CardContent>
           </Card>
         </Box>
@@ -342,9 +336,7 @@ export default function Importacao() {
                   type="file"
                   accept=".csv"
                   style={{ display: 'none' }}
-                  onChange={() => {
-                    setBeneficiosState(prev => ({ ...prev, success: false, error: null }));
-                  }}
+                  onChange={handleBeneficiosFileChange}
                 />
                 <Button
                   variant="outlined"
@@ -356,11 +348,9 @@ export default function Importacao() {
                   Selecionar Arquivo (.csv)
                 </Button>
                 
-                {beneficiosFileRef.current?.files?.[0] && (
-                  <Typography variant="body2" color="primary">
-                    Arquivo selecionado: {beneficiosFileRef.current.files[0].name}
-                  </Typography>
-                )}
+                <Typography variant="body2" color="primary">
+                  Arquivo selecionado: {beneficiosFileName || ''}
+                </Typography>
               </Box>
 
               <Box display="flex" gap={1}>
@@ -384,64 +374,6 @@ export default function Importacao() {
                   </Button>
                 )}
               </Box>
-
-              {/* Status da importação */}
-              {beneficiosState.loading && (
-                <Box display="flex" alignItems="center" mt={2}>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  <Typography variant="body2">Processando arquivo...</Typography>
-                </Box>
-              )}
-
-              {beneficiosState.success && (
-                <Alert severity="success" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    Importação realizada com sucesso!
-                    {beneficiosState.arquivo && (
-                      <>
-                        <br />
-                        Arquivo: {beneficiosState.arquivo}
-                      </>
-                    )}
-                    {beneficiosState.tamanho && (
-                      <>
-                        <br />
-                        Tamanho: {(beneficiosState.tamanho / 1024).toFixed(2)} KB
-                      </>
-                    )}
-                    {beneficiosState.registrosProcessados && (
-                      <>
-                        <br />
-                        Registros processados: {beneficiosState.registrosProcessados}
-                      </>
-                    )}
-                  </Typography>
-                </Alert>
-              )}
-
-              {beneficiosState.error && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  <Typography variant="body2">{beneficiosState.error}</Typography>
-                </Alert>
-              )}
-
-              {beneficiosState.erros && beneficiosState.erros.length > 0 && (
-                <Paper sx={{ mt: 2, p: 2, maxHeight: 200, overflow: 'auto' }}>
-                  <Typography variant="subtitle2" color="error" gutterBottom>
-                    Erros encontrados:
-                  </Typography>
-                  <List dense>
-                    {beneficiosState.erros.map((erro, index) => (
-                      <ListItem key={index}>
-                        <ListItemIcon>
-                          <ErrorIcon color="error" fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary={erro} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
             </CardContent>
           </Card>
         </Box>
@@ -467,9 +399,7 @@ export default function Importacao() {
                   type="file"
                   accept=".txt"
                   style={{ display: 'none' }}
-                  onChange={() => {
-                    setFolhaAdpState(prev => ({ ...prev, success: false, error: null }));
-                  }}
+                  onChange={handleFolhaAdpFileChange}
                 />
                 <Button
                   variant="outlined"
@@ -481,11 +411,9 @@ export default function Importacao() {
                   Selecionar Arquivo (.txt)
                 </Button>
                 
-                {folhaAdpFileRef.current?.files?.[0] && (
-                  <Typography variant="body2" color="primary">
-                    Arquivo selecionado: {folhaAdpFileRef.current.files[0].name}
-                  </Typography>
-                )}
+                <Typography variant="body2" color="primary">
+                  Arquivo selecionado: {folhaAdpFileName || ''}
+                </Typography>
               </Box>
 
               <Box display="flex" gap={1}>
@@ -509,147 +437,81 @@ export default function Importacao() {
                   </Button>
                 )}
               </Box>
-
-              {/* Status da importação */}
-              {folhaAdpState.loading && (
-                <Box display="flex" alignItems="center" mt={2}>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  <Typography variant="body2">Processando arquivo...</Typography>
-                </Box>
-              )}
-
-              {folhaAdpState.success && (
-                <Alert severity="success" sx={{ mt: 2 }}>
-                  <Typography variant="body2">
-                    Importação realizada com sucesso!
-                    {folhaAdpState.arquivo && (
-                      <>
-                        <br />
-                        Arquivo: {folhaAdpState.arquivo}
-                      </>
-                    )}
-                    {folhaAdpState.tamanho && (
-                      <>
-                        <br />
-                        Tamanho: {(folhaAdpState.tamanho / 1024).toFixed(2)} KB
-                      </>
-                    )}
-                    {folhaAdpState.registrosProcessados && (
-                      <>
-                        <br />
-                        Registros processados: {folhaAdpState.registrosProcessados}
-                      </>
-                    )}
-                  </Typography>
-                </Alert>
-              )}
-
-              {folhaAdpState.error && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  <Typography variant="body2">{folhaAdpState.error}</Typography>
-                </Alert>
-              )}
-
-              {folhaAdpState.erros && folhaAdpState.erros.length > 0 && (
-                <Paper sx={{ mt: 2, p: 2, maxHeight: 200, overflow: 'auto' }}>
-                  <Typography variant="subtitle2" color="error" gutterBottom>
-                    Erros encontrados:
-                  </Typography>
-                  <List dense>
-                    {folhaAdpState.erros.map((erro, index) => (
-                      <ListItem key={index}>
-                        <ListItemIcon>
-                          <ErrorIcon color="error" fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary={erro} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
             </CardContent>
           </Card>
         </Box>
       </Box>
-
-      {/* Instruções */}
-      <Card sx={{ mt: 3 }}>
+      <Card sx={{ mt: 4 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Instruções de Importação
+            Status da Importação
           </Typography>
-          
-          <Box display="flex" gap={2} flexWrap="wrap">
-            <Box flex="1" minWidth="300px">
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Folha de Pagamento (.txt)</strong>
+          {/* Status loading */}
+          {(folhaState.loading || beneficiosState.loading || folhaAdpState.loading) && (
+            <Box display="flex" alignItems="center" mb={2}>
+              <CircularProgress size={20} sx={{ mr: 1 }} />
+              <Typography variant="body2">Processando arquivo...</Typography>
+            </Box>
+          )}
+          {/* Sucesso */}
+          {(folhaState.success || beneficiosState.success || folhaAdpState.success) && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                Importação realizada com sucesso!
+                {folhaState.success && folhaState.arquivo && (<><br />Arquivo: {folhaState.arquivo}</>)}
+                {beneficiosState.success && beneficiosState.arquivo && (<><br />Arquivo: {beneficiosState.arquivo}</>)}
+                {folhaAdpState.success && folhaAdpState.arquivo && (<><br />Arquivo: {folhaAdpState.arquivo}</>)}
+                {folhaState.success && folhaState.tamanho && (<><br />Tamanho: {(folhaState.tamanho / 1024).toFixed(2)} KB</>)}
+                {beneficiosState.success && beneficiosState.tamanho && (<><br />Tamanho: {(beneficiosState.tamanho / 1024).toFixed(2)} KB</>)}
+                {folhaAdpState.success && folhaAdpState.tamanho && (<><br />Tamanho: {(folhaAdpState.tamanho / 1024).toFixed(2)} KB</>)}
+                {folhaState.success && folhaState.registrosProcessados && (<><br />Registros processados: {folhaState.registrosProcessados}</>)}
+                {beneficiosState.success && beneficiosState.registrosProcessados && (<><br />Registros processados: {beneficiosState.registrosProcessados}</>)}
+                {folhaAdpState.success && folhaAdpState.registrosProcessados && (<><br />Registros processados: {folhaAdpState.registrosProcessados}</>)}
               </Typography>
-              <Typography variant="body2" paragraph>
-                O arquivo deve conter:
+            </Alert>
+          )}
+          {/* Erro */}
+          {(folhaState.error || beneficiosState.error || folhaAdpState.error) && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                {folhaState.error || beneficiosState.error || folhaAdpState.error}
+              </Typography>
+            </Alert>
+          )}
+          {/* Lista de erros detalhados */}
+          {((folhaState.erros && folhaState.erros.length > 0) || (beneficiosState.erros && beneficiosState.erros.length > 0) || (folhaAdpState.erros && folhaAdpState.erros.length > 0)) && (
+            <Paper sx={{ p: 2, maxHeight: 200, overflow: 'auto' }}>
+              <Typography variant="subtitle2" color="error" gutterBottom>
+                Erros encontrados:
               </Typography>
               <List dense>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Linha com período de competência (ex: Competência: 01/01/2024 a 31/01/2024)" />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Linha com centro de custo, ID e nome do funcionário (ex: 258 SERVICOS - EDU 273 RENATO AMANCIO DA SILVA)" />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Linhas com rubricas (código, descrição, quantidade, base cálculo, valor)" />
-                </ListItem>
+                {folhaState.erros && folhaState.erros.map((erro, index) => (
+                  <ListItem key={"folha-"+index}>
+                    <ListItemIcon>
+                      <ErrorIcon color="error" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={erro} />
+                  </ListItem>
+                ))}
+                {beneficiosState.erros && beneficiosState.erros.map((erro, index) => (
+                  <ListItem key={"beneficio-"+index}>
+                    <ListItemIcon>
+                      <ErrorIcon color="error" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={erro} />
+                  </ListItem>
+                ))}
+                {folhaAdpState.erros && folhaAdpState.erros.map((erro, index) => (
+                  <ListItem key={"adp-"+index}>
+                    <ListItemIcon>
+                      <ErrorIcon color="error" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={erro} />
+                  </ListItem>
+                ))}
               </List>
-            </Box>
-            
-            <Box flex="1" minWidth="300px">
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Benefícios (.csv)</strong>
-              </Typography>
-              <Typography variant="body2" paragraph>
-                O arquivo deve conter as colunas:
-              </Typography>
-              <List dense>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="ID do funcionário" />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Descrição do benefício" />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Valor" />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Data de início (dd/MM/yyyy)" />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Data de fim (opcional, dd/MM/yyyy)" />
-                </ListItem>
-              </List>
-            </Box>
-          </Box>
+            </Paper>
+          )}
         </CardContent>
       </Card>
     </Box>

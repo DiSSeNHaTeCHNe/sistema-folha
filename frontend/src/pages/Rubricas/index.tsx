@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -45,8 +45,7 @@ export default function Rubricas() {
   const [rubricas, setRubricas] = useState<Rubrica[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedRubrica, setSelectedRubrica] = useState<Rubrica | null>(null);
-  const { register, handleSubmit, reset, setValue, watch, control } = useForm<RubricaFormData>();
-  const tipoSelecionado = watch('tipo');
+  const { register, handleSubmit, reset, setValue, control } = useForm<RubricaFormData>();
 
   useEffect(() => {
     carregarRubricas();

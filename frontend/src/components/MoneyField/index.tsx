@@ -1,11 +1,15 @@
 import { TextField } from '@mui/material';
-import type { TextFieldProps } from '@mui/material';
 import { NumericFormat } from 'react-number-format';
-import type { NumericFormatProps } from 'react-number-format';
 
-interface MoneyFieldProps extends Omit<TextFieldProps, 'value' | 'onChange'> {
+interface MoneyFieldProps {
   value: number;
   onChange: (value: number) => void;
+  label?: string;
+  error?: boolean;
+  helperText?: string;
+  disabled?: boolean;
+  required?: boolean;
+  fullWidth?: boolean;
 }
 
 export function MoneyField({ value, onChange, ...props }: MoneyFieldProps) {

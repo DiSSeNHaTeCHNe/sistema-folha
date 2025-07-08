@@ -1,4 +1,4 @@
-import { Grid, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import {
   People as PeopleIcon,
   AttachMoney as MoneyIcon,
@@ -21,52 +21,52 @@ function StatCard({ title, value, icon }: StatCardProps) {
         height: 140,
       }}
     >
-      <Grid container spacing={2}>
-        <Grid item xs={8}>
+      <Box display="flex" gap={2}>
+        <Box flex="1">
           <Typography component="h2" variant="h6" color="primary" gutterBottom>
             {title}
           </Typography>
           <Typography component="p" variant="h4">
             {value}
           </Typography>
-        </Grid>
-        <Grid item xs={4} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        </Box>
+        <Box display="flex" justifyContent="flex-end" alignItems="center">
           {icon}
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Paper>
   );
 }
 
 export function Dashboard() {
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Typography component="h1" variant="h4" gutterBottom>
-          Dashboard
-        </Typography>
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <StatCard
-          title="Total de Funcionários"
-          value="150"
-          icon={<PeopleIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
-        />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <StatCard
-          title="Folha de Pagamento"
-          value="R$ 450.000,00"
-          icon={<MoneyIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
-        />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <StatCard
-          title="Benefícios Ativos"
-          value="75"
-          icon={<GiftIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
-        />
-      </Grid>
-    </Grid>
+    <Box display="flex" flexDirection="column" gap={3}>
+      <Typography component="h1" variant="h4" gutterBottom>
+        Dashboard
+      </Typography>
+      <Box display="flex" flexWrap="wrap" gap={3}>
+        <Box flex="1" minWidth="300px">
+          <StatCard
+            title="Total de Funcionários"
+            value="150"
+            icon={<PeopleIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
+          />
+        </Box>
+        <Box flex="1" minWidth="300px">
+          <StatCard
+            title="Folha de Pagamento"
+            value="R$ 450.000,00"
+            icon={<MoneyIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
+          />
+        </Box>
+        <Box flex="1" minWidth="300px">
+          <StatCard
+            title="Benefícios Ativos"
+            value="75"
+            icon={<GiftIcon sx={{ fontSize: 40, color: 'primary.main' }} />}
+          />
+        </Box>
+      </Box>
+    </Box>
   );
 } 

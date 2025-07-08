@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  Grid,
   IconButton,
   InputLabel,
   MenuItem,
@@ -214,15 +213,15 @@ export default function Funcionarios() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <form onSubmit={handleSubmit(handleFiltros)}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
+            <Box display="flex" flexWrap="wrap" gap={2}>
+              <Box flex="1" minWidth="250px">
                 <TextField
                   fullWidth
                   label="Nome"
                   {...register('nome')}
                 />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Box>
+              <Box flex="1" minWidth="250px">
                 <FormControl fullWidth>
                   <InputLabel>Linha de Negócio</InputLabel>
                   <Select
@@ -237,8 +236,8 @@ export default function Funcionarios() {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Box>
+              <Box flex="1" minWidth="250px">
                 <FormControl fullWidth>
                   <InputLabel>Cargo</InputLabel>
                   <Select
@@ -254,8 +253,8 @@ export default function Funcionarios() {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Box>
+              <Box flex="1" minWidth="250px">
                 <FormControl fullWidth>
                   <InputLabel>Centro de Custo</InputLabel>
                   <Select
@@ -271,20 +270,20 @@ export default function Funcionarios() {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid item xs={12}>
+              </Box>
+              <Box width="100%">
                 <Button type="submit" variant="contained" color="primary">
                   Filtrar
                 </Button>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </form>
         </CardContent>
       </Card>
 
-      <Grid container spacing={2}>
+      <Box display="flex" flexWrap="wrap" gap={2}>
         {funcionarios.map((funcionario) => (
-          <Grid item xs={12} sm={6} md={4} key={funcionario.id}>
+          <Box key={funcionario.id} flex="1" minWidth="300px" maxWidth="400px">
             <Card>
               <CardContent>
                 <Typography variant="h6">{funcionario.nome}</Typography>
@@ -309,9 +308,9 @@ export default function Funcionarios() {
                 </Box>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
@@ -319,78 +318,66 @@ export default function Funcionarios() {
         </DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Nome"
-                  {...register('nome', { required: true })}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="CPF"
-                  {...register('cpf', { required: true })}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Data de Admissão"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  {...register('dataAdmissao', { required: true })}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Linha de Negócio</InputLabel>
-                  <Select
-                    label="Linha de Negócio"
-                    {...register('linhaNegocioId', { required: true })}
-                  >
-                    {linhasNegocio.map((linha) => (
-                      <MenuItem key={linha.id} value={linha.id}>
-                        {linha.descricao}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Cargo</InputLabel>
-                  <Select
-                    label="Cargo"
-                    {...register('cargoId', { required: true })}
-                    disabled={!linhaNegocioId}
-                  >
-                    {cargos.map((cargo) => (
-                      <MenuItem key={cargo.id} value={cargo.id}>
-                        {cargo.descricao}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Centro de Custo</InputLabel>
-                  <Select
-                    label="Centro de Custo"
-                    {...register('centroCustoId', { required: true })}
-                    disabled={!linhaNegocioId}
-                  >
-                    {centrosCusto.map((centro) => (
-                      <MenuItem key={centro.id} value={centro.id}>
-                        {centro.descricao}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
+            <Box display="flex" flexDirection="column" gap={2}>
+              <TextField
+                fullWidth
+                label="Nome"
+                {...register('nome', { required: true })}
+              />
+              <TextField
+                fullWidth
+                label="CPF"
+                {...register('cpf', { required: true })}
+              />
+              <TextField
+                fullWidth
+                label="Data de Admissão"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                {...register('dataAdmissao', { required: true })}
+              />
+              <FormControl fullWidth>
+                <InputLabel>Linha de Negócio</InputLabel>
+                <Select
+                  label="Linha de Negócio"
+                  {...register('linhaNegocioId', { required: true })}
+                >
+                  {linhasNegocio.map((linha) => (
+                    <MenuItem key={linha.id} value={linha.id}>
+                      {linha.descricao}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Cargo</InputLabel>
+                <Select
+                  label="Cargo"
+                  {...register('cargoId', { required: true })}
+                  disabled={!linhaNegocioId}
+                >
+                  {cargos.map((cargo) => (
+                    <MenuItem key={cargo.id} value={cargo.id}>
+                      {cargo.descricao}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Centro de Custo</InputLabel>
+                <Select
+                  label="Centro de Custo"
+                  {...register('centroCustoId', { required: true })}
+                  disabled={!linhaNegocioId}
+                >
+                  {centrosCusto.map((centro) => (
+                    <MenuItem key={centro.id} value={centro.id}>
+                      {centro.descricao}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancelar</Button>

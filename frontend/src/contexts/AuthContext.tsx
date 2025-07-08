@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login as apiLogin, logout as apiLogout } from '../services/api';
-import type { LoginRequest, LoginResponse, Usuario } from '../types';
+import { login as apiLogin, logout as apiLogout, getUserByLogin } from '../services/api';
+import type { LoginRequest, Usuario } from '../types';
 
 interface AuthContextData {
   user: Usuario | null;
@@ -19,8 +19,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    console.log('AuthContext - storedUser:', storedUser);
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        console.log('AuthContext - parsedUser:', parsedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('AuthContext - Error parsing stored user:', error);
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
@@ -28,9 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (data: LoginRequest) => {
     try {
       const response = await apiLogin(data);
+      console.log('AuthContext - login response:', response);
       localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify({ login: response.login }));
-      setUser({ login: response.login } as Usuario);
+      
+      // Buscar dados completos do usuário
+      const userData = await getUserByLogin(response.login);
+      console.log('AuthContext - user data:', userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData as Usuario);
       navigate('/dashboard');
     } catch (error) {
       throw error;
@@ -39,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     apiLogout();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
     navigate('/login');
   };
