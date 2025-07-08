@@ -73,6 +73,7 @@ public class ImportacaoFolhaService {
         LocalDate dataFim = null;
         DadosFuncionario dadosFuncionario = new DadosFuncionario();
         int[] contadores = {0, 0, 0}; // [registrosProcessados, funcionariosProcessados, rubricasCriadas]
+        List<String> funcionariosNaoEncontrados = new ArrayList<>();
 
         for (int i = 0; i < linhas.size(); i++) {
             String linha = linhas.get(i);
@@ -153,6 +154,7 @@ public class ImportacaoFolhaService {
                         .orElseThrow(() -> {
                             logger.error("Funcionário não encontrado: ID={}, Nome={}", 
                                        dadosFuncionario.idExterno, dadosFuncionario.nome);
+                            funcionariosNaoEncontrados.add(dadosFuncionario.nome);
                             return new RuntimeException("Funcionário não encontrado: " + dadosFuncionario.idExterno + " - " + dadosFuncionario.nome);
                         });
 
@@ -190,6 +192,9 @@ public class ImportacaoFolhaService {
         
         logger.info("Importação de folha concluída - Registros processados: {}, Funcionários: {}, Rubricas criadas: {}", 
                    contadores[0], contadores[1], contadores[2]);
+        if (!funcionariosNaoEncontrados.isEmpty()) {
+            throw new RuntimeException("Funcionários não encontrados: " + String.join(", ", funcionariosNaoEncontrados));
+        }
     }
 
     private List<String> lerArquivo(MultipartFile arquivo) throws IOException {

@@ -29,4 +29,13 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
     @Modifying
     @Query("UPDATE FolhaPagamento f SET f.ativo = false WHERE f.id = :id")
     void softDelete(@Param("id") Long id);
+    
+    List<FolhaPagamento> findByFuncionarioIdAndAtivoTrue(Long funcionarioId);
+    
+    // Métodos para buscar dados da competência mais recente
+    @Query("SELECT f FROM FolhaPagamento f WHERE f.ativo = true AND f.dataInicio = :competenciaInicio AND f.dataFim = :competenciaFim")
+    List<FolhaPagamento> findByCompetenciaAndAtivoTrue(@Param("competenciaInicio") LocalDate competenciaInicio, @Param("competenciaFim") LocalDate competenciaFim);
+    
+    @Query("SELECT f FROM FolhaPagamento f WHERE f.funcionario.id = :funcionarioId AND f.ativo = true AND f.dataInicio = :competenciaInicio AND f.dataFim = :competenciaFim")
+    List<FolhaPagamento> findByFuncionarioIdAndCompetenciaAndAtivoTrue(@Param("funcionarioId") Long funcionarioId, @Param("competenciaInicio") LocalDate competenciaInicio, @Param("competenciaFim") LocalDate competenciaFim);
 } 

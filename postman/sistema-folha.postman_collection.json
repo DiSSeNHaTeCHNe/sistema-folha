@@ -50,6 +50,29 @@
       ]
     },
     {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Estatísticas do Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "stats"]
+            },
+            "description": "Retorna estatísticas completas para o dashboard gerencial"
+          }
+        }
+      ]
+    },
+    {
       "name": "Usuários",
       "item": [
         {
@@ -261,7 +284,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"João Silva\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"linhaNegocioId\": 1,\n    \"idExterno\": \"FUNC001\",\n    \"dataAdmissao\": \"2024-01-15\",\n    \"sexo\": \"M\",\n    \"tipoSalario\": \"MENSAL\",\n    \"funcao\": \"Desenvolvedor\",\n    \"dependentesIrrf\": 2,\n    \"dependentesSalarioFamilia\": 1,\n    \"vinculo\": \"CLT\"\n}"
+              "raw": "{\n    \"cpf\": \"12345678901\",\n    \"nome\": \"João Silva\",\n    \"email\": \"joao.silva@empresa.com\",\n    \"dataAdmissao\": \"2024-01-15\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"linhaNegocioId\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/funcionarios",
@@ -287,7 +310,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"João Silva Atualizado\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"linhaNegocioId\": 1,\n    \"idExterno\": \"FUNC001\",\n    \"dataAdmissao\": \"2024-01-15\",\n    \"sexo\": \"M\",\n    \"tipoSalario\": \"MENSAL\",\n    \"funcao\": \"Desenvolvedor Senior\",\n    \"dependentesIrrf\": 2,\n    \"dependentesSalarioFamilia\": 1,\n    \"vinculo\": \"CLT\"\n}"
+              "raw": "{\n    \"cpf\": \"12345678901\",\n    \"nome\": \"João Silva Atualizado\",\n    \"email\": \"joao.silva@empresa.com\",\n    \"dataAdmissao\": \"2024-01-15\",\n    \"cargoId\": 1,\n    \"centroCustoId\": 1,\n    \"linhaNegocioId\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/funcionarios/1",
@@ -313,6 +336,113 @@
               "path": ["funcionarios", "1"]
             },
             "description": "Remove um funcionário (soft delete)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Folha de Pagamento",
+      "item": [
+        {
+          "name": "Consultar Folha por Período",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta folha de pagamento por período"
+          }
+        },
+        {
+          "name": "Consultar Folha por Funcionário",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento/funcionario/1?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento", "funcionario", "1"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta folha de pagamento por funcionário em um período"
+          }
+        },
+        {
+          "name": "Consultar Folha por Centro de Custo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento/centro-custo/1?dataInicio=2024-01-01&dataFim=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento", "centro-custo", "1"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Consulta folha de pagamento por centro de custo em um período"
+          }
+        },
+        {
+          "name": "Remover Registro de Folha",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folha-pagamento/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["folha-pagamento", "1"]
+            },
+            "description": "Remove um registro de folha de pagamento (soft delete)"
           }
         }
       ]
@@ -372,7 +502,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"codigo\": \"DEV001\",\n    \"descricao\": \"Desenvolvedor Java\",\n    \"salarioBase\": 5000.00\n}"
+              "raw": "{\n    \"codigo\": \"DEV001\",\n    \"descricao\": \"Desenvolvedor Pleno\",\n    \"salarioBase\": 5000.00\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/cargos",
@@ -398,7 +528,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"codigo\": \"DEV001\",\n    \"descricao\": \"Desenvolvedor Java Senior\",\n    \"salarioBase\": 6000.00\n}"
+              "raw": "{\n    \"codigo\": \"DEV001\",\n    \"descricao\": \"Desenvolvedor Senior\",\n    \"salarioBase\": 7000.00\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/cargos/1",
@@ -762,135 +892,10 @@
       ]
     },
     {
-      "name": "Folha de Pagamento",
-      "item": [
-        {
-          "name": "Listar Folha de Pagamento",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/folha-pagamento",
-              "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento"]
-            },
-            "description": "Lista todos os registros de folha de pagamento"
-          }
-        },
-        {
-          "name": "Consultar por Funcionário",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/folha-pagamento/funcionario/1?dataInicio=2024-01-01&dataFim=2024-01-31",
-              "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento", "funcionario", "1"],
-              "query": [
-                {
-                  "key": "dataInicio",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "dataFim",
-                  "value": "2024-01-31"
-                }
-              ]
-            },
-            "description": "Consulta folha de pagamento por funcionário e período"
-          }
-        },
-        {
-          "name": "Consultar por Centro de Custo",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/folha-pagamento/centro-custo/1?dataInicio=2024-01-01&dataFim=2024-01-31",
-              "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento", "centro-custo", "1"],
-              "query": [
-                {
-                  "key": "dataInicio",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "dataFim",
-                  "value": "2024-01-31"
-                }
-              ]
-            },
-            "description": "Consulta folha de pagamento por centro de custo e período"
-          }
-        },
-        {
-          "name": "Consultar por Período",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/folha-pagamento?dataInicio=2024-01-01&dataFim=2024-01-31",
-              "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento"],
-              "query": [
-                {
-                  "key": "dataInicio",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "dataFim",
-                  "value": "2024-01-31"
-                }
-              ]
-            },
-            "description": "Consulta folha de pagamento por período"
-          }
-        },
-        {
-          "name": "Remover Registro",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/folha-pagamento/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["folha-pagamento", "1"]
-            },
-            "description": "Remove um registro de folha de pagamento (soft delete)"
-          }
-        }
-      ]
-    },
-    {
       "name": "Benefícios",
       "item": [
         {
-          "name": "Consultar por Funcionário",
+          "name": "Listar Benefícios",
           "request": {
             "method": "GET",
             "header": [
@@ -900,21 +905,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/beneficios/funcionario/1?data=2024-01-15",
+              "raw": "{{baseUrl}}/beneficios",
               "host": ["{{baseUrl}}"],
-              "path": ["beneficios", "funcionario", "1"],
-              "query": [
-                {
-                  "key": "data",
-                  "value": "2024-01-15"
-                }
-              ]
+              "path": ["beneficios"]
             },
-            "description": "Consulta benefícios por funcionário e data"
+            "description": "Lista todos os benefícios ativos"
           }
         },
         {
-          "name": "Consultar por Centro de Custo",
+          "name": "Buscar Benefício por ID",
           "request": {
             "method": "GET",
             "header": [
@@ -924,17 +923,63 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/beneficios/centro-custo/1?data=2024-01-15",
+              "raw": "{{baseUrl}}/beneficios/1",
               "host": ["{{baseUrl}}"],
-              "path": ["beneficios", "centro-custo", "1"],
-              "query": [
-                {
-                  "key": "data",
-                  "value": "2024-01-15"
-                }
-              ]
+              "path": ["beneficios", "1"]
             },
-            "description": "Consulta benefícios por centro de custo e data"
+            "description": "Busca um benefício pelo ID"
+          }
+        },
+        {
+          "name": "Cadastrar Benefício",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"funcionarioId\": 1,\n    \"tipoRubrica\": \"VALE_ALIMENTACAO\",\n    \"valorMensal\": 500.00,\n    \"dataInicio\": \"2024-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/beneficios",
+              "host": ["{{baseUrl}}"],
+              "path": ["beneficios"]
+            },
+            "description": "Cadastra um novo benefício"
+          }
+        },
+        {
+          "name": "Atualizar Benefício",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"funcionarioId\": 1,\n    \"tipoRubrica\": \"VALE_ALIMENTACAO\",\n    \"valorMensal\": 600.00,\n    \"dataInicio\": \"2024-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/beneficios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["beneficios", "1"]
+            },
+            "description": "Atualiza um benefício existente"
           }
         },
         {

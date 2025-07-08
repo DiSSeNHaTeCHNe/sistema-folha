@@ -15,7 +15,10 @@ public class WebConfig {
         CorsConfiguration config = new CorsConfiguration();
         
         // Permitir requisições do frontend
+        config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedOrigin("http://localhost:5173");
+        config.addAllowedOrigin("http://10.113.134.159:3000");
+        config.addAllowedOrigin("http://10.113.134.159:5173");
         
         // Permitir todos os métodos HTTP
         config.addAllowedMethod("*");

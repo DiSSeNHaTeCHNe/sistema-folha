@@ -34,4 +34,9 @@ public interface BeneficioRepository extends JpaRepository<Beneficio, Long> {
     @Modifying
     @Query("UPDATE Beneficio b SET b.ativo = false WHERE b.id = :id")
     void softDelete(@Param("id") Long id);
+    
+    @Query("SELECT COUNT(b) FROM Beneficio b " +
+           "WHERE b.ativo = true " +
+           "AND (b.dataFim IS NULL OR b.dataFim >= :data)")
+    Long countByDataFimIsNullOrDataFimAfter(@Param("data") LocalDate data);
 } 

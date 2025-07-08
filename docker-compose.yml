@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: sistema_folha_api
     ports:
-      - "8083:8080"
+      - "8083:8083"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sistema_folha
       SPRING_DATASOURCE_USERNAME: postgres
@@ -13,6 +13,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-prod
+      args:
+        VITE_API_URL: http://10.113.134.159:8083/api
+    container_name: sistema_folha_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
 
   postgres:
     image: postgres:15-alpine

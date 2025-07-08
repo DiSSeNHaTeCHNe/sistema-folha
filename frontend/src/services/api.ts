@@ -3,7 +3,8 @@ import type { LoginRequest, LoginResponse } from '../types';
 
 // @ts-ignore
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8083/api',
+  //baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8083/api',
+  baseURL: import.meta.env.VITE_API_URL || '',
 });
 
 api.interceptors.request.use((config: any) => {

@@ -92,6 +92,7 @@ public class ImportacaoFolhaAdpService {
         
         Funcionario funcionarioAtual = null;
         List<String> rubricasProcessadas = new ArrayList<>();
+        List<String> funcionariosNaoEncontrados = new ArrayList<>();
         
         // Variáveis para dados de resumo
         Integer totalEmpregados = null;
@@ -138,6 +139,7 @@ public class ImportacaoFolhaAdpService {
 
                     if (funcionarioAtual == null) {
                         logger.warn("Funcionário não encontrado: {}", identificadorFuncionario);
+                        funcionariosNaoEncontrados.add(identificadorFuncionario);
                     } else {
                         logger.debug("Funcionário encontrado: {} - {}", funcionarioAtual.getIdExterno(), funcionarioAtual.getNome());
                     }
@@ -265,6 +267,10 @@ public class ImportacaoFolhaAdpService {
         } catch (Exception e) {
             logger.error("Erro durante importação: {}", e.getMessage(), e);
             throw new RuntimeException("Erro durante importação: " + e.getMessage(), e);
+        }
+
+        if (!funcionariosNaoEncontrados.isEmpty()) {
+            throw new RuntimeException("Funcionários não encontrados: " + String.join(", ", funcionariosNaoEncontrados));
         }
 
         logger.info("Importação de folha ADP concluída - Registros processados: {}", folhasPagamento.size());

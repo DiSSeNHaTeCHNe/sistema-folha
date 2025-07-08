@@ -369,7 +369,11 @@ INSERT INTO cargos (descricao) VALUES
 ('Vice-Presidente de Negócios Educacionais'),
 ('Vice-Presidente de Negócios de Governo'),
 ('Web Designer'),
-('Web Designer Sênior');
+('Web Designer Sênior'),
+('Testador'),
+('Diretor de Serviços'),
+('Analista Comercial'),
+('Analista Financeiro Pleno');
 
 INSERT INTO usuarios (login, senha, nome, email) VALUES
 ('admin', '$2a$10$4opK407j7af6ysFU7WEJ5Ope/icW4ajjsrquoOCB8N.0nY623CdPC', 'Administrador', 'admin@techne.com.br'); 
