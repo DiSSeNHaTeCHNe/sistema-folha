@@ -39,6 +39,18 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.buscarPorLogin(login));
     }
 
+    @GetMapping("/funcionario/{funcionarioId}")
+    @Operation(summary = "Busca um usuário pelo ID do funcionário")
+    public ResponseEntity<UsuarioDTO> buscarPorFuncionario(
+            @Parameter(description = "ID do funcionário") @PathVariable Long funcionarioId) {
+        UsuarioDTO usuario = usuarioService.buscarPorFuncionario(funcionarioId);
+        if (usuario != null) {
+            return ResponseEntity.ok(usuario);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PostMapping
     @Operation(summary = "Cadastra um novo usuário")
     public ResponseEntity<UsuarioDTO> cadastrar(

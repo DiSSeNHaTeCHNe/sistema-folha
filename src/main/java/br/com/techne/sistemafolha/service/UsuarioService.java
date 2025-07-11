@@ -2,8 +2,11 @@ package br.com.techne.sistemafolha.service;
 
 import br.com.techne.sistemafolha.dto.UsuarioDTO;
 import br.com.techne.sistemafolha.exception.UsuarioNotFoundException;
+import br.com.techne.sistemafolha.exception.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.model.Usuario;
+import br.com.techne.sistemafolha.model.Funcionario;
 import br.com.techne.sistemafolha.repository.UsuarioRepository;
+import br.com.techne.sistemafolha.repository.FuncionarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,7 @@ public class UsuarioService {
     private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
 
     private final UsuarioRepository usuarioRepository;
+    private final FuncionarioRepository funcionarioRepository;
     private final PasswordEncoder passwordEncoder;
 
     public List<UsuarioDTO> listarTodos() {
@@ -44,6 +48,13 @@ public class UsuarioService {
                 .filter(u -> u.isAtivo())
                 .map(this::toDTO)
                 .orElseThrow(() -> new UsuarioNotFoundException(login));
+    }
+
+    public UsuarioDTO buscarPorFuncionario(Long funcionarioId) {
+        logger.info("Buscando usuário por funcionário ID: {}", funcionarioId);
+        return usuarioRepository.findByFuncionarioIdAndAtivoTrue(funcionarioId)
+                .map(this::toDTO)
+                .orElse(null);
     }
 
     @Transactional
@@ -72,9 +83,21 @@ public class UsuarioService {
 
         usuario.setLogin(dto.login());
         usuario.setNome(dto.nome());
+        usuario.setPermissoes(dto.permissoes());
+        
         if (dto.senha() != null && !dto.senha().isEmpty()) {
             usuario.setSenha(passwordEncoder.encode(dto.senha()));
         }
+        
+        // Atualizar funcionário associado
+        if (dto.funcionarioId() != null) {
+            Funcionario funcionario = funcionarioRepository.findById(dto.funcionarioId())
+                .orElseThrow(() -> new FuncionarioNotFoundException(dto.funcionarioId()));
+            usuario.setFuncionario(funcionario);
+        } else {
+            usuario.setFuncionario(null);
+        }
+        
         return toDTO(usuarioRepository.save(usuario));
     }
 
@@ -89,13 +112,7 @@ public class UsuarioService {
     }
 
     private UsuarioDTO toDTO(Usuario usuario) {
-        return new UsuarioDTO(
-            usuario.getId(),
-            usuario.getLogin(),
-            null, // Não retornamos a senha no DTO
-            usuario.getNome(),
-            usuario.getPermissoes()
-        );
+        return UsuarioDTO.fromEntity(usuario);
     }
 
     private Usuario toEntity(UsuarioDTO dto) {
@@ -103,7 +120,15 @@ public class UsuarioService {
         usuario.setLogin(dto.login());
         usuario.setSenha(dto.senha());
         usuario.setNome(dto.nome());
+        usuario.setPermissoes(dto.permissoes());
         usuario.setAtivo(true);
+        
+        if (dto.funcionarioId() != null) {
+            Funcionario funcionario = funcionarioRepository.findById(dto.funcionarioId())
+                .orElseThrow(() -> new FuncionarioNotFoundException(dto.funcionarioId()));
+            usuario.setFuncionario(funcionario);
+        }
+        
         return usuario;
     }
 

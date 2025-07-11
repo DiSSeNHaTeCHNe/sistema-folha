@@ -13,7 +13,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +30,11 @@ public class JwtService {
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
+
+    @Value("${jwt.refresh.expiration:604800000}") // 7 dias padrão
+    private long refreshExpiration;
+
+    private final SecureRandom secureRandom = new SecureRandom();
 
     public String extractLogin(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -57,6 +64,12 @@ public class JwtService {
                 .compact();
     }
 
+    public String generateRefreshToken() {
+        byte[] randomBytes = new byte[32];
+        secureRandom.nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
             final String login = extractLogin(token);
@@ -66,8 +79,16 @@ public class JwtService {
         }
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
+    }
+
+    public long getRefreshExpirationTime() {
+        return refreshExpiration;
+    }
+
+    public long getJwtExpirationTime() {
+        return jwtExpiration;
     }
 
     private Date extractExpiration(String token) {

@@ -36,6 +36,10 @@ public class Usuario implements UserDetails {
     @Size(max = 100)
     private String nome;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "funcionario_id")
+    private Funcionario funcionario;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_permissoes", joinColumns = @JoinColumn(name = "usuario_id"))
     @Column(name = "permissao")

@@ -8,7 +8,10 @@ public record UsuarioDTO(
     String login,
     String senha,
     String nome,
-    List<String> permissoes
+    List<String> permissoes,
+    Long funcionarioId,
+    String funcionarioNome,
+    String funcionarioCpf
 ) {
     public static UsuarioDTO fromEntity(Usuario usuario) {
         return new UsuarioDTO(
@@ -16,7 +19,10 @@ public record UsuarioDTO(
             usuario.getLogin(),
             null, // Não retornamos a senha no DTO
             usuario.getNome(),
-            usuario.getPermissoes()
+            usuario.getPermissoes(),
+            usuario.getFuncionario() != null ? usuario.getFuncionario().getId() : null,
+            usuario.getFuncionario() != null ? usuario.getFuncionario().getNome() : null,
+            usuario.getFuncionario() != null ? usuario.getFuncionario().getCpf() : null
         );
     }
 } 
