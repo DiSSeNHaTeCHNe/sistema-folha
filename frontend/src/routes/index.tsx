@@ -3,7 +3,7 @@ import { CircularProgress, Box } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { Login } from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
-import { Usuarios } from '../pages/Usuarios';
+import Usuarios from '../pages/Usuarios';
 import Funcionarios from '../pages/Funcionarios';
 import { FolhaPagamento } from '../pages/FolhaPagamento';
 import Rubricas from '../pages/Rubricas';

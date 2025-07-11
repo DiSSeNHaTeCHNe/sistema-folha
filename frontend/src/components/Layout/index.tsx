@@ -35,6 +35,7 @@ import {
   AccountTree,
   Receipt,
   CloudUpload,
+  ManageAccounts,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -77,6 +78,7 @@ export function Layout() {
   ];
 
   const cadastroItems = [
+    { text: 'Usuários', icon: <ManageAccounts />, path: '/usuarios' },
     { text: 'Linhas de Negócio', icon: <AccountTree />, path: '/linhas-negocio' },
     { text: 'Centros de Custo', icon: <Business />, path: '/centros-custo' },
     { text: 'Cargos', icon: <Work />, path: '/cargos' },

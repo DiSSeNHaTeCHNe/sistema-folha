@@ -3,6 +3,9 @@ export interface Usuario {
   login: string;
   nome: string;
   permissoes: string[];
+  funcionarioId?: number;
+  funcionarioNome?: string;
+  funcionarioCpf?: string;
 }
 
 export interface Funcionario {
@@ -69,8 +72,22 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
   login: string;
+  token: string;
+  refreshToken: string;
+  tokenExpiration: string;
+  refreshExpiration: string;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface TokenData {
+  token: string;
+  refreshToken: string;
+  tokenExpiration: string;
+  refreshExpiration: string;
 }
 
 export interface Cargo {
