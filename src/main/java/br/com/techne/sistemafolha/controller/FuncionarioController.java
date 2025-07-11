@@ -21,8 +21,19 @@ public class FuncionarioController {
     private final FuncionarioService funcionarioService;
 
     @GetMapping
-    @Operation(summary = "Lista todos os funcionários ativos")
-    public ResponseEntity<List<FuncionarioDTO>> listar() {
+    @Operation(summary = "Lista todos os funcionários ativos com filtros opcionais")
+    public ResponseEntity<List<FuncionarioDTO>> listar(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) Long cargoId,
+            @RequestParam(required = false) Long centroCustoId,
+            @RequestParam(required = false) Long linhaNegocioId) {
+        
+        // Se algum filtro foi fornecido, usar o método de filtros
+        if (nome != null || cargoId != null || centroCustoId != null || linhaNegocioId != null) {
+            return ResponseEntity.ok(funcionarioService.listarComFiltros(nome, cargoId, centroCustoId, linhaNegocioId));
+        }
+        
+        // Caso contrário, usar o método básico
         return ResponseEntity.ok(funcionarioService.listarTodos());
     }
 

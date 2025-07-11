@@ -28,4 +28,21 @@ public interface FuncionarioRepository extends JpaRepository<Funcionario, Long> 
     Optional<Funcionario> findByCpfAndAtivoTrue(String cpf);
     boolean existsByCpfAndAtivoTrue(String cpf);
     Long countByAtivoTrue();
+    
+    @Query("SELECT f FROM Funcionario f " +
+           "LEFT JOIN f.cargo c " +
+           "LEFT JOIN f.centroCusto cc " +
+           "LEFT JOIN cc.linhaNegocio ln " +
+           "WHERE f.ativo = true " +
+           "AND (:nomePattern IS NULL OR f.nome ILIKE :nomePattern) " +
+           "AND (:cargoId IS NULL OR c.id = :cargoId) " +
+           "AND (:centroCustoId IS NULL OR cc.id = :centroCustoId) " +
+           "AND (:linhaNegocioId IS NULL OR ln.id = :linhaNegocioId) " +
+           "ORDER BY f.nome")
+    List<Funcionario> findByFiltros(
+        @Param("nomePattern") String nomePattern,
+        @Param("cargoId") Long cargoId,
+        @Param("centroCustoId") Long centroCustoId,
+        @Param("linhaNegocioId") Long linhaNegocioId
+    );
 } 

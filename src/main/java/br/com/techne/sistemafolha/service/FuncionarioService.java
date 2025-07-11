@@ -30,6 +30,18 @@ public class FuncionarioService {
                 .collect(Collectors.toList());
     }
 
+    public List<FuncionarioDTO> listarComFiltros(String nome, Long cargoId, Long centroCustoId, Long linhaNegocioId) {
+        // Preparar pattern para busca de nome (case insensitive)
+        String nomePattern = null;
+        if (nome != null && !nome.trim().isEmpty()) {
+            nomePattern = "%" + nome + "%";
+        }
+        
+        return funcionarioRepository.findByFiltros(nomePattern, cargoId, centroCustoId, linhaNegocioId).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     public FuncionarioDTO buscarPorId(Long id) {
         return funcionarioRepository.findById(id)
                 .filter(Funcionario::getAtivo)
