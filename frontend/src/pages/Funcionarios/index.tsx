@@ -15,9 +15,10 @@ import {
   Select,
   TextField,
   Typography,
+  FormHelperText,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import api from "../../services/api";
 import { toast } from 'react-toastify';
 
@@ -39,19 +40,14 @@ interface FuncionarioLocal {
 interface Cargo {
   id: number;
   descricao: string;
-  linhaNegocio: {
-    id: number;
-    descricao: string;
-  };
+  ativo: boolean;
 }
 
 interface CentroCusto {
   id: number;
   descricao: string;
-  linhaNegocio: {
-    id: number;
-    descricao: string;
-  };
+  ativo: boolean;
+  linhaNegocioId: number;
 }
 
 interface LinhaNegocio {
@@ -85,22 +81,56 @@ export default function Funcionarios() {
   const [linhasNegocio, setLinhasNegocio] = useState<LinhaNegocio[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedFuncionario, setSelectedFuncionario] = useState<FuncionarioLocal | null>(null);
-  const { register, handleSubmit, reset, setValue, watch } = useForm<Filtros>();
+  const [formValues, setFormValues] = useState({
+    nome: '',
+    cpf: '',
+    dataAdmissao: '',
+    linhaNegocioId: '',
+    cargoId: '',
+    centroCustoId: ''
+  });
+
+  // Para novo funcionário: mostrar todos os centros de custo
+  // Para edição: também mostrar todos (a linha de negócio será atualizada automaticamente)
+  const centrosCustoFiltrados = centrosCusto;
+  const { register, handleSubmit, reset, setValue, watch } = useForm<Filtros>({
+    defaultValues: {
+      nome: '',
+      cpf: '',
+      dataAdmissao: '',
+      cargoId: '',
+      centroCustoId: '',
+      linhaNegocioId: ''
+    }
+  });
+  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, control: controlEdit } = useForm({
+    defaultValues: {
+      nome: '',
+      cpf: '',
+      dataAdmissao: '',
+      cargoId: '',
+      centroCustoId: '',
+      linhaNegocioId: ''
+    }
+  });
   const linhaNegocioId = watch('linhaNegocioId');
 
   useEffect(() => {
     carregarDados();
+    carregarTodosCargos(); // Carregar todos os cargos uma vez
+    carregarTodosCentrosCusto(); // Carregar todos os centros de custo uma vez
   }, []);
 
+
+
+  // useEffect para sincronizar o formulário com os valores do estado
   useEffect(() => {
-    if (linhaNegocioId) {
-      carregarCargosPorLinhaNegocio(linhaNegocioId);
-      carregarCentrosCustoPorLinhaNegocio(linhaNegocioId);
-    } else {
-      setCargos([]);
-      setCentrosCusto([]);
+    if (formValues.nome) {
+      resetEdit(formValues);
     }
-  }, [linhaNegocioId]);
+  }, [formValues, centrosCusto, resetEdit]);
+
+
 
   const carregarDados = async () => {
     try {
@@ -115,42 +145,68 @@ export default function Funcionarios() {
     }
   };
 
-  const carregarCargosPorLinhaNegocio = async (linhaNegocioId: number) => {
+  const carregarTodosCargos = async () => {
     try {
-      const response = await api.get(`/cargos/linha-negocio/${linhaNegocioId}`);
+      const response = await api.get('/cargos');
       setCargos(response.data);
     } catch (error) {
       toast.error('Erro ao carregar cargos');
     }
   };
 
-  const carregarCentrosCustoPorLinhaNegocio = async (linhaNegocioId: number) => {
+  const carregarTodosCentrosCusto = async () => {
     try {
-      const response = await api.get(`/centros-custo/linha-negocio/${linhaNegocioId}`);
+      const response = await api.get('/centros-custo');
       setCentrosCusto(response.data);
     } catch (error) {
       toast.error('Erro ao carregar centros de custo');
     }
   };
 
+
+
   const handleOpen = (funcionario?: FuncionarioLocal) => {
+    setOpen(true);
+    
     if (funcionario) {
       setSelectedFuncionario(funcionario);
-      setValue('nome', funcionario.nome);
-      setValue('cpf', funcionario.cpf);
-      setValue('dataAdmissao', funcionario.dataAdmissao);
-      setValue('cargoId', funcionario.cargoId);
-      setValue('centroCustoId', funcionario.centroCustoId);
+      
+      const dadosFuncionario = {
+        nome: funcionario.nome || '',
+        cpf: funcionario.cpf || '',
+        dataAdmissao: funcionario.dataAdmissao || '',
+        linhaNegocioId: funcionario.linhaNegocioId?.toString() || '',
+        cargoId: funcionario.cargoId?.toString() || '',
+        centroCustoId: funcionario.centroCustoId?.toString() || ''
+      };
+      
+      // Definir valores no estado local
+      setFormValues(dadosFuncionario);
     } else {
       setSelectedFuncionario(null);
-      reset();
+      setFormValues({
+        nome: '',
+        cpf: '',
+        dataAdmissao: '',
+        linhaNegocioId: '',
+        cargoId: '',
+        centroCustoId: ''
+      });
     }
-    setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
-    reset();
+    setSelectedFuncionario(null);
+    setFormValues({
+      nome: '',
+      cpf: '',
+      dataAdmissao: '',
+      linhaNegocioId: '',
+      cargoId: '',
+      centroCustoId: ''
+    });
+    resetEdit();
   };
 
   const onSubmit = async (data: any) => {
@@ -229,13 +285,16 @@ export default function Funcionarios() {
                     {...register('linhaNegocioId')}
                   >
                     <MenuItem value="">Todas</MenuItem>
-                    {linhasNegocio.map((linha) => (
-                      <MenuItem key={linha.id} value={linha.id}>
-                        {linha.descricao}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                                          {linhasNegocio.map((linha) => (
+                        <MenuItem key={linha.id} value={linha.id}>
+                          {linha.descricao}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <FormHelperText>
+                      Campo informativo - preenchido automaticamente pelo centro de custo
+                    </FormHelperText>
+                  </FormControl>
               </Box>
               <Box flex="1" minWidth="250px">
                 <FormControl fullWidth>
@@ -316,67 +375,124 @@ export default function Funcionarios() {
         <DialogTitle>
           {selectedFuncionario ? 'Editar Funcionário' : 'Novo Funcionário'}
         </DialogTitle>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmitEdit(onSubmit)}>
           <DialogContent>
             <Box display="flex" flexDirection="column" gap={2}>
               <TextField
                 fullWidth
                 label="Nome"
-                {...register('nome', { required: true })}
+                {...registerEdit('nome', { required: true })}
+                defaultValue={formValues.nome}
               />
               <TextField
                 fullWidth
                 label="CPF"
-                {...register('cpf', { required: true })}
+                {...registerEdit('cpf', { required: true })}
+                defaultValue={formValues.cpf}
               />
               <TextField
                 fullWidth
                 label="Data de Admissão"
                 type="date"
                 InputLabelProps={{ shrink: true }}
-                {...register('dataAdmissao', { required: true })}
+                {...registerEdit('dataAdmissao', { required: true })}
+                defaultValue={formValues.dataAdmissao}
               />
-              <FormControl fullWidth>
-                <InputLabel>Linha de Negócio</InputLabel>
-                <Select
-                  label="Linha de Negócio"
-                  {...register('linhaNegocioId', { required: true })}
-                >
-                  {linhasNegocio.map((linha) => (
-                    <MenuItem key={linha.id} value={linha.id}>
-                      {linha.descricao}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>Cargo</InputLabel>
-                <Select
-                  label="Cargo"
-                  {...register('cargoId', { required: true })}
-                  disabled={!linhaNegocioId}
-                >
-                  {cargos.map((cargo) => (
-                    <MenuItem key={cargo.id} value={cargo.id}>
-                      {cargo.descricao}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>Centro de Custo</InputLabel>
-                <Select
-                  label="Centro de Custo"
-                  {...register('centroCustoId', { required: true })}
-                  disabled={!linhaNegocioId}
-                >
-                  {centrosCusto.map((centro) => (
-                    <MenuItem key={centro.id} value={centro.id}>
-                      {centro.descricao}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Controller
+                name="cargoId"
+                control={controlEdit}
+                defaultValue={formValues.cargoId}
+                rules={{ required: 'Cargo é obrigatório' }}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Cargo</InputLabel>
+                    <Select
+                      {...field}
+                      label="Cargo"
+                      value={field.value || formValues.cargoId || ''}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // Quando mudar o cargo, limpar centro de custo e linha de negócio
+                        if (!selectedFuncionario) {
+                          const novoFormValues = {
+                            ...formValues,
+                            cargoId: e.target.value.toString(),
+                            centroCustoId: '',
+                            linhaNegocioId: ''
+                          };
+                          setFormValues(novoFormValues);
+                        }
+                      }}
+                    >
+                      {cargos.map((cargo) => (
+                        <MenuItem key={cargo.id} value={cargo.id}>
+                          {cargo.descricao}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+              <Controller
+                name="centroCustoId"
+                control={controlEdit}
+                defaultValue={formValues.centroCustoId}
+                rules={{ required: 'Centro de Custo é obrigatório' }}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Centro de Custo</InputLabel>
+                    <Select
+                      {...field}
+                      label="Centro de Custo"
+                      value={field.value || formValues.centroCustoId || ''}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // Atualizar linha de negócio automaticamente
+                        const centroSelecionado = centrosCusto.find(c => c.id === Number(e.target.value));
+                        if (centroSelecionado && centroSelecionado.linhaNegocioId) {
+                          const novoFormValues = {
+                            ...formValues,
+                            centroCustoId: e.target.value.toString(),
+                            linhaNegocioId: centroSelecionado.linhaNegocioId.toString()
+                          };
+                          setFormValues(novoFormValues);
+                        }
+                      }}
+                    >
+                      {centrosCustoFiltrados.map((centro) => (
+                        <MenuItem key={centro.id} value={centro.id}>
+                          {centro.descricao}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <FormHelperText>
+                      A seleção do centro de custo determina automaticamente a linha de negócio
+                    </FormHelperText>
+                  </FormControl>
+                )}
+              />
+              <Controller
+                name="linhaNegocioId"
+                control={controlEdit}
+                defaultValue={formValues.linhaNegocioId}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Linha de Negócio (Informativo)</InputLabel>
+                    <Select
+                      {...field}
+                      label="Linha de Negócio (Informativo)"
+                      value={field.value || formValues.linhaNegocioId || ''}
+                      disabled={true}
+                    >
+                      {linhasNegocio.map((linha) => (
+                        <MenuItem key={linha.id} value={linha.id}>
+                          {linha.descricao}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
             </Box>
           </DialogContent>
           <DialogActions>
