@@ -2,6 +2,7 @@ package br.com.techne.sistemafolha.repository;
 
 import br.com.techne.sistemafolha.model.FolhaPagamento;
 import br.com.techne.sistemafolha.model.CentroCusto;
+import br.com.techne.sistemafolha.model.LinhaNegocio;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -25,6 +26,13 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
     List<FolhaPagamento> findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(Long funcionarioId, LocalDate dataInicio, LocalDate dataFim);
     List<FolhaPagamento> findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(CentroCusto centroCusto, LocalDate dataInicio, LocalDate dataFim);
     List<FolhaPagamento> findByDataInicioBetweenAndAtivoTrue(LocalDate dataInicio, LocalDate dataFim);
+    
+    @Query("SELECT f FROM FolhaPagamento f WHERE f.linhaNegocio = :linhaNegocio AND f.dataInicio BETWEEN :dataInicio AND :dataFim AND f.ativo = true")
+    List<FolhaPagamento> findByLinhaNegocioAndDataInicioBetweenAndAtivoTrue(
+        @Param("linhaNegocio") LinhaNegocio linhaNegocio, 
+        @Param("dataInicio") LocalDate dataInicio, 
+        @Param("dataFim") LocalDate dataFim
+    );
     
     @Modifying
     @Query("UPDATE FolhaPagamento f SET f.ativo = false WHERE f.id = :id")

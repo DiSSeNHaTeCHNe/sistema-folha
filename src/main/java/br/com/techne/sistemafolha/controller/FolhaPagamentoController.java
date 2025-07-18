@@ -3,9 +3,12 @@ package br.com.techne.sistemafolha.controller;
 import br.com.techne.sistemafolha.dto.FolhaPagamentoDTO;
 import br.com.techne.sistemafolha.model.FolhaPagamento;
 import br.com.techne.sistemafolha.model.CentroCusto;
+import br.com.techne.sistemafolha.model.LinhaNegocio;
 import br.com.techne.sistemafolha.repository.FolhaPagamentoRepository;
 import br.com.techne.sistemafolha.repository.CentroCustoRepository;
+import br.com.techne.sistemafolha.repository.LinhaNegocioRepository;
 import br.com.techne.sistemafolha.exception.CentroCustoNotFoundException;
+import br.com.techne.sistemafolha.exception.LinhaNegocioNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 public class FolhaPagamentoController {
     private final FolhaPagamentoRepository folhaPagamentoRepository;
     private final CentroCustoRepository centroCustoRepository;
+    private final LinhaNegocioRepository linhaNegocioRepository;
 
     @GetMapping("/funcionario/{funcionarioId}")
     @Operation(summary = "Consulta folha de pagamento ativa por funcionário")
@@ -50,6 +54,23 @@ public class FolhaPagamentoController {
             
         List<FolhaPagamentoDTO> folha = folhaPagamentoRepository
             .findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(centroCusto, dataInicio, dataFim)
+            .stream()
+            .map(this::toDTO)
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(folha);
+    }
+
+    @GetMapping("/linha-negocio/{linhaNegocioId}")
+    @Operation(summary = "Consulta folha de pagamento ativa por linha de negócio")
+    public ResponseEntity<List<FolhaPagamentoDTO>> consultarPorLinhaNegocio(
+            @PathVariable Long linhaNegocioId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+        LinhaNegocio linhaNegocio = linhaNegocioRepository.findById(linhaNegocioId)
+            .orElseThrow(() -> new LinhaNegocioNotFoundException(linhaNegocioId));
+            
+        List<FolhaPagamentoDTO> folha = folhaPagamentoRepository
+            .findByLinhaNegocioAndDataInicioBetweenAndAtivoTrue(linhaNegocio, dataInicio, dataFim)
             .stream()
             .map(this::toDTO)
             .collect(Collectors.toList());

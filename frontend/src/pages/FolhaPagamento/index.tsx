@@ -19,14 +19,43 @@ import {
   DialogActions,
   Card,
   CardContent,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
+import { Controller, useForm } from 'react-hook-form';
 import type { FolhaPagamento } from '../../types';
 import { folhaPagamentoService } from '../../services/folhaPagamentoService';
 import { resumoFolhaPagamentoService, type ResumoFolhaPagamento } from '../../services/resumoFolhaPagamentoService';
+import api from '../../services/api';
+
+interface Funcionario {
+  id: number;
+  nome: string;
+}
+
+interface CentroCusto {
+  id: number;
+  descricao: string;
+}
+
+interface LinhaNegocio {
+  id: number;
+  descricao: string;
+}
+
+interface FiltrosFolha {
+  funcionarioId: string;
+  centroCustoId: string;
+  linhaNegocioId: string;
+  mes: string;
+  ano: string;
+}
 
 const initialForm: Omit<FolhaPagamento, 'id'> = {
   funcionarioId: 0,
@@ -71,11 +100,9 @@ const formatarDataCompetencia = (dataString: string): string => {
 
 export function FolhaPagamento() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [mes, setMes] = useState('');
-  const [ano, setAno] = useState('');
-  const [funcionarioId, setFuncionarioId] = useState('');
-  const [centroCusto, setCentroCusto] = useState('');
-  const [linhaNegocio, setLinhaNegocio] = useState('');
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([]);
+  const [linhasNegocio, setLinhasNegocio] = useState<LinhaNegocio[]>([]);
   const [folha, setFolha] = useState<FolhaPagamento[]>([]);
   const [funcionariosResumo, setFuncionariosResumo] = useState<FuncionarioResumo[]>([]);
   const [resumosFolha, setResumosFolha] = useState<ResumoFolhaPagamento[]>([]);
@@ -93,44 +120,75 @@ export function FolhaPagamento() {
   const [resumoSelecionado, setResumoSelecionado] = useState<ResumoFolhaPagamento | null>(null);
   const [mostrarFuncionarios, setMostrarFuncionarios] = useState(false);
 
-  const getPeriodo = () => {
-    if (mes && ano) {
-      const m = mes.padStart(2, '0');
-      const dataInicio = `${ano}-${m}-01`;
-      const dataFim = `${ano}-${m}-31`;
+  const { control, handleSubmit: handleSubmitFiltros, reset: resetFiltros, watch } = useForm<FiltrosFolha>({
+    defaultValues: {
+      funcionarioId: '',
+      centroCustoId: '',
+      linhaNegocioId: '',
+      mes: '',
+      ano: ''
+    }
+  });
+
+  const watchedValues = watch();
+
+  const carregarOpcoesDeFilters = async () => {
+    try {
+      const [funcionariosRes, centrosCustoRes, linhasNegocioRes] = await Promise.all([
+        api.get('/funcionarios'),
+        api.get('/centros-custo'),
+        api.get('/linhas-negocio')
+      ]);
+      
+      setFuncionarios(funcionariosRes.data);
+      setCentrosCusto(centrosCustoRes.data);
+      setLinhasNegocio(linhasNegocioRes.data);
+    } catch (error) {
+      console.error('Erro ao carregar opções de filtros:', error);
+    }
+  };
+
+  const getPeriodo = (mes?: string, ano?: string) => {
+    const mesValue = mes || watchedValues.mes;
+    const anoValue = ano || watchedValues.ano;
+    
+    if (mesValue && anoValue) {
+      const m = mesValue.padStart(2, '0');
+      const dataInicio = `${anoValue}-${m}-01`;
+      const dataFim = `${anoValue}-${m}-31`;
       return { dataInicio, dataFim };
     }
     return { dataInicio: '', dataFim: '' };
   };
 
-  const fetchFolha = async () => {
+  const fetchFolha = async (filtros?: FiltrosFolha) => {
     setLoading(true);
     try {
       let data: FolhaPagamento[] = [];
-      const { dataInicio, dataFim } = getPeriodo();
+      const { dataInicio, dataFim } = getPeriodo(filtros?.mes, filtros?.ano);
       
-      // Buscar dados da folha
-      if (funcionarioId) {
-        data = await folhaPagamentoService.buscarPorFuncionario(Number(funcionarioId), dataInicio, dataFim);
-      } else if (centroCusto) {
-        data = await folhaPagamentoService.buscarPorCentroCusto(centroCusto, dataInicio, dataFim);
-      } else if (linhaNegocio) {
-        data = await folhaPagamentoService.buscarPorLinhaNegocio(linhaNegocio, dataInicio, dataFim);
-      } else if (mes && ano) {
+      // Buscar dados da folha baseado nos filtros
+      if (filtros?.funcionarioId) {
+        data = await folhaPagamentoService.buscarPorFuncionario(Number(filtros.funcionarioId), dataInicio, dataFim);
+      } else if (filtros?.centroCustoId) {
+        data = await folhaPagamentoService.buscarPorCentroCusto(filtros.centroCustoId, dataInicio, dataFim);
+      } else if (filtros?.linhaNegocioId) {
+        data = await folhaPagamentoService.buscarPorLinhaNegocio(filtros.linhaNegocioId, dataInicio, dataFim);
+      } else if (filtros?.mes && filtros?.ano) {
         data = await folhaPagamentoService.buscarPorPeriodo(dataInicio, dataFim);
       } else {
         data = await folhaPagamentoService.listar();
       }
+      
       setFolha(data);
       
       // Buscar todos os resumos da folha
       try {
         const resumos = await resumoFolhaPagamentoService.listarTodos();
-        // Ordenar por competência em ordem decrescente (mais novo primeiro)
         const resumosOrdenados = resumos.sort((a, b) => {
           const dataA = new Date(a.competenciaInicio).getTime();
           const dataB = new Date(b.competenciaInicio).getTime();
-          return dataB - dataA; // Ordem decrescente
+          return dataB - dataA;
         });
         setResumosFolha(resumosOrdenados);
       } catch (err) {
@@ -185,16 +243,21 @@ export function FolhaPagamento() {
   };
 
   useEffect(() => {
+    carregarOpcoesDeFilters();
     fetchFolha();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  const handleFilter = async () => {
-    await fetchFolha();
+  const handleFiltrarFolha = async (filtros: FiltrosFolha) => {
+    await fetchFolha(filtros);
+  };
+
+  const handleLimparFiltros = () => {
+    resetFiltros();
+    fetchFolha();
   };
 
   const handleCloseDialog = () => {
@@ -269,40 +332,108 @@ export function FolhaPagamento() {
       </Box>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <TextField
-          label="Funcionário (ID)"
-          value={funcionarioId}
-          onChange={e => setFuncionarioId(e.target.value)}
-          type="number"
+        <FormControl variant="outlined" sx={{ minWidth: 120 }}>
+          <InputLabel id="funcionario-label">Funcionário</InputLabel>
+          <Controller
+            name="funcionarioId"
+            control={control}
+            render={({ field }) => (
+              <Select
+                labelId="funcionario-label"
+                label="Funcionário"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                fullWidth
+              >
+                <MenuItem value="">Todos</MenuItem>
+                {funcionarios.map((funcionario) => (
+                  <MenuItem key={funcionario.id} value={funcionario.id}>
+                    {funcionario.nome}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+        </FormControl>
+        <FormControl variant="outlined" sx={{ minWidth: 120 }}>
+          <InputLabel id="centro-custo-label">Centro de Custo</InputLabel>
+          <Controller
+            name="centroCustoId"
+            control={control}
+            render={({ field }) => (
+              <Select
+                labelId="centro-custo-label"
+                label="Centro de Custo"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                fullWidth
+              >
+                <MenuItem value="">Todos</MenuItem>
+                {centrosCusto.map((centro) => (
+                  <MenuItem key={centro.id} value={centro.id}>
+                    {centro.descricao}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+        </FormControl>
+        <FormControl variant="outlined" sx={{ minWidth: 120 }}>
+          <InputLabel id="linha-negocio-label">Linha de Negócio</InputLabel>
+          <Controller
+            name="linhaNegocioId"
+            control={control}
+            render={({ field }) => (
+              <Select
+                labelId="linha-negocio-label"
+                label="Linha de Negócio"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                fullWidth
+              >
+                <MenuItem value="">Todos</MenuItem>
+                {linhasNegocio.map((linha) => (
+                  <MenuItem key={linha.id} value={linha.id}>
+                    {linha.descricao}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+        </FormControl>
+        <Controller
+          name="mes"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              label="Mês"
+              type="number"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              inputProps={{ min: 1, max: 12 }}
+            />
+          )}
         />
-        <TextField
-          label="Centro de Custo"
-          value={centroCusto}
-          onChange={e => setCentroCusto(e.target.value)}
+        <Controller
+          name="ano"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              label="Ano"
+              type="number"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              inputProps={{ min: 2000, max: 2100 }}
+            />
+          )}
         />
-        <TextField
-          label="Linha de Negócio"
-          value={linhaNegocio}
-          onChange={e => setLinhaNegocio(e.target.value)}
-        />
-        <TextField
-          label="Mês"
-          type="number"
-          value={mes}
-          onChange={e => setMes(e.target.value)}
-          inputProps={{ min: 1, max: 12 }}
-        />
-        <TextField
-          label="Ano"
-          type="number"
-          value={ano}
-          onChange={e => setAno(e.target.value)}
-          inputProps={{ min: 2000, max: 2100 }}
-        />
-        <Button variant="outlined" onClick={handleFilter}>Filtrar</Button>
-        <Button variant="text" onClick={() => {
-          setFuncionarioId(''); setCentroCusto(''); setLinhaNegocio(''); setMes(''); setAno(''); fetchFolha();
-        }}>Limpar</Button>
+        <Button variant="outlined" onClick={handleSubmitFiltros(handleFiltrarFolha)}>Filtrar</Button>
+        <Button variant="text" onClick={handleLimparFiltros}>Limpar</Button>
       </Box>
 
       <Box sx={{ mb: 2 }}>
