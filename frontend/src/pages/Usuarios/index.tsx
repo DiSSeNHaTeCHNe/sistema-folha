@@ -26,7 +26,6 @@ import {
   FormControlLabel,
   Checkbox,
   FormGroup,
-      Grid,
   Alert,
   InputAdornment,
   Divider,
@@ -248,8 +247,8 @@ export default function Usuarios() {
             Filtros
           </Typography>
           <form onSubmit={handleFilterSubmit(handleFilter)}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={3}>
+            <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+              <Box flex="1" minWidth={200}>
                 <Controller
                   name="nome"
                   control={filterControl}
@@ -269,8 +268,8 @@ export default function Usuarios() {
                     />
                   )}
                 />
-              </Grid>
-              <Grid item xs={12} md={3}>
+              </Box>
+              <Box flex="1" minWidth={200}>
                 <Controller
                   name="login"
                   control={filterControl}
@@ -283,8 +282,8 @@ export default function Usuarios() {
                     />
                   )}
                 />
-              </Grid>
-              <Grid item xs={12} md={3}>
+              </Box>
+              <Box flex="1" minWidth={200}>
                 <Controller
                   name="funcionarioId"
                   control={filterControl}
@@ -306,27 +305,23 @@ export default function Usuarios() {
                     </FormControl>
                   )}
                 />
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <Box display="flex" gap={1}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    startIcon={<SearchIcon />}
-                    fullWidth
-                  >
-                    Filtrar
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={handleClearFilter}
-                    fullWidth
-                  >
-                    Limpar
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
+              </Box>
+              <Box display="flex" gap={1}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  startIcon={<SearchIcon />}
+                >
+                  Filtrar
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleClearFilter}
+                >
+                  Limpar
+                </Button>
+              </Box>
+            </Box>
           </form>
         </CardContent>
       </Card>
@@ -437,51 +432,53 @@ export default function Usuarios() {
         </DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
-            <Grid container spacing={2}>
+            <Box display="flex" flexDirection="column" gap={2}>
               {/* Dados Básicos */}
-              <Grid item xs={12}>
+              <Box>
                 <Typography variant="h6" gutterBottom>
                   <Badge sx={{ mr: 1 }} />
                   Dados Básicos
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
-              </Grid>
+              </Box>
               
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="login"
-                  control={control}
-                  rules={{ required: 'Login é obrigatório' }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Login"
-                      fullWidth
-                      error={!!errors.login}
-                      helperText={errors.login?.message}
-                    />
-                  )}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="nome"
-                  control={control}
-                  rules={{ required: 'Nome é obrigatório' }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Nome"
-                      fullWidth
-                      error={!!errors.nome}
-                      helperText={errors.nome?.message}
-                    />
-                  )}
-                />
-              </Grid>
+              <Box display="flex" gap={2} flexWrap="wrap">
+                <Box flex="1" minWidth={200}>
+                  <Controller
+                    name="login"
+                    control={control}
+                    rules={{ required: 'Login é obrigatório' }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Login"
+                        fullWidth
+                        error={!!errors.login}
+                        helperText={errors.login?.message}
+                      />
+                    )}
+                  />
+                </Box>
+                
+                <Box flex="1" minWidth={200}>
+                  <Controller
+                    name="nome"
+                    control={control}
+                    rules={{ required: 'Nome é obrigatório' }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Nome"
+                        fullWidth
+                        error={!!errors.nome}
+                        helperText={errors.nome?.message}
+                      />
+                    )}
+                  />
+                </Box>
+              </Box>
 
-              <Grid item xs={12}>
+              <Box>
                 <Controller
                   name="funcionarioId"
                   control={control}
@@ -503,93 +500,95 @@ export default function Usuarios() {
                     </FormControl>
                   )}
                 />
-              </Grid>
+              </Box>
 
               {/* Senha */}
-              <Grid item xs={12}>
+              <Box>
                 <Typography variant="h6" gutterBottom>
                   <Security sx={{ mr: 1 }} />
                   Senha
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
-              </Grid>
+              </Box>
 
               {selectedUsuario && (
-                <Grid item xs={12}>
+                <Box>
                   <Alert severity="info">
                     Deixe os campos de senha em branco para manter a senha atual
                   </Alert>
-                </Grid>
+                </Box>
               )}
 
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="senha"
-                  control={control}
-                  rules={!selectedUsuario ? { required: 'Senha é obrigatória' } : {}}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Senha"
-                      type={showPassword ? 'text' : 'password'}
-                      fullWidth
-                      error={!!errors.senha}
-                      helperText={errors.senha?.message}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowPassword(!showPassword)}
-                              edge="end"
-                            >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Grid>
+              <Box display="flex" gap={2} flexWrap="wrap">
+                <Box flex="1" minWidth={200}>
+                  <Controller
+                    name="senha"
+                    control={control}
+                    rules={!selectedUsuario ? { required: 'Senha é obrigatória' } : {}}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Senha"
+                        type={showPassword ? 'text' : 'password'}
+                        fullWidth
+                        error={!!errors.senha}
+                        helperText={errors.senha?.message}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
+                </Box>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Confirmar Senha"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  fullWidth
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  error={senha !== confirmPassword && confirmPassword !== ''}
-                  helperText={
-                    senha !== confirmPassword && confirmPassword !== '' 
-                      ? 'As senhas não coincidem' 
-                      : ''
-                  }
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          edge="end"
-                        >
-                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
+                <Box flex="1" minWidth={200}>
+                  <TextField
+                    label="Confirmar Senha"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    fullWidth
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    error={senha !== confirmPassword && confirmPassword !== ''}
+                    helperText={
+                      senha !== confirmPassword && confirmPassword !== '' 
+                        ? 'As senhas não coincidem' 
+                        : ''
+                    }
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            edge="end"
+                          >
+                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Box>
+              </Box>
 
               {/* Permissões */}
-              <Grid item xs={12}>
+              <Box>
                 <Typography variant="h6" gutterBottom>
                   <Security sx={{ mr: 1 }} />
                   Permissões
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12}>
+              <Box>
                 <Controller
                   name="permissoes"
                   control={control}
@@ -597,9 +596,9 @@ export default function Usuarios() {
                   render={({ field }) => (
                     <FormControl component="fieldset" error={!!errors.permissoes}>
                       <FormGroup>
-                        <Grid container spacing={1}>
+                        <Box display="flex" flexWrap="wrap" gap={1}>
                           {permissoesDisponiveis.map((permissao) => (
-                            <Grid item xs={12} sm={6} md={4} key={permissao}>
+                            <Box key={permissao} minWidth={200}>
                               <FormControlLabel
                                 control={
                                   <Checkbox
@@ -617,9 +616,9 @@ export default function Usuarios() {
                                 }
                                 label={permissao}
                               />
-                            </Grid>
+                            </Box>
                           ))}
-                        </Grid>
+                        </Box>
                       </FormGroup>
                       {errors.permissoes && (
                         <Typography color="error" variant="caption">
@@ -629,8 +628,8 @@ export default function Usuarios() {
                     </FormControl>
                   )}
                 />
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancelar</Button>

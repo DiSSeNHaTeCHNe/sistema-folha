@@ -85,7 +85,7 @@ export default function Funcionarios() {
   // Para novo funcionário: mostrar todos os centros de custo
   // Para edição: também mostrar todos (a linha de negócio será atualizada automaticamente)
   const centrosCustoFiltrados = centrosCusto;
-  const { register, handleSubmit, reset, setValue, watch, control } = useForm<Filtros>({
+  const { register, handleSubmit, reset, control } = useForm<Filtros>({
     defaultValues: {
       nome: '',
       cpf: '',
@@ -105,7 +105,6 @@ export default function Funcionarios() {
       linhaNegocioId: ''
     }
   });
-  const linhaNegocioId = watch('linhaNegocioId');
 
   useEffect(() => {
     carregarDados();

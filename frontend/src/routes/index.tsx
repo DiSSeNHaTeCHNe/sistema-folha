@@ -15,6 +15,7 @@ import { Layout } from '../components/Layout';
 import Cargos from '../pages/Cargos';
 import CentrosCusto from '../pages/CentrosCusto';
 import LinhasNegocio from '../pages/LinhasNegocio';
+import Organograma from '../pages/Organograma';
 
 function PrivateRoute() {
   const { user, loading } = useAuth();
@@ -55,6 +56,7 @@ export function RouterWithAuth() {
               <Route path="/cargos" element={<Cargos />} />
               <Route path="/centros-custo" element={<CentrosCusto />} />
               <Route path="/linhas-negocio" element={<LinhasNegocio />} />
+              <Route path="/organograma" element={<Organograma />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Route>

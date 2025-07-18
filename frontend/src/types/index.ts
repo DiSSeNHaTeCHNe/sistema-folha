@@ -117,3 +117,42 @@ export interface ImportacaoResponse {
   registrosProcessados?: number;
   erros?: string[];
 } 
+
+// Tipos para Organograma
+export interface NoOrganograma {
+  id: number;
+  nome: string;
+  descricao?: string;
+  nivel: number;
+  parentId?: number;
+  posicao: number;
+  ativo: boolean;
+  funcionarios: FuncionarioOrganograma[];
+  centrosCusto: CentroCustoOrganograma[];
+  children?: NoOrganograma[];
+}
+
+export interface FuncionarioOrganograma {
+  id: number;
+  funcionarioId: number;
+  noOrganogramaId: number;
+  funcionario: Funcionario;
+}
+
+export interface CentroCustoOrganograma {
+  id: number;
+  centroCustoId: number;
+  noOrganogramaId: number;
+  centroCusto: CentroCusto;
+}
+
+export interface NoOrganogramaFormData {
+  nome: string;
+  descricao?: string;
+  parentId?: number;
+}
+
+export interface OrganogramaTree {
+  node: NoOrganograma;
+  children: OrganogramaTree[];
+}

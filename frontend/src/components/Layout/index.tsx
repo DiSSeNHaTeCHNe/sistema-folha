@@ -36,6 +36,7 @@ import {
   Receipt,
   CloudUpload,
   ManageAccounts,
+  Category,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -71,6 +72,7 @@ export function Layout() {
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
     { text: 'Funcionários', icon: <People />, path: '/funcionarios' },
+    { text: 'Organograma', icon: <AccountTree />, path: '/organograma' },
     { text: 'Folha de Pagamento', icon: <AttachMoney />, path: '/folha-pagamento' },
     { text: 'Benefícios', icon: <CardGiftcard />, path: '/beneficios' },
     { text: 'Importação', icon: <CloudUpload />, path: '/importacao' },
@@ -79,7 +81,7 @@ export function Layout() {
 
   const cadastroItems = [
     { text: 'Usuários', icon: <ManageAccounts />, path: '/usuarios' },
-    { text: 'Linhas de Negócio', icon: <AccountTree />, path: '/linhas-negocio' },
+    { text: 'Linhas de Negócio', icon: <Category />, path: '/linhas-negocio' },
     { text: 'Centros de Custo', icon: <Business />, path: '/centros-custo' },
     { text: 'Cargos', icon: <Work />, path: '/cargos' },
     { text: 'Rubricas', icon: <Receipt />, path: '/rubricas' },
