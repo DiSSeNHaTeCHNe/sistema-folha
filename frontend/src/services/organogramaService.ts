@@ -4,27 +4,27 @@ import type { NoOrganograma, NoOrganogramaFormData, FuncionarioOrganograma, Cent
 export const organogramaService = {
   // Operações de Nós
   listarTodos: async (): Promise<NoOrganograma[]> => {
-    const response = await api.get('/organograma/nos');
+    const response = await api.get('/organograma');
     return response.data;
   },
 
   buscarPorId: async (id: number): Promise<NoOrganograma> => {
-    const response = await api.get(`/organograma/nos/${id}`);
+    const response = await api.get(`/organograma/${id}`);
     return response.data;
   },
 
   criarNo: async (data: NoOrganogramaFormData): Promise<NoOrganograma> => {
-    const response = await api.post('/organograma/nos', data);
+    const response = await api.post('/organograma', data);
     return response.data;
   },
 
   atualizarNo: async (id: number, data: Partial<NoOrganogramaFormData>): Promise<NoOrganograma> => {
-    const response = await api.put(`/organograma/nos/${id}`, data);
+    const response = await api.put(`/organograma/${id}`, data);
     return response.data;
   },
 
   removerNo: async (id: number): Promise<void> => {
-    await api.delete(`/organograma/nos/${id}`);
+    await api.delete(`/organograma/${id}`);
   },
 
   // Operações de estrutura hierárquica
@@ -34,44 +34,41 @@ export const organogramaService = {
   },
 
   moverNo: async (noId: number, novoParentId?: number, novaPosicao?: number): Promise<NoOrganograma> => {
-    const response = await api.put(`/organograma/nos/${noId}/mover`, {
-      parentId: novoParentId,
-      posicao: novaPosicao
-    });
+    const params = new URLSearchParams();
+    if (novoParentId !== undefined) params.append('novoParentId', novoParentId.toString());
+    if (novaPosicao !== undefined) params.append('novaPosicao', novaPosicao.toString());
+    
+    const response = await api.put(`/organograma/${noId}/mover?${params.toString()}`);
     return response.data;
   },
 
   // Operações de Funcionários
   adicionarFuncionario: async (noId: number, funcionarioId: number): Promise<FuncionarioOrganograma> => {
-    const response = await api.post(`/organograma/nos/${noId}/funcionarios`, {
-      funcionarioId
-    });
+    const response = await api.post(`/organograma/${noId}/funcionarios/${funcionarioId}`);
     return response.data;
   },
 
   removerFuncionario: async (noId: number, funcionarioId: number): Promise<void> => {
-    await api.delete(`/organograma/nos/${noId}/funcionarios/${funcionarioId}`);
+    await api.delete(`/organograma/${noId}/funcionarios/${funcionarioId}`);
   },
 
   listarFuncionarios: async (noId: number): Promise<FuncionarioOrganograma[]> => {
-    const response = await api.get(`/organograma/nos/${noId}/funcionarios`);
+    const response = await api.get(`/organograma/${noId}/funcionarios`);
     return response.data;
   },
 
   // Operações de Centros de Custo
   adicionarCentroCusto: async (noId: number, centroCustoId: number): Promise<CentroCustoOrganograma> => {
-    const response = await api.post(`/organograma/nos/${noId}/centros-custo`, {
-      centroCustoId
-    });
+    const response = await api.post(`/organograma/${noId}/centros-custo/${centroCustoId}`);
     return response.data;
   },
 
   removerCentroCusto: async (noId: number, centroCustoId: number): Promise<void> => {
-    await api.delete(`/organograma/nos/${noId}/centros-custo/${centroCustoId}`);
+    await api.delete(`/organograma/${noId}/centros-custo/${centroCustoId}`);
   },
 
   listarCentrosCusto: async (noId: number): Promise<CentroCustoOrganograma[]> => {
-    const response = await api.get(`/organograma/nos/${noId}/centros-custo`);
+    const response = await api.get(`/organograma/${noId}/centros-custo`);
     return response.data;
   }
 }; 

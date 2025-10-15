@@ -1187,6 +1187,393 @@
           }
         }
       ]
+    },
+    {
+      "name": "Organograma",
+      "item": [
+        {
+          "name": "Listar Todos os Nós",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma"]
+            },
+            "description": "Lista todos os nós do organograma ativos"
+          }
+        },
+        {
+          "name": "Buscar Nó por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1"]
+            },
+            "description": "Busca um nó do organograma pelo ID"
+          }
+        },
+        {
+          "name": "Criar Nó",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Diretoria Executiva\",\n    \"descricao\": \"Diretoria responsável pela gestão executiva da empresa\",\n    \"parentId\": null,\n    \"posicao\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma"]
+            },
+            "description": "Cria um novo nó do organograma"
+          }
+        },
+        {
+          "name": "Criar Nó Filho",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Gerência de TI\",\n    \"descricao\": \"Gerência responsável pela área de tecnologia\",\n    \"parentId\": 1,\n    \"posicao\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma"]
+            },
+            "description": "Cria um nó filho do organograma"
+          }
+        },
+        {
+          "name": "Atualizar Nó",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Diretoria Executiva Atualizada\",\n    \"descricao\": \"Descrição atualizada\",\n    \"parentId\": null,\n    \"posicao\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1"]
+            },
+            "description": "Atualiza um nó do organograma"
+          }
+        },
+        {
+          "name": "Remover Nó",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1"]
+            },
+            "description": "Remove um nó do organograma (apenas se não tiver filhos)"
+          }
+        },
+        {
+          "name": "Remover Nó com Filhos",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/cascata",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "cascata"]
+            },
+            "description": "Remove um nó do organograma e todos os seus filhos"
+          }
+        },
+        {
+          "name": "Obter Árvore Completa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/arvore",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "arvore"]
+            },
+            "description": "Obtém a árvore completa do organograma ativo"
+          }
+        },
+        {
+          "name": "Obter Filhos de um Nó",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/filhos?parentId=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "filhos"],
+              "query": [
+                {
+                  "key": "parentId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Obtém os nós filhos de um nó pai"
+          }
+        },
+        {
+          "name": "Mover Nó",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/mover?novoParentId=2&novaPosicao=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "mover"],
+              "query": [
+                {
+                  "key": "novoParentId",
+                  "value": "2"
+                },
+                {
+                  "key": "novaPosicao",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Move um nó para outra posição na hierarquia"
+          }
+        },
+        {
+          "name": "Obter Organograma Ativo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/ativo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "ativo"]
+            },
+            "description": "Obtém o organograma atualmente ativo"
+          }
+        },
+        {
+          "name": "Ativar Organograma",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/ativar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "ativar"]
+            },
+            "description": "Ativa um organograma (nó raiz)"
+          }
+        },
+        {
+          "name": "Desativar Organograma",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/desativar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "desativar"]
+            },
+            "description": "Desativa o organograma atual"
+          }
+        },
+        {
+          "name": "Associar Funcionário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/funcionarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "funcionarios", "1"]
+            },
+            "description": "Associa um funcionário a um nó do organograma"
+          }
+        },
+        {
+          "name": "Desassociar Funcionário",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/funcionarios/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "funcionarios", "1"]
+            },
+            "description": "Desassocia um funcionário de um nó do organograma"
+          }
+        },
+        {
+          "name": "Listar Funcionários do Nó",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/funcionarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "funcionarios"]
+            },
+            "description": "Lista funcionários associados a um nó"
+          }
+        },
+        {
+          "name": "Associar Centro de Custo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/centros-custo/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "centros-custo", "1"]
+            },
+            "description": "Associa um centro de custo a um nó do organograma"
+          }
+        },
+        {
+          "name": "Desassociar Centro de Custo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/centros-custo/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "centros-custo", "1"]
+            },
+            "description": "Desassocia um centro de custo de um nó do organograma"
+          }
+        },
+        {
+          "name": "Listar Centros de Custo do Nó",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organograma/1/centros-custo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organograma", "1", "centros-custo"]
+            },
+            "description": "Lista centros de custo associados a um nó"
+          }
+        }
+      ]
     }
   ],
   "variable": [

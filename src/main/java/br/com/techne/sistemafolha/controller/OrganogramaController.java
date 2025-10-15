@@ -43,11 +43,20 @@ public class OrganogramaController {
     @PostMapping
     @Operation(summary = "Cadastra um novo nó do organograma")
     public ResponseEntity<NoOrganogramaDTO> cadastrar(
-            @Parameter(description = "Dados do nó") @Valid @RequestBody NoOrganogramaDTO dto) {
+            @Parameter(description = "Dados do nó") @Valid @RequestBody NoOrganogramaCreateDTO dto) {
         try {
-            return ResponseEntity.ok(organogramaService.cadastrar(dto));
+            System.out.println("Recebendo requisição para criar nó: " + dto);
+            NoOrganogramaDTO resultado = organogramaService.cadastrar(dto);
+            System.out.println("Nó criado com sucesso: " + resultado.id());
+            return ResponseEntity.ok(resultado);
         } catch (NoOrganogramaNotFoundException | IllegalArgumentException e) {
+            System.err.println("Erro ao criar nó: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            System.err.println("Erro inesperado ao criar nó: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
     }
 

@@ -131,15 +131,15 @@ const NoOrganogramaCard: React.FC<{
           <Box mb={2}>
             <Typography variant="subtitle2" display="flex" alignItems="center" gap={1} mb={1}>
               <PersonIcon fontSize="small" />
-              Funcionários ({no.funcionarios.length})
+              Funcionários ({no.funcionarios?.length || 0})
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={1}>
-              {no.funcionarios.map((func) => (
+              {no.funcionarios?.map((func) => (
                 <Chip
                   key={func.id}
-                  label={func.funcionario.nome}
+                  label={func.nome}
                   size="small"
-                  onDelete={() => onRemoveFuncionario(no.id, func.funcionarioId)}
+                  onDelete={() => onRemoveFuncionario(no.id, func.id)}
                   color="primary"
                   variant="outlined"
                 />
@@ -151,15 +151,15 @@ const NoOrganogramaCard: React.FC<{
           <Box>
             <Typography variant="subtitle2" display="flex" alignItems="center" gap={1} mb={1}>
               <BusinessIcon fontSize="small" />
-              Centros de Custo ({no.centrosCusto.length})
+              Centros de Custo ({no.centrosCusto?.length || 0})
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={1}>
-              {no.centrosCusto.map((centro) => (
+              {no.centrosCusto?.map((centro) => (
                 <Chip
                   key={centro.id}
-                  label={centro.centroCusto.descricao}
+                  label={centro.descricao}
                   size="small"
-                  onDelete={() => onRemoveCentroCusto(no.id, centro.centroCustoId)}
+                  onDelete={() => onRemoveCentroCusto(no.id, centro.id)}
                   color="secondary"
                   variant="outlined"
                 />
@@ -170,7 +170,7 @@ const NoOrganogramaCard: React.FC<{
       </Card>
 
       {/* Nós filhos */}
-      {no.children.length > 0 && (
+      {no.children && no.children.length > 0 && (
         <Box ml={4} mt={2}>
           {no.children.map((child) => (
             <NoOrganogramaCard
@@ -283,7 +283,12 @@ export default function Organograma() {
 
     // Criar mapa de nós
     nos.forEach(no => {
-      nosMap.set(no.id, { ...no, children: [] });
+      nosMap.set(no.id, { 
+        ...no, 
+        children: [],
+        funcionarios: no.funcionarios || [],
+        centrosCusto: no.centrosCusto || []
+      });
     });
 
     // Construir hierarquia
@@ -415,11 +420,11 @@ export default function Organograma() {
     }
   };
 
-  const nosIds = nos.flatMap(no => getAllNodeIds(no)).map(id => `no-${id}`);
-
   const getAllNodeIds = (no: NoOrganogramaWithChildren): number[] => {
     return [no.id, ...no.children.flatMap(child => getAllNodeIds(child))];
   };
+
+  const nosIds = nos.flatMap(no => getAllNodeIds(no)).map(id => `no-${id}`);
 
   if (loading) {
     return (

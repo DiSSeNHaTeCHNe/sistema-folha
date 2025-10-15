@@ -41,10 +41,12 @@ public class OrganogramaService {
     }
 
     @Transactional
-    public NoOrganogramaDTO cadastrar(NoOrganogramaDTO dto) {
+    public NoOrganogramaDTO cadastrar(NoOrganogramaCreateDTO dto) {
         logger.info("Cadastrando novo nó do organograma: {}", dto.nome());
         
-        NoOrganograma no = toEntity(dto);
+        NoOrganograma no = new NoOrganograma();
+        no.setNome(dto.nome());
+        no.setDescricao(dto.descricao());
         
         // Se tem parent, buscar e validar
         if (dto.parentId() != null) {
@@ -52,6 +54,25 @@ public class OrganogramaService {
                     .orElseThrow(() -> new NoOrganogramaNotFoundException("Nó pai não encontrado com ID: " + dto.parentId()));
             no.setParent(parent);
             no.setNivel(parent.getNivel() + 1);
+        } else {
+            no.setNivel(0);
+        }
+        
+        // Definir posição automaticamente se não fornecida
+        if (dto.posicao() != null) {
+            no.setPosicao(dto.posicao());
+        } else {
+            // Calcular próxima posição disponível
+            List<NoOrganograma> irmaos = no.getParent() != null ? 
+                noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(no.getParent()) :
+                noOrganogramaRepository.findByParentIsNullAndAtivoTrueOrderByPosicao();
+            
+            int proximaPosicao = irmaos.stream()
+                    .mapToInt(NoOrganograma::getPosicao)
+                    .max()
+                    .orElse(-1) + 1;
+            
+            no.setPosicao(proximaPosicao);
         }
         
         no = noOrganogramaRepository.save(no);

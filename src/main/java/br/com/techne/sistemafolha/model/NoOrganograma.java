@@ -77,8 +77,10 @@ public class NoOrganograma {
         dataAtualizacao = LocalDateTime.now();
         
         // Se o parent existe, definir o nível baseado no parent
-        if (parent != null) {
+        if (parent != null && parent.getNivel() != null) {
             nivel = parent.getNivel() + 1;
+        } else {
+            nivel = 0;
         }
     }
 

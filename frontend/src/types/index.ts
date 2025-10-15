@@ -125,11 +125,19 @@ export interface NoOrganograma {
   descricao?: string;
   nivel: number;
   parentId?: number;
+  parentNome?: string;
   posicao: number;
   ativo: boolean;
-  funcionarios: FuncionarioOrganograma[];
-  centrosCusto: CentroCustoOrganograma[];
+  organogramaAtivo?: boolean;
+  funcionarioIds?: number[];
+  funcionarios?: Funcionario[];
+  centroCustoIds?: number[];
+  centrosCusto?: CentroCusto[];
   children?: NoOrganograma[];
+  dataCriacao?: string;
+  dataAtualizacao?: string;
+  criadoPor?: string;
+  atualizadoPor?: string;
 }
 
 export interface FuncionarioOrganograma {
