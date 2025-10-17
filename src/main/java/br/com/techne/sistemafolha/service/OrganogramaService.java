@@ -29,7 +29,7 @@ public class OrganogramaService {
     public List<NoOrganogramaDTO> listarTodos() {
         logger.info("Listando todos os nós do organograma");
         return noOrganogramaRepository.findByAtivoTrue().stream()
-                .map(this::toDTO)
+                .map(this::toDTOCompleto)
                 .collect(Collectors.toList());
     }
 
@@ -267,9 +267,16 @@ public class OrganogramaService {
         Funcionario funcionario = funcionarioRepository.findByIdAndAtivoTrue(funcionarioId)
                 .orElseThrow(() -> new FuncionarioNotFoundException(funcionarioId));
 
-        // Verificar se já existe associação
+        // Verificar se já existe associação neste nó
         if (funcionarioOrganogramaRepository.existsByFuncionarioAndNoOrganograma(funcionario, no)) {
-            throw new IllegalArgumentException("Funcionário já está associado a este nó");
+            throw new IllegalArgumentException("Funcionário '" + funcionario.getNome() + "' já está associado ao nó '" + no.getNome() + "'");
+        }
+
+        // Verificar se funcionário já está em outro nó
+        List<FuncionarioOrganograma> associacoesExistentes = funcionarioOrganogramaRepository.findByFuncionario(funcionario);
+        if (!associacoesExistentes.isEmpty()) {
+            NoOrganograma noExistente = associacoesExistentes.get(0).getNoOrganograma();
+            throw new IllegalArgumentException("Funcionário '" + funcionario.getNome() + "' já está associado ao nó '" + noExistente.getNome() + "'. Um funcionário só pode estar em um nó por vez.");
         }
 
         FuncionarioOrganograma associacao = new FuncionarioOrganograma();

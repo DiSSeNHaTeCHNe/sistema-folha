@@ -2,7 +2,7 @@ spring:
   application:
     name: sistema-folha
   datasource:
-    url: jdbc:postgresql://localhost:5433/sistema_folha
+    url: jdbc:postgresql://192.168.68.110:5433/sistema_folha
     username: postgres
     password: postgres
   jpa:
