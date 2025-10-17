@@ -15,6 +15,8 @@ import {
   Paper,
   ToggleButtonGroup,
   ToggleButton,
+  Backdrop,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -335,6 +337,7 @@ export default function Organograma() {
   const [selectedNo, setSelectedNo] = useState<NoOrganograma | null>(null);
   const [parentIdForNew, setParentIdForNew] = useState<number | undefined>();
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false); // Novo estado para operações
   const [activeItem, setActiveItem] = useState<DragItem | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
   const [filtroFuncionario, setFiltroFuncionario] = useState('');
@@ -357,9 +360,15 @@ export default function Organograma() {
     carregarDados();
   }, []);
 
-  const carregarDados = async () => {
+  const carregarDados = async (silencioso = false) => {
     try {
-      setLoading(true);
+      // Só mostra loading na primeira carga
+      if (!silencioso) {
+        setLoading(true);
+      } else {
+        setUpdating(true);
+      }
+      
       const [nosData, funcionariosData, centrosCustoData] = await Promise.all([
         organogramaService.listarTodos(),
         funcionarioService.listar(),
@@ -420,6 +429,7 @@ export default function Organograma() {
       toast.error('Erro ao carregar dados do organograma');
     } finally {
       setLoading(false);
+      setUpdating(false);
     }
   };
 
@@ -486,6 +496,8 @@ export default function Organograma() {
     console.log('📝 onSubmit chamado:', { data, selectedNo });
     
     try {
+      setUpdating(true);
+      
       if (selectedNo) {
         // Para atualização, enviar DTO completo com os campos existentes
         const payload: Partial<NoOrganograma> = {
@@ -514,22 +526,25 @@ export default function Organograma() {
         toast.success('Nó criado com sucesso');
       }
       handleCloseDialog();
-      await carregarDados();
+      await carregarDados(true); // true = silencioso, não mostra loading
     } catch (error: any) {
       console.error('❌ Erro ao salvar nó:', error);
       console.error('❌ Detalhes:', error?.response?.data);
       toast.error(error?.response?.data?.message || error?.message || 'Erro ao salvar nó');
+      setUpdating(false);
     }
   };
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este nó? Todos os subnós também serão excluídos.')) {
       try {
+        setUpdating(true);
         await organogramaService.removerNo(id);
         toast.success('Nó excluído com sucesso');
-        carregarDados();
+        await carregarDados(true);
       } catch (error) {
         toast.error('Erro ao excluir nó');
+        setUpdating(false);
       }
     }
   };
@@ -591,12 +606,14 @@ export default function Organograma() {
       console.log('👤 Adicionando funcionário:', { funcionarioId, noId });
       
       try {
+        setUpdating(true);
         await organogramaService.adicionarFuncionario(noId, funcionarioId);
         toast.success('Funcionário adicionado ao nó');
-        carregarDados();
+        await carregarDados(true);
       } catch (error: any) {
         console.error('❌ Erro ao adicionar funcionário:', error);
         toast.error(error?.response?.data?.message || 'Erro ao adicionar funcionário');
+        setUpdating(false);
       }
     } else if (activeId.startsWith('centroCusto-') && overId.startsWith('no-')) {
       const centroCustoId = parseInt(activeId.replace('centroCusto-', ''));
@@ -605,12 +622,14 @@ export default function Organograma() {
       console.log('🏢 Adicionando centro de custo:', { centroCustoId, noId });
       
       try {
+        setUpdating(true);
         await organogramaService.adicionarCentroCusto(noId, centroCustoId);
         toast.success('Centro de custo adicionado ao nó');
-        carregarDados();
+        await carregarDados(true);
       } catch (error: any) {
         console.error('❌ Erro ao adicionar centro de custo:', error);
         toast.error(error?.response?.data?.message || 'Erro ao adicionar centro de custo');
+        setUpdating(false);
       }
     } else {
       console.log('⚠️ Combinação não reconhecida:', { activeId, overId });
@@ -619,21 +638,25 @@ export default function Organograma() {
 
   const handleRemoveFuncionario = async (noId: number, funcionarioId: number) => {
     try {
+      setUpdating(true);
       await organogramaService.removerFuncionario(noId, funcionarioId);
       toast.success('Funcionário removido do nó');
-      carregarDados();
+      await carregarDados(true);
     } catch (error) {
       toast.error('Erro ao remover funcionário');
+      setUpdating(false);
     }
   };
 
   const handleRemoveCentroCusto = async (noId: number, centroCustoId: number) => {
     try {
+      setUpdating(true);
       await organogramaService.removerCentroCusto(noId, centroCustoId);
       toast.success('Centro de custo removido do nó');
-      carregarDados();
+      await carregarDados(true);
     } catch (error) {
       toast.error('Erro ao remover centro de custo');
+      setUpdating(false);
     }
   };
 
@@ -679,14 +702,33 @@ export default function Organograma() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
-        <Typography>Carregando organograma...</Typography>
+      <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height="calc(100vh - 200px)" gap={2}>
+        <CircularProgress size={60} />
+        <Typography variant="h6" color="text.secondary">
+          Carregando organograma...
+        </Typography>
       </Box>
     );
   }
 
   return (
-    <DndContext
+    <>
+      {/* Backdrop com spinner durante operações */}
+      <Backdrop
+        sx={{ 
+          color: '#fff', 
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          backdropFilter: 'blur(2px)',
+        }}
+        open={updating}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+          <CircularProgress color="inherit" size={60} />
+          <Typography variant="h6">Processando...</Typography>
+        </Box>
+      </Backdrop>
+
+      <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
@@ -989,5 +1031,6 @@ export default function Organograma() {
         ) : null}
       </DragOverlay>
     </DndContext>
+    </>
   );
 } 
