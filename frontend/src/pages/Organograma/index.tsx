@@ -24,7 +24,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   Person as PersonIcon,
   Business as BusinessIcon,
-  DragIndicator as DragIcon,
   AccountTree as TreeIcon,
 } from '@mui/icons-material';
 import {
@@ -34,14 +33,11 @@ import {
   useSensors,
   PointerSensor,
   KeyboardSensor,
+  DragOverlay,
+  useDroppable,
+  useDraggable,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { organogramaService } from '../../services/organogramaService';
@@ -73,39 +69,31 @@ const NoOrganogramaCard: React.FC<{
   onRemoveFuncionario: (noId: number, funcionarioId: number) => void;
   onRemoveCentroCusto: (noId: number, centroCustoId: number) => void;
 }> = ({ no, onEdit, onDelete, onAddChild, onRemoveFuncionario, onRemoveCentroCusto }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  // Usar useDroppable para aceitar itens arrastados
+  const { setNodeRef, isOver } = useDroppable({
     id: `no-${no.id}`,
+    data: {
+      type: 'no-organograma',
+      noId: no.id,
+    },
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
   return (
-    <div ref={setNodeRef} style={style}>
+    <Box mb={2}>
       <Card
+        ref={setNodeRef}
         sx={{
-          mb: 2,
           border: '2px solid',
-          borderColor: isDragging ? 'primary.main' : 'grey.300',
+          borderColor: isOver ? 'primary.main' : 'grey.300',
+          bgcolor: isOver ? 'primary.light' : 'background.paper',
           minHeight: 200,
+          transition: 'all 0.2s ease',
+          position: 'relative',
         }}
       >
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Box display="flex" alignItems="center" gap={1}>
-              <IconButton size="small" {...attributes} {...listeners}>
-                <DragIcon />
-              </IconButton>
               <Typography variant="h6">{no.nome}</Typography>
             </Box>
             <Box>
@@ -169,6 +157,7 @@ const NoOrganogramaCard: React.FC<{
         </CardContent>
       </Card>
 
+      
       {/* Nós filhos */}
       {no.children && no.children.length > 0 && (
         <Box ml={4} mt={2}>
@@ -185,7 +174,7 @@ const NoOrganogramaCard: React.FC<{
           ))}
         </Box>
       )}
-    </div>
+    </Box>
   );
 };
 
@@ -198,16 +187,17 @@ const DraggableItem: React.FC<{
     listeners,
     setNodeRef,
     transform,
-    transition,
     isDragging,
-  } = useSortable({
+  } = useDraggable({
     id: item.id,
+    data: item,
   });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 9999 : 'auto',
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   return (
@@ -220,6 +210,9 @@ const DraggableItem: React.FC<{
           '&:hover': { bgcolor: 'grey.100' },
           border: isDragging ? '2px solid' : '1px solid',
           borderColor: isDragging ? 'primary.main' : 'grey.300',
+          '&:active': {
+            cursor: 'grabbing',
+          },
         }}
       >
         <Typography variant="body2" display="flex" alignItems="center" gap={1}>
@@ -242,14 +235,17 @@ export default function Organograma() {
   const [selectedNo, setSelectedNo] = useState<NoOrganograma | null>(null);
   const [parentIdForNew, setParentIdForNew] = useState<number | undefined>();
   const [loading, setLoading] = useState(true);
+  const [activeItem, setActiveItem] = useState<DragItem | null>(null);
 
   const { register, handleSubmit, reset, setValue } = useForm<NoOrganogramaFormData>();
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor)
   );
 
   useEffect(() => {
@@ -265,12 +261,57 @@ export default function Organograma() {
         centroCustoService.listarTodos(),
       ]);
 
+      console.log('🔍 Dados recebidos do backend:', {
+        totalNos: nosData.length,
+        primeiroNo: nosData[0],
+        temFuncionarioIds: nosData[0]?.funcionarioIds,
+      });
+
+      // Enriquecer nós com objetos completos de funcionários e centros de custo
+      const nosEnriquecidos = nosData.map(no => ({
+        ...no,
+        funcionarios: no.funcionarioIds 
+          ? no.funcionarioIds
+              .map(id => funcionariosData.find(f => f.id === id))
+              .filter(Boolean) as Funcionario[]
+          : [],
+        centrosCusto: no.centroCustoIds
+          ? no.centroCustoIds
+              .map(id => centrosCustoData.find(cc => cc.id === id))
+              .filter(Boolean) as CentroCusto[]
+          : [],
+      }));
+
+      console.log('✅ Nós enriquecidos:', nosEnriquecidos[0]);
+
       // Construir árvore hierárquica
-      const arvore = construirArvore(nosData);
+      const arvore = construirArvore(nosEnriquecidos);
+      
+      // Obter IDs de funcionários já associados
+      const funcionariosAssociadosIds = new Set<number>();
+      nosEnriquecidos.forEach(no => {
+        if (no.funcionarioIds) {
+          no.funcionarioIds.forEach(id => funcionariosAssociadosIds.add(id));
+        }
+      });
+      
+      // Filtrar apenas funcionários não associados
+      const funcionariosDisponiveis = funcionariosData.filter(
+        f => !funcionariosAssociadosIds.has(f.id)
+      );
+      
+      console.log('📊 Estatísticas:', {
+        totalFuncionarios: funcionariosData.length,
+        funcionariosAssociados: funcionariosAssociadosIds.size,
+        funcionariosDisponiveis: funcionariosDisponiveis.length,
+        nosComFuncionarios: nosEnriquecidos.filter(n => n.funcionarios.length > 0).length,
+      });
+      
       setNos(arvore);
-      setFuncionarios(funcionariosData);
+      setFuncionarios(funcionariosDisponiveis);
       setCentrosCusto(centrosCustoData);
     } catch (error) {
+      console.error('❌ Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados do organograma');
     } finally {
       setLoading(false);
@@ -364,39 +405,86 @@ export default function Organograma() {
     }
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const activeId = active.id as string;
+    
+    // Identificar o item sendo arrastado
+    if (activeId.startsWith('funcionario-')) {
+      const funcionarioId = parseInt(activeId.replace('funcionario-', ''));
+      const funcionario = funcionarios.find(f => f.id === funcionarioId);
+      if (funcionario) {
+        setActiveItem({
+          id: activeId,
+          type: 'funcionario',
+          data: funcionario,
+        });
+      }
+    } else if (activeId.startsWith('centroCusto-')) {
+      const centroCustoId = parseInt(activeId.replace('centroCusto-', ''));
+      const centroCusto = centrosCusto.find(c => c.id === centroCustoId);
+      if (centroCusto) {
+        setActiveItem({
+          id: activeId,
+          type: 'centroCusto',
+          data: centroCusto,
+        });
+      }
+    }
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
-    if (!over) return;
+    console.log('🎯 DragEnd:', { 
+      activeId: active.id, 
+      overId: over?.id,
+      overData: over?.data
+    });
+    
+    setActiveItem(null);
+    
+    if (!over) {
+      console.log('❌ Sem alvo de drop');
+      return;
+    }
 
     const activeId = active.id as string;
     const overId = over.id as string;
+
+    console.log('🔍 Processando drop:', { activeId, overId });
 
     // Se é um funcionário ou centro de custo sendo arrastado para um nó
     if (activeId.startsWith('funcionario-') && overId.startsWith('no-')) {
       const funcionarioId = parseInt(activeId.replace('funcionario-', ''));
       const noId = parseInt(overId.replace('no-', ''));
       
+      console.log('👤 Adicionando funcionário:', { funcionarioId, noId });
+      
       try {
         await organogramaService.adicionarFuncionario(noId, funcionarioId);
         toast.success('Funcionário adicionado ao nó');
         carregarDados();
-      } catch (error) {
-        toast.error('Erro ao adicionar funcionário');
+      } catch (error: any) {
+        console.error('❌ Erro ao adicionar funcionário:', error);
+        toast.error(error?.response?.data?.message || 'Erro ao adicionar funcionário');
       }
-    }
-
-    if (activeId.startsWith('centroCusto-') && overId.startsWith('no-')) {
+    } else if (activeId.startsWith('centroCusto-') && overId.startsWith('no-')) {
       const centroCustoId = parseInt(activeId.replace('centroCusto-', ''));
       const noId = parseInt(overId.replace('no-', ''));
+      
+      console.log('🏢 Adicionando centro de custo:', { centroCustoId, noId });
       
       try {
         await organogramaService.adicionarCentroCusto(noId, centroCustoId);
         toast.success('Centro de custo adicionado ao nó');
         carregarDados();
-      } catch (error) {
-        toast.error('Erro ao adicionar centro de custo');
+      } catch (error: any) {
+        console.error('❌ Erro ao adicionar centro de custo:', error);
+        toast.error(error?.response?.data?.message || 'Erro ao adicionar centro de custo');
       }
+    } else {
+      console.log('⚠️ Combinação não reconhecida:', { activeId, overId });
     }
   };
 
@@ -420,12 +508,6 @@ export default function Organograma() {
     }
   };
 
-  const getAllNodeIds = (no: NoOrganogramaWithChildren): number[] => {
-    return [no.id, ...no.children.flatMap(child => getAllNodeIds(child))];
-  };
-
-  const nosIds = nos.flatMap(no => getAllNodeIds(no)).map(id => `no-${id}`);
-
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="400px">
@@ -438,6 +520,7 @@ export default function Organograma() {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <Box p={3}>
@@ -463,34 +546,32 @@ export default function Organograma() {
                 Estrutura do Organograma
               </Typography>
               
-              <SortableContext items={nosIds}>
-                {nos.length === 0 ? (
-                  <Box 
-                    display="flex" 
-                    flexDirection="column" 
-                    alignItems="center" 
-                    justifyContent="center" 
-                    height={400}
-                    color="text.secondary"
-                  >
-                    <TreeIcon sx={{ fontSize: 64, mb: 2 }} />
-                    <Typography variant="h6">Nenhum nó criado</Typography>
-                    <Typography>Clique em "Novo Nó Raiz" para começar</Typography>
-                  </Box>
-                ) : (
-                  nos.map((no) => (
-                    <NoOrganogramaCard
-                      key={no.id}
-                      no={no}
-                      onEdit={handleOpenDialog}
-                      onDelete={handleDelete}
-                      onAddChild={(parentId) => handleOpenDialog(undefined, parentId)}
-                      onRemoveFuncionario={handleRemoveFuncionario}
-                      onRemoveCentroCusto={handleRemoveCentroCusto}
-                    />
-                  ))
-                )}
-              </SortableContext>
+              {nos.length === 0 ? (
+                <Box 
+                  display="flex" 
+                  flexDirection="column" 
+                  alignItems="center" 
+                  justifyContent="center" 
+                  height={400}
+                  color="text.secondary"
+                >
+                  <TreeIcon sx={{ fontSize: 64, mb: 2 }} />
+                  <Typography variant="h6">Nenhum nó criado</Typography>
+                  <Typography>Clique em "Novo Nó Raiz" para começar</Typography>
+                </Box>
+              ) : (
+                nos.map((no) => (
+                  <NoOrganogramaCard
+                    key={no.id}
+                    no={no}
+                    onEdit={handleOpenDialog}
+                    onDelete={handleDelete}
+                    onAddChild={(parentId) => handleOpenDialog(undefined, parentId)}
+                    onRemoveFuncionario={handleRemoveFuncionario}
+                    onRemoveCentroCusto={handleRemoveCentroCusto}
+                  />
+                ))
+              )}
             </Paper>
           </Box>
 
@@ -510,18 +591,16 @@ export default function Organograma() {
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                  <SortableContext items={funcionarios.map(f => `funcionario-${f.id}`)}>
-                    {funcionarios.map((funcionario) => (
-                      <DraggableItem
-                        key={`funcionario-${funcionario.id}`}
-                        item={{
-                          id: `funcionario-${funcionario.id}`,
-                          type: 'funcionario',
-                          data: funcionario,
-                        }}
-                      />
-                    ))}
-                  </SortableContext>
+                  {funcionarios.map((funcionario) => (
+                    <DraggableItem
+                      key={`funcionario-${funcionario.id}`}
+                      item={{
+                        id: `funcionario-${funcionario.id}`,
+                        type: 'funcionario',
+                        data: funcionario,
+                      }}
+                    />
+                  ))}
                 </AccordionDetails>
               </Accordion>
 
@@ -534,18 +613,16 @@ export default function Organograma() {
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                  <SortableContext items={centrosCusto.map(c => `centroCusto-${c.id}`)}>
-                    {centrosCusto.map((centroCusto) => (
-                      <DraggableItem
-                        key={`centroCusto-${centroCusto.id}`}
-                        item={{
-                          id: `centroCusto-${centroCusto.id}`,
-                          type: 'centroCusto',
-                          data: centroCusto,
-                        }}
-                      />
-                    ))}
-                  </SortableContext>
+                  {centrosCusto.map((centroCusto) => (
+                    <DraggableItem
+                      key={`centroCusto-${centroCusto.id}`}
+                      item={{
+                        id: `centroCusto-${centroCusto.id}`,
+                        type: 'centroCusto',
+                        data: centroCusto,
+                      }}
+                    />
+                  ))}
                 </AccordionDetails>
               </Accordion>
             </Paper>
@@ -588,6 +665,36 @@ export default function Organograma() {
           </form>
         </Dialog>
       </Box>
+
+      {/* DragOverlay para preview visual durante drag */}
+      <DragOverlay
+        dropAnimation={{
+          duration: 200,
+          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+        }}
+        style={{ zIndex: 10000 }}
+      >
+        {activeItem ? (
+          <Paper
+            sx={{
+              p: 1,
+              cursor: 'grabbing',
+              border: '2px solid',
+              borderColor: 'primary.main',
+              bgcolor: 'background.paper',
+              boxShadow: 3,
+            }}
+          >
+            <Typography variant="body2" display="flex" alignItems="center" gap={1}>
+              {activeItem.type === 'funcionario' ? <PersonIcon fontSize="small" /> : <BusinessIcon fontSize="small" />}
+              {activeItem.type === 'funcionario' 
+                ? (activeItem.data as Funcionario).nome 
+                : (activeItem.data as CentroCusto).descricao
+              }
+            </Typography>
+          </Paper>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 } 
