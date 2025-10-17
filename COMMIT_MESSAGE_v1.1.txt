@@ -1,0 +1,65 @@
+feat: adiciona visualização em gráfico do organograma com zoom/pan
+
+Implementada nova funcionalidade de visualização do organograma em modo
+mapa mental interativo usando ReactFlow.
+
+## Novos Recursos
+
+- Toggle para alternar entre visualização Lista (tradicional) e Gráfico (novo)
+- Navegação intuitiva com zoom/pan usando mouse
+- MiniMap para overview e navegação rápida pela estrutura completa
+- Layout automático hierárquico com centralização inteligente de nós
+- Controles de zoom (+/-), fit view e lock
+- Nós customizados exibindo todas as informações
+- Todas funcionalidades de edição mantidas no modo gráfico
+
+## Implementação
+
+- Criado componente `OrganogramaGrafico` com ReactFlow
+- Integrado toggle no componente principal `Organograma`
+- Algoritmo de layout hierárquico automático
+- Conversão de estrutura de árvore para nós/edges do ReactFlow
+- Performance otimizada para hierarquias complexas
+
+## Dependências
+
+- Adicionada: reactflow@^11.x
+
+## Arquivos
+
+### Criados
+- frontend/src/components/OrganogramaGrafico/index.tsx
+- relatorios/MELHORIA_VISUALIZACAO_GRAFICO_ORGANOGRAMA.md
+- CHANGELOG_v1.1.md
+- COMMIT_MESSAGE_v1.1.txt
+
+### Modificados
+- frontend/src/pages/Organograma/index.tsx
+- frontend/package.json
+- frontend/package-lock.json
+- README.md
+- relatorios/CONHECIMENTO_CONSOLIDADO_ORGANOGRAMA.md
+
+## Breaking Changes
+
+Nenhum - 100% backward compatible
+
+## Testes
+
+- ✅ Compilação TypeScript sem erros
+- ✅ Build do frontend bem-sucedido (5.81s)
+- ✅ Lint sem erros
+- ✅ Todas funcionalidades existentes preservadas
+
+## Documentação
+
+Documentação completa disponível em:
+- relatorios/MELHORIA_VISUALIZACAO_GRAFICO_ORGANOGRAMA.md
+- CHANGELOG_v1.1.md
+
+## Versão
+
+v1.0 → v1.1
+
+Closes: #1 - Visualização em Gráfico do Organograma
+

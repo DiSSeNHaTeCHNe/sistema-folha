@@ -3,6 +3,27 @@
 ## Descrição
 Sistema completo para controle de folha de pagamento, desenvolvido com Spring Boot no backend e React no frontend.
 
+## 📋 Changelog
+
+### Versão 1.1 (17/10/2025)
+✅ **Nova Funcionalidade - Visualização em Gráfico do Organograma**
+- Adicionado modo de visualização tipo mapa mental com zoom/pan
+- Toggle para alternar entre modo Lista (tradicional) e Gráfico (novo)
+- Biblioteca ReactFlow integrada para navegação intuitiva
+- MiniMap para overview da estrutura completa
+- Layout automático hierárquico com centralização inteligente
+- Todas funcionalidades de edição mantidas no modo gráfico
+- Performance otimizada para hierarquias complexas
+- 📄 Documentação detalhada: `relatorios/MELHORIA_VISUALIZACAO_GRAFICO_ORGANOGRAMA.md`
+
+**Dependências adicionadas:**
+- `reactflow: ^11.x` - Visualização de grafos interativos
+
+**Arquivos modificados:**
+- `frontend/src/pages/Organograma/index.tsx` - Integração do toggle
+- `frontend/src/components/OrganogramaGrafico/index.tsx` - Novo componente
+- `frontend/package.json` - Nova dependência
+
 ## Tecnologias Utilizadas
 
 ### Backend
@@ -20,10 +41,13 @@ Sistema completo para controle de folha de pagamento, desenvolvido com Spring Bo
 ### Frontend
 - React 18
 - TypeScript
-- Material-UI
+- Material-UI v7
+- ReactFlow (visualização de grafos)
 - Vite
 - Axios
 - React Router
+- React Hook Form
+- @dnd-kit (drag & drop)
 - ESLint
 - Prettier
 
