@@ -81,6 +81,7 @@ export default function Funcionarios() {
   const [linhasNegocio, setLinhasNegocio] = useState<LinhaNegocio[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedFuncionario, setSelectedFuncionario] = useState<FuncionarioLocal | null>(null);
+  const [hoveredCardId, setHoveredCardId] = useState<number | null>(null);
 
   // Para novo funcionário: mostrar todos os centros de custo
   // Para edição: também mostrar todos (a linha de negócio será atualizada automaticamente)
@@ -354,35 +355,178 @@ export default function Funcionarios() {
         </CardContent>
       </Card>
 
-      <Box display="flex" flexWrap="wrap" gap={2}>
-        {funcionarios.map((funcionario) => (
-          <Box key={funcionario.id} flex="1" minWidth="300px" maxWidth="400px">
-            <Card>
-              <CardContent>
-                <Typography variant="h6">{funcionario.nome}</Typography>
-                <Typography color="textSecondary">CPF: {funcionario.cpf}</Typography>
-                <Typography color="textSecondary">
-                  Data de Admissão: {formatarDataCompetencia(funcionario.dataAdmissao)}
-                </Typography>
-                <Typography color="textSecondary">Cargo: {funcionario.cargoDescricao || 'N/A'}</Typography>
-                <Typography color="textSecondary">
-                  Centro de Custo: {funcionario.centroCustoDescricao || 'N/A'}
-                </Typography>
-                <Typography color="textSecondary">
-                  Linha de Negócio: {funcionario.linhaNegocioDescricao || 'N/A'}
-                </Typography>
-                <Box display="flex" justifyContent="flex-end" mt={2}>
-                  <IconButton onClick={() => handleOpen(funcionario)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(funcionario.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </CardContent>
-            </Card>
-          </Box>
-        ))}
+      <Box 
+        sx={{ 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 2,
+          '@media (max-width: 1200px)': {
+            gridTemplateColumns: 'repeat(2, 1fr)',
+          },
+          '@media (max-width: 768px)': {
+            gridTemplateColumns: '1fr',
+          },
+        }}
+      >
+        {funcionarios.map((funcionario) => {
+          const isHovered = hoveredCardId === funcionario.id;
+          const showDetails = isHovered;
+
+          return (
+            <Box 
+              key={funcionario.id}
+              sx={{
+                position: 'relative',
+                height: '85px', // Espaço fixo reservado no grid
+              }}
+            >
+              <Card
+                onMouseEnter={() => setHoveredCardId(funcionario.id)}
+                onMouseLeave={() => setHoveredCardId(null)}
+                sx={{
+                  position: 'absolute', // Sempre absolute para nunca afetar o layout
+                  top: 0,
+                  left: 0,
+                  right: showDetails ? 'auto' : 0,
+                  transition: 'all 0.3s ease-in-out',
+                  cursor: 'pointer',
+                  zIndex: showDetails ? 1000 : 1,
+                  width: showDetails ? '350px' : '100%',
+                  height: showDetails ? 'auto' : '85px',
+                  minHeight: showDetails ? '280px' : '85px',
+                  transform: showDetails ? 'scale(1.05)' : 'scale(1)',
+                  boxShadow: showDetails 
+                    ? '0 8px 24px rgba(0,0,0,0.15)' 
+                    : '0 2px 4px rgba(0,0,0,0.1)',
+                  '&:hover': {
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  },
+                }}
+              >
+                <CardContent>
+                  {/* Modo Compacto - Sempre visível */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      minHeight: '48px',
+                    }}
+                  >
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: showDetails ? 'normal' : 'nowrap',
+                        flex: 1,
+                        pr: 1,
+                      }}
+                    >
+                      {funcionario.nome}
+                    </Typography>
+                    
+                    <Box display="flex" gap={0.5}>
+                      <IconButton 
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpen(funcionario);
+                        }}
+                        title="Editar"
+                        sx={{
+                          color: 'primary.main',
+                          '&:hover': {
+                            backgroundColor: 'primary.light',
+                            color: 'white',
+                          },
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton 
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(funcionario.id);
+                        }}
+                        title="Excluir"
+                        sx={{
+                          color: 'error.main',
+                          '&:hover': {
+                            backgroundColor: 'error.light',
+                            color: 'white',
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+
+                  {/* Detalhes - Só aparecem no hover */}
+                  {showDetails && (
+                    <Box 
+                      sx={{ 
+                        mt: 2,
+                        pt: 2,
+                        borderTop: '1px solid #e0e0e0',
+                        animation: 'fadeIn 0.3s ease-in-out',
+                        '@keyframes fadeIn': {
+                          '0%': {
+                            opacity: 0,
+                            transform: 'translateY(-10px)',
+                          },
+                          '100%': {
+                            opacity: 1,
+                            transform: 'translateY(0)',
+                          },
+                        },
+                      }}
+                    >
+                      <Typography 
+                        color="textSecondary" 
+                        variant="body2"
+                        sx={{ mb: 1 }}
+                      >
+                        <strong>CPF:</strong> {funcionario.cpf}
+                      </Typography>
+                      <Typography 
+                        color="textSecondary"
+                        variant="body2"
+                        sx={{ mb: 1 }}
+                      >
+                        <strong>Data de Admissão:</strong> {formatarDataCompetencia(funcionario.dataAdmissao)}
+                      </Typography>
+                      <Typography 
+                        color="textSecondary"
+                        variant="body2"
+                        sx={{ mb: 1 }}
+                      >
+                        <strong>Cargo:</strong> {funcionario.cargoDescricao || 'N/A'}
+                      </Typography>
+                      <Typography 
+                        color="textSecondary"
+                        variant="body2"
+                        sx={{ mb: 1 }}
+                      >
+                        <strong>Centro de Custo:</strong> {funcionario.centroCustoDescricao || 'N/A'}
+                      </Typography>
+                      <Typography 
+                        color="textSecondary"
+                        variant="body2"
+                      >
+                        <strong>Linha de Negócio:</strong> {funcionario.linhaNegocioDescricao || 'N/A'}
+                      </Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Box>
+          );
+        })}
       </Box>
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
