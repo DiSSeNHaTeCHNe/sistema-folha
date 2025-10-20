@@ -48,9 +48,10 @@ api.interceptors.response.use(
   },
   async (error: any) => {
     const originalRequest = error.config;
+    const isRefreshRequest = originalRequest?.url?.includes('/auth/refresh') || false;
     
-    // Se o erro é 401 (token expirado) e não é uma tentativa de refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Se o erro é 401 ou 403 (token expirado/inválido) e não é uma tentativa de refresh
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry && !isRefreshRequest) {
       // Marcar a requisição como tentativa de retry
       originalRequest._retry = true;
       
@@ -129,6 +130,13 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+    
+    // Se o erro é 401/403 e é do próprio endpoint de refresh, fazer logout
+    if ((error.response?.status === 401 || error.response?.status === 403) && isRefreshRequest) {
+      console.log('Refresh token inválido ou expirado, fazendo logout...');
+      TokenService.clearTokens();
+      window.dispatchEvent(new CustomEvent('auth:logout'));
     }
     
     return Promise.reject(error);
