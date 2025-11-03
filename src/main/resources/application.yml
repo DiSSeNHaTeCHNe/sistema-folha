@@ -17,11 +17,23 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+  # Configurações para upload de arquivos
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+      file-size-threshold: 2KB
 
 server:
   port: 8083
   servlet:
     context-path: /api
+  # Configurações para upload de arquivos grandes
+  connection-timeout: 300000 # 5 minutos
+  tomcat:
+    max-http-post-size: 50MB
+    max-http-form-post-size: 50MB
 
 springdoc:
   api-docs:

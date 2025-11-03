@@ -10,6 +10,7 @@ const importacaoService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000, // 5 minutos para operações de importação
     });
     
     return response.data;
@@ -23,6 +24,7 @@ const importacaoService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000, // 5 minutos para operações de importação
     });
     
     return response.data;
@@ -36,6 +38,7 @@ const importacaoService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000, // 5 minutos para operações de importação
     });
     
     return response.data;
