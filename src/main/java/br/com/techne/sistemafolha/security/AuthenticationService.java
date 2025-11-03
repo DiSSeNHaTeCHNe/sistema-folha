@@ -1,10 +1,13 @@
 package br.com.techne.sistemafolha.security;
 
+import br.com.techne.sistemafolha.dto.AcessoUsuarioDTO;
 import br.com.techne.sistemafolha.dto.LoginDTO;
 import br.com.techne.sistemafolha.dto.TokenDTO;
+import br.com.techne.sistemafolha.model.NoOrganograma;
 import br.com.techne.sistemafolha.model.RefreshToken;
 import br.com.techne.sistemafolha.model.Usuario;
 import br.com.techne.sistemafolha.repository.UsuarioRepository;
+import br.com.techne.sistemafolha.service.OrganogramaAcessoService;
 import br.com.techne.sistemafolha.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -18,8 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,7 @@ public class AuthenticationService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
+    private final OrganogramaAcessoService organogramaAcessoService;
 
     @Transactional
     public TokenDTO authenticate(LoginDTO loginDTO) {
@@ -66,6 +70,9 @@ public class AuthenticationService {
             LocalDateTime tokenExpiration = LocalDateTime.now().plusSeconds(jwtService.getJwtExpirationTime() / 1000);
             LocalDateTime refreshExpiration = refreshToken.getDataExpiracao();
             
+            // Busca informações de acesso baseadas no organograma
+            AcessoUsuarioDTO acessoUsuario = obterAcessoUsuario(usuario.getId());
+            
             logger.info("Token JWT e refresh token gerados com sucesso para o usuário: {}", loginDTO.login());
 
             return new TokenDTO(
@@ -73,7 +80,8 @@ public class AuthenticationService {
                 jwtToken, 
                 refreshToken.getToken(),
                 tokenExpiration,
-                refreshExpiration
+                refreshExpiration,
+                acessoUsuario
             );
         } catch (Exception e) {
             logger.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
@@ -106,6 +114,9 @@ public class AuthenticationService {
         LocalDateTime tokenExpiration = LocalDateTime.now().plusSeconds(jwtService.getJwtExpirationTime() / 1000);
         LocalDateTime refreshExpiration = newRefreshToken.getDataExpiracao();
         
+        // Busca informações de acesso baseadas no organograma
+        AcessoUsuarioDTO acessoUsuario = obterAcessoUsuario(usuario.getId());
+        
         logger.info("Tokens renovados com sucesso para o usuário: {}", usuario.getLogin());
         
         return new TokenDTO(
@@ -113,7 +124,8 @@ public class AuthenticationService {
             newJwtToken, 
             newRefreshToken.getToken(),
             tokenExpiration,
-            refreshExpiration
+            refreshExpiration,
+            acessoUsuario
         );
     }
 
@@ -125,5 +137,28 @@ public class AuthenticationService {
             refreshTokenService.revogarToken(refreshTokenString);
             logger.info("Refresh token revogado no logout");
         }
+    }
+    
+    /**
+     * Obtém as informações de acesso do usuário baseadas no organograma.
+     */
+    private AcessoUsuarioDTO obterAcessoUsuario(Long usuarioId) {
+        Optional<NoOrganograma> noOpt = organogramaAcessoService.obterNoDoUsuario(usuarioId);
+        Set<Long> centrosAcessiveis = organogramaAcessoService.obterCentrosCustoAcessiveis(usuarioId);
+        boolean acessoTotal = organogramaAcessoService.usuarioTemAcessoTotal(usuarioId);
+        
+        AcessoUsuarioDTO.AcessoUsuarioDTOBuilder builder = AcessoUsuarioDTO.builder()
+            .centrosCustoAcessiveis(centrosAcessiveis)
+            .acessoTotal(acessoTotal)
+            .quantidadeCentrosAcessiveis(centrosAcessiveis.size());
+        
+        if (noOpt.isPresent()) {
+            NoOrganograma no = noOpt.get();
+            builder.noOrganogramaId(no.getId())
+                   .noOrganogramaNome(no.getNome())
+                   .nivel(no.getNivel());
+        }
+        
+        return builder.build();
     }
 } 

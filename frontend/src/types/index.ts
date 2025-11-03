@@ -71,12 +71,22 @@ export interface LoginRequest {
   senha: string;
 }
 
+export interface AcessoUsuario {
+  noOrganogramaId?: number;
+  noOrganogramaNome?: string;
+  nivel?: number;
+  centrosCustoAcessiveis: number[];
+  acessoTotal: boolean;
+  quantidadeCentrosAcessiveis: number;
+}
+
 export interface LoginResponse {
   login: string;
   token: string;
   refreshToken: string;
   tokenExpiration: string;
   refreshExpiration: string;
+  acessoUsuario?: AcessoUsuario;
 }
 
 export interface RefreshTokenRequest {

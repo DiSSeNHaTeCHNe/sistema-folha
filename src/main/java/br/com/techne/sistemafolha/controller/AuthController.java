@@ -3,12 +3,18 @@ package br.com.techne.sistemafolha.controller;
 import br.com.techne.sistemafolha.dto.LoginDTO;
 import br.com.techne.sistemafolha.dto.RefreshTokenRequest;
 import br.com.techne.sistemafolha.dto.TokenDTO;
+import br.com.techne.sistemafolha.model.Usuario;
+import br.com.techne.sistemafolha.repository.UsuarioRepository;
 import br.com.techne.sistemafolha.security.AuthenticationService;
+import br.com.techne.sistemafolha.service.OrganogramaAcessoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -16,9 +22,15 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthenticationService authenticationService;
+    private final OrganogramaAcessoService organogramaAcessoService;
+    private final UsuarioRepository usuarioRepository;
 
-    public AuthController(AuthenticationService authenticationService) {
+    public AuthController(AuthenticationService authenticationService,
+                         OrganogramaAcessoService organogramaAcessoService,
+                         UsuarioRepository usuarioRepository) {
         this.authenticationService = authenticationService;
+        this.organogramaAcessoService = organogramaAcessoService;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @PostMapping("/login")
@@ -38,5 +50,17 @@ public class AuthController {
     public ResponseEntity<Void> logout(@RequestBody @Valid RefreshTokenRequest request) {
         authenticationService.logout(request.refreshToken());
         return ResponseEntity.ok().build();
+    }
+    
+    @GetMapping("/acesso")
+    @Operation(summary = "Obtém informações de acesso do usuário", 
+               description = "Retorna os centros de custo e nó do organograma que o usuário pode acessar")
+    public ResponseEntity<Map<String, Object>> obterInformacoesAcesso(Authentication authentication) {
+        String login = authentication.getName();
+        Usuario usuario = usuarioRepository.findByLoginAndAtivoTrue(login)
+            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        
+        Map<String, Object> info = organogramaAcessoService.obterInformacoesAcesso(usuario.getId());
+        return ResponseEntity.ok(info);
     }
 } 
