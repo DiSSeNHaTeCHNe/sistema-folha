@@ -19,6 +19,9 @@ public interface ResumoFolhaPagamentoRepository extends JpaRepository<ResumoFolh
     
     Optional<ResumoFolhaPagamento> findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(LocalDate competenciaInicio, LocalDate competenciaFim);
     
+    List<ResumoFolhaPagamento> findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
+        LocalDate competenciaInicio, LocalDate competenciaFim, Boolean decimoTerceiro);
+    
     @Query("SELECT r FROM ResumoFolhaPagamento r WHERE r.ativo = true ORDER BY r.dataImportacao DESC")
     List<ResumoFolhaPagamento> findLatestResumos();
     

@@ -44,6 +44,9 @@ public class ResumoFolhaPagamento {
     @Column(name = "data_importacao")
     private LocalDateTime dataImportacao;
     
+    @Column(name = "decimo_terceiro")
+    private Boolean decimoTerceiro = false;
+    
     @Column(name = "ativo")
     private Boolean ativo = true;
 } 

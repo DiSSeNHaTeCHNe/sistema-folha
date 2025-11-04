@@ -2,9 +2,11 @@ import api from './api';
 import type { ImportacaoResponse } from '../types';
 
 const importacaoService = {
-  importarFolhaAdp: async (arquivo: File): Promise<ImportacaoResponse> => {
+  importarFolhaAdp: async (arquivo: File, decimoTerceiro: boolean = false, confirmarSubstituicao: boolean = false): Promise<ImportacaoResponse> => {
     const formData = new FormData();
     formData.append('arquivo', arquivo);
+    formData.append('decimoTerceiro', decimoTerceiro.toString());
+    formData.append('confirmarSubstituicao', confirmarSubstituicao.toString());
     
     const response = await api.post('/importacao/folha-adp', formData, {
       headers: {

@@ -46,4 +46,6 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
     
     @Query("SELECT f FROM FolhaPagamento f WHERE f.funcionario.id = :funcionarioId AND f.ativo = true AND f.dataInicio = :competenciaInicio AND f.dataFim = :competenciaFim")
     List<FolhaPagamento> findByFuncionarioIdAndCompetenciaAndAtivoTrue(@Param("funcionarioId") Long funcionarioId, @Param("competenciaInicio") LocalDate competenciaInicio, @Param("competenciaFim") LocalDate competenciaFim);
+    
+    List<FolhaPagamento> findByDataInicioAndDataFim(LocalDate dataInicio, LocalDate dataFim);
 } 

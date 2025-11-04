@@ -10,6 +10,7 @@ export interface ResumoFolhaPagamento {
   competenciaInicio: string;
   competenciaFim: string;
   dataImportacao: string;
+  decimoTerceiro: boolean;
   ativo: boolean;
 }
 

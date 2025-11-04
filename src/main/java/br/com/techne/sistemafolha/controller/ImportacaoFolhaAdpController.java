@@ -25,7 +25,10 @@ public class ImportacaoFolhaAdpController {
     @PostMapping("/folha-adp")
     @Operation(summary = "Importa arquivo de folha de pagamento ADP", 
                description = "Importa um arquivo de texto com layout específico do ADP contendo dados da folha de pagamento")
-    public ResponseEntity<ImportacaoFolhaAdpResponseDTO> importarFolhaAdp(@RequestParam("arquivo") MultipartFile arquivo) {
+    public ResponseEntity<ImportacaoFolhaAdpResponseDTO> importarFolhaAdp(
+            @RequestParam("arquivo") MultipartFile arquivo,
+            @RequestParam(value = "decimoTerceiro", required = false, defaultValue = "false") Boolean decimoTerceiro,
+            @RequestParam(value = "confirmarSubstituicao", required = false, defaultValue = "false") Boolean confirmarSubstituicao) {
         
         try {
             // Validações básicas
@@ -40,7 +43,7 @@ public class ImportacaoFolhaAdpController {
             }
 
             // Executa a importação
-            List<FolhaPagamento> folhasPagamento = importacaoFolhaAdpService.importarFolhaAdp(arquivo);
+            List<FolhaPagamento> folhasPagamento = importacaoFolhaAdpService.importarFolhaAdp(arquivo, decimoTerceiro, confirmarSubstituicao);
             
             return ResponseEntity.ok(ImportacaoFolhaAdpResponseDTO.success(
                 arquivo.getOriginalFilename(), 
@@ -48,6 +51,16 @@ public class ImportacaoFolhaAdpController {
                 folhasPagamento
             ));
             
+        } catch (br.com.techne.sistemafolha.exception.FolhaDuplicadaException e) {
+            // Retorna status 409 (Conflict) para indicar duplicidade que requer confirmação
+            return ResponseEntity.status(409)
+                .body(ImportacaoFolhaAdpResponseDTO.conflict(
+                    e.getMessage(), 
+                    arquivo.getOriginalFilename(),
+                    e.getCompetenciaInicio(),
+                    e.getCompetenciaFim(),
+                    e.isDecimoTerceiro()
+                ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ImportacaoFolhaAdpResponseDTO.error("Erro ao importar arquivo ADP: " + e.getMessage(), arquivo.getOriginalFilename()));

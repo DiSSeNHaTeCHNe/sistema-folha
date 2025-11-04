@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -57,14 +59,19 @@ export default function Importacao() {
   const folhaAdpFileRef = useRef<HTMLInputElement>(null);
 
   const [helpOpen, setHelpOpen] = useState(false);
+  const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   const [beneficiosFileName, setBeneficiosFileName] = useState('');
   const [folhaAdpFileName, setFolhaAdpFileName] = useState('');
+  const [isDecimoTerceiro, setIsDecimoTerceiro] = useState(false);
 
   const handleFileUpload = async (
     file: File | null,
     tipo: 'beneficios' | 'folhaAdp',
-    setState: React.Dispatch<React.SetStateAction<UploadState>>
+    setState: React.Dispatch<React.SetStateAction<UploadState>>,
+    decimoTerceiro?: boolean
   ) => {
     if (!file) {
       toast.error('Por favor, selecione um arquivo');
@@ -93,7 +100,7 @@ export default function Importacao() {
       
       switch (tipo) {
         case 'folhaAdp':
-          response = await importacaoService.importarFolhaAdp(file);
+          response = await importacaoService.importarFolhaAdp(file, decimoTerceiro || false);
           break;
         case 'beneficios':
           response = await importacaoService.importarBeneficios(file);
@@ -115,6 +122,20 @@ export default function Importacao() {
 
         const tipoNome = tipo === 'folhaAdp' ? 'folha ADP' : 'benefícios';
         toast.success(`Arquivo de ${tipoNome} importado com sucesso!`);
+        
+        // Limpar campos para próxima importação
+        if (tipo === 'folhaAdp') {
+          setFolhaAdpFileName('');
+          setIsDecimoTerceiro(false);
+          if (folhaAdpFileRef.current) {
+            folhaAdpFileRef.current.value = '';
+          }
+        } else if (tipo === 'beneficios') {
+          setBeneficiosFileName('');
+          if (beneficiosFileRef.current) {
+            beneficiosFileRef.current.value = '';
+          }
+        }
       } else {
         setState({
           loading: false,
@@ -129,6 +150,20 @@ export default function Importacao() {
         }
       }
     } catch (error: any) {
+      // Verificar se é um conflito (status 409)
+      if (error.response?.status === 409) {
+        const conflictData = error.response.data;
+        setConflictMessage(conflictData.message);
+        setPendingFile(file);
+        setConflictDialogOpen(true);
+        setState({
+          loading: false,
+          success: false,
+          error: null,
+        });
+        return;
+      }
+      
       const errorMessage = error.response?.data?.message || 'Erro ao importar arquivo';
       setState({
         loading: false,
@@ -162,7 +197,7 @@ export default function Importacao() {
 
   const handleFolhaAdpUpload = () => {
     const file = folhaAdpFileRef.current?.files?.[0] || null;
-    handleFileUpload(file, 'folhaAdp', setFolhaAdpState);
+    handleFileUpload(file, 'folhaAdp', setFolhaAdpState, isDecimoTerceiro);
   };
 
   const resetBeneficiosState = () => {
@@ -184,9 +219,60 @@ export default function Importacao() {
       error: null,
     });
     setFolhaAdpFileName('');
+    setIsDecimoTerceiro(false);
     if (folhaAdpFileRef.current) {
       folhaAdpFileRef.current.value = '';
     }
+  };
+
+  const handleConfirmSubstituicao = async () => {
+    setConflictDialogOpen(false);
+    if (pendingFile) {
+      // Reenviar com flag de confirmação
+      setFolhaAdpState({ loading: true, success: false, error: null });
+      try {
+        const response = await importacaoService.importarFolhaAdp(pendingFile, isDecimoTerceiro, true);
+        if (response.success) {
+          setFolhaAdpState({
+            loading: false,
+            success: true,
+            error: null,
+            registrosProcessados: response.registrosProcessados,
+            erros: response.erros,
+            arquivo: response.arquivo,
+            tamanho: response.tamanho,
+          });
+          toast.success('Folha ADP importada com sucesso! A folha anterior foi substituída.');
+          
+          // Limpar campos para próxima importação
+          setFolhaAdpFileName('');
+          setIsDecimoTerceiro(false);
+          if (folhaAdpFileRef.current) {
+            folhaAdpFileRef.current.value = '';
+          }
+        }
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.message || 'Erro ao importar arquivo';
+        setFolhaAdpState({
+          loading: false,
+          success: false,
+          error: errorMessage,
+        });
+        toast.error(errorMessage);
+      } finally {
+        setPendingFile(null);
+      }
+    }
+  };
+
+  const handleCancelSubstituicao = () => {
+    setConflictDialogOpen(false);
+    setPendingFile(null);
+    setFolhaAdpState({
+      loading: false,
+      success: false,
+      error: null,
+    });
   };
 
   return (
@@ -295,6 +381,20 @@ export default function Importacao() {
               <Typography variant="body2" color="text.secondary" paragraph>
                 Importe arquivos de texto (.txt) com layout específico do ADP contendo dados da folha de pagamento.
               </Typography>
+
+              <Box mb={2}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isDecimoTerceiro}
+                      onChange={(e) => setIsDecimoTerceiro(e.target.checked)}
+                      color="secondary"
+                    />
+                  }
+                  label="Marcar como folha de 13º salário"
+                  sx={{ mb: 2 }}
+                />
+              </Box>
 
               <Box mb={2}>
                 <input
@@ -406,6 +506,31 @@ export default function Importacao() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog de Confirmação de Substituição */}
+      <Dialog open={conflictDialogOpen} onClose={handleCancelSubstituicao}>
+        <DialogTitle>Confirmar Substituição de Folha</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {conflictMessage}
+          </Alert>
+          <Typography variant="body2">
+            Esta ação irá desativar a folha de pagamento existente e todos os seus registros,
+            substituindo-os pelos dados do novo arquivo.
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 2, fontWeight: 'bold' }}>
+            Deseja continuar?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelSubstituicao} color="inherit">
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmSubstituicao} variant="contained" color="warning">
+            Confirmar Substituição
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 } 

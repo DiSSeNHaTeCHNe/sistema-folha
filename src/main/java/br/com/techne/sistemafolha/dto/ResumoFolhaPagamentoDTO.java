@@ -14,5 +14,6 @@ public record ResumoFolhaPagamentoDTO(
     LocalDate competenciaInicio,
     LocalDate competenciaFim,
     LocalDateTime dataImportacao,
+    Boolean decimoTerceiro,
     Boolean ativo
 ) {} 

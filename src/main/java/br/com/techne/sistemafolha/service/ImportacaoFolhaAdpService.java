@@ -82,13 +82,60 @@ public class ImportacaoFolhaAdpService {
     }
 
     @Transactional
-    public List<FolhaPagamento> importarFolhaAdp(MultipartFile arquivo) throws IOException {
+    public List<FolhaPagamento> importarFolhaAdp(MultipartFile arquivo, Boolean decimoTerceiro, Boolean confirmarSubstituicao) throws IOException {
         logger.info("Iniciando importação de folha ADP - Arquivo: {}, Tamanho: {} bytes", 
                    arquivo.getOriginalFilename(), arquivo.getSize());
 
+        // PASSO 1: Extrair período de competência do arquivo primeiro
+        LocalDate[] periodo = extrairPeriodoCompetencia(arquivo);
+        LocalDate dataInicio = periodo[0];
+        LocalDate dataFim = periodo[1];
+        
+        logger.info("Período de competência identificado: {} a {}", dataInicio, dataFim);
+        
+        // PASSO 2: Verificar duplicidade ANTES de processar
+        boolean isDecimoTerceiro = decimoTerceiro != null ? decimoTerceiro : (dataInicio.getMonthValue() == 12);
+        
+        var resumosExistentes = resumoFolhaPagamentoRepository
+            .findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
+                dataInicio, dataFim, isDecimoTerceiro);
+        
+        if (!resumosExistentes.isEmpty()) {
+            if (!confirmarSubstituicao) {
+                // Lançar exceção ANTES de processar
+                String tipoFolha = isDecimoTerceiro ? "13º salário" : "normal";
+                throw new br.com.techne.sistemafolha.exception.FolhaDuplicadaException(
+                    "Já existe uma folha de pagamento " + tipoFolha + 
+                    " para o período " + dataInicio + " a " + dataFim + 
+                    ". A importação desta nova folha irá substituir a folha existente. Deseja continuar?",
+                    dataInicio.toString(),
+                    dataFim.toString(),
+                    isDecimoTerceiro
+                );
+            } else {
+                // Usuário confirmou: DELETAR TODAS as folhas existentes
+                logger.info("Removendo {} folha(s) existente(s) para o período {} a {}", 
+                    resumosExistentes.size(), dataInicio, dataFim);
+                
+                // Primeiro, deletar todos os registros de folha_pagamento associados
+                List<FolhaPagamento> folhasAntigas = folhaPagamentoRepository
+                    .findByDataInicioAndDataFim(dataInicio, dataFim);
+                
+                logger.info("Removendo {} registro(s) de folha_pagamento antigos", folhasAntigas.size());
+                folhaPagamentoRepository.deleteAll(folhasAntigas);
+                
+                // Depois, deletar os resumos
+                for (ResumoFolhaPagamento resumoAntigo : resumosExistentes) {
+                    logger.info("Removendo resumo antigo: ID={}", resumoAntigo.getId());
+                    resumoFolhaPagamentoRepository.delete(resumoAntigo);
+                }
+                
+                logger.info("Registros antigos removidos com sucesso");
+            }
+        }
+        
+        // PASSO 3: Agora sim, processar o arquivo
         List<FolhaPagamento> folhasPagamento = new ArrayList<>();
-        LocalDate dataInicio = LocalDate.now(); // Será extraída do arquivo se disponível
-        LocalDate dataFim = LocalDate.now(); // Será extraída do arquivo se disponível
         
         Funcionario funcionarioAtual = null;
         List<String> rubricasProcessadas = new ArrayList<>();
@@ -107,26 +154,7 @@ public class ImportacaoFolhaAdpService {
             while (br.ready()) {
                 String linha = br.readLine();
 
-                // Procura período de competência
-                if (linha.contains("Competência:")) {
-                    try {
-                        // Extrai período de competência se disponível
-                        // Formato esperado: "Competência: 01/10/2023 a 31/10/2023"
-                        String[] partes = linha.split("Competência:\\s*");
-                        if (partes.length > 1) {
-                            String periodo = partes[1].trim();
-                            String[] datas = periodo.split("\\s+a\\s+");
-                            if (datas.length == 2) {
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                                dataInicio = LocalDate.parse(datas[0].trim(), formatter);
-                                dataFim = LocalDate.parse(datas[1].trim(), formatter);
-                                logger.info("Período de competência identificado: {} a {}", dataInicio, dataFim);
-                            }
-                        }
-                    } catch (Exception e) {
-                        logger.warn("Erro ao processar período de competência: {}", e.getMessage());
-                    }
-                }
+                // Período já foi extraído no início, ignora aqui
 
                 // Processa cabeçalho do funcionário (Admissão)
                 if (linha.length() > 102 && linha.substring(96, 102).equalsIgnoreCase("Admiss")) {
@@ -253,6 +281,9 @@ public class ImportacaoFolhaAdpService {
                     resumo.setCompetenciaInicio(dataInicio);
                     resumo.setCompetenciaFim(dataFim);
                     resumo.setDataImportacao(LocalDateTime.now());
+                    
+                    // Define se é folha de 13º salário (já foi definido no início)
+                    resumo.setDecimoTerceiro(isDecimoTerceiro);
                     resumo.setAtivo(true);
                     
                     resumoFolhaPagamentoRepository.save(resumo);
@@ -479,5 +510,46 @@ public class ImportacaoFolhaAdpService {
 
         return tipoRubricaRepository.findByDescricao(descricao)
                 .orElseThrow(() -> new RuntimeException("Tipo de rubrica " + descricao + " não encontrado"));
+    }
+    
+    /**
+     * Extrai o período de competência do arquivo ADP
+     * Faz uma leitura rápida apenas para encontrar as datas
+     */
+    private LocalDate[] extrairPeriodoCompetencia(MultipartFile arquivo) throws IOException {
+        LocalDate dataInicio = LocalDate.now();
+        LocalDate dataFim = LocalDate.now();
+        
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(arquivo.getInputStream(), Charset.forName("WINDOWS-1252")))) {
+            
+            while (br.ready()) {
+                String linha = br.readLine();
+                
+                // Procura período de competência
+                if (linha.contains("Competência:")) {
+                    try {
+                        // Extrai período de competência
+                        // Formato esperado: "Competência: 01/10/2023 a 31/10/2023"
+                        String[] partes = linha.split("Competência:\\s*");
+                        if (partes.length > 1) {
+                            String periodoStr = partes[1].trim();
+                            String[] datas = periodoStr.split("\\s+a\\s+");
+                            if (datas.length == 2) {
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                                dataInicio = LocalDate.parse(datas[0].trim(), formatter);
+                                dataFim = LocalDate.parse(datas[1].trim(), formatter);
+                                logger.info("Período extraído do arquivo: {} a {}", dataInicio, dataFim);
+                                break; // Encontrou, pode parar de ler
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Erro ao extrair período de competência: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+        
+        return new LocalDate[]{dataInicio, dataFim};
     }
 } 

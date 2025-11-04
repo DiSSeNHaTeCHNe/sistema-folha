@@ -77,6 +77,7 @@ public class ResumoFolhaPagamentoController {
             resumo.getCompetenciaInicio(),
             resumo.getCompetenciaFim(),
             resumo.getDataImportacao(),
+            resumo.getDecimoTerceiro(),
             resumo.getAtivo()
         );
     }

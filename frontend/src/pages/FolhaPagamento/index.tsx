@@ -26,6 +26,8 @@ import {
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
+  CardGiftcard as CardGiftcardIcon,
+  AttachMoney as AttachMoneyIcon,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import type { FolhaPagamento } from '../../types';
@@ -514,12 +516,12 @@ export function FolhaPagamento() {
               <TableHead>
                 <TableRow>
                   <TableCell>Competência</TableCell>
+                  <TableCell align="center">Tipo</TableCell>
                   <TableCell align="right">Total Empregados</TableCell>
                   <TableCell align="right">Total Encargos</TableCell>
                   <TableCell align="right">Total Pagamentos</TableCell>
                   <TableCell align="right">Total Descontos</TableCell>
                   <TableCell align="right">Total Líquido</TableCell>
-                  <TableCell>Data Importação</TableCell>
                   <TableCell align="center">Ações</TableCell>
                 </TableRow>
               </TableHead>
@@ -528,6 +530,19 @@ export function FolhaPagamento() {
                   <TableRow key={resumo.id || Math.random()}>
                     <TableCell>
                       {formatarDataCompetencia(resumo.competenciaInicio)} a {formatarDataCompetencia(resumo.competenciaFim)}
+                    </TableCell>
+                    <TableCell align="center">
+                      {resumo.decimoTerceiro ? (
+                        <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                          <CardGiftcardIcon color="secondary" />
+                          <Typography variant="body2" color="secondary">13º</Typography>
+                        </Box>
+                      ) : (
+                        <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                          <AttachMoneyIcon color="primary" />
+                          <Typography variant="body2" color="primary">Normal</Typography>
+                        </Box>
+                      )}
                     </TableCell>
                     <TableCell align="right">{resumo.totalEmpregados}</TableCell>
                     <TableCell align="right">
@@ -555,9 +570,6 @@ export function FolhaPagamento() {
                           currency: 'BRL',
                         }).format(resumo.totalLiquido)}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(resumo.dataImportacao).toLocaleString('pt-BR')}
                     </TableCell>
                     <TableCell align="center">
                       <Button

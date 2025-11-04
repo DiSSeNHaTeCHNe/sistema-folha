@@ -9,7 +9,11 @@ public record ImportacaoFolhaAdpResponseDTO(
     String arquivo,
     Long tamanho,
     int registrosProcessados,
-    List<FolhaPagamentoDTO> folhasPagamento
+    List<FolhaPagamentoDTO> folhasPagamento,
+    boolean conflict,
+    String competenciaInicio,
+    String competenciaFim,
+    Boolean decimoTerceiro
 ) {
     public static ImportacaoFolhaAdpResponseDTO success(String arquivo, Long tamanho, List<FolhaPagamento> folhasPagamento) {
         List<FolhaPagamentoDTO> folhasDTO = folhasPagamento.stream()
@@ -41,7 +45,11 @@ public record ImportacaoFolhaAdpResponseDTO(
             arquivo,
             tamanho,
             folhasPagamento.size(),
-            folhasDTO
+            folhasDTO,
+            false,
+            null,
+            null,
+            null
         );
     }
 
@@ -52,7 +60,27 @@ public record ImportacaoFolhaAdpResponseDTO(
             arquivo,
             0L,
             0,
-            List.of()
+            List.of(),
+            false,
+            null,
+            null,
+            null
+        );
+    }
+    
+    public static ImportacaoFolhaAdpResponseDTO conflict(String message, String arquivo, 
+            String competenciaInicio, String competenciaFim, Boolean decimoTerceiro) {
+        return new ImportacaoFolhaAdpResponseDTO(
+            false,
+            message,
+            arquivo,
+            0L,
+            0,
+            List.of(),
+            true,
+            competenciaInicio,
+            competenciaFim,
+            decimoTerceiro
         );
     }
 } 
