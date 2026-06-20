@@ -1,6 +1,6 @@
-# Backend
-HELP.md
-target/
+# Backend (backend/)
+backend/HELP.md
+backend/target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -15,7 +15,7 @@ target/
 hs_err_pid*
 replay_pid*
 
-# Frontend
+# Frontend (frontend/)
 frontend/node_modules
 frontend/dist
 frontend/.env
@@ -41,6 +41,11 @@ frontend/*.ntvs*
 frontend/*.njsproj
 frontend/*.sln
 frontend/*.sw?
+
+# Legacy paths (pre-reorg)
+target/
+front/
+back/
 
 # IDE
 .idea/
@@ -101,7 +106,20 @@ out/
 .env.production.local
 .env*.local
 
+# Spec-driven (deprecated layout — canonical: _docs/specs/)
+.specs/
+
+# Agentes, tooling local e docs de governança (não versionar)
+.agents/
+.antigravitycli/
+.claude/
+.cursor/
+.windsurf/
+**/AGENTS.md
+_docs/
+_old/
+
 # Outros
 *.swp
 *.swo
-*~ 
+*~

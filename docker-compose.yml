@@ -20,7 +20,7 @@ services:
       dockerfile: Dockerfile
       target: frontend-prod
       args:
-        VITE_API_URL: http://10.113.134.159:8083/api
+        VITE_API_URL: http://localhost:8083/api
     container_name: sistema_folha_frontend
     ports:
       - "3000:80"

@@ -173,29 +173,43 @@ Sistema completo para controle de folha de pagamento, desenvolvido com Spring Bo
 
 ## Estrutura do Projeto
 
-### Backend
-```
-src/
-├── main/
-│   ├── java/
-│   │   └── br/com/techne/
-│   │       ├── config/
-│   │       ├── controller/
-│   │       ├── dto/
-│   │       ├── entity/
-│   │       ├── repository/
-│   │       ├── service/
-│   │       └── SistemaFolhaApplication.java
-│   └── resources/
-│       ├── db/migration/
-│       └── application.properties
-└── test/
-    └── java/
-        └── br/com/techne/
+```text
+sistema-folha/
+├── frontend/              # SPA React
+├── backend/               # API Spring Boot (pom.xml + src/)
+├── diversos/              # Scripts, Postman, utilitários, relatórios
+│   ├── scripts/
+│   ├── postman/
+│   ├── bcrypt-generator/
+│   ├── db/
+│   └── relatorios/
+├── _docs/                 # PRD, specs, documentação canônica
+├── docker-compose.yml
+└── Dockerfile
 ```
 
-### Frontend
+### Backend (`backend/`)
+
+```text
+backend/
+├── pom.xml
+└── src/
+    ├── main/java/br/com/techne/sistemafolha/
+    │   ├── config/
+    │   ├── controller/
+    │   ├── dto/
+    │   ├── model/
+    │   ├── repository/
+    │   ├── service/
+    │   └── SistemaFolhaApplication.java
+    └── main/resources/
+        ├── db/migration/
+        └── application.yml
 ```
+
+### Frontend (`frontend/`)
+
+```text
 frontend/
 ├── src/
 │   ├── components/
@@ -219,20 +233,22 @@ frontend/
 - NPM ou Yarn
 
 ### Backend
-1. Configure o banco de dados:
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/sistema_folha
-spring.datasource.username=seu_usuario
-spring.datasource.password=sua_senha
+1. Configure o banco de dados em `backend/src/main/resources/application.yml`:
+```yaml
+spring.datasource.url: jdbc:postgresql://localhost:5432/sistema_folha
+spring.datasource.username: seu_usuario
+spring.datasource.password: sua_senha
 ```
 
 2. Execute as migrações:
 ```bash
+cd backend
 mvn flyway:migrate
 ```
 
 3. Inicie o servidor:
 ```bash
+cd backend
 mvn spring-boot:run
 ```
 
@@ -245,6 +261,7 @@ npm install
 
 2. Inicie o servidor de desenvolvimento:
 ```bash
+cd frontend
 npm run dev
 ```
 
@@ -253,22 +270,22 @@ npm run dev
 ### API
 1. Importe a coleção do Postman:
 ```
-postman/sistema-folha.postman_collection.json
+diversos/postman/sistema-folha.postman_collection.json
 ```
 
 2. Importe o ambiente:
 ```
-postman/sistema-folha.postman_environment.json
+diversos/postman/sistema-folha.postman_environment.json
 ```
 
 3. Execute os testes:
 ```bash
-./scripts/test-api.sh
+./diversos/scripts/test-api.sh
 ```
 
 4. Consulte a documentação das collections:
 ```
-postman/README.md
+diversos/postman/README.md
 ```
 
 ## Próximos Passos

@@ -22,6 +22,21 @@ import { useForm, Controller } from 'react-hook-form';
 import api from "../../services/api";
 import { toast } from 'react-toastify';
 
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return fallback;
+  }
+
+  const response = (error as { response?: { data?: unknown } }).response;
+  if (response?.data && typeof response.data === 'object') {
+    const data = response.data as { message?: string };
+    if (data.message) {
+      return data.message;
+    }
+  }
+  return fallback;
+};
+
 interface FuncionarioLocal {
   id: number;
   nome: string;
@@ -103,7 +118,8 @@ export default function Funcionarios() {
       dataAdmissao: '',
       cargoId: '',
       centroCustoId: '',
-      linhaNegocioId: ''
+      linhaNegocioId: '',
+      idExterno: ''
     }
   });
 
@@ -124,7 +140,8 @@ export default function Funcionarios() {
         dataAdmissao: selectedFuncionario.dataAdmissao || '',
         linhaNegocioId: selectedFuncionario.linhaNegocioId?.toString() || '',
         cargoId: selectedFuncionario.cargoId?.toString() || '',
-        centroCustoId: selectedFuncionario.centroCustoId?.toString() || ''
+        centroCustoId: selectedFuncionario.centroCustoId?.toString() || '',
+        idExterno: selectedFuncionario.idExterno || ''
       };
       resetEdit(dadosFuncionario);
     } else if (open && !selectedFuncionario) {
@@ -134,7 +151,8 @@ export default function Funcionarios() {
         dataAdmissao: '',
         linhaNegocioId: '',
         cargoId: '',
-        centroCustoId: ''
+        centroCustoId: '',
+        idExterno: ''
       };
       resetEdit(dadosVazios);
     }
@@ -188,7 +206,8 @@ export default function Funcionarios() {
       dataAdmissao: '',
       linhaNegocioId: '',
       cargoId: '',
-      centroCustoId: ''
+      centroCustoId: '',
+      idExterno: ''
     });
   };
 
@@ -196,10 +215,12 @@ export default function Funcionarios() {
     try {
       // Converter strings para números onde necessário
       const dadosParaEnvio = {
-        ...data,
+        nome: data.nome,
+        cpf: data.cpf,
+        dataAdmissao: data.dataAdmissao,
         cargoId: data.cargoId ? Number(data.cargoId) : undefined,
         centroCustoId: data.centroCustoId ? Number(data.centroCustoId) : undefined,
-        linhaNegocioId: data.linhaNegocioId ? Number(data.linhaNegocioId) : undefined
+        idExterno: data.idExterno?.trim() || undefined,
       };
 
       if (selectedFuncionario) {
@@ -212,18 +233,25 @@ export default function Funcionarios() {
       handleClose();
       carregarDados();
     } catch (error) {
-      toast.error('Erro ao salvar funcionário');
+      toast.error(getApiErrorMessage(error, 'Erro ao salvar funcionário'));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este funcionário?')) {
+    if (window.confirm(
+      'Inativar este funcionário? O histórico de folha permanece vinculado a este cadastro. ' +
+      'Para nova matrícula (ex.: efetivação), cadastre um novo funcionário com o mesmo CPF e novo ID externo.'
+    )) {
       try {
         await api.delete(`/funcionarios/${id}`);
-        toast.success('Funcionário excluído com sucesso');
+        toast.success('Funcionário inativado com sucesso');
+        toast.info(
+          'Para efetivação ou nova matrícula: use "Novo Funcionário" com o mesmo CPF e um ID externo (matrícula) diferente.',
+          { autoClose: 8000 }
+        );
         carregarDados();
       } catch (error) {
-        toast.error('Erro ao excluir funcionário');
+        toast.error(getApiErrorMessage(error, 'Erro ao inativar funcionário'));
       }
     }
   };
@@ -452,7 +480,7 @@ export default function Funcionarios() {
                           e.stopPropagation();
                           handleDelete(funcionario.id);
                         }}
-                        title="Excluir"
+                        title="Inativar"
                         sx={{
                           color: 'error.main',
                           '&:hover': {
@@ -517,8 +545,15 @@ export default function Funcionarios() {
                       <Typography 
                         color="textSecondary"
                         variant="body2"
+                        sx={{ mb: 1 }}
                       >
                         <strong>Linha de Negócio:</strong> {funcionario.linhaNegocioDescricao || 'N/A'}
+                      </Typography>
+                      <Typography 
+                        color="textSecondary"
+                        variant="body2"
+                      >
+                        <strong>ID Externo:</strong> {funcionario.idExterno || 'N/A'}
                       </Typography>
                     </Box>
                   )}
@@ -552,6 +587,12 @@ export default function Funcionarios() {
                 type="date"
                 InputLabelProps={{ shrink: true }}
                 {...registerEdit('dataAdmissao', { required: true })}
+              />
+              <TextField
+                fullWidth
+                label="ID Externo (matrícula ADP)"
+                helperText="Obrigatório para importação da folha. Use matrícula nova ao efetivar."
+                {...registerEdit('idExterno')}
               />
               <Controller
                 name="cargoId"
