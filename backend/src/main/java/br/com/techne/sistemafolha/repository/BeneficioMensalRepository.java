@@ -1,0 +1,85 @@
+package br.com.techne.sistemafolha.repository;
+
+import br.com.techne.sistemafolha.model.BeneficioMensal;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
+
+@Repository
+public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal, Long> {
+
+    List<BeneficioMensal> findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+        LocalDate competenciaInicio, LocalDate competenciaFim);
+
+    List<BeneficioMensal> findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+        LocalDate competenciaInicio, LocalDate competenciaFim, Collection<Long> centroCustoIds);
+
+    List<BeneficioMensal> findByFuncionarioIdAndCompetenciaInicioAndAtivoTrue(
+        Long funcionarioId, LocalDate competenciaInicio);
+
+    List<BeneficioMensal> findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+        Long funcionarioId, LocalDate competenciaInicio, LocalDate competenciaFim);
+
+    boolean existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+        LocalDate competenciaInicio, LocalDate competenciaFim);
+
+    @Query("""
+        SELECT tb.codigo AS codigo, tb.descricao AS descricao,
+               SUM(bm.valor) AS total, COUNT(bm) AS qtdLancamentos
+        FROM BeneficioMensal bm
+        JOIN bm.tipoBeneficio tb
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+        GROUP BY tb.id, tb.codigo, tb.descricao
+        ORDER BY tb.codigo
+        """)
+    List<BeneficioMensalResumoProjection> resumoPorCompetencia(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim);
+
+    @Query("""
+        SELECT tb.codigo AS codigo, tb.descricao AS descricao,
+               SUM(bm.valor) AS total, COUNT(bm) AS qtdLancamentos
+        FROM BeneficioMensal bm
+        JOIN bm.tipoBeneficio tb
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND bm.funcionario.centroCusto.id IN :centroCustoIds
+        GROUP BY tb.id, tb.codigo, tb.descricao
+        ORDER BY tb.codigo
+        """)
+    List<BeneficioMensalResumoProjection> resumoPorCompetenciaAndCentroCustoIds(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
+
+    @Modifying
+    @Query("""
+        UPDATE BeneficioMensal bm
+        SET bm.ativo = false
+        WHERE bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND bm.ativo = true
+        """)
+    void softDeleteByCompetencia(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim);
+
+    @Modifying
+    @Query("""
+        DELETE FROM BeneficioMensal bm
+        WHERE bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+        """)
+    void deleteByCompetenciaInicioAndCompetenciaFim(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim);
+}

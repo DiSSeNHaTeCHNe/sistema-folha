@@ -17,20 +17,6 @@ const importacaoService = {
     
     return response.data;
   },
-
-  importarBeneficios: async (arquivo: File): Promise<ImportacaoResponse> => {
-    const formData = new FormData();
-    formData.append('arquivo', arquivo);
-    
-    const response = await api.post('/importacao/beneficios', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      timeout: 300000, // 5 minutos para operações de importação
-    });
-    
-    return response.data;
-  }
 };
 
 export { importacaoService }; 

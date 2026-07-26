@@ -6,8 +6,8 @@ import Dashboard from '../pages/Dashboard';
 import Usuarios from '../pages/Usuarios';
 import Funcionarios from '../pages/Funcionarios';
 import { FolhaPagamento } from '../pages/FolhaPagamento';
+import BeneficiosMensais from '../pages/BeneficiosMensais';
 import Rubricas from '../pages/Rubricas';
-import { Beneficios } from '../pages/Beneficios';
 import Importacao from '../pages/Importacao';
 import { Relatorios } from '../pages/Relatorios';
 import { AuthProvider } from '../contexts/AuthContext';
@@ -16,6 +16,7 @@ import Cargos from '../pages/Cargos';
 import CentrosCusto from '../pages/CentrosCusto';
 import LinhasNegocio from '../pages/LinhasNegocio';
 import Organograma from '../pages/Organograma';
+import TiposBeneficio from '../pages/TiposBeneficio';
 
 function PrivateRoute() {
   const { user, loading } = useAuth();
@@ -49,14 +50,16 @@ export function RouterWithAuth() {
               <Route path="/usuarios" element={<Usuarios />} />
               <Route path="/funcionarios" element={<Funcionarios />} />
               <Route path="/folha-pagamento" element={<FolhaPagamento />} />
+              <Route path="/beneficios-mensais" element={<BeneficiosMensais />} />
               <Route path="/rubricas" element={<Rubricas />} />
-              <Route path="/beneficios" element={<Beneficios />} />
+              <Route path="/beneficios" element={<Navigate to="/beneficios-mensais" replace />} />
               <Route path="/importacao" element={<Importacao />} />
               <Route path="/relatorios" element={<Relatorios />} />
               <Route path="/cargos" element={<Cargos />} />
               <Route path="/centros-custo" element={<CentrosCusto />} />
               <Route path="/linhas-negocio" element={<LinhasNegocio />} />
               <Route path="/organograma" element={<Organograma />} />
+              <Route path="/tipos-beneficio" element={<TiposBeneficio />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Route>

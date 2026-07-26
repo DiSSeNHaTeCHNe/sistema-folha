@@ -25,6 +25,7 @@ import {
   People,
   AttachMoney,
   CardGiftcard,
+  Redeem,
   Assessment,
   AccountCircle,
   ExpandLess,
@@ -74,7 +75,7 @@ export function Layout() {
     { text: 'Funcionários', icon: <People />, path: '/funcionarios' },
     { text: 'Organograma', icon: <AccountTree />, path: '/organograma' },
     { text: 'Folha de Pagamento', icon: <AttachMoney />, path: '/folha-pagamento' },
-    { text: 'Benefícios', icon: <CardGiftcard />, path: '/beneficios' },
+    { text: 'Benefícios Mensais', icon: <Redeem />, path: '/beneficios-mensais' },
     { text: 'Importação', icon: <CloudUpload />, path: '/importacao' },
     { text: 'Relatórios', icon: <Assessment />, path: '/relatorios' },
   ];
@@ -85,6 +86,7 @@ export function Layout() {
     { text: 'Centros de Custo', icon: <Business />, path: '/centros-custo' },
     { text: 'Cargos', icon: <Work />, path: '/cargos' },
     { text: 'Rubricas', icon: <Receipt />, path: '/rubricas' },
+    { text: 'Tipos de Benefício', icon: <CardGiftcard />, path: '/tipos-beneficio' },
   ];
 
   const drawer = (

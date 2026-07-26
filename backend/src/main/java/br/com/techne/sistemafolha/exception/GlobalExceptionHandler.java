@@ -20,12 +20,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(BeneficioNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleBeneficioNotFoundException(BeneficioNotFoundException ex) {
-        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
-    }
-
     @ExceptionHandler(RubricaNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleRubricaNotFoundException(RubricaNotFoundException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
@@ -48,6 +42,37 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleOrganogramaAtivoConflictException(OrganogramaAtivoConflictException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(TipoBeneficioNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTipoBeneficioNotFoundException(TipoBeneficioNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(TipoBeneficioCodigoDuplicadoException.class)
+    public ResponseEntity<ErrorResponse> handleTipoBeneficioCodigoDuplicadoException(TipoBeneficioCodigoDuplicadoException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(BeneficioMensalNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleBeneficioMensalNotFoundException(BeneficioMensalNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(BeneficioMensalDuplicadaException.class)
+    public ResponseEntity<ErrorResponse> handleBeneficioMensalDuplicadaException(BeneficioMensalDuplicadaException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(ImportacaoBeneficioMensalInvalidaException.class)
+    public ResponseEntity<ErrorResponse> handleImportacaoBeneficioMensalInvalidaException(
+            ImportacaoBeneficioMensalInvalidaException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

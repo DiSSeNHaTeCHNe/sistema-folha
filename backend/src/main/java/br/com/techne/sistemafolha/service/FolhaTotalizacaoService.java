@@ -2,12 +2,14 @@ package br.com.techne.sistemafolha.service;
 
 import br.com.techne.sistemafolha.dto.FolhaTotaisFuncionarioDTO;
 import br.com.techne.sistemafolha.model.Beneficio;
+import br.com.techne.sistemafolha.model.BeneficioMensal;
 import br.com.techne.sistemafolha.model.Cargo;
 import br.com.techne.sistemafolha.model.CentroCusto;
 import br.com.techne.sistemafolha.model.FolhaPagamento;
 import br.com.techne.sistemafolha.model.Funcionario;
 import br.com.techne.sistemafolha.model.LinhaNegocio;
 import br.com.techne.sistemafolha.model.Rubrica;
+import br.com.techne.sistemafolha.repository.BeneficioMensalRepository;
 import br.com.techne.sistemafolha.repository.BeneficioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class FolhaTotalizacaoService {
     private static final RoundingMode ROUNDING = RoundingMode.HALF_UP;
 
     private final BeneficioRepository beneficioRepository;
+    private final BeneficioMensalRepository beneficioMensalRepository;
 
     @Transactional(readOnly = true)
     public List<FolhaTotaisFuncionarioDTO> calcularTotaisPorFuncionario(List<FolhaPagamento> linhas) {
@@ -65,13 +68,28 @@ public class FolhaTotalizacaoService {
                 custoFolha = custoFolha.add(valor.multiply(coef.custo()));
             }
 
-            List<Beneficio> beneficios = beneficioRepository.findAtivosByFuncionarioAndPeriodo(
-                funcionario.getId(), competenciaInicio, competenciaFim);
+            int totalBeneficios;
+            BigDecimal custoBeneficios;
 
-            BigDecimal custoBeneficios = beneficios.stream()
-                .map(Beneficio::getValor)
-                .filter(v -> v != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                competenciaInicio, competenciaFim)) {
+                List<BeneficioMensal> beneficiosMensais = beneficioMensalRepository
+                    .findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                        funcionario.getId(), competenciaInicio, competenciaFim);
+                totalBeneficios = beneficiosMensais.size();
+                custoBeneficios = beneficiosMensais.stream()
+                    .map(BeneficioMensal::getValor)
+                    .filter(v -> v != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            } else {
+                List<Beneficio> beneficios = beneficioRepository.findAtivosByFuncionarioAndPeriodo(
+                    funcionario.getId(), competenciaInicio, competenciaFim);
+                totalBeneficios = beneficios.size();
+                custoBeneficios = beneficios.stream()
+                    .map(Beneficio::getValor)
+                    .filter(v -> v != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            }
 
             BigDecimal salBruto = arredondar(bruto);
             BigDecimal salLiquido = arredondar(liquido);
@@ -97,7 +115,7 @@ public class FolhaTotalizacaoService {
                 linhaNegocio != null ? linhaNegocio.getId() : null,
                 linhaNegocio != null ? linhaNegocio.getDescricao() : null,
                 grupo.size(),
-                beneficios.size(),
+                totalBeneficios,
                 salBruto,
                 salLiquido,
                 salCustoFolha,

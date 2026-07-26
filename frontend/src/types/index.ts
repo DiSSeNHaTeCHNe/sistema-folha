@@ -44,6 +44,56 @@ export interface Beneficio {
   observacao: string | null;
 }
 
+export interface TipoBeneficio {
+  id: number;
+  codigo: string;
+  descricao: string;
+  ativo: boolean;
+}
+
+export interface BeneficioMensal {
+  id: number;
+  funcionarioId: number;
+  funcionarioNome?: string;
+  tipoBeneficioId: number;
+  tipoBeneficioCodigo?: string;
+  tipoBeneficioDescricao?: string;
+  centroCustoId?: number;
+  centroCustoDescricao?: string;
+  valor: number;
+  competenciaInicio: string;
+  competenciaFim: string;
+  observacao?: string | null;
+}
+
+export interface BeneficioMensalResumo {
+  codigo: string;
+  descricao: string;
+  total: number;
+  qtdLancamentos: number;
+}
+
+export interface BeneficioMensalCompetenciaParams {
+  competenciaInicio: string;
+  competenciaFim: string;
+}
+
+export interface BeneficioMensalCreateDTO {
+  funcionarioId: number;
+  tipoBeneficioId: number;
+  valor: number;
+  competenciaInicio: string;
+  competenciaFim: string;
+  observacao?: string | null;
+}
+
+export interface ImportacaoBeneficioMensalResultado {
+  processadas: number;
+  erros: number;
+  totalValor: number;
+  detalhesErros: string[];
+}
+
 export interface FolhaPagamento {
   id: number;
   funcionarioId: number;
