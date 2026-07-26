@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 2,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::when grepping for forbidden legacy path prefixes match the path token itself e g specs not only the slash suffixed form specs so join style literals cannot bypass the gate",
+      "text": "When grepping for forbidden legacy path prefixes, match the path token itself (e.g. .specs), not only the slash-suffixed form (.specs/), so join()-style literals cannot bypass the gate.",
+      "signal": "surviving_mutant",
+      "scope": "harness/tlc-paths",
+      "status": "candidate",
+      "features": [
+        "ajuste-harness"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md:sensor-A / lessons.py:STORE_REL (harness/tlc-paths)"
+      ],
+      "created": "2026-07-26T16:06:16Z",
+      "last_seen": "2026-07-26T16:06:16Z"
+    }
+  ]
+}

@@ -106,18 +106,18 @@ out/
 .env.production.local
 .env*.local
 
-# Spec-driven (deprecated layout — canonical: _docs/specs/)
+# Spec-driven deprecated layout
 .specs/
 
-# Agentes, tooling local e docs de governança (não versionar)
-.agents/
-.antigravitycli/
-.claude/
-.cursor/
-.windsurf/
-**/AGENTS.md
-_docs/
+# Docs: só specs versionadas; temp e scratch fora
+_docs/*
+!_docs/specs/
+!_docs/specs/**
+
+# Keep local-only / legacy
+.antigravitycli/   # until real config; optional later
 _old/
+.windsurf/         # may keep ignore even if dir deleted in T11
 
 # Outros
 *.swp

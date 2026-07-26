@@ -1,0 +1,60 @@
+# Cursor Rules & Project Governance
+
+Bem-vindo ao projeto! Como agente inteligente do Cursor, você deve seguir estritamente as regras de governança e os padrões operacionais estabelecidos neste repositório.
+
+Toda a base de conhecimento de governança, regras, referências e competências dos agentes está centralizada sob a pasta `.agents/`. O arquivo mestre de governança é `AGENTS.md` na raiz do repositório. Artefatos spec-driven ficam em `_docs/specs/`.
+
+---
+
+## 1. Regras de Ouro do Projeto
+
+Antes de iniciar qualquer tarefa de planejamento, especificação, implementação ou testes:
+1. **Leia o Guia Geral:** Consulte sempre o arquivo mestre de governança `AGENTS.md` na raiz do repositório.
+2. **Respeite o Linear Workflow:** Todo o seu trabalho deve ser dividido em issues curtas, com nomenclaturas claras seguindo a regra em `.agents/rules/linear_issue_management.md`.
+3. **Consulte as Skills e Procedimentos:** Descubra e use skills sob `.agents/skills/` (inventário completo no diretório — inclui TLC, Linear/PRD, skills FE TARGET, Spring/Flyway/JPA, modularidade, etc.). Não limite-se a um subconjunto fixo.
+4. **Use as Referências Operacionais:** Todos os guias detalhados de desenvolvimento (como design de código, implementação, testes, handoffs e limites de contexto) estão localizados na pasta `.agents/references/`. Artefatos spec-driven devem seguir `.agents/references/specs-layout.md` e `_docs/specs/` (layout flat).
+
+---
+
+## 2. Estrutura do Conhecimento (`.agents/`)
+
+Familiarize-se com a estrutura do diretório de agentes:
+```text
+.agents/
+├── rules/
+│   └── linear_issue_management.md
+├── skills/                          # inventário completo — descobrir por pasta
+│   ├── api-client/                  # FE TARGET
+│   ├── break-prd-tdd-sdd-into-linear-issues/
+│   ├── component-architecture/      # FE TARGET
+│   ├── flyway-migration-writer/
+│   ├── forms-validation/            # FE TARGET
+│   ├── jpa-performance/
+│   ├── modular-decomposition/
+│   ├── modular-design-principles/
+│   ├── routing-perf/                # FE TARGET
+│   ├── spring-boot-new-endpoint/
+│   ├── spring-security/
+│   ├── testing-a11y/                # FE TARGET
+│   └── tlc-spec-driven/
+└── references/
+    ├── brownfield-mapping.md
+    ├── code-analysis.md
+    ├── coding-principles.md
+    ├── concerns.md
+    ├── context-limits.md
+    ├── design.md
+    ├── discuss.md
+    ├── implement.md
+    ├── project-init.md
+    ├── quick-mode.md
+    ├── roadmap.md
+    ├── session-handoff.md
+    ├── specify.md
+    ├── specs-layout.md              # layout canônico flat em _docs/specs/
+    ├── state-management.md
+    ├── tasks.md
+    └── validate.md
+```
+
+Sempre respeite as prioridades de orientação descritas no `AGENTS.md` e garanta que nenhuma alteração fuja do escopo sem autorização explícita do usuário.
