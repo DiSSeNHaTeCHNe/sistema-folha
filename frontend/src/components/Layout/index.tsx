@@ -73,7 +73,6 @@ export function Layout() {
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
     { text: 'Funcionários', icon: <People />, path: '/funcionarios' },
-    { text: 'Organograma', icon: <AccountTree />, path: '/organograma' },
     { text: 'Folha de Pagamento', icon: <AttachMoney />, path: '/folha-pagamento' },
     { text: 'Benefícios Mensais', icon: <Redeem />, path: '/beneficios-mensais' },
     { text: 'Relatórios', icon: <Assessment />, path: '/relatorios' },
@@ -86,6 +85,7 @@ export function Layout() {
     { text: 'Cargos', icon: <Work />, path: '/cargos' },
     { text: 'Rubricas', icon: <Receipt />, path: '/rubricas' },
     { text: 'Tipos de Benefício', icon: <CardGiftcard />, path: '/tipos-beneficio' },
+    { text: 'Organograma', icon: <AccountTree />, path: '/organograma' },
     { text: 'Importação', icon: <CloudUpload />, path: '/importacao' },
   ];
 
