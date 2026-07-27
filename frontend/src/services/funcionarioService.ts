@@ -1,6 +1,17 @@
 import api from './api';
 import type { Funcionario } from '../types';
 
+export interface FuncionarioCreatePayload {
+  nome: string;
+  cpf: string;
+  dataAdmissao: string;
+  cargoId?: number;
+  centroCustoId?: number;
+  idExterno?: string;
+}
+
+export type FuncionarioUpdatePayload = Partial<FuncionarioCreatePayload>;
+
 export const funcionarioService = {
   listar: async () => {
     const response = await api.get<Funcionario[]>('/funcionarios');
@@ -12,17 +23,38 @@ export const funcionarioService = {
     return response.data;
   },
 
-  criar: async (funcionario: Omit<Funcionario, 'id'>) => {
+  criar: async (funcionario: FuncionarioCreatePayload) => {
     const response = await api.post<Funcionario>('/funcionarios', funcionario);
     return response.data;
   },
 
-  atualizar: async (id: number, funcionario: Partial<Funcionario>) => {
+  atualizar: async (id: number, funcionario: FuncionarioUpdatePayload) => {
     const response = await api.put<Funcionario>(`/funcionarios/${id}`, funcionario);
     return response.data;
   },
 
   remover: async (id: number) => {
     await api.delete(`/funcionarios/${id}`);
+  },
+
+  filtrar: async (filtros: {
+    nome?: string;
+    cargoId?: string;
+    centroCustoId?: string;
+    linhaNegocioId?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filtros.nome) params.append('nome', filtros.nome);
+    if (filtros.cargoId && filtros.cargoId !== '') params.append('cargoId', filtros.cargoId);
+    if (filtros.centroCustoId && filtros.centroCustoId !== '') {
+      params.append('centroCustoId', filtros.centroCustoId);
+    }
+    if (filtros.linhaNegocioId && filtros.linhaNegocioId !== '') {
+      params.append('linhaNegocioId', filtros.linhaNegocioId);
+    }
+    const query = params.toString();
+    const url = query ? `/funcionarios?${query}` : '/funcionarios';
+    const response = await api.get<Funcionario[]>(url);
+    return response.data;
   },
 }; 

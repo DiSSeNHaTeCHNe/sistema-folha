@@ -1,7 +1,7 @@
 package br.com.techne.sistemafolha.security;
 
-import br.com.techne.sistemafolha.model.Usuario;
-import br.com.techne.sistemafolha.repository.UsuarioRepository;
+import br.com.techne.sistemafolha.auth.domain.Usuario;
+import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

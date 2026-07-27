@@ -33,17 +33,6 @@ export interface Rubrica {
   ativo: boolean;
 }
 
-export interface Beneficio {
-  id: number;
-  funcionarioId: number;
-  funcionarioNome: string;
-  descricao: string;
-  valor: number;
-  dataInicio: string;
-  dataFim: string | null;
-  observacao: string | null;
-}
-
 export interface TipoBeneficio {
   id: number;
   codigo: string;
@@ -121,12 +110,17 @@ export interface LoginRequest {
   senha: string;
 }
 
+export type MotivoNegacaoAcesso = 'SEM_FUNCIONARIO' | 'SEM_NO_ORGANOGRAMA';
+
 export interface AcessoUsuario {
+  temFuncionarioVinculado: boolean;
+  temNoOrganograma: boolean;
+  acessoTotal: boolean;
+  centrosCustoIds: number[];
+  motivoNegacao?: MotivoNegacaoAcesso;
   noOrganogramaId?: number;
   noOrganogramaNome?: string;
   nivel?: number;
-  centrosCustoAcessiveis: number[];
-  acessoTotal: boolean;
   quantidadeCentrosAcessiveis: number;
 }
 

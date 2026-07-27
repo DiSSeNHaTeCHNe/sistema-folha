@@ -48,6 +48,7 @@ import { useNotification } from '../../hooks/useNotification';
 
 const permissoesDisponiveis = [
   'ADMIN',
+  'ACESSO_TOTAL',
   'GESTOR',
   'OPERADOR',
   'CONSULTA',
@@ -216,6 +217,7 @@ export default function Usuarios() {
   const getPermissaoColor = (permissao: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
     const colors: Record<string, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
       'ADMIN': 'error',
+      'ACESSO_TOTAL': 'error',
       'GESTOR': 'warning',
       'OPERADOR': 'primary',
       'CONSULTA': 'info',

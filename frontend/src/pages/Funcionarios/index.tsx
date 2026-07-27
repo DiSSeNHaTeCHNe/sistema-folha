@@ -19,7 +19,10 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
-import api from "../../services/api";
+import { funcionarioService } from '../../services/funcionarioService';
+import { cargoService } from '../../services/cargoService';
+import { centroCustoService } from '../../services/centroCustoService';
+import { linhaNegocioService } from '../../services/linhaNegocioService';
 import { toast } from 'react-toastify';
 
 const getApiErrorMessage = (error: unknown, fallback: string): string => {
@@ -161,31 +164,31 @@ export default function Funcionarios() {
 
   const carregarDados = async () => {
     try {
-      const [funcionariosRes, linhasNegocioRes] = await Promise.all([
-        api.get('/funcionarios'),
-        api.get('/linhas-negocio'),
+      const [funcionariosData, linhasNegocioData] = await Promise.all([
+        funcionarioService.listar(),
+        linhaNegocioService.listarTodos(),
       ]);
-      setFuncionarios(funcionariosRes.data);
-      setLinhasNegocio(linhasNegocioRes.data);
-    } catch (error) {
+      setFuncionarios(funcionariosData);
+      setLinhasNegocio(linhasNegocioData);
+    } catch {
       toast.error('Erro ao carregar dados');
     }
   };
 
   const carregarTodosCargos = async () => {
     try {
-      const response = await api.get('/cargos');
-      setCargos(response.data);
-    } catch (error) {
+      const cargosData = await cargoService.listarTodos();
+      setCargos(cargosData);
+    } catch {
       toast.error('Erro ao carregar cargos');
     }
   };
 
   const carregarTodosCentrosCusto = async () => {
     try {
-      const response = await api.get('/centros-custo');
-      setCentrosCusto(response.data);
-    } catch (error) {
+      const centrosData = await centroCustoService.listarTodos();
+      setCentrosCusto(centrosData);
+    } catch {
       toast.error('Erro ao carregar centros de custo');
     }
   };
@@ -224,10 +227,10 @@ export default function Funcionarios() {
       };
 
       if (selectedFuncionario) {
-        await api.put(`/funcionarios/${selectedFuncionario.id}`, dadosParaEnvio);
+        await funcionarioService.atualizar(selectedFuncionario.id, dadosParaEnvio);
         toast.success('Funcionário atualizado com sucesso');
       } else {
-        await api.post('/funcionarios', dadosParaEnvio);
+        await funcionarioService.criar(dadosParaEnvio);
         toast.success('Funcionário cadastrado com sucesso');
       }
       handleClose();
@@ -243,7 +246,7 @@ export default function Funcionarios() {
       'Para nova matrícula (ex.: efetivação), cadastre um novo funcionário com o mesmo CPF e novo ID externo.'
     )) {
       try {
-        await api.delete(`/funcionarios/${id}`);
+        await funcionarioService.remover(id);
         toast.success('Funcionário inativado com sucesso');
         toast.info(
           'Para efetivação ou nova matrícula: use "Novo Funcionário" com o mesmo CPF e um ID externo (matrícula) diferente.',
@@ -258,16 +261,10 @@ export default function Funcionarios() {
 
   const handleFiltros = async (filtros: Filtros) => {
     try {
-      const params = new URLSearchParams();
-      if (filtros.nome) params.append('nome', filtros.nome);
-      if (filtros.cargoId && filtros.cargoId !== '') params.append('cargoId', filtros.cargoId);
-      if (filtros.centroCustoId && filtros.centroCustoId !== '') params.append('centroCustoId', filtros.centroCustoId);
-      if (filtros.linhaNegocioId && filtros.linhaNegocioId !== '') params.append('linhaNegocioId', filtros.linhaNegocioId);
-
-      const response = await api.get(`/funcionarios?${params.toString()}`);
-      setFuncionarios(response.data);
-      toast.success(`${response.data.length} funcionário(s) encontrado(s)`);
-    } catch (error) {
+      const data = await funcionarioService.filtrar(filtros);
+      setFuncionarios(data);
+      toast.success(`${data.length} funcionário(s) encontrado(s)`);
+    } catch {
       toast.error('Erro ao filtrar funcionários');
     }
   };

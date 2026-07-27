@@ -14,12 +14,15 @@ Governança geral do monorepo: `../AGENTS.md`. Specs técnicas: `../_docs/specs/
 | Build completo | `mvn clean package -DskipTests` |
 | Build + testes | `mvn clean install` |
 | Todos os testes | `mvn test` |
+| Cobertura JaCoCo | `mvn test` → `target/site/jacoco/index.html` (+ `jacoco.xml`) |
 | Classe de teste | `mvn test -Dtest=FuncionarioServiceTest` |
 | Método específico | `mvn test -Dtest=FuncionarioServiceTest#cadastrar_rejeita_cpf_ativo_duplicado` |
 | Subir API local | `mvn spring-boot:run` |
 | Migrações Flyway | `mvn flyway:migrate` |
 
 **Lint/Checkstyle:** não configurado no `pom.xml`. Não invente plugins.
+
+**JaCoCo:** `jacoco-maven-plugin` gera relatório na fase `test`. O Sonar (servidor da máquina em `~/devtools/sonarqube`) importa `target/site/jacoco/jacoco.xml` via `./diversos/scripts/sonar-analyze.sh`.
 
 **Perfis Maven:** nenhum (`-Pdev` / `-Pprod` não existem).
 

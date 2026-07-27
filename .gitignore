@@ -106,6 +106,10 @@ out/
 .env.production.local
 .env*.local
 
+# SonarQube (token local — nunca versionar)
+.sonar.env
+.scannerwork/
+
 # Spec-driven deprecated layout
 .specs/
 

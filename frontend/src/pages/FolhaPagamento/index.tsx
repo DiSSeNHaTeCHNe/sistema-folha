@@ -33,7 +33,8 @@ import { Controller, useForm } from 'react-hook-form';
 import type { FolhaPagamento } from '../../types';
 import { folhaPagamentoService } from '../../services/folhaPagamentoService';
 import { resumoFolhaPagamentoService, type ResumoFolhaPagamento } from '../../services/resumoFolhaPagamentoService';
-import api from '../../services/api';
+import { centroCustoService } from '../../services/centroCustoService';
+import { linhaNegocioService } from '../../services/linhaNegocioService';
 
 interface CentroCusto {
   id: number;
@@ -117,16 +118,16 @@ export function FolhaPagamento() {
 
   const carregarOpcoesDeFilters = async () => {
     try {
-      const [centrosCustoRes, linhasNegocioRes] = await Promise.all([
-        api.get('/centros-custo'),
-        api.get('/linhas-negocio')
+      const [centrosCustoData, linhasNegocioData] = await Promise.all([
+        centroCustoService.listarTodos(),
+        linhaNegocioService.listarTodos(),
       ]);
       
       // Ordenar em ordem alfabética crescente
-      const centrosCustoOrdenados = [...centrosCustoRes.data].sort((a, b) => 
+      const centrosCustoOrdenados = [...centrosCustoData].sort((a, b) => 
         a.descricao.localeCompare(b.descricao)
       );
-      const linhasNegocioOrdenadas = [...linhasNegocioRes.data].sort((a, b) => 
+      const linhasNegocioOrdenadas = [...linhasNegocioData].sort((a, b) => 
         a.descricao.localeCompare(b.descricao)
       );
       

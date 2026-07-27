@@ -2,8 +2,8 @@
 
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
-**Last Updated:** 2026-07-26  
-**Current Work:** Feature `ajuste-harness` — Execute T1–T13 done (uncommitted per user); awaiting Verifier + user commits
+**Last Updated:** 2026-07-27  
+**Current Work:** `acl-acesso-total-role` — Tasks Draft T1–T5 awaiting approval
 
 ---
 
@@ -57,19 +57,60 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 **Scope:** Governança / IDE pointers.  
 **Status:** active (applied in Execute `ajuste-harness`)
 
+### AD-007: Monólito modular in-process; remoção Beneficio legado (2026-07-26)
+
+**Decision:** Adequação modular via pacotes por domínio in-process (sem microserviços). Remover domínio legado `Beneficio` por completo. OrganogramaAcesso como submódulo de Organograma (contrato). Migração incremental. Ports síncronas. FE mínimo. ACL: negar sem funcionário e sem nó.  
+**Reason:** modular-design-principles + decomposition P0/P1; usuário confirmou remoção legado e refactor-only.  
+**Trade-off:** Drop dados `beneficios` sem migração automática para mensal; breaking change em semântica ACL (fim de acesso total implícito).  
+**Scope:** Feature `modular-monolith`; BE+FE mínimo.  
+**Status:** active
+
+### AD-008: Layout de pacote `{dominio}.{camada}` (2026-07-26)
+
+**Decision:** Código backend em `br.com.techne.sistemafolha.{dominio}.{api|application|domain|infrastructure|port}` dentro de um único módulo Maven; comunicação cross-domain via packages `*.port` apenas.  
+**Reason:** Approach A do Design `modular-monolith`; Spring Boot scan na raiz cobre subpacotes; alinha modular-decomposition sem multi-módulo.  
+**Trade-off:** Moves grandes de package; período híbrido até P2 completar.  
+**Scope:** Backend Java; futuras features devem colocar código novo no domínio correspondente.  
+**Status:** active
+
+### AD-009: ArchUnit application-layer + allowlist dashboard/importacao (2026-07-26)
+
+**Decision:** `ModularArchitectureTest` SHALL incluir regras que proíbem `..application..` de depender de `..infrastructure..` de **outro** domínio (same-domain permitido). Até existirem ports Folha/Cadastros stats, `dashboard.application` e `importacao.application` ficam em **allowlist temporária** documentada no teste e no design `modular-monolith-fix` Approach A. Novas features não podem expandir a allowlist sem AD superseding.  
+**Reason:** Fecha gap Verifier (application cross-infra) sem big-bang de ports de escrita/leitura Folha neste fix.  
+**Trade-off:** Isolamento AD-008 incompleto nesses dois packages até follow-up.  
+**Scope:** Backend ArchUnit; feature `modular-monolith-fix`; follow-up obrigatório para remover allowlist.  
+**Status:** superseded by AD-010
+
+### AD-010: ArchUnit dashboard/importacao sem allowlist (2026-07-27)
+
+**Decision:** `ModularArchitectureTest` inclui regras simétricas `dashboard_application_must_not_access_foreign_infrastructure` e `importacao_application_must_not_access_foreign_infrastructure`. Allowlist AD-009 removida; consumidores usam apenas `*.port` (FolhaConsultaPort, FolhaImportacaoPort, CadastrosImportLookupPort, BeneficioConsultaPort, OrganogramaAcessoPort, UsuarioLookupPort).  
+**Reason:** Fecha dívida AD-009 após ports agregadoras + ACL dashboard + refactor importação ADP (feature `modular-boundary-hardening`).  
+**Trade-off:** Nenhum — isolamento AD-008 completo nos application packages cobertos.  
+**Scope:** Backend ArchUnit; feature `modular-boundary-hardening` MODBH-27…30.  
+**Status:** active
+
+### AD-011: Permissão `ACESSO_TOTAL` ≠ `ADMIN` (2026-07-27)
+
+**Decision:** Visão global de dados (`acessoTotal=true` no `OrganogramaAcessoPort`) exige permissão explícita `ACESSO_TOTAL`. Role `ADMIN` permanece só para mutações privilegiadas (`hasRole("ADMIN")`) e **não** implica `acessoTotal`. Seed admin recebe ambas. Concessão a qualquer usuário via `usuario_permissoes`.  
+**Reason:** Least privilege; fecha gap pós MOD-09 onde `acessoTotal` nunca era setado em produção; evita funcionário fantasma no organograma.  
+**Trade-off:** Resumo da folha continua unscoped neste MVP (ACL no resumo Deferred).  
+**Scope:** ACL organograma + consumidores Folha/Benefícios/Dashboard; feature `acl-acesso-total-role`.  
+**Status:** active
+
 ---
 
 ## Handoff
 
-- **Feature**: `ajuste-harness` → `_docs/specs/features/ajuste-harness/`
-- **Phase / Task**: Execute complete (T1–T13); Full harness gate PASS
-- **Completed**: Specify, Design Approach A, Tasks, Execute T1–T13 (Batch 1 + Batch 2)
-- **In-progress**: Awaiting independent Verifier; user commits (no auto-commit)
-- **Next step**: Verifier → optional `validation.md`; user commits harness changes
-- **Blockers**: Nenhum técnico
-- **Uncommitted files**: harness + specs (produto backend/frontend fora do escopo desta feature)
-- **Branch**: (working tree local)
-
+- **Feature (active)**: `acl-acesso-total-role` → `_docs/specs/features/acl-acesso-total-role/`
+  - **Phase**: Execute **complete** + Independent Verifier **PASS** (after Fix cycle 1 tests-only) + code-review clean
+  - **Branch**: `main`
+  - **Commits**: none (NO COMMITS per user)
+  - **Gates**: `mvn test` → **129** passed, 0 failed; `npm run build` → pass
+  - **Validation**: `_docs/specs/features/acl-acesso-total-role/validation.md` — 10/10 MVP ACs; sensor 2/2 killed
+  - **Fix cycles used**: 1/3 (ATOT-03/04/10/06 tests); no production drift
+  - **Uncommitted (feature)**: OrganogramaAcessoService(+Test), V1.15 SQL, Usuarios/index.tsx, AuthContext.tsx, FolhaPagamentoServiceTest, AuthenticationServiceAcessoTest, SecurityConfigTipoBeneficioTest, feature specs + validation + STATE Handoff
+  - **Deferred**: ATOT-11
+- **Decisions**: AD-001…AD-008, AD-010, AD-011 active
 ---
 
 ## Blockers
@@ -84,7 +125,18 @@ _None currently._
 - [x] Executar `map codebase` → brownfield docs
 - [x] Specificar feature `ajuste-harness`
 - [x] Aprovar Design `ajuste-harness` → Tasks → Execute (T1–T13 done, uncommitted)
-- [ ] Verifier independente + commits do usuário
+- [x] Specificar feature `modular-monolith` (spec + context)
+- [x] Design Approach A `modular-monolith`
+- [x] Tasks `modular-monolith` (T1–T32 drafted)
+- [x] Specificar + Design Approach A `modular-monolith` → Tasks → Execute T1–T32 (uncommitted; Verifier FAIL)
+- [x] Design Approach A `modular-monolith-fix` (AD-009)
+- [x] Aprovar tasks `modular-monolith-fix` → Execute → Verifier fix → re-Verifier pai
+- [x] Specificar feature `modular-acl-security-fix` (ACL empty-set + refresh permitAll + Folha delete ACL)
+- [x] Re-review spec `modular-acl-security-fix` vs tree pós sibling/parent PASS (2026-07-26)
+- [x] Execute `modular-acl-security-fix` T1–T4 + Verifier PASS + code-review (uncommitted)
+- [ ] Commits do usuário (`ajuste-harness` / `modular-monolith` / fix batch)
+- [x] Feature `modular-boundary-hardening` — Execute T1–T12 done; AD-010 active; ready for Verifier
+- [ ] Deferred concerns (not this fix): `/usuarios` ADMIN privilege escalation; password logging hygiene; N+1 import loops
 - [ ] Feature futura: adequação do código às skills FE target / gaps de segurança do relatório
 - [x] Migrar ou descartar artefatos legados em `.specs/codebase/`
 

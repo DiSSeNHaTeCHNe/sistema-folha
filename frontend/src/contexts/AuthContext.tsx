@@ -137,13 +137,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   /**
    * Verifica se o usuário pode acessar um centro de custo específico.
-   * Se acessoTotal é true, pode acessar tudo.
-   * Caso contrário, verifica se o centro está na lista de acessíveis.
+   * acessoTotal concede acesso global antes de exigir vínculo a funcionário/nó.
    */
   const podeAcessarCentroCusto = (centroCustoId: number): boolean => {
-    if (!acessoUsuario) return true; // Se não tem info de acesso, permite (fallback)
+    if (!acessoUsuario) return false;
     if (acessoUsuario.acessoTotal) return true;
-    return acessoUsuario.centrosCustoAcessiveis.includes(centroCustoId);
+    if (!acessoUsuario.temFuncionarioVinculado || !acessoUsuario.temNoOrganograma) return false;
+    return acessoUsuario.centrosCustoIds.includes(centroCustoId);
   };
 
   return (

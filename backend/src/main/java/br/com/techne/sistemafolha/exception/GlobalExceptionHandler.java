@@ -1,5 +1,16 @@
 package br.com.techne.sistemafolha.exception;
 
+import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensalDuplicadaException;
+import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensalNotFoundException;
+import br.com.techne.sistemafolha.beneficios.domain.ImportacaoBeneficioMensalInvalidaException;
+import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioCodigoDuplicadoException;
+import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundException;
+import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
+import br.com.techne.sistemafolha.cadastros.domain.FuncionarioJaExisteException;
+import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
+import br.com.techne.sistemafolha.cadastros.domain.RubricaNotFoundException;
+import br.com.techne.sistemafolha.organograma.domain.NoOrganogramaNotFoundException;
+import br.com.techne.sistemafolha.organograma.domain.OrganogramaAtivoConflictException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
