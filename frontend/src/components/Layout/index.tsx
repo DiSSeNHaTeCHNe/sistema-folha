@@ -76,7 +76,6 @@ export function Layout() {
     { text: 'Organograma', icon: <AccountTree />, path: '/organograma' },
     { text: 'Folha de Pagamento', icon: <AttachMoney />, path: '/folha-pagamento' },
     { text: 'Benefícios Mensais', icon: <Redeem />, path: '/beneficios-mensais' },
-    { text: 'Importação', icon: <CloudUpload />, path: '/importacao' },
     { text: 'Relatórios', icon: <Assessment />, path: '/relatorios' },
   ];
 
@@ -87,6 +86,7 @@ export function Layout() {
     { text: 'Cargos', icon: <Work />, path: '/cargos' },
     { text: 'Rubricas', icon: <Receipt />, path: '/rubricas' },
     { text: 'Tipos de Benefício', icon: <CardGiftcard />, path: '/tipos-beneficio' },
+    { text: 'Importação', icon: <CloudUpload />, path: '/importacao' },
   ];
 
   const drawer = (
