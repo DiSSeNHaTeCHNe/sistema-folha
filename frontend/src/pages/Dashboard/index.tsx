@@ -63,7 +63,7 @@ export default function Dashboard() {
         setLoading(true);
         const data = await getDashboardStats();
         setStats(data);
-      } catch (err) {
+      } catch {
         setError('Erro ao carregar dados do dashboard');
       } finally {
         setLoading(false);
@@ -129,7 +129,14 @@ export default function Dashboard() {
   const percentualProventos = ((stats.totalProventos / (stats.totalProventos + stats.totalDescontos)) * 100);
 
   // Função para renderizar legenda customizada
-  const renderLegend = (data: any[]) => (
+  type PieLegendEntry = {
+    name: string;
+    value: number;
+    color: string;
+    fullName?: string;
+  };
+
+  const renderLegend = (data: PieLegendEntry[]) => (
     <Box mt={2}>
       {data.map((entry, index) => (
         <Box key={index} display="flex" alignItems="center" mb={1}>
