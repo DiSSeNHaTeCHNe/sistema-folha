@@ -2,8 +2,10 @@ package br.com.techne.sistemafolha.folha.application;
 
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
+import br.com.techne.sistemafolha.beneficios.port.BeneficioConsultaPort;
 import br.com.techne.sistemafolha.folha.api.ResumoFolhaPagamentoDTO;
 import br.com.techne.sistemafolha.folha.domain.ResumoFolhaPagamento;
+import br.com.techne.sistemafolha.folha.infrastructure.FichaMensalRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.ResumoFolhaPagamentoRepository;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
@@ -22,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,6 +62,15 @@ class ResumoFolhaPagamentoServiceTest {
     @Mock
     private UsuarioLookupPort usuarioLookupPort;
 
+    @Mock
+    private BeneficioConsultaPort beneficioConsultaPort;
+
+    @Mock
+    private EncargosRateioService encargosRateioService;
+
+    @Mock
+    private FichaMensalRepository fichaMensalRepository;
+
     @InjectMocks
     private ResumoFolhaPagamentoService resumoFolhaPagamentoService;
 
@@ -68,6 +81,7 @@ class ResumoFolhaPagamentoServiceTest {
     void listarTodos_mapeia_resumos_ativos() {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubGlobalSemFicha();
         ResumoFolhaPagamento resumo = resumoAtivo(1L);
         when(resumoFolhaPagamentoRepository.findByCompetenciaInicioBetweenAndAtivoTrue(
                 ANO_2024_INICIO, ANO_2024_FIM))
@@ -78,12 +92,14 @@ class ResumoFolhaPagamentoServiceTest {
         assertEquals(1, result.size());
         assertEquals(1L, result.get(0).id());
         assertEquals(new BigDecimal("50000.00"), result.get(0).totalLiquido());
+        assertEquals(new BigDecimal("60000.00"), result.get(0).totalBruto());
     }
 
     @Test
     void consultarPorCompetencia_retorna_optional_quando_encontrado() {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubGlobalSemFicha();
         ResumoFolhaPagamento resumo = resumoAtivo(2L);
         when(resumoFolhaPagamentoRepository.findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM))
@@ -102,6 +118,7 @@ class ResumoFolhaPagamentoServiceTest {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
             .thenReturn(contextoRestrito(Set.of(CENTRO_A)));
+        stubBeneficiosVazios();
 
         ResumoFolhaPagamento snapshot = resumoAtivo(1L);
         when(resumoFolhaPagamentoRepository.findByCompetenciaInicioBetweenAndAtivoTrue(
@@ -125,6 +142,8 @@ class ResumoFolhaPagamentoServiceTest {
         assertEquals(0, new BigDecimal("8000.00").compareTo(dto.totalPagamentos()));
         assertEquals(0, new BigDecimal("700.00").compareTo(dto.totalDescontos()));
         assertEquals(0, new BigDecimal("7300.00").compareTo(dto.totalLiquido()));
+        assertEquals(0, new BigDecimal("8000.00").compareTo(dto.totalBruto()));
+        assertEquals(0, new BigDecimal("8000.00").compareTo(dto.totalCustoEmpresa()));
         assertEquals(0, BigDecimal.ZERO.compareTo(dto.totalEncargos()));
         // RSF-05: would fail if scoped mirrored global snapshot
         assertNotEquals(snapshot.getTotalEmpregados(), dto.totalEmpregados());
@@ -138,6 +157,7 @@ class ResumoFolhaPagamentoServiceTest {
     void listarTodos_acessoTotal_retornaSnapshotPersistidoComEncargos() {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubGlobalSemFicha();
         ResumoFolhaPagamento snapshot = resumoAtivo(5L);
         when(resumoFolhaPagamentoRepository.findByCompetenciaInicioBetweenAndAtivoTrue(
                 ANO_2024_INICIO, ANO_2024_FIM))
@@ -153,7 +173,10 @@ class ResumoFolhaPagamentoServiceTest {
         assertEquals(new BigDecimal("60000.00"), dto.totalPagamentos());
         assertEquals(new BigDecimal("10000.00"), dto.totalDescontos());
         assertEquals(new BigDecimal("50000.00"), dto.totalLiquido());
-        verify(folhaConsultaPort, never()).findLinhasAtivasPorCompetencia(any(), any(), anyBoolean(), any());
+        assertEquals(new BigDecimal("60000.00"), dto.totalBruto());
+        assertEquals(new BigDecimal("70000.00"), dto.totalCustoEmpresa());
+        verify(folhaConsultaPort).findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
     }
 
     /** RSF-03: deny (no funcionario/nó) → empty list. */
@@ -189,6 +212,7 @@ class ResumoFolhaPagamentoServiceTest {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
             .thenReturn(contextoRestrito(Set.of(CENTRO_A)));
+        stubBeneficiosVazios();
 
         ResumoFolhaPagamento snapshot = resumoAtivo(7L);
         snapshot.setDecimoTerceiro(true);
@@ -222,6 +246,7 @@ class ResumoFolhaPagamentoServiceTest {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
             .thenReturn(contextoRestrito(Set.of(CENTRO_A)));
+        stubBeneficiosVazios();
 
         ResumoFolhaPagamento snapshot = resumoAtivo(9L);
         when(resumoFolhaPagamentoRepository.findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
@@ -249,6 +274,7 @@ class ResumoFolhaPagamentoServiceTest {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
             .thenReturn(contextoRestrito(Set.of(CENTRO_A)));
+        stubBeneficiosVazios();
 
         ResumoFolhaPagamento snapshotRegular = resumoAtivo(10L);
         snapshotRegular.setDecimoTerceiro(false);
@@ -303,6 +329,7 @@ class ResumoFolhaPagamentoServiceTest {
     void listarTodos_anoEMes_filtraPorMes() {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubGlobalSemFicha();
         LocalDate inicio = LocalDate.of(2024, 10, 1);
         LocalDate fim = LocalDate.of(2024, 10, 31);
         when(resumoFolhaPagamentoRepository.findByCompetenciaInicioBetweenAndAtivoTrue(inicio, fim))
@@ -350,6 +377,39 @@ class ResumoFolhaPagamentoServiceTest {
 
         assertEquals("Ano deve estar entre 2000 e 2100", ex.getMessage());
         verify(resumoFolhaPagamentoRepository, never()).findByCompetenciaInicioBetweenAndAtivoTrue(any(), any());
+    }
+
+    /** FCLT-ACL-06: scoped never reads persisted global ficha totals. */
+    @Test
+    void listarTodos_scoped_nuncaConsultaTotaisGlobaisFicha() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(CENTRO_A)));
+        stubBeneficiosVazios();
+
+        ResumoFolhaPagamento snapshot = resumoAtivo(12L);
+        when(resumoFolhaPagamentoRepository.findByCompetenciaInicioBetweenAndAtivoTrue(
+                ANO_2024_INICIO, ANO_2024_FIM))
+            .thenReturn(List.of(snapshot));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(CENTRO_A)))
+            .thenReturn(List.of(linha(101L, CENTRO_A, "PROVENTO", "1000.00")));
+
+        resumoFolhaPagamentoService.listarTodos(LOGIN, 2024, null);
+
+        verify(fichaMensalRepository, never()).existsByCompetencia(any(), any(), anyBoolean());
+        verify(fichaMensalRepository, never()).findByCompetencia(any(), any(), anyBoolean());
+    }
+
+    private void stubGlobalSemFicha() {
+        when(fichaMensalRepository.existsByCompetencia(any(), any(), anyBoolean())).thenReturn(false);
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(any(), any(), anyBoolean(), isNull()))
+            .thenReturn(List.of());
+    }
+
+    private void stubBeneficiosVazios() {
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of());
     }
 
     private void stubUsuario() {

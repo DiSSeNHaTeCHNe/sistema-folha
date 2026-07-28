@@ -11,9 +11,11 @@ public record ResumoFolhaPagamentoDTO(
     BigDecimal totalPagamentos,
     BigDecimal totalDescontos,
     BigDecimal totalLiquido,
+    BigDecimal totalBruto,
+    BigDecimal totalCustoEmpresa,
     LocalDate competenciaInicio,
     LocalDate competenciaFim,
     LocalDateTime dataImportacao,
     Boolean decimoTerceiro,
     Boolean ativo
-) {} 
+) {}
