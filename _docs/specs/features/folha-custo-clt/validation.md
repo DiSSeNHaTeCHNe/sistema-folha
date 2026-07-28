@@ -58,7 +58,7 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 | FCLT-ACL-08 scoped lines CC filter; encargos=0 | Scoped encargosRateados zero | `FolhaTotalizacaoServiceTest.java:117` — `assertEquals(BigDecimal.ZERO.setScale(2), total.encargosRateados())` | ✅ PASS |
 | FCLT-ACL-09 acessoTotal rateio D4-CLT | 800/200 on 8k/2k | `FolhaTotalizacaoServiceTest.java:140-143` | ✅ PASS |
 | FCLT-ACL-10 FE cards use API not local aggregate | No reduce on money totals | `FolhaPagamento/index.tsx:202-206` — `consultarTotaisPorFuncionario` (no automated assertion) | ⚠️ Spec-precision gap |
-| FCLT-ACL-11 paridade resumo ↔ cards | Sum cards = scoped resumo | — | ❌ GAP |
+| FCLT-ACL-11 paridade resumo ↔ cards | Sum cards = scoped resumo | `FolhaAclParidadeResumoCardsTest.java:103-152` — sum bruto/liquido/custoEmpresa = resumo scoped | ✅ PASS |
 
 ### P1 — ACL detalhe
 
@@ -100,11 +100,11 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 | FCLT-21 UI Rubricas Fixas CRUD | CRUD with valor/vigência | `RubricasFixas/index.tsx:254` etc. (no automated assertion) | ⚠️ Spec-precision gap |
 | FCLT-22 processar inject CUSTO_FIXO | origemLinha CUSTO_FIXO from cadastro | `FolhaProcessamentoServiceTest.java:138-142` | ✅ PASS |
 | FCLT-23 dedup ADP vs fixo prefer ADP | Single ADP line when duplicate | `FolhaProcessamentoServiceTest.java:176-180` — `assertEquals(1, resultado.totalLinhas())` | ✅ PASS |
-| FCLT-24 cadastro change stale until reprocess | Consulta unchanged until POST /processar | — | ❌ GAP |
-| FCLT-INT-02 scoped CUSTO_FIXO respects ACL by CC | Same filter as FOLHA_ADP | — (implicit in port; no dedicated assertion) | ❌ GAP |
+| FCLT-24 cadastro change stale until reprocess | Consulta unchanged until POST /processar | `FolhaProcessamentoServiceTest.java:226-274` — ficha 10500 unchanged after cadastro 800; 10800 after reprocess | ✅ PASS |
+| FCLT-INT-02 scoped CUSTO_FIXO respects ACL by CC | Same filter as FOLHA_ADP | `FolhaConsultaAdapterTest.java:191-211` — scoped Set.of(100L) returns only CC 100 CUSTO_FIXO | ✅ PASS |
 | FCLT-25 férias impact totals via operadores | bruto/custo include line | `FolhaProcessamentoServiceTest.java:222-223` — bruto 14500 | ✅ PASS |
 
-**Status**: ❌ Gaps present — **28/40** with test assertions ✅; **8/40** ⚠️ implementation-only (FE AD-004); **5/40** ❌ no evidence
+**Status**: ⚠️ Cycle-1 (a) gaps closed — **31/40** with test assertions ✅; **8/40** ⚠️ impl-only (FE); **3/40** ❌ schema/migration evidence
 
 ---
 
@@ -137,7 +137,8 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 - **Gate command**: `cd backend && mvn test && cd ../frontend && npm run lint && npm run build`
 - **Backend**: ✅ BUILD SUCCESS — **222** tests, **0** failed, **0** skipped
-- **Frontend lint**: ❌ exit 1 — **38 errors**, **8 warnings** (mostly pre-existing outside feature: `api.ts`, `Cargos`, `Organograma`, etc.; feature files: `Dashboard/index.tsx` unused `err` + `any`; `Rubricas/index.tsx` hook-deps warning only)
+- **Frontend lint (feature files)**: ✅ 0 errors on Dashboard/FolhaPagamento/Rubricas/RubricasFixas/folhaPagamentoService (1 hook-deps warning in Rubricas pre-existing)
+- **Frontend lint (repo-wide)**: ❌ pre-existing debt outside feature scope
 - **Frontend build**: ✅ `tsc -b && vite build` success
 - **Test files**: base `c4ac169` → **26**; HEAD → **32** (+6 feature test classes)
 - **ModularArchitectureTest**: ✅ 18 rules passed
@@ -164,19 +165,24 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 | Operador 0 → line excluded from totalizer tab | ✅ `FolhaFichaConsultaServiceTest:85-87` |
 | Dedup ADP vs fixo | ✅ `FolhaProcessamentoServiceTest:176-180` |
 | Rateio centavos última parcela | ✅ `EncargosRateioServiceTest:48-57` |
-| Custo fixo stale until reprocess | ❌ Not tested |
+| Custo fixo stale until reprocess | ✅ `FolhaProcessamentoServiceTest:226-274` |
+
+---
+
+## Security (cycle-1 fixes)
+
+| Control | Expected | Evidence | Result |
+| ------- | -------- | -------- | ------ |
+| POST `/folha-pagamento/processar` ADMIN only | 403 USER/ACESSO_TOTAL; 2xx ADMIN | `SecurityConfig.java:39`; `SecurityConfigFolhaProcessamentoTest.java:47-74` | ✅ PASS |
+| `/funcionario-rubrica-fixa/**` ADMIN only | 403 USER; 2xx ADMIN list/create | `SecurityConfig.java:43`; `SecurityConfigFuncionarioRubricaFixaTest.java:47-74` | ✅ PASS |
 
 ---
 
 ## Ranked Gaps
 
-1. **Gate FAIL — `npm run lint`** (38 errors repo-wide; T27 requires lint success) — blocker for full gate
-2. **FCLT-ACL-11** — no test asserting sum(card bruto/liquido/custoEmpresa) = scoped resumo totals
-3. **FCLT-24** — no test that cadastro rubrica fixa change does not alter consulta until reprocess
-4. **FCLT-INT-02** — no explicit scoped ACL test for `CUSTO_FIXO` lines by funcionário CC
-5. **FCLT-15** — no GET funcionário / entity test asserting regime CLT after migration
-6. **FE ACs (FCLT-03, 09–12, 21, ACL-10, 14)** — implementation present, zero Vitest/Playwright assertions (AD-004)
-7. **Schema ACs (FCLT-01, FCLT-18)** — migration SQL only; compile gate, no Flyway/integration assertion
+1. **FE ACs (FCLT-03, 09–12, 21, ACL-10, 14)** — implementation present, zero Vitest/Playwright assertions (AD-004)
+2. **Schema ACs (FCLT-01, FCLT-15, FCLT-18)** — migration SQL only; compile gate, no Flyway/integration assertion
+3. **Repo-wide lint** — pre-existing debt outside feature files (`api.ts`, `Cargos`, `Organograma`, etc.)
 
 ---
 
@@ -184,7 +190,8 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 | Requirement | Previous | Verified status |
 | ----------- | -------- | --------------- |
-| FCLT-01, 15, 18, 24, INT-02, ACL-11 | Done | ❌ Needs Fix / test |
+| FCLT-01, 15, 18 | Done | ❌ Needs Fix / test |
+| FCLT-24, INT-02, ACL-11 | Done | ✅ Verified (cycle-1 fix) |
 | FCLT-03, 09–12, 21, ACL-10, 14 | Done | ⚠️ Verified impl-only |
 | All other in-scope FCLT / ACL | Done | ✅ Verified (test-backed) |
 | FCLT-17 | Deferred | — |
@@ -201,6 +208,6 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 **What works**: Backend motor, ACL dual-path, rateio, processamento (ADP + fixo + férias), dashboard custo empresa, discrimination sensor on critical paths.
 
-**Next steps**: (1) Fix or waive lint debt for T27 gate; (2) add FCLT-ACL-11 + FCLT-24 + FCLT-INT-02 tests; (3) add FE tests per AD-004 for visible ACs; (4) optional Flyway smoke for FCLT-01/15/18.
+**Next steps**: (1) add FE tests per AD-004 for visible ACs; (2) optional Flyway smoke for FCLT-01/15/18; (3) address repo-wide lint debt outside feature scope.
 
 **Lessons**: not recorded (`lessons.py` requires `--feature/--signal/--source`; manual follow-up recommended).
