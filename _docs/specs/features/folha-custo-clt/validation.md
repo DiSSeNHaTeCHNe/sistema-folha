@@ -2,6 +2,7 @@
 
 **Date**: 2026-07-28  
 **Re-run (cycle 1)**: 2026-07-28 17:44 UTC-3 — commits `b78ba23`..`3d14347`  
+**Re-run (cycle 2)**: 2026-07-28 17:49 UTC-3 — commits `df1358a`..`c09a298`  
 **Spec**: `_docs/specs/features/folha-custo-clt/spec.md`  
 **Diff range**: `c4ac1699a03f4acc20f7066eacda95d698c488b2..HEAD`  
 **Verifier**: independent sub-agent (author ≠ verifier)
@@ -13,7 +14,7 @@
 | Task | Status | Notes |
 | ---- | ------ | ----- |
 | T1–T26 | ✅ Done | All marked done in `tasks.md` |
-| T27 | ⚠️ Partial | Backend gate green; frontend `npm run lint` fails on pre-existing repo debt |
+| T27 | ✅ Done | Full gate green — backend 233/233; frontend lint 0 errors + build pass |
 
 ---
 
@@ -93,7 +94,7 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 | --------- | -------------------- | ----------------------- | ------ |
 | FCLT-13 rateio 8k/2k → 800/200 ±R$0.01 | HALF_UP 2; sum tolerance | `EncargosRateioServiceTest.java:24-26` | ✅ PASS |
 | FCLT-14 scoped rateio not executed | encargos=0 | `EncargosRateioServiceTest.java:30-35`; `FolhaLinhaAgregacaoTest.java:101` | ✅ PASS |
-| FCLT-15 migration regime CLT seed | CLT active; funcionários → CLT | `V1.20__regime_trabalho.sql:9-26` (no test assertion) | ❌ GAP |
+| FCLT-15 migration regime CLT seed | CLT active; funcionários → CLT | `FuncionarioConsultaAdapterTest.java:71-79` — `assertEquals("CLT", result.get().getRegimeTrabalho().getCodigo())`; `:79` — `assertTrue(…getAtivo())`; migration `V1.20__regime_trabalho.sql:9-26` | ✅ PASS |
 | FCLT-16 férias 2,5 CALCULADO when recalcularFerias | Line cod 5000; valor 2500 on 12k sal | `FolhaProcessamentoServiceTest.java:214-217` — `assertEquals(new BigDecimal("2500.00"), linhaFerias.getValor())` | ✅ PASS |
 | FCLT-18 schema funcionario_rubrica_fixa | Table columns per spec | `V1.19__funcionario_rubrica_fixa.sql:2-13` (no test assertion) | ❌ GAP |
 | FCLT-19 CRUD rubrica fixa | Persist id + valor | `FuncionarioRubricaFixaServiceTest.java:74-80` | ✅ PASS |
@@ -105,7 +106,7 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 | FCLT-INT-02 scoped CUSTO_FIXO respects ACL by CC | Same filter as FOLHA_ADP | `FolhaConsultaAdapterTest.java:191-211` — scoped Set.of(100L) returns only CC 100 CUSTO_FIXO | ✅ PASS |
 | FCLT-25 férias impact totals via operadores | bruto/custo include line | `FolhaProcessamentoServiceTest.java:222-223` — bruto 14500 | ✅ PASS |
 
-**Status**: ⚠️ Cycle-1 (a) gaps closed — **31/40** with test assertions ✅; **8/40** ⚠️ impl-only (FE); **3/40** ❌ schema/migration evidence
+**Status**: ⚠️ Cycle-2 — **32/40** with test assertions ✅; **8/40** ⚠️ impl-only (FE, AD-004 non-blocker); **2/40** ❌ schema/migration evidence (FCLT-01, FCLT-18 — tasks matrix: compile gate only)
 
 ---
 
@@ -134,6 +135,16 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 ---
 
+## Cycle 2 Re-check (targeted gaps)
+
+| Target | Expected | Evidence (re-run) | Result |
+| ------ | -------- | ----------------- | ------ |
+| FCLT-15 | Funcionário carregado com regime CLT ativo | `FuncionarioConsultaAdapterTest.java:71-79` — codigo `CLT`, `ativo=true` | ✅ PASS |
+| Repo-wide FE lint | Full gate `npm run lint` exit 0 | `eslint .` — **0 errors**, 8 warnings (hook-deps brownfield) | ✅ PASS |
+| Full gate | mvn test + lint + build | Backend 233/233; lint 0 errors; `tsc -b && vite build` success | ✅ PASS |
+
+---
+
 ## Cycle 1 Re-check (targeted gaps)
 
 | Target | Expected | Evidence (re-run) | Result |
@@ -150,11 +161,10 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 ## Gate Check
 
 - **Gate command**: `cd backend && mvn test && cd ../frontend && npm run lint && npm run build`
-- **Backend**: ✅ BUILD SUCCESS — **232** tests, **0** failed, **0** skipped (re-run 2026-07-28)
-- **Frontend lint (feature files)**: ✅ 0 errors on Dashboard/FolhaPagamento/Rubricas/RubricasFixas/folhaPagamentoService (1 hook-deps warning in Rubricas)
-- **Frontend lint (repo-wide)**: ❌ **36 errors**, 8 warnings — pre-existing debt (`api.ts`, Cargos, Organograma, etc.)
+- **Backend**: ✅ BUILD SUCCESS — **233** tests, **0** failed, **0** skipped (cycle 2 re-run 2026-07-28 17:49 UTC-3)
+- **Frontend lint (repo-wide)**: ✅ **0 errors**, 8 warnings — hook-deps brownfield (`Rubricas`, `AuthContext`, `Organograma`, etc.)
 - **Frontend build**: ✅ `tsc -b && vite build` success
-- **Test files**: base `c4ac169` → **26**; HEAD → **35** (+9 test classes incl. cycle-1 security + paridade)
+- **Test files**: base `c4ac169` → **26**; HEAD → **36** (+10 test classes incl. cycle-1 security/paridade + cycle-2 FCLT-15)
 - **ModularArchitectureTest**: ✅ 18 rules passed
 
 ---
@@ -166,7 +176,7 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 | Minimum code / surgical changes | ✅ |
 | Matches existing patterns | ✅ |
 | Spec-anchored backend tests non-shallow | ✅ |
-| FE tests per AD-004 | ❌ Not added (known gap) |
+| FE tests per AD-004 | ❌ Not added (known gap — **does not block PASS** per tasks matrix + AD-004) |
 | Guidelines | `_docs/specs/TESTING.md`, `backend/AGENTS.md` §4, `frontend/AGENTS.md` |
 
 ---
@@ -194,9 +204,9 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 ## Ranked Gaps
 
-1. **FE ACs (FCLT-03, 09–12, 21, ACL-10, 14)** — implementation present, zero Vitest/Playwright assertions (AD-004)
-2. **Schema ACs (FCLT-01, FCLT-15, FCLT-18)** — migration SQL only; compile gate, no Flyway/integration assertion
-3. **Repo-wide lint** — pre-existing debt outside feature files (`api.ts`, `Cargos`, `Organograma`, etc.)
+1. **FE ACs (FCLT-03, 09–12, 21, ACL-10, 14)** — implementation present, zero Vitest/Playwright assertions (AD-004; **non-blocker** per tasks matrix)
+2. **Schema ACs (FCLT-01, FCLT-18)** — migration SQL only; compile gate passes; optional Flyway smoke not added (tasks matrix: none required)
+3. ~~**Repo-wide lint**~~ — **closed cycle 2** (`df1358a` — 0 errors repo-wide)
 
 ---
 
@@ -204,7 +214,8 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 | Requirement | Previous | Verified status |
 | ----------- | -------- | --------------- |
-| FCLT-01, 15, 18 | Done | ❌ Needs Fix / test |
+| FCLT-15 | Done | ✅ Verified (cycle-2 `FuncionarioConsultaAdapterTest`) |
+| FCLT-01, 18 | Done | ⚠️ Migration SQL only (compile gate; optional smoke) |
 | FCLT-24, INT-02, ACL-11 | Done | ✅ Verified (cycle-1 fix) |
 | FCLT-03, 09–12, 21, ACL-10, 14 | Done | ⚠️ Verified impl-only |
 | All other in-scope FCLT / ACL | Done | ✅ Verified (test-backed) |
@@ -214,15 +225,16 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 ## Summary
 
-**Overall**: ❌ **FAIL** (cycle 1 re-run)
+**Overall**: ✅ **PASS** (cycle 2 re-run)
 
-**Cycle 1 targets**: FCLT-ACL-11, FCLT-24, FCLT-INT-02, security fixes, FE lint (feature scope) — all ✅  
-**Spec-anchored check**: **31/40** ACs with test assertions; **8/40** ⚠️ impl-only (FE); **3/40** ❌ schema/migration evidence  
-**Sensor**: 5 injected, 5 killed, 0 survived  
-**Gate**: backend **232/232** pass; frontend **repo-wide lint fail** (36 errors); frontend build pass
+**Cycle 2 targets**: FCLT-15 test assertion, repo-wide FE lint (`df1358a`), full gate — all ✅  
+**Cycle 1 carry-over**: FCLT-ACL-11, FCLT-24, FCLT-INT-02, security fixes — still ✅  
+**Spec-anchored check**: **32/40** ACs with test assertions; **8/40** ⚠️ impl-only (FE); **2/40** ❌ schema/migration evidence (non-blocking per tasks matrix)  
+**Sensor**: 5 injected, 5 killed, 0 survived (unchanged from cycle 1)  
+**Gate**: backend **233/233** pass; frontend **repo-wide lint pass** (0 errors); frontend build pass
 
-**What works**: Backend motor, ACL dual-path, rateio, processamento (ADP + fixo + férias), paridade resumo↔cards, stale custo fixo, scoped CUSTO_FIXO ACL, ADMIN-only processar/rubrica-fixa, dashboard custo empresa.
+**What works**: Backend motor, ACL dual-path, rateio, processamento (ADP + fixo + férias), paridade resumo↔cards, stale custo fixo, scoped CUSTO_FIXO ACL, ADMIN-only processar/rubrica-fixa, dashboard custo empresa, regime CLT load assertion.
 
-**Remaining gaps**: (1) FE Vitest/Playwright per AD-004; (2) Flyway smoke for FCLT-01/15/18; (3) repo-wide lint debt (blocks full gate).
+**Remaining gaps (non-blocking)**: (1) FE Vitest/Playwright per AD-004 — impl-only, does **not** block PASS; (2) optional Flyway smoke for FCLT-01/18.
 
 **Lessons**: not recorded (`lessons.py` requires `--feature/--signal/--source`; manual follow-up recommended).
