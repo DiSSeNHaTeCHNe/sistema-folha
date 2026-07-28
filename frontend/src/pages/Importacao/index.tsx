@@ -148,7 +148,7 @@ export default function Importacao() {
           tamanho: response.tamanho,
         });
 
-        toast.success('Arquivo de folha ADP importado com sucesso!');
+        toast.success(response.message);
         setFolhaAdpFileName('');
         setIsDecimoTerceiro(false);
         if (folhaAdpFileRef.current) {
@@ -556,7 +556,7 @@ export default function Importacao() {
                   }
                   fullWidth
                 >
-                  {folhaAdpState.loading ? 'Importando...' : 'Importar Folha ADP'}
+                  {folhaAdpState.loading ? 'Importando e processando ficha…' : 'Importar Folha ADP'}
                 </Button>
 
                 {folhaAdpState.success && (
@@ -577,7 +577,11 @@ export default function Importacao() {
           {(beneficiosMensaisState.loading || folhaAdpState.loading) && (
             <Box display="flex" alignItems="center" mb={2}>
               <CircularProgress size={20} sx={{ mr: 1 }} />
-              <Typography variant="body2">Processando arquivo...</Typography>
+              <Typography variant="body2">
+                {folhaAdpState.loading
+                  ? 'Importando e processando ficha…'
+                  : 'Processando arquivo...'}
+              </Typography>
             </Box>
           )}
           {(beneficiosMensaisState.success || folhaAdpState.success) && (

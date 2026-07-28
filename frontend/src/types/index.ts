@@ -184,6 +184,8 @@ export interface ImportacaoResponse {
   arquivo?: string;
   tamanho?: number;
   registrosProcessados?: number;
+  fichasProcessadas?: number;
+  linhasProcessadas?: number;
   erros?: string[];
 } 
 
