@@ -348,14 +348,14 @@ Ver decisões em `context.md` (ACL-1…5, INT-1, INT-2).
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| FCLT-01 | P1: Operadores migração | T1 | Tasks |
-| FCLT-02 | P1: Operadores API | T2 | Tasks |
+| FCLT-01 | P1: Operadores migração | T1 | Done |
+| FCLT-02 | P1: Operadores API | T2 | Done |
 | FCLT-03 | P1: Operadores UI | T21 | Tasks |
-| FCLT-04 | P1: Ficha pós-import | T3, T4, T6 | Tasks |
-| FCLT-05 | P1: Motor fórmulas | T5, T6, T7 | Tasks |
+| FCLT-04 | P1: Ficha pós-import | T3, T4, T6 | Done |
+| FCLT-05 | P1: Motor fórmulas | T5, T6, T7 | Done |
 | FCLT-06 | P1: Custo empresa global | T5, T12, T13 | Tasks |
-| FCLT-07 | P1: Snapshot operadores linha | T3, T4, T6 | Tasks |
-| FCLT-08 | P1: Testes motor | T5, T7 | Tasks |
+| FCLT-07 | P1: Snapshot operadores linha | T3, T4, T6 | Done |
+| FCLT-08 | P1: Testes motor | T5, T7 | Done |
 | FCLT-INT-01 | P1: Benefícios pós-import folha | T8, T13 | Tasks |
 | FCLT-09 | P1: FE resumo colunas | T22 | Tasks |
 | FCLT-10 | P1: FE cards | T23 | Tasks |

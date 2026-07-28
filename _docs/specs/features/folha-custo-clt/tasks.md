@@ -115,9 +115,9 @@ T27
 - Skill: `flyway-migration-writer`, `jpa-performance`
 
 **Done when**:
-- [ ] Colunas SMALLINT NOT NULL com default derivado do tipo
-- [ ] Entity JPA sincronizada
-- [ ] Gate: `cd backend && mvn clean compile`
+- [x] Colunas SMALLINT NOT NULL com default derivado do tipo
+- [x] Entity JPA sincronizada
+- [x] Gate: `cd backend && mvn clean compile`
 
 **Tests**: none  
 **Gate**: build  
@@ -143,9 +143,9 @@ T27
 - Skill: `spring-boot-new-endpoint`, `spring-security`
 
 **Done when**:
-- [ ] POST/PUT aceitam operadores; valores inválidos → 400
-- [ ] Testes unitários cobrem validação e persistência
-- [ ] Gate: `cd backend && mvn test -Dtest=RubricaServiceTest`
+- [x] POST/PUT aceitam operadores; valores inválidos → 400
+- [x] Testes unitários cobrem validação e persistência
+- [x] Gate: `cd backend && mvn test -Dtest=RubricaServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -169,8 +169,8 @@ T27
 - Skill: `flyway-migration-writer`
 
 **Done when**:
-- [ ] Migrations idempotentes e ordenadas V1.21 antes V1.18 se dependência de colunas
-- [ ] Gate: `cd backend && mvn clean compile`
+- [x] Migrations idempotentes e ordenadas V1.21 antes V1.18 se dependência de colunas
+- [x] Gate: `cd backend && mvn clean compile`
 
 **Tests**: none  
 **Gate**: build  
@@ -194,9 +194,9 @@ T27
 - Skill: `jpa-performance`, `flyway-migration-writer`
 
 **Done when**:
-- [ ] Entities mapeiam schema T3
-- [ ] Repository: findByCompetencia, deleteByCompetencia (replace idempotente)
-- [ ] Gate: `cd backend && mvn clean compile`
+- [x] Entities mapeiam schema T3
+- [x] Repository: findByCompetencia, deleteByCompetencia (replace idempotente)
+- [x] Gate: `cd backend && mvn clean compile`
 
 **Tests**: none  
 **Gate**: build  
@@ -221,9 +221,9 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] PROVENTO+DESCONTO; operador custom; HALF_UP 2 casas
-- [ ] Composer: custoFolha + encargos + benefícios
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaMotorCalculoTest,FolhaCustoEmpresaComposerTest`
+- [x] PROVENTO+DESCONTO; operador custom; HALF_UP 2 casas
+- [x] Composer: custoFolha + encargos + benefícios
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaMotorCalculoTest,FolhaCustoEmpresaComposerTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -249,10 +249,10 @@ T27
 - Skill: `spring-boot-new-endpoint`, `spring-security`, `jpa-performance`
 
 **Done when**:
-- [ ] POST `/folha-pagamento/processar` persiste ficha com bruto/liquido/custoFolha
-- [ ] Operadores copiados na linha; origemLinha=FOLHA_ADP
-- [ ] Testes: import simulado → processar → totais corretos
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaProcessamentoServiceTest`
+- [x] POST `/folha-pagamento/processar` persiste ficha com bruto/liquido/custoFolha
+- [x] Operadores copiados na linha; origemLinha=FOLHA_ADP
+- [x] Testes: import simulado → processar → totais corretos
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaProcessamentoServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -276,9 +276,9 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] DESCONTO impacta só líquido; PROVENTO impacta os três
-- [ ] Arredondamento e benefícios intactos
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaTotalizacaoServiceTest`
+- [x] DESCONTO impacta só líquido; PROVENTO impacta os três
+- [x] Arredondamento e benefícios intactos
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaTotalizacaoServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
