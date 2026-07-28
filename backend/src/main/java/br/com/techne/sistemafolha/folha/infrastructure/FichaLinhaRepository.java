@@ -77,6 +77,9 @@ public interface FichaLinhaRepository extends JpaRepository<FichaLinha, Long> {
         @Param("competenciaFim") LocalDate competenciaFim,
         @Param("decimoTerceiro") boolean decimoTerceiro);
 
+    @EntityGraph(attributePaths = {"rubrica", "rubrica.tipoRubrica", "fichaMensal", "fichaMensal.funcionario", "fichaMensal.funcionario.centroCusto"})
+    List<FichaLinha> findByFichaMensalIdAndAtivoTrue(Long fichaMensalId);
+
     @Modifying
     @Query("""
         DELETE FROM FichaLinha fl

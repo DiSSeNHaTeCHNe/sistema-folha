@@ -2,6 +2,7 @@ package br.com.techne.sistemafolha.beneficios.port;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,4 +26,7 @@ public interface BeneficioConsultaPort {
 
     BigDecimal somarValorPorCompetenciaECentros(
         LocalDate competenciaInicio, LocalDate competenciaFim, Set<Long> centrosCustoIds);
+
+    List<BeneficioLinhaSnapshot> findLinhasPorFuncionarioECompetencia(
+        Long funcionarioId, LocalDate competenciaInicio, LocalDate competenciaFim);
 }

@@ -9,6 +9,7 @@ import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioJaExisteException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.RubricaNotFoundException;
+import br.com.techne.sistemafolha.folha.domain.FichaMensalNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.NoOrganogramaNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.OrganogramaAtivoConflictException;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RubricaNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleRubricaNotFoundException(RubricaNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(FichaMensalNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleFichaMensalNotFoundException(FichaMensalNotFoundException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }

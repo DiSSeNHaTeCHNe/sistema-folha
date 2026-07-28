@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.beneficios.application;
 
 import br.com.techne.sistemafolha.beneficios.port.BeneficioConsultaPort;
+import br.com.techne.sistemafolha.beneficios.port.BeneficioLinhaSnapshot;
 import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensal;
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalRepository;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +90,22 @@ public class BeneficioConsultaAdapter implements BeneficioConsultaPort {
             resultado.put(funcionarioId, total);
         }
         return resultado;
+    }
+
+    @Override
+    public List<BeneficioLinhaSnapshot> findLinhasPorFuncionarioECompetencia(
+            Long funcionarioId, LocalDate competenciaInicio, LocalDate competenciaFim) {
+        validarFuncionarioECompetencia(funcionarioId, competenciaInicio, competenciaFim);
+        return beneficioMensalRepository
+            .findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                funcionarioId, competenciaInicio, competenciaFim)
+            .stream()
+            .map(b -> new BeneficioLinhaSnapshot(
+                b.getId(),
+                b.getTipoBeneficio().getCodigo(),
+                b.getTipoBeneficio().getDescricao(),
+                b.getValor()))
+            .toList();
     }
 
     @Override
