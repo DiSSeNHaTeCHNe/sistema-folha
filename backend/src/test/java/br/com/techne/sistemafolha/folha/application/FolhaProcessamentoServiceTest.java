@@ -1,8 +1,10 @@
 package br.com.techne.sistemafolha.folha.application;
 
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
+import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixa;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
+import br.com.techne.sistemafolha.cadastros.infrastructure.FuncionarioRubricaFixaRepository;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoOpcoes;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FichaLinha;
@@ -26,6 +28,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,14 +47,17 @@ class FolhaProcessamentoServiceTest {
     @Mock
     private FichaLinhaRepository fichaLinhaRepository;
 
+    @Mock
+    private FuncionarioRubricaFixaRepository funcionarioRubricaFixaRepository;
+
     @InjectMocks
     private FolhaProcessamentoService folhaProcessamentoService;
 
     @Test
     void processar_copiaAdpParaFichaComOperadoresSnapshot() {
         Funcionario funcionario = funcionario(1L);
-        Rubrica provento = rubricaProvento();
-        Rubrica desconto = rubricaDesconto();
+        Rubrica provento = rubricaProvento(1L);
+        Rubrica desconto = rubricaDesconto(2L);
 
         FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
         FolhaPagamento linhaInss = linhaAdp(funcionario, desconto, new BigDecimal("800.00"));
@@ -59,6 +65,8 @@ class FolhaProcessamentoServiceTest {
         when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(linhaSalario, linhaInss));
+        when(funcionarioRubricaFixaRepository.findVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
         when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
             FichaMensal ficha = inv.getArgument(0);
             if (ficha.getId() == null) {
@@ -78,7 +86,7 @@ class FolhaProcessamentoServiceTest {
         verify(fichaMensalRepository).deleteByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
 
         ArgumentCaptor<FichaLinha> linhaCaptor = ArgumentCaptor.forClass(FichaLinha.class);
-        verify(fichaLinhaRepository, org.mockito.Mockito.times(2)).save(linhaCaptor.capture());
+        verify(fichaLinhaRepository, times(2)).save(linhaCaptor.capture());
         FichaLinha linhaDesconto = linhaCaptor.getAllValues().stream()
             .filter(l -> l.getOperadorLiquido() == -1)
             .findFirst()
@@ -95,6 +103,92 @@ class FolhaProcessamentoServiceTest {
         assertEquals(new BigDecimal("10000.00"), fichaFinal.getCustoFolha());
     }
 
+    @Test
+    void processar_injetarCustoFixoVigente() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        Rubrica ajuda = rubricaProvento(3L);
+        ajuda.setCodigo("900");
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        FuncionarioRubricaFixa fixo = rubricaFixa(funcionario, ajuda, new BigDecimal("500.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(funcionarioRubricaFixaRepository.findVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(fixo));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        assertEquals(2, resultado.totalLinhas());
+
+        ArgumentCaptor<FichaLinha> linhaCaptor = ArgumentCaptor.forClass(FichaLinha.class);
+        verify(fichaLinhaRepository, times(2)).save(linhaCaptor.capture());
+        FichaLinha linhaFixa = linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.CUSTO_FIXO)
+            .findFirst()
+            .orElseThrow();
+        assertEquals(new BigDecimal("500.00"), linhaFixa.getValor());
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("10500.00"), fichaFinal.getBruto());
+        assertEquals(new BigDecimal("10500.00"), fichaFinal.getCustoFolha());
+    }
+
+    @Test
+    void processar_custoFixoDuplicataAdp_prefereAdp() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        FuncionarioRubricaFixa fixo = rubricaFixa(funcionario, provento, new BigDecimal("999.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(funcionarioRubricaFixaRepository.findVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(fixo));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        assertEquals(1, resultado.totalLinhas());
+        ArgumentCaptor<FichaLinha> linhaCaptor = ArgumentCaptor.forClass(FichaLinha.class);
+        verify(fichaLinhaRepository, times(1)).save(linhaCaptor.capture());
+        assertEquals(OrigemLinha.FOLHA_ADP, linhaCaptor.getValue().getOrigemLinha());
+        assertEquals(new BigDecimal("10000.00"), linhaCaptor.getValue().getValor());
+    }
+
+    private FuncionarioRubricaFixa rubricaFixa(Funcionario funcionario, Rubrica rubrica, BigDecimal valor) {
+        FuncionarioRubricaFixa fixo = new FuncionarioRubricaFixa();
+        fixo.setFuncionario(funcionario);
+        fixo.setRubrica(rubrica);
+        fixo.setValor(valor);
+        fixo.setVigenciaInicio(COMPETENCIA_INICIO);
+        fixo.setAtivo(true);
+        return fixo;
+    }
+
     private Funcionario funcionario(Long id) {
         Funcionario funcionario = new Funcionario();
         funcionario.setId(id);
@@ -102,11 +196,11 @@ class FolhaProcessamentoServiceTest {
         return funcionario;
     }
 
-    private Rubrica rubricaProvento() {
+    private Rubrica rubricaProvento(Long id) {
         TipoRubrica tipo = new TipoRubrica();
         tipo.setDescricao("PROVENTO");
         Rubrica rubrica = new Rubrica();
-        rubrica.setId(1L);
+        rubrica.setId(id);
         rubrica.setTipoRubrica(tipo);
         rubrica.setOperadorBruto((short) 1);
         rubrica.setOperadorLiquido((short) 1);
@@ -114,11 +208,11 @@ class FolhaProcessamentoServiceTest {
         return rubrica;
     }
 
-    private Rubrica rubricaDesconto() {
+    private Rubrica rubricaDesconto(Long id) {
         TipoRubrica tipo = new TipoRubrica();
         tipo.setDescricao("DESCONTO");
         Rubrica rubrica = new Rubrica();
-        rubrica.setId(2L);
+        rubrica.setId(id);
         rubrica.setTipoRubrica(tipo);
         rubrica.setOperadorBruto((short) 0);
         rubrica.setOperadorLiquido((short) -1);
