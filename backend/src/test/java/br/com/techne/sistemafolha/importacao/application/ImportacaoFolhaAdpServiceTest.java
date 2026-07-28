@@ -4,10 +4,12 @@ import br.com.techne.sistemafolha.cadastros.port.CadastrosImportLookupPort;
 import br.com.techne.sistemafolha.cadastros.port.FuncionarioImportRef;
 import br.com.techne.sistemafolha.cadastros.port.RubricaImportRef;
 import br.com.techne.sistemafolha.folha.api.FolhaPagamentoDTO;
+import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FolhaDuplicadaException;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoCommand;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoPort;
+import br.com.techne.sistemafolha.folha.port.FolhaProcessamentoPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,6 +26,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,6 +52,9 @@ class ImportacaoFolhaAdpServiceTest {
     @Mock
     private FolhaImportacaoPort folhaImportacaoPort;
 
+    @Mock
+    private FolhaProcessamentoPort folhaProcessamentoPort;
+
     @InjectMocks
     private ImportacaoFolhaAdpService importacaoFolhaAdpService;
 
@@ -67,11 +73,12 @@ class ImportacaoFolhaAdpServiceTest {
         assertEquals(COMPETENCIA_FIM.toString(), ex.getCompetenciaFim());
         assertFalse(ex.isDecimoTerceiro());
         verify(folhaImportacaoPort, never()).persistirImportacao(any());
+        verify(folhaProcessamentoPort, never()).processar(any(), any(), anyBoolean(), anyBoolean());
         verify(cadastrosImportLookupPort, never()).findFuncionarioByIdExterno(any());
     }
 
     @Test
-    void importar_happyPath_chamaPersistirImportacao() throws Exception {
+    void importar_happyPath_chamaPersistirImportacaoEProcessamento() throws Exception {
         MockMultipartFile arquivo = arquivoComCompetencia();
         when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(false);
@@ -83,10 +90,15 @@ class ImportacaoFolhaAdpServiceTest {
             new BigDecimal("1000"), BigDecimal.ONE, new BigDecimal("1000"), false
         );
         when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of(dto));
+        ProcessamentoResultadoDTO processamento = new ProcessamentoResultadoDTO(1, 2, 1);
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenReturn(processamento);
 
-        List<FolhaPagamentoDTO> result = importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false);
+        ImportacaoFolhaAdpResult result = importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false);
 
-        assertEquals(1, result.size());
+        assertEquals(1, result.folhasPagamento().size());
+        assertEquals(processamento, result.processamento());
         ArgumentCaptor<FolhaImportacaoCommand> captor = ArgumentCaptor.forClass(FolhaImportacaoCommand.class);
         verify(folhaImportacaoPort).persistirImportacao(captor.capture());
         FolhaImportacaoCommand command = captor.getValue();
@@ -95,20 +107,25 @@ class ImportacaoFolhaAdpServiceTest {
         assertFalse(command.substituirExistente());
         assertFalse(command.decimoTerceiro());
         assertTrue(command.linhas().isEmpty());
+        verify(folhaProcessamentoPort).processar(COMPETENCIA_INICIO, COMPETENCIA_FIM, false, false);
     }
 
     @Test
-    void importar_duplicidadeComConfirmacao_passaSubstituirExistente() throws Exception {
+    void importar_duplicidadeComConfirmacao_passaSubstituirExistenteEEncadeiaProcessamento() throws Exception {
         MockMultipartFile arquivo = arquivoComCompetencia();
         when(folhaConsultaPort.existsResumoAtivo(eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), anyBoolean()))
             .thenReturn(true);
         when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenReturn(new ProcessamentoResultadoDTO(0, 0, 0));
 
         importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, true);
 
         ArgumentCaptor<FolhaImportacaoCommand> captor = ArgumentCaptor.forClass(FolhaImportacaoCommand.class);
         verify(folhaImportacaoPort).persistirImportacao(captor.capture());
         assertTrue(captor.getValue().substituirExistente());
+        verify(folhaProcessamentoPort).processar(COMPETENCIA_INICIO, COMPETENCIA_FIM, false, false);
     }
 
     @Test
@@ -127,6 +144,9 @@ class ImportacaoFolhaAdpServiceTest {
             eq("12345678901"), eq(1L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false)))
             .thenReturn(false);
         when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenReturn(new ProcessamentoResultadoDTO(1, 1, 1));
 
         importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, true);
 
@@ -139,6 +159,64 @@ class ImportacaoFolhaAdpServiceTest {
         assertEquals(2L, command.linhas().get(0).rubricaId());
         verify(folhaConsultaPort, never()).existsByFuncionarioIdAndRubricaIdAndPeriodo(
             any(), any(), any(), any(), anyBoolean());
+        verify(folhaProcessamentoPort).processar(COMPETENCIA_INICIO, COMPETENCIA_FIM, false, false);
+    }
+
+    @Test
+    void importar_processamentoFalha_propagaExcecao() throws Exception {
+        MockMultipartFile arquivo = arquivoComCompetencia();
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenThrow(new RuntimeException("Erro no processamento da ficha"));
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false)
+        );
+
+        assertEquals("Erro no processamento da ficha", ex.getMessage());
+        verify(folhaImportacaoPort).persistirImportacao(any());
+        verify(folhaProcessamentoPort).processar(COMPETENCIA_INICIO, COMPETENCIA_FIM, false, false);
+    }
+
+    @Test
+    void importar_processamentoZeroFichas_retornaResultadoComposto() throws Exception {
+        MockMultipartFile arquivo = arquivoComCompetencia();
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        ProcessamentoResultadoDTO processamentoZero = new ProcessamentoResultadoDTO(0, 0, 0);
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenReturn(processamentoZero);
+
+        ImportacaoFolhaAdpResult result = importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false);
+
+        assertNotNull(result.processamento());
+        assertEquals(0, result.processamento().totalFichas());
+        assertEquals(0, result.processamento().totalLinhas());
+        assertTrue(result.folhasPagamento().isEmpty());
+    }
+
+    @Test
+    void importar_funcionarioNaoEncontrado_nuncaChamaProcessamento() throws Exception {
+        MockMultipartFile arquivo = arquivoComFuncionarioInexistente();
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(cadastrosImportLookupPort.findFuncionarioByIdExterno("99999"))
+            .thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false)
+        );
+
+        assertTrue(ex.getMessage().contains("Funcionários não encontrados"));
+        verify(folhaImportacaoPort, never()).persistirImportacao(any());
+        verify(folhaProcessamentoPort, never()).processar(any(), any(), anyBoolean(), anyBoolean());
     }
 
     private MockMultipartFile arquivoComCompetencia() {
@@ -178,6 +256,32 @@ class ImportacaoFolhaAdpServiceTest {
         String conteudo = "Competência: 01/10/2024 a 31/10/2024\n"
             + admissao + "\n"
             + rubrica + "\n";
+        return new MockMultipartFile(
+            "arquivo",
+            "folha.txt",
+            "text/plain",
+            conteudo.getBytes(Charset.forName("WINDOWS-1252"))
+        );
+    }
+
+    private MockMultipartFile arquivoComFuncionarioInexistente() {
+        StringBuilder admissao = new StringBuilder();
+        while (admissao.length() < 50) {
+            admissao.append(' ');
+        }
+        admissao.append("99999");
+        while (admissao.length() < 57) {
+            admissao.append(' ');
+        }
+        admissao.append("FUNCIONARIO INEXISTENTE");
+        while (admissao.length() < 96) {
+            admissao.append(' ');
+        }
+        admissao.append("Admiss");
+        admissao.append("ao");
+
+        String conteudo = "Competência: 01/10/2024 a 31/10/2024\n"
+            + admissao + "\n";
         return new MockMultipartFile(
             "arquivo",
             "folha.txt",

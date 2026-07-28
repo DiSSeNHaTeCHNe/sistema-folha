@@ -4,12 +4,14 @@ import br.com.techne.sistemafolha.cadastros.port.CadastrosImportLookupPort;
 import br.com.techne.sistemafolha.cadastros.port.FuncionarioImportRef;
 import br.com.techne.sistemafolha.cadastros.port.RubricaImportRef;
 import br.com.techne.sistemafolha.folha.api.FolhaPagamentoDTO;
+import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FolhaDuplicadaException;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoCommand;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoLinhaCommand;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoPort;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoResumoCommand;
+import br.com.techne.sistemafolha.folha.port.FolhaProcessamentoPort;
 import br.com.techne.sistemafolha.shared.logging.DomainLogging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,7 @@ public class ImportacaoFolhaAdpService {
     private final CadastrosImportLookupPort cadastrosImportLookupPort;
     private final FolhaConsultaPort folhaConsultaPort;
     private final FolhaImportacaoPort folhaImportacaoPort;
+    private final FolhaProcessamentoPort folhaProcessamentoPort;
 
     private final List<String> rubricasIgnore = List.of(
         "VENDAS E PRE VENDAS-CRONA"
@@ -58,10 +61,12 @@ public class ImportacaoFolhaAdpService {
     public ImportacaoFolhaAdpService(
             CadastrosImportLookupPort cadastrosImportLookupPort,
             FolhaConsultaPort folhaConsultaPort,
-            FolhaImportacaoPort folhaImportacaoPort) {
+            FolhaImportacaoPort folhaImportacaoPort,
+            FolhaProcessamentoPort folhaProcessamentoPort) {
         this.cadastrosImportLookupPort = cadastrosImportLookupPort;
         this.folhaConsultaPort = folhaConsultaPort;
         this.folhaImportacaoPort = folhaImportacaoPort;
+        this.folhaProcessamentoPort = folhaProcessamentoPort;
         inicializarMapaEmpresas();
     }
 
@@ -72,7 +77,7 @@ public class ImportacaoFolhaAdpService {
     }
 
     @Transactional
-    public List<FolhaPagamentoDTO> importarFolhaAdp(
+    public ImportacaoFolhaAdpResult importarFolhaAdp(
             MultipartFile arquivo, Boolean decimoTerceiro, Boolean confirmarSubstituicao) throws IOException {
         logger.info("{}Iniciando importação de folha ADP - Arquivo: {}, Tamanho: {} bytes",
                    DomainLogging.prefix(DOMAIN), arquivo.getOriginalFilename(), arquivo.getSize());
@@ -251,7 +256,13 @@ public class ImportacaoFolhaAdpService {
 
         List<FolhaPagamentoDTO> persistidas = folhaImportacaoPort.persistirImportacao(command);
         logger.info("Importação de folha ADP concluída - Registros processados: {}", persistidas.size());
-        return persistidas;
+
+        ProcessamentoResultadoDTO processamento = folhaProcessamentoPort.processar(
+            dataInicio, dataFim, isDecimoTerceiro, false);
+        logger.info("Processamento de ficha concluído - Fichas: {}, Linhas: {}",
+            processamento.totalFichas(), processamento.totalLinhas());
+
+        return new ImportacaoFolhaAdpResult(persistidas, processamento);
     }
 
     private void processarRubrica(
