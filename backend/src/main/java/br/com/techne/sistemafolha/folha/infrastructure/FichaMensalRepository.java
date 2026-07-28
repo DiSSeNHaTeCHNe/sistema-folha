@@ -25,6 +25,19 @@ public interface FichaMensalRepository extends JpaRepository<FichaMensal, Long> 
         @Param("competenciaFim") LocalDate competenciaFim,
         @Param("decimoTerceiro") boolean decimoTerceiro);
 
+    @Query("""
+        SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END
+        FROM FichaMensal f
+        WHERE f.ativo = true
+        AND f.competenciaInicio = :competenciaInicio
+        AND f.competenciaFim = :competenciaFim
+        AND f.decimoTerceiro = :decimoTerceiro
+        """)
+    boolean existsByCompetencia(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("decimoTerceiro") boolean decimoTerceiro);
+
     @Modifying
     @Query("""
         DELETE FROM FichaMensal f

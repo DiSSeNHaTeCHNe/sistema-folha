@@ -329,8 +329,8 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] 8k/2k bruto, 1k encargos → 800/200; soma ± R$0,01
-- [ ] Gate: `cd backend && mvn test -Dtest=EncargosRateioServiceTest`
+- [x] 8k/2k bruto, 1k encargos → 800/200; soma ± R$0,01
+- [x] Gate: `cd backend && mvn test -Dtest=EncargosRateioServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -339,8 +339,6 @@ T27
 ---
 
 ### T10: FolhaConsultaPort — dual source + FolhaLinhaSnapshot extend
-
-**What**: Estender port record com operadores/origemLinha; adapter lê `ficha_linha` se existir senão fallback `folha_pagamento`.  
 **Where**:
 - `folha/port/FolhaConsultaPort.java`, `FolhaLinhaSnapshot.java`
 - `folha/application/FolhaConsultaAdapter.java`

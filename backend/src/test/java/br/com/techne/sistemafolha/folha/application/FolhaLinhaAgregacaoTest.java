@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.folha.application;
 
+import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
 import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import org.junit.jupiter.api.Test;
 
@@ -58,8 +59,11 @@ class FolhaLinhaAgregacaoTest {
     }
 
     private static FolhaLinhaSnapshot linha(Long funcionarioId, String tipo, String valor) {
+        short ob = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
+        short ol = "DESCONTO".equals(tipo) ? (short) -1 : ("PROVENTO".equals(tipo) ? (short) 1 : (short) 0);
+        short oc = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         return new FolhaLinhaSnapshot(
             funcionarioId, 1L, "CC", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", tipo, new BigDecimal(valor));
+            1L, "001", "Rubrica", tipo, new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP);
     }
 }

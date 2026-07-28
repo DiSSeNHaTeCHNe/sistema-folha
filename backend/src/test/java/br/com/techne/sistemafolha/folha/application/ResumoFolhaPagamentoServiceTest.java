@@ -6,6 +6,7 @@ import br.com.techne.sistemafolha.folha.api.ResumoFolhaPagamentoDTO;
 import br.com.techne.sistemafolha.folha.domain.ResumoFolhaPagamento;
 import br.com.techne.sistemafolha.folha.infrastructure.ResumoFolhaPagamentoRepository;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
+import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
 import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import br.com.techne.sistemafolha.organograma.acesso.port.MotivoNegacaoAcesso;
@@ -388,8 +389,11 @@ class ResumoFolhaPagamentoServiceTest {
     }
 
     private static FolhaLinhaSnapshot linha(Long funcionarioId, Long centroId, String tipo, String valor) {
+        short ob = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
+        short ol = "DESCONTO".equals(tipo) ? (short) -1 : ("PROVENTO".equals(tipo) ? (short) 1 : (short) 0);
+        short oc = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         return new FolhaLinhaSnapshot(
             funcionarioId, centroId, "CC", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", tipo, new BigDecimal(valor));
+            1L, "001", "Rubrica", tipo, new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP);
     }
 }

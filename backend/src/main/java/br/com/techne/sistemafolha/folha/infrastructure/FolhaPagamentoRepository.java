@@ -3,6 +3,7 @@ package br.com.techne.sistemafolha.folha.infrastructure;
 import br.com.techne.sistemafolha.folha.domain.FolhaPagamento;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -57,6 +58,29 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
     // Métodos para buscar dados da competência mais recente
     @Query("SELECT f FROM FolhaPagamento f WHERE f.ativo = true AND f.dataInicio = :competenciaInicio AND f.dataFim = :competenciaFim AND f.decimoTerceiro = :decimoTerceiro")
     List<FolhaPagamento> findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("decimoTerceiro") boolean decimoTerceiro);
+
+    @EntityGraph(attributePaths = {
+        "funcionario",
+        "funcionario.centroCusto",
+        "funcionario.centroCusto.linhaNegocio",
+        "funcionario.cargo",
+        "cargo",
+        "centroCusto",
+        "linhaNegocio",
+        "rubrica",
+        "rubrica.tipoRubrica"
+    })
+    @Query("""
+        SELECT f FROM FolhaPagamento f
+        WHERE f.ativo = true
+        AND f.dataInicio = :competenciaInicio
+        AND f.dataFim = :competenciaFim
+        AND f.decimoTerceiro = :decimoTerceiro
+        """)
+    List<FolhaPagamento> findByCompetenciaAndDecimoTerceiroWithFetch(
         @Param("competenciaInicio") LocalDate competenciaInicio,
         @Param("competenciaFim") LocalDate competenciaFim,
         @Param("decimoTerceiro") boolean decimoTerceiro);

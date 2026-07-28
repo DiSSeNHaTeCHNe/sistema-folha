@@ -5,6 +5,7 @@ import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
 import br.com.techne.sistemafolha.beneficios.port.BeneficioConsultaPort;
 import br.com.techne.sistemafolha.cadastros.port.CadastrosImportLookupPort;
 import br.com.techne.sistemafolha.dashboard.api.DashboardStatsDTO;
+import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaEvolucaoSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
@@ -348,8 +349,12 @@ class DashboardServiceTest {
             Long linhaId, String linhaDesc, Long cargoId, String cargoDesc,
             Long rubricaId, String rubricaCodigo, String rubricaDesc,
             String tipo, BigDecimal valor) {
+        short ob = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
+        short ol = "DESCONTO".equals(tipo) ? (short) -1 : ("PROVENTO".equals(tipo) ? (short) 1 : (short) 0);
+        short oc = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         return new FolhaLinhaSnapshot(
             funcionarioId, centroId, centroDesc, linhaId, linhaDesc,
-            cargoId, cargoDesc, rubricaId, rubricaCodigo, rubricaDesc, tipo, valor);
+            cargoId, cargoDesc, rubricaId, rubricaCodigo, rubricaDesc, tipo, valor,
+            ob, ol, oc, OrigemLinha.FOLHA_ADP);
     }
 }

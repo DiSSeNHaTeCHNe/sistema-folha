@@ -1,7 +1,11 @@
 package br.com.techne.sistemafolha.folha.application;
 
+import br.com.techne.sistemafolha.folha.domain.FichaLinha;
 import br.com.techne.sistemafolha.folha.domain.FolhaPagamento;
+import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
 import br.com.techne.sistemafolha.folha.domain.ResumoFolhaPagamento;
+import br.com.techne.sistemafolha.folha.infrastructure.FichaLinhaRepository;
+import br.com.techne.sistemafolha.folha.infrastructure.FichaMensalRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.FolhaPagamentoRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.ResumoFolhaPagamentoRepository;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
@@ -26,6 +30,8 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
 
     private final FolhaPagamentoRepository folhaPagamentoRepository;
     private final ResumoFolhaPagamentoRepository resumoFolhaPagamentoRepository;
+    private final FichaMensalRepository fichaMensalRepository;
+    private final FichaLinhaRepository fichaLinhaRepository;
 
     @Override
     public Optional<FolhaResumoSnapshot> findResumoMaisRecente() {
@@ -39,12 +45,37 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
     public List<FolhaLinhaSnapshot> findLinhasAtivasPorCompetencia(
             LocalDate competenciaInicio, LocalDate competenciaFim, boolean decimoTerceiro,
             Set<Long> centrosCustoIds) {
-        List<FolhaPagamento> linhas = folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+        if (fichaMensalRepository.existsByCompetencia(competenciaInicio, competenciaFim, decimoTerceiro)) {
+            return linhasDeFicha(competenciaInicio, competenciaFim, decimoTerceiro, centrosCustoIds);
+        }
+        return linhasDeFolhaPagamento(competenciaInicio, competenciaFim, decimoTerceiro, centrosCustoIds);
+    }
+
+    private List<FolhaLinhaSnapshot> linhasDeFicha(
+            LocalDate competenciaInicio, LocalDate competenciaFim, boolean decimoTerceiro,
+            Set<Long> centrosCustoIds) {
+        List<FichaLinha> linhas;
+        if (centrosCustoIds != null && !centrosCustoIds.isEmpty()) {
+            linhas = fichaLinhaRepository.findByCompetenciaAndCentrosCustoIds(
+                competenciaInicio, competenciaFim, decimoTerceiro, centrosCustoIds);
+        } else {
+            linhas = fichaLinhaRepository.findByCompetenciaWithFetch(
+                competenciaInicio, competenciaFim, decimoTerceiro);
+        }
+        return linhas.stream()
+            .map(this::toLinhaSnapshotFromFicha)
+            .collect(Collectors.toList());
+    }
+
+    private List<FolhaLinhaSnapshot> linhasDeFolhaPagamento(
+            LocalDate competenciaInicio, LocalDate competenciaFim, boolean decimoTerceiro,
+            Set<Long> centrosCustoIds) {
+        List<FolhaPagamento> linhas = folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
             competenciaInicio, competenciaFim, decimoTerceiro);
 
         return linhas.stream()
             .filter(l -> centrosCustoIds == null || pertenceAosCentros(l, centrosCustoIds))
-            .map(this::toLinhaSnapshot)
+            .map(this::toLinhaSnapshotFromFolhaPagamento)
             .collect(Collectors.toList());
     }
 
@@ -102,7 +133,7 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
         );
     }
 
-    private FolhaLinhaSnapshot toLinhaSnapshot(FolhaPagamento folha) {
+    private FolhaLinhaSnapshot toLinhaSnapshotFromFolhaPagamento(FolhaPagamento folha) {
         var funcionario = folha.getFuncionario();
         var centroCusto = funcionario.getCentroCusto();
         var linhaNegocio = centroCusto != null ? centroCusto.getLinhaNegocio() : null;
@@ -121,7 +152,43 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
             rubrica.getCodigo(),
             rubrica.getDescricao(),
             rubrica.getTipoRubrica().getDescricao(),
-            folha.getValor()
+            folha.getValor(),
+            operadorOuZero(rubrica.getOperadorBruto()),
+            operadorOuZero(rubrica.getOperadorLiquido()),
+            operadorOuZero(rubrica.getOperadorCusto()),
+            OrigemLinha.FOLHA_ADP
         );
+    }
+
+    private FolhaLinhaSnapshot toLinhaSnapshotFromFicha(FichaLinha linha) {
+        var fichaMensal = linha.getFichaMensal();
+        var funcionario = fichaMensal.getFuncionario();
+        var centroCusto = funcionario.getCentroCusto();
+        var linhaNegocio = centroCusto != null ? centroCusto.getLinhaNegocio() : null;
+        var cargo = funcionario.getCargo();
+        var rubrica = linha.getRubrica();
+
+        return new FolhaLinhaSnapshot(
+            funcionario.getId(),
+            centroCusto != null ? centroCusto.getId() : null,
+            centroCusto != null ? centroCusto.getDescricao() : null,
+            linhaNegocio != null ? linhaNegocio.getId() : null,
+            linhaNegocio != null ? linhaNegocio.getDescricao() : null,
+            cargo != null ? cargo.getId() : null,
+            cargo != null ? cargo.getDescricao() : null,
+            rubrica.getId(),
+            rubrica.getCodigo(),
+            rubrica.getDescricao(),
+            rubrica.getTipoRubrica().getDescricao(),
+            linha.getValor(),
+            operadorOuZero(linha.getOperadorBruto()),
+            operadorOuZero(linha.getOperadorLiquido()),
+            operadorOuZero(linha.getOperadorCusto()),
+            linha.getOrigemLinha() != null ? linha.getOrigemLinha() : OrigemLinha.FOLHA_ADP
+        );
+    }
+
+    private short operadorOuZero(Short operador) {
+        return operador != null ? operador : 0;
     }
 }

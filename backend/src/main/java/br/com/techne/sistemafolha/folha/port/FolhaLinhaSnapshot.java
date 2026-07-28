@@ -1,5 +1,7 @@
 package br.com.techne.sistemafolha.folha.port;
 
+import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
+
 import java.math.BigDecimal;
 
 public record FolhaLinhaSnapshot(
@@ -14,5 +16,9 @@ public record FolhaLinhaSnapshot(
     String rubricaCodigo,
     String rubricaDescricao,
     String tipoRubricaDescricao,
-    BigDecimal valor
+    BigDecimal valor,
+    short operadorBruto,
+    short operadorLiquido,
+    short operadorCusto,
+    OrigemLinha origemLinha
 ) {}

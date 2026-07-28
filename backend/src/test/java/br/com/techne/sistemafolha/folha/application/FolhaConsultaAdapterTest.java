@@ -6,8 +6,13 @@ import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
+import br.com.techne.sistemafolha.folha.domain.FichaLinha;
+import br.com.techne.sistemafolha.folha.domain.FichaMensal;
 import br.com.techne.sistemafolha.folha.domain.FolhaPagamento;
+import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
 import br.com.techne.sistemafolha.folha.domain.ResumoFolhaPagamento;
+import br.com.techne.sistemafolha.folha.infrastructure.FichaLinhaRepository;
+import br.com.techne.sistemafolha.folha.infrastructure.FichaMensalRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.FolhaPagamentoRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.ResumoFolhaPagamentoRepository;
 import br.com.techne.sistemafolha.folha.port.FolhaEvolucaoSnapshot;
@@ -27,7 +32,10 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +50,12 @@ class FolhaConsultaAdapterTest {
 
     @Mock
     private ResumoFolhaPagamentoRepository resumoFolhaPagamentoRepository;
+
+    @Mock
+    private FichaMensalRepository fichaMensalRepository;
+
+    @Mock
+    private FichaLinhaRepository fichaLinhaRepository;
 
     @InjectMocks
     private FolhaConsultaAdapter adapter;
@@ -69,11 +83,13 @@ class FolhaConsultaAdapterTest {
     }
 
     @Test
-    void findLinhasAtivasPorCompetencia_filtraPorCentroCusto() {
+    void findLinhasAtivasPorCompetencia_semFicha_fallbackAdpFiltraPorCentroCusto() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
         FolhaPagamento linhaCc1 = folhaPagamento(1L, 100L, "CC Alpha", new BigDecimal("1000.00"), false);
         FolhaPagamento linhaCc2 = folhaPagamento(2L, 200L, "CC Beta", new BigDecimal("2000.00"), false);
 
-        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(linhaCc1, linhaCc2));
 
@@ -83,17 +99,44 @@ class FolhaConsultaAdapterTest {
         assertEquals(1, result.size());
         assertEquals(100L, result.get(0).centroCustoId());
         assertEquals(new BigDecimal("1000.00"), result.get(0).valor());
+        assertEquals(OrigemLinha.FOLHA_ADP, result.get(0).origemLinha());
+        assertEquals((short) 1, result.get(0).operadorBruto());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_comFicha_usaFichaLinhaComOperadoresSnapshot() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+        FichaLinha linhaFicha = fichaLinha(1L, 100L, new BigDecimal("1500.00"), (short) 1, (short) 1, (short) 1,
+            OrigemLinha.CUSTO_FIXO);
+
+        when(fichaLinhaRepository.findByCompetenciaAndCentrosCustoIds(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L)))
+            .thenReturn(List.of(linhaFicha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L));
+
+        assertEquals(1, result.size());
+        assertEquals(new BigDecimal("1500.00"), result.get(0).valor());
+        assertEquals(OrigemLinha.CUSTO_FIXO, result.get(0).origemLinha());
+        verify(folhaPagamentoRepository, never())
+            .findByCompetenciaAndDecimoTerceiroWithFetch(any(), any(), anyBoolean());
     }
 
     @Test
     void findLinhasAtivasPorCompetencia_filtraPorDecimoTerceiro() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, true))
+            .thenReturn(false);
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
         FolhaPagamento linhaRegular = folhaPagamento(1L, 100L, "CC Alpha", new BigDecimal("1000.00"), false);
         FolhaPagamento linhaDecimo = folhaPagamento(1L, 100L, "CC Alpha", new BigDecimal("3000.00"), true);
 
-        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM, true))
             .thenReturn(List.of(linhaDecimo));
-        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(linhaRegular));
 
@@ -127,13 +170,16 @@ class FolhaConsultaAdapterTest {
     }
 
     @Test
-    void findLinhasAtivasPorCompetencia_centrosNull_retornaTodas() {
-        FolhaPagamento linhaCc1 = folhaPagamento(1L, 100L, "CC Alpha", new BigDecimal("1000.00"), false);
-        FolhaPagamento linhaCc2 = folhaPagamento(2L, 200L, "CC Beta", new BigDecimal("2000.00"), false);
+    void findLinhasAtivasPorCompetencia_centrosNull_retornaTodasViaFicha() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+        FichaLinha linha1 = fichaLinha(1L, 100L, new BigDecimal("1000.00"), (short) 1, (short) 1, (short) 1,
+            OrigemLinha.FOLHA_ADP);
+        FichaLinha linha2 = fichaLinha(2L, 200L, new BigDecimal("2000.00"), (short) 1, (short) 1, (short) 1,
+            OrigemLinha.FOLHA_ADP);
 
-        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
-                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
-            .thenReturn(List.of(linhaCc1, linhaCc2));
+        when(fichaLinhaRepository.findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha1, linha2));
 
         List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
@@ -182,6 +228,9 @@ class FolhaConsultaAdapterTest {
         rubrica.setCodigo("0010");
         rubrica.setDescricao("Salário Base");
         rubrica.setTipoRubrica(tipoRubrica);
+        rubrica.setOperadorBruto((short) 1);
+        rubrica.setOperadorLiquido((short) 1);
+        rubrica.setOperadorCusto((short) 1);
 
         FolhaPagamento folha = new FolhaPagamento();
         folha.setFuncionario(funcionario);
@@ -195,5 +244,55 @@ class FolhaConsultaAdapterTest {
         folha.setDecimoTerceiro(decimoTerceiro);
         folha.setAtivo(true);
         return folha;
+    }
+
+    private FichaLinha fichaLinha(
+            Long funcionarioId, Long centroCustoId, BigDecimal valor,
+            short operadorBruto, short operadorLiquido, short operadorCusto, OrigemLinha origemLinha) {
+        LinhaNegocio linhaNegocio = new LinhaNegocio();
+        linhaNegocio.setId(10L);
+        linhaNegocio.setDescricao("LN Teste");
+
+        CentroCusto centroCusto = new CentroCusto();
+        centroCusto.setId(centroCustoId);
+        centroCusto.setDescricao("CC");
+        centroCusto.setLinhaNegocio(linhaNegocio);
+
+        Cargo cargo = new Cargo();
+        cargo.setId(5L);
+        cargo.setDescricao("Analista");
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(funcionarioId);
+        funcionario.setNome("Func " + funcionarioId);
+        funcionario.setCentroCusto(centroCusto);
+        funcionario.setCargo(cargo);
+
+        TipoRubrica tipoRubrica = new TipoRubrica();
+        tipoRubrica.setDescricao("PROVENTO");
+
+        Rubrica rubrica = new Rubrica();
+        rubrica.setId(1L);
+        rubrica.setCodigo("0010");
+        rubrica.setDescricao("Salário Base");
+        rubrica.setTipoRubrica(tipoRubrica);
+
+        FichaMensal fichaMensal = new FichaMensal();
+        fichaMensal.setFuncionario(funcionario);
+        fichaMensal.setCompetenciaInicio(COMPETENCIA_INICIO);
+        fichaMensal.setCompetenciaFim(COMPETENCIA_FIM);
+        fichaMensal.setDecimoTerceiro(false);
+        fichaMensal.setAtivo(true);
+
+        FichaLinha linha = new FichaLinha();
+        linha.setFichaMensal(fichaMensal);
+        linha.setRubrica(rubrica);
+        linha.setValor(valor);
+        linha.setOperadorBruto(operadorBruto);
+        linha.setOperadorLiquido(operadorLiquido);
+        linha.setOperadorCusto(operadorCusto);
+        linha.setOrigemLinha(origemLinha);
+        linha.setAtivo(true);
+        return linha;
     }
 }
