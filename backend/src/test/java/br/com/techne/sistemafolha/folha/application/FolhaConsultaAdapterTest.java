@@ -188,6 +188,28 @@ class FolhaConsultaAdapterTest {
         assertEquals(2, result.size());
     }
 
+    @Test
+    void findLinhasAtivasPorCompetencia_comFicha_custoFixoFiltraPorCentroCusto() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+        FichaLinha linhaCc1 = fichaLinha(1L, 100L, new BigDecimal("500.00"), (short) 1, (short) 1, (short) 1,
+            OrigemLinha.CUSTO_FIXO);
+
+        when(fichaLinhaRepository.findByCompetenciaAndCentrosCustoIds(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L)))
+            .thenReturn(List.of(linhaCc1));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L));
+
+        assertEquals(1, result.size());
+        assertEquals(100L, result.get(0).centroCustoId());
+        assertEquals(new BigDecimal("500.00"), result.get(0).valor());
+        assertEquals(OrigemLinha.CUSTO_FIXO, result.get(0).origemLinha());
+        verify(fichaLinhaRepository).findByCompetenciaAndCentrosCustoIds(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L));
+    }
+
     private ResumoFolhaPagamento resumo(
             LocalDate inicio, LocalDate fim, BigDecimal totalLiquido, int empregados, boolean decimoTerceiro) {
         ResumoFolhaPagamento resumo = new ResumoFolhaPagamento();
