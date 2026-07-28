@@ -223,6 +223,57 @@ class FolhaProcessamentoServiceTest {
         assertEquals(new BigDecimal("14500.00"), fichaFinal.getCustoFolha());
     }
 
+    @Test
+    void processar_alteracaoCadastroFixo_naoAtualizaFichaAteReprocessar() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        Rubrica ajuda = rubricaProvento(3L);
+        ajuda.setCodigo("900");
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        FuncionarioRubricaFixa fixo500 = rubricaFixa(funcionario, ajuda, new BigDecimal("500.00"));
+        FuncionarioRubricaFixa fixo800 = rubricaFixa(funcionario, ajuda, new BigDecimal("800.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(fixo500));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaAposPrimeiroProcessamento =
+            fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("10500.00"), fichaAposPrimeiroProcessamento.getBruto());
+        assertEquals(new BigDecimal("10500.00"), fichaAposPrimeiroProcessamento.getCustoFolha());
+
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(fixo800));
+
+        assertEquals(new BigDecimal("10500.00"), fichaAposPrimeiroProcessamento.getBruto());
+        assertEquals(new BigDecimal("10500.00"), fichaAposPrimeiroProcessamento.getCustoFolha());
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(4)).save(fichaCaptor.capture());
+        FichaMensal fichaAposReprocessamento =
+            fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("10800.00"), fichaAposReprocessamento.getBruto());
+        assertEquals(new BigDecimal("10800.00"), fichaAposReprocessamento.getCustoFolha());
+    }
+
     private Rubrica rubricaFerias() {
         TipoRubrica tipo = new TipoRubrica();
         tipo.setDescricao("PROVENTO");
