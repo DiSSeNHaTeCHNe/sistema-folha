@@ -303,9 +303,9 @@ T27
 - Skill: `jpa-performance`
 
 **Done when**:
-- [ ] Batch evita N+1 no resumo/cards
-- [ ] Filtro CC na query (não in-memory)
-- [ ] Gate: `cd backend && mvn test -Dtest=BeneficioConsultaAdapterTest`
+- [x] Batch evita N+1 no resumo/cards
+- [x] Filtro CC na query (não in-memory)
+- [x] Gate: `cd backend && mvn test -Dtest=BeneficioConsultaAdapterTest`
 
 **Tests**: unit  
 **Gate**: quick  
