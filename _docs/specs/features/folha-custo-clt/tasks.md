@@ -379,9 +379,9 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] Scoped: encargos sempre 0; custoEmpresa inclui benefícios
-- [ ] Testes: mix operadores; lista vazia → zeros
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaLinhaAgregacaoTest`
+- [x] Scoped: encargos sempre 0; custoEmpresa inclui benefícios
+- [x] Testes: mix operadores; lista vazia → zeros
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaLinhaAgregacaoTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -406,10 +406,10 @@ T27
 - Skill: `spring-security`
 
 **Done when**:
-- [ ] Scoped: totalBruto/Liquido/CustoEmpresa; encargos=0
-- [ ] Global: inclui encargos rateados + benefícios
-- [ ] Teste verify: scoped **never** calls repository de totais globais ficha
-- [ ] Gate: `cd backend && mvn test -Dtest=ResumoFolhaPagamentoServiceTest`
+- [x] Scoped: totalBruto/Liquido/CustoEmpresa; encargos=0
+- [x] Global: inclui encargos rateados + benefícios
+- [x] Teste verify: scoped **never** calls repository de totais globais ficha
+- [x] Gate: `cd backend && mvn test -Dtest=ResumoFolhaPagamentoServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -436,10 +436,10 @@ T27
 - Skill: `spring-boot-new-endpoint`, `spring-security`
 
 **Done when**:
-- [ ] Scoped: encargosRateados=0; custoEmpresa = custoFolha + benefícios
-- [ ] Global: rateio encargos por funcionário
-- [ ] Benefício lançado após folha reflete na consulta sem reimport
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaPagamentoServiceTest,FolhaTotalizacaoServiceTest`
+- [x] Scoped: encargosRateados=0; custoEmpresa = custoFolha + benefícios
+- [x] Global: rateio encargos por funcionário
+- [x] Benefício lançado após folha reflete na consulta sem reimport
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaPagamentoServiceTest,FolhaTotalizacaoServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  

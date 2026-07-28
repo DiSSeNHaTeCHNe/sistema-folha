@@ -142,6 +142,7 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
 
         return new FolhaLinhaSnapshot(
             funcionario.getId(),
+            funcionario.getNome(),
             centroCusto != null ? centroCusto.getId() : null,
             centroCusto != null ? centroCusto.getDescricao() : null,
             linhaNegocio != null ? linhaNegocio.getId() : null,
@@ -170,6 +171,7 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
 
         return new FolhaLinhaSnapshot(
             funcionario.getId(),
+            funcionario.getNome(),
             centroCusto != null ? centroCusto.getId() : null,
             centroCusto != null ? centroCusto.getDescricao() : null,
             linhaNegocio != null ? linhaNegocio.getId() : null,

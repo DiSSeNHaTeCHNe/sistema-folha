@@ -353,7 +353,7 @@ class DashboardServiceTest {
         short ol = "DESCONTO".equals(tipo) ? (short) -1 : ("PROVENTO".equals(tipo) ? (short) 1 : (short) 0);
         short oc = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         return new FolhaLinhaSnapshot(
-            funcionarioId, centroId, centroDesc, linhaId, linhaDesc,
+            funcionarioId, "Func " + funcionarioId, centroId, centroDesc, linhaId, linhaDesc,
             cargoId, cargoDesc, rubricaId, rubricaCodigo, rubricaDesc, tipo, valor,
             ob, ol, oc, OrigemLinha.FOLHA_ADP);
     }

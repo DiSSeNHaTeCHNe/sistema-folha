@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 public record FolhaLinhaSnapshot(
     Long funcionarioId,
+    String funcionarioNome,
     Long centroCustoId,
     String centroCustoDescricao,
     Long linhaNegocioId,

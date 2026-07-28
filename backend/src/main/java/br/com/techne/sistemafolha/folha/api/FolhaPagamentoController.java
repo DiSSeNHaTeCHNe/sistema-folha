@@ -68,13 +68,14 @@ public class FolhaPagamentoController {
     }
 
     @GetMapping("/totais-funcionarios")
-    @Operation(summary = "Totaliza bruto, líquido e custo Techne por funcionário no período")
+    @Operation(summary = "Totaliza bruto, líquido e custo empresa por funcionário no período")
     public ResponseEntity<List<FolhaTotaisFuncionarioDTO>> consultarTotaisPorFuncionario(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) Boolean decimoTerceiro,
             Authentication authentication) {
         return ResponseEntity.ok(folhaPagamentoService.consultarTotaisPorFuncionario(
-            authentication.getName(), dataInicio, dataFim));
+            authentication.getName(), dataInicio, dataFim, decimoTerceiro));
     }
 
     @DeleteMapping("/{id}")

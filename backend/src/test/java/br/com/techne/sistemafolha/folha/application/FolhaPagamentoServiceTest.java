@@ -15,6 +15,9 @@ import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
 import br.com.techne.sistemafolha.cadastros.port.CadastrosLookupPort;
 import br.com.techne.sistemafolha.folha.infrastructure.FolhaPagamentoRepository;
+import br.com.techne.sistemafolha.folha.infrastructure.ResumoFolhaPagamentoRepository;
+import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
+import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -59,6 +62,12 @@ class FolhaPagamentoServiceTest {
 
     @Mock
     private FolhaTotalizacaoService folhaTotalizacaoService;
+
+    @Mock
+    private FolhaConsultaPort folhaConsultaPort;
+
+    @Mock
+    private ResumoFolhaPagamentoRepository resumoFolhaPagamentoRepository;
 
     @InjectMocks
     private FolhaPagamentoService folhaPagamentoService;
@@ -252,29 +261,38 @@ class FolhaPagamentoServiceTest {
     }
 
     @Test
-    void consultarTotaisPorFuncionario_delega_totalizacao_apos_filtro_acl() {
+    void consultarTotaisPorFuncionario_delega_totalizacao_via_port_apos_filtro_acl() {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
 
-        FolhaPagamento folha = folhaAtiva(7L, 99L);
-        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(DATA_INICIO, DATA_FIM))
-            .thenReturn(List.of(folha));
+        FolhaLinhaSnapshot linha = new FolhaLinhaSnapshot(
+            99L, "João", 10L, "TI", null, null, 5L, "Analista",
+            1L, "001", "Salário", "PROVENTO", new BigDecimal("5000"),
+            (short) 1, (short) 1, (short) 1, br.com.techne.sistemafolha.folha.domain.OrigemLinha.FOLHA_ADP);
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(DATA_INICIO, DATA_FIM, false, null))
+            .thenReturn(List.of(linha));
+        when(resumoFolhaPagamentoRepository.findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
+                DATA_INICIO, DATA_FIM, false))
+            .thenReturn(List.of());
 
         FolhaTotaisFuncionarioDTO total = new FolhaTotaisFuncionarioDTO(
             99L, "João", DATA_INICIO, DATA_FIM,
             5L, "Analista", 10L, "TI", null, null,
             1, 0,
             new BigDecimal("5000"), new BigDecimal("4000"), new BigDecimal("5000"),
-            BigDecimal.ZERO, new BigDecimal("5500"));
-        when(folhaTotalizacaoService.calcularTotaisPorFuncionario(List.of(folha)))
+            BigDecimal.ZERO, new BigDecimal("500.00"), new BigDecimal("5500.00"));
+        when(folhaTotalizacaoService.calcularTotaisPorFuncionario(
+                List.of(linha), contextoAcessoTotal(), BigDecimal.ZERO, DATA_INICIO, DATA_FIM))
             .thenReturn(List.of(total));
 
         List<FolhaTotaisFuncionarioDTO> result = folhaPagamentoService.consultarTotaisPorFuncionario(
-            LOGIN, DATA_INICIO, DATA_FIM);
+            LOGIN, DATA_INICIO, DATA_FIM, false);
 
         assertEquals(1, result.size());
         assertEquals(99L, result.get(0).funcionarioId());
-        verify(folhaTotalizacaoService).calcularTotaisPorFuncionario(eq(List.of(folha)));
+        verify(folhaConsultaPort).findLinhasAtivasPorCompetencia(DATA_INICIO, DATA_FIM, false, null);
+        verify(folhaTotalizacaoService).calcularTotaisPorFuncionario(
+            eq(List.of(linha)), eq(contextoAcessoTotal()), eq(BigDecimal.ZERO), eq(DATA_INICIO), eq(DATA_FIM));
     }
 
     @Test

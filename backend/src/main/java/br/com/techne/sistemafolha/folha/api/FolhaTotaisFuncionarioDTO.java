@@ -20,5 +20,6 @@ public record FolhaTotaisFuncionarioDTO(
     BigDecimal salLiquido,
     BigDecimal salCustoFolha,
     BigDecimal salCustoBeneficios,
-    BigDecimal salCustoTechne
+    BigDecimal encargosRateados,
+    BigDecimal custoEmpresa
 ) {}

@@ -6,6 +6,7 @@ import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.folha.domain.FolhaPagamento;
+import br.com.techne.sistemafolha.folha.domain.ResumoFolhaPagamento;
 import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
@@ -13,6 +14,9 @@ import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
 import br.com.techne.sistemafolha.cadastros.port.CadastrosLookupPort;
 import br.com.techne.sistemafolha.folha.infrastructure.FolhaPagamentoRepository;
+import br.com.techne.sistemafolha.folha.infrastructure.ResumoFolhaPagamentoRepository;
+import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
+import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +24,11 @@ import br.com.techne.sistemafolha.shared.logging.DomainLogging;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +43,8 @@ public class FolhaPagamentoService {
     private final UsuarioLookupPort usuarioLookupPort;
     private final OrganogramaAcessoPort organogramaAcessoPort;
     private final FolhaTotalizacaoService folhaTotalizacaoService;
+    private final FolhaConsultaPort folhaConsultaPort;
+    private final ResumoFolhaPagamentoRepository resumoFolhaPagamentoRepository;
 
     public List<FolhaPagamentoDTO> consultarPorFuncionario(
             String login, Long funcionarioId, LocalDate dataInicio, LocalDate dataFim, Boolean decimoTerceiro) {
@@ -118,17 +126,38 @@ public class FolhaPagamentoService {
     }
 
     public List<FolhaTotaisFuncionarioDTO> consultarTotaisPorFuncionario(
-            String login, LocalDate dataInicio, LocalDate dataFim) {
+            String login, LocalDate dataInicio, LocalDate dataFim, Boolean decimoTerceiro) {
         AccessContextDTO contexto = obterContextoAcesso(login);
+        boolean decimo = Boolean.TRUE.equals(decimoTerceiro);
 
-        List<FolhaPagamento> linhas = folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(dataInicio, dataFim)
-            .stream()
-            .filter(f -> aplicarFiltroAcesso(f, contexto))
-            .toList();
+        Set<Long> centrosFiltro = contexto.acessoTotal() ? null : contexto.centrosCustoIds();
+        if (!contexto.acessoTotal()
+            && (!contexto.temFuncionarioVinculado()
+                || !contexto.temNoOrganograma()
+                || centrosFiltro == null
+                || centrosFiltro.isEmpty())) {
+            return List.of();
+        }
 
-        List<FolhaTotaisFuncionarioDTO> totais = folhaTotalizacaoService.calcularTotaisPorFuncionario(linhas);
+        List<FolhaLinhaSnapshot> linhas = folhaConsultaPort.findLinhasAtivasPorCompetencia(
+            dataInicio, dataFim, decimo, centrosFiltro);
 
-        logger.info("{}Usuário {} consultou totais de folha: {} funcionários no período {} a {}", DomainLogging.prefix(DOMAIN),             login, totais.size(), dataInicio, dataFim);
+        BigDecimal totalEncargos = BigDecimal.ZERO;
+        if (contexto.acessoTotal()) {
+            totalEncargos = resumoFolhaPagamentoRepository
+                .findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
+                    dataInicio, dataFim, decimo)
+                .stream()
+                .findFirst()
+                .map(ResumoFolhaPagamento::getTotalEncargos)
+                .orElse(BigDecimal.ZERO);
+        }
+
+        List<FolhaTotaisFuncionarioDTO> totais = folhaTotalizacaoService.calcularTotaisPorFuncionario(
+            linhas, contexto, totalEncargos, dataInicio, dataFim);
+
+        logger.info("{}Usuário {} consultou totais de folha: {} funcionários no período {} a {} (decimoTerceiro={})",
+            DomainLogging.prefix(DOMAIN), login, totais.size(), dataInicio, dataFim, decimo);
 
         return totais;
     }
