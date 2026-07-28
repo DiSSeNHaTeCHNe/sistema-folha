@@ -35,6 +35,7 @@ import {
 import { toast } from 'react-toastify';
 import { importacaoService } from '../../services/importacaoService';
 import { beneficioMensalService } from '../../services/beneficioMensalService';
+import { folhaPagamentoService } from '../../services/folhaPagamentoService';
 import type { BeneficioMensalCompetenciaParams, ImportacaoResponse } from '../../types';
 
 const MESES = [
@@ -111,10 +112,20 @@ export default function Importacao() {
   const [folhaAdpFileName, setFolhaAdpFileName] = useState('');
   const [isDecimoTerceiro, setIsDecimoTerceiro] = useState(false);
 
+  const [mesProcessamento, setMesProcessamento] = useState(now.getMonth() + 1);
+  const [anoProcessamento, setAnoProcessamento] = useState(now.getFullYear());
+  const [decimoTerceiroProcessamento, setDecimoTerceiroProcessamento] = useState(false);
+  const [recalcularFerias, setRecalcularFerias] = useState(false);
+  const [processamentoManualLoading, setProcessamentoManualLoading] = useState(false);
+
   const anosDisponiveis = useMemo(() => gerarAnosDisponiveis(), []);
   const competenciaBeneficios = useMemo(
     () => competenciaParams(mesBeneficios, anoBeneficios),
     [mesBeneficios, anoBeneficios],
+  );
+  const competenciaProcessamento = useMemo(
+    () => competenciaParams(mesProcessamento, anoProcessamento),
+    [mesProcessamento, anoProcessamento],
   );
 
   const handleFolhaAdpUpload = async (file: File | null, confirmarSubstituicao = false) => {
@@ -282,6 +293,34 @@ export default function Importacao() {
     setIsDecimoTerceiro(false);
     if (folhaAdpFileRef.current) {
       folhaAdpFileRef.current.value = '';
+    }
+  };
+
+  const handleProcessarCompetencia = async () => {
+    setProcessamentoManualLoading(true);
+    try {
+      const resultado = await folhaPagamentoService.processarCompetencia({
+        competenciaInicio: competenciaProcessamento.competenciaInicio,
+        competenciaFim: competenciaProcessamento.competenciaFim,
+        decimoTerceiro: decimoTerceiroProcessamento,
+        recalcularFerias,
+      });
+      toast.success(
+        `Ficha processada: ${resultado.totalFichas} fichas, ${resultado.totalLinhas} linhas`,
+      );
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number; data?: { message?: string; detail?: string } } };
+      if (axiosError.response?.status === 403) {
+        toast.error('Você não tem permissão para processar a ficha. Apenas administradores podem executar esta ação.');
+        return;
+      }
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.detail ||
+        'Erro ao processar ficha da competência';
+      toast.error(errorMessage);
+    } finally {
+      setProcessamentoManualLoading(false);
     }
   };
 
@@ -565,6 +604,91 @@ export default function Importacao() {
                   </Button>
                 )}
               </Box>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ mt: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Processar ficha da competência
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Reprocesse a ficha mensal de uma competência já importada, sem reenviar o arquivo ADP.
+              </Typography>
+
+              <Box
+                sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}
+              >
+                <FormControl sx={{ minWidth: { xs: '100%', sm: 180 } }}>
+                  <InputLabel id="processamento-mes-label">Mês</InputLabel>
+                  <Select
+                    labelId="processamento-mes-label"
+                    label="Mês"
+                    value={mesProcessamento}
+                    onChange={(e) => setMesProcessamento(Number(e.target.value))}
+                    disabled={processamentoManualLoading}
+                  >
+                    {MESES.map((item) => (
+                      <MenuItem key={item.valor} value={item.valor}>
+                        {item.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl sx={{ minWidth: { xs: '100%', sm: 120 } }}>
+                  <InputLabel id="processamento-ano-label">Ano</InputLabel>
+                  <Select
+                    labelId="processamento-ano-label"
+                    label="Ano"
+                    value={anoProcessamento}
+                    onChange={(e) => setAnoProcessamento(Number(e.target.value))}
+                    disabled={processamentoManualLoading}
+                  >
+                    {anosDisponiveis.map((itemAno) => (
+                      <MenuItem key={itemAno} value={itemAno}>
+                        {itemAno}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={decimoTerceiroProcessamento}
+                    onChange={(e) => setDecimoTerceiroProcessamento(e.target.checked)}
+                    color="secondary"
+                    disabled={processamentoManualLoading}
+                  />
+                }
+                label="Marcar como folha de 13º salário"
+                sx={{ mb: 1, display: 'block' }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={recalcularFerias}
+                    onChange={(e) => setRecalcularFerias(e.target.checked)}
+                    color="secondary"
+                    disabled={processamentoManualLoading}
+                  />
+                }
+                label="Recalcular férias proporcionais"
+                sx={{ mb: 2, display: 'block' }}
+              />
+
+              <Button
+                variant="contained"
+                onClick={handleProcessarCompetencia}
+                disabled={processamentoManualLoading}
+                startIcon={
+                  processamentoManualLoading ? <CircularProgress size={20} /> : <DescriptionIcon />
+                }
+                fullWidth
+              >
+                {processamentoManualLoading ? 'Processando ficha…' : 'Processar'}
+              </Button>
             </CardContent>
           </Card>
         </Box>
