@@ -8,6 +8,8 @@ import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundExcepti
 import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioJaExisteException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
+import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixaNotFoundException;
+import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixaVigenciaConflictException;
 import br.com.techne.sistemafolha.cadastros.domain.RubricaNotFoundException;
 import br.com.techne.sistemafolha.folha.domain.FichaMensalNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.NoOrganogramaNotFoundException;
@@ -70,6 +72,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TipoBeneficioCodigoDuplicadoException.class)
     public ResponseEntity<ErrorResponse> handleTipoBeneficioCodigoDuplicadoException(TipoBeneficioCodigoDuplicadoException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(FuncionarioRubricaFixaNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleFuncionarioRubricaFixaNotFoundException(
+            FuncionarioRubricaFixaNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(FuncionarioRubricaFixaVigenciaConflictException.class)
+    public ResponseEntity<ErrorResponse> handleFuncionarioRubricaFixaVigenciaConflictException(
+            FuncionarioRubricaFixaVigenciaConflictException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
