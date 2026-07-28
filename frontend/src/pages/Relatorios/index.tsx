@@ -64,7 +64,7 @@ export function Relatorios() {
       ]);
       setRelatoriosFolha(folha);
       setRelatoriosBeneficio(beneficio);
-    } catch (error) {
+    } catch {
       showNotification('Erro ao carregar relatórios', 'error');
     } finally {
       setLoading(false);
@@ -87,7 +87,7 @@ export function Relatorios() {
       }
 
       await carregarRelatorios();
-    } catch (error) {
+    } catch {
       showNotification('Erro ao gerar relatório', 'error');
     } finally {
       setLoading(false);
@@ -111,7 +111,7 @@ export function Relatorios() {
       document.body.removeChild(a);
 
       showNotification('Relatório baixado com sucesso', 'success');
-    } catch (error) {
+    } catch {
       showNotification('Erro ao baixar relatório', 'error');
     } finally {
       setLoading(false);

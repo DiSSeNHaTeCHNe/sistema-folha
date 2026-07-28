@@ -2,7 +2,18 @@ import axios from 'axios';
 import type { LoginRequest, LoginResponse } from '../types';
 import { TokenService } from './tokenService';
 
-// @ts-ignore
+interface RetryableRequestConfig {
+  url?: string;
+  headers?: Record<string, string>;
+  _retry?: boolean;
+}
+
+interface AxiosLikeError {
+  config?: RetryableRequestConfig;
+  response?: { status?: number };
+}
+
+// @ts-expect-error axios default export lacks create in bundled type resolution
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8083/api',
   timeout: 10000,
@@ -11,11 +22,11 @@ const api = axios.create({
 // Flag para evitar múltiplas tentativas de refresh simultâneas
 let isRefreshing = false;
 let failedQueue: Array<{
-  resolve: (value?: any) => void;
-  reject: (error?: any) => void;
+  resolve: (value?: unknown) => void;
+  reject: (error?: unknown) => void;
 }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach(({ resolve, reject }) => {
     if (error) {
       reject(error);
@@ -29,29 +40,31 @@ const processQueue = (error: any, token: string | null = null) => {
 
 // Interceptor de requisição para adicionar token de autorização
 api.interceptors.request.use(
-  (config: any) => {
+  (config: unknown) => {
+    const requestConfig = config as RetryableRequestConfig;
     const token = TokenService.getToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (token && requestConfig.headers) {
+      requestConfig.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error: any) => {
+  (error: unknown) => {
     return Promise.reject(error);
   }
 );
 
 // Interceptor de resposta para lidar com refresh automático
 api.interceptors.response.use(
-  (response: any) => {
+  (response: unknown) => {
     return response;
   },
-  async (error: any) => {
-    const originalRequest = error.config;
+  async (error: unknown) => {
+    const axiosError = error as AxiosLikeError;
+    const originalRequest = axiosError.config;
     const isRefreshRequest = originalRequest?.url?.includes('/auth/refresh') || false;
     
     // Se o erro é 401 ou 403 (token expirado/inválido) e não é uma tentativa de refresh
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry && !isRefreshRequest) {
+    if ((axiosError.response?.status === 401 || axiosError.response?.status === 403) && originalRequest && !originalRequest._retry && !isRefreshRequest) {
       // Marcar a requisição como tentativa de retry
       originalRequest._retry = true;
       
@@ -133,7 +146,7 @@ api.interceptors.response.use(
     }
     
     // Se o erro é 401/403 e é do próprio endpoint de refresh, fazer logout
-    if ((error.response?.status === 401 || error.response?.status === 403) && isRefreshRequest) {
+    if ((axiosError.response?.status === 401 || axiosError.response?.status === 403) && isRefreshRequest) {
       console.log('Refresh token inválido ou expirado, fazendo logout...');
       TokenService.clearTokens();
       window.dispatchEvent(new CustomEvent('auth:logout'));
@@ -171,4 +184,4 @@ export const getUserByLogin = async (login: string) => {
   return response.data;
 };
 
-export default api; 
+export default api;

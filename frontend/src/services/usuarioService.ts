@@ -73,7 +73,7 @@ export const usuarioService = {
   // Listar funcionários para vincular
   listarFuncionarios: async (): Promise<{id: number, nome: string, cpf: string}[]> => {
     const response = await api.get('/funcionarios');
-    return response.data.map((f: any) => ({
+    return response.data.map((f: { id: number; nome: string; cpf: string }) => ({
       id: f.id,
       nome: f.nome,
       cpf: f.cpf

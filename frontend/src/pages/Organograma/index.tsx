@@ -63,6 +63,19 @@ interface DragItem {
   data: Funcionario | CentroCusto;
 }
 
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+};
+
 // Componente para um nó do organograma com drag & drop
 const NoOrganogramaCard: React.FC<{
   no: NoOrganogramaWithChildren;
@@ -527,10 +540,12 @@ export default function Organograma() {
       }
       handleCloseDialog();
       await carregarDados(true); // true = silencioso, não mostra loading
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Erro ao salvar nó:', error);
-      console.error('❌ Detalhes:', error?.response?.data);
-      toast.error(error?.response?.data?.message || error?.message || 'Erro ao salvar nó');
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        console.error('❌ Detalhes:', (error as { response?: { data?: unknown } }).response?.data);
+      }
+      toast.error(getApiErrorMessage(error, 'Erro ao salvar nó'));
       setUpdating(false);
     }
   };
@@ -542,7 +557,7 @@ export default function Organograma() {
         await organogramaService.removerNo(id);
         toast.success('Nó excluído com sucesso');
         await carregarDados(true);
-      } catch (error) {
+      } catch {
         toast.error('Erro ao excluir nó');
         setUpdating(false);
       }
@@ -610,9 +625,9 @@ export default function Organograma() {
         await organogramaService.adicionarFuncionario(noId, funcionarioId);
         toast.success('Funcionário adicionado ao nó');
         await carregarDados(true);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('❌ Erro ao adicionar funcionário:', error);
-        toast.error(error?.response?.data?.message || 'Erro ao adicionar funcionário');
+        toast.error(getApiErrorMessage(error, 'Erro ao adicionar funcionário'));
         setUpdating(false);
       }
     } else if (activeId.startsWith('centroCusto-') && overId.startsWith('no-')) {
@@ -626,9 +641,9 @@ export default function Organograma() {
         await organogramaService.adicionarCentroCusto(noId, centroCustoId);
         toast.success('Centro de custo adicionado ao nó');
         await carregarDados(true);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('❌ Erro ao adicionar centro de custo:', error);
-        toast.error(error?.response?.data?.message || 'Erro ao adicionar centro de custo');
+        toast.error(getApiErrorMessage(error, 'Erro ao adicionar centro de custo'));
         setUpdating(false);
       }
     } else {
@@ -642,7 +657,7 @@ export default function Organograma() {
       await organogramaService.removerFuncionario(noId, funcionarioId);
       toast.success('Funcionário removido do nó');
       await carregarDados(true);
-    } catch (error) {
+    } catch {
       toast.error('Erro ao remover funcionário');
       setUpdating(false);
     }
@@ -654,7 +669,7 @@ export default function Organograma() {
       await organogramaService.removerCentroCusto(noId, centroCustoId);
       toast.success('Centro de custo removido do nó');
       await carregarDados(true);
-    } catch (error) {
+    } catch {
       toast.error('Erro ao remover centro de custo');
       setUpdating(false);
     }

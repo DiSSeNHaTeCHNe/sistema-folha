@@ -42,7 +42,7 @@ export default function LinhasNegocio() {
     try {
       const data = await linhaNegocioService.listarTodos();
       setLinhasNegocio(data);
-    } catch (error) {
+    } catch {
       toast.error('Erro ao carregar linhas de negócio');
     }
   };
@@ -74,7 +74,7 @@ export default function LinhasNegocio() {
       }
       handleClose();
       carregarLinhasNegocio();
-    } catch (error) {
+    } catch {
       toast.error('Erro ao salvar linha de negócio');
     }
   };
@@ -85,7 +85,7 @@ export default function LinhasNegocio() {
         await linhaNegocioService.remover(id);
         toast.success('Linha de Negócio excluída com sucesso');
         carregarLinhasNegocio();
-      } catch (error) {
+      } catch {
         toast.error('Erro ao excluir linha de negócio');
       }
     }

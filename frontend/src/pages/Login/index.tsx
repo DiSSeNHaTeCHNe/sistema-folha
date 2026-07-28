@@ -34,7 +34,7 @@ export function Login() {
     try {
       await login(formData);
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('Usuário ou senha inválidos');
     } finally {
       setLoading(false);

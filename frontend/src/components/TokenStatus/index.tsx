@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Chip, Button, Paper } from '@mui/material';
 import { TokenService } from '../../services/tokenService';
+import type { TokenData } from '../../types';
 
 export function TokenStatus() {
-  const [tokenData, setTokenData] = useState<any>(null);
+  const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [, setUpdateTrigger] = useState(0);
 
   const forceUpdate = () => setUpdateTrigger(prev => prev + 1);

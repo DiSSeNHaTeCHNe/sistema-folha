@@ -42,7 +42,7 @@ export default function Cargos() {
     try {
       const data = await cargoService.listarTodos();
       setCargos(data);
-    } catch (error) {
+    } catch {
       toast.error('Erro ao carregar cargos');
     }
   };
@@ -74,7 +74,7 @@ export default function Cargos() {
       }
       handleClose();
       carregarCargos();
-    } catch (error) {
+    } catch {
       toast.error('Erro ao salvar cargo');
     }
   };
@@ -85,7 +85,7 @@ export default function Cargos() {
         await cargoService.remover(id);
         toast.success('Cargo excluído com sucesso');
         carregarCargos();
-      } catch (error) {
+      } catch {
         toast.error('Erro ao excluir cargo');
       }
     }

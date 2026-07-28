@@ -47,8 +47,21 @@ interface OrganogramaGraficoProps {
   onHover: (id: number | null) => void;
 }
 
+interface NoOrganogramaNodeData {
+  no: NoOrganogramaWithChildren;
+  onEdit: (no: NoOrganograma) => void;
+  onDelete: (id: number) => void;
+  onAddChild: (parentId: number) => void;
+  onRemoveFuncionario: (noId: number, funcionarioId: number) => void;
+  onRemoveCentroCusto: (noId: number, centroCustoId: number) => void;
+  expandedNodeId: number | null;
+  hoveredNodeId: number | null;
+  onToggleExpand: (id: number) => void;
+  onHover: (id: number | null) => void;
+}
+
 // Componente customizado para cada nó do organograma
-const NoOrganogramaNode = ({ data }: { data: any }) => {
+const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
   const no = data.no as NoOrganogramaWithChildren;
   const isExpanded = data.expandedNodeId === no.id;
   const isHovered = data.hoveredNodeId === no.id;

@@ -1,3 +1,4 @@
+import type { ComponentProps, ComponentType } from 'react';
 import { TextField } from '@mui/material';
 import { NumericFormat } from 'react-number-format';
 
@@ -24,7 +25,7 @@ export function MoneyField({ value, onChange, ...props }: MoneyFieldProps) {
       prefix="R$ "
       decimalScale={2}
       fixedDecimalScale
-      customInput={TextField as any}
+      customInput={TextField as ComponentType<ComponentProps<typeof TextField>>}
       fullWidth
       {...props}
     />

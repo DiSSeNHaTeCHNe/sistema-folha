@@ -53,7 +53,7 @@ export default function CentrosCusto() {
       ]);
       setCentrosCusto(centrosCustoData);
       setLinhasNegocio(linhasNegocioData);
-    } catch (error) {
+    } catch {
       toast.error('Erro ao carregar dados');
     }
   };
@@ -86,7 +86,7 @@ export default function CentrosCusto() {
       }
       handleClose();
       carregarDados();
-    } catch (error) {
+    } catch {
       toast.error('Erro ao salvar centro de custo');
     }
   };
@@ -97,7 +97,7 @@ export default function CentrosCusto() {
         await centroCustoService.remover(id);
         toast.success('Centro de Custo excluído com sucesso');
         carregarDados();
-      } catch (error) {
+      } catch {
         toast.error('Erro ao excluir centro de custo');
       }
     }

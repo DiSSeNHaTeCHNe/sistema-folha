@@ -92,6 +92,16 @@ interface Filtros {
   status: FuncionarioStatusFiltro;
 }
 
+interface FuncionarioEditFormData {
+  nome: string;
+  cpf: string;
+  dataAdmissao: string;
+  cargoId: string;
+  centroCustoId: string;
+  linhaNegocioId: string;
+  idExterno: string;
+}
+
 // Função utilitária para formatar datas do backend (formato ISO)
 const formatarDataCompetencia = (dataString: string): string => {
   if (!dataString) return '';
@@ -125,7 +135,7 @@ export default function Funcionarios() {
       status: 'ATIVO' as FuncionarioStatusFiltro,
     }
   });
-  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, control: controlEdit, setValue: setValueEdit } = useForm({
+  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, control: controlEdit, setValue: setValueEdit } = useForm<FuncionarioEditFormData>({
     defaultValues: {
       nome: '',
       cpf: '',
@@ -225,7 +235,7 @@ export default function Funcionarios() {
     });
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FuncionarioEditFormData) => {
     try {
       // Converter strings para números onde necessário
       const dadosParaEnvio = {

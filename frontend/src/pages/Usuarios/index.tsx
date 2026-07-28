@@ -59,6 +59,16 @@ const permissoesDisponiveis = [
   'CADASTROS'
 ];
 
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+  return fallback;
+};
+
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [funcionarios, setFuncionarios] = useState<{id: number, nome: string, cpf: string}[]>([]);
@@ -113,7 +123,7 @@ export default function Usuarios() {
       ]);
       setUsuarios(usuariosData);
       setFuncionarios(funcionariosData);
-    } catch (error) {
+    } catch {
       showNotification('Erro ao carregar dados', 'error');
     } finally {
       setLoading(false);
@@ -180,11 +190,8 @@ export default function Usuarios() {
       
       handleClose();
       carregarDados();
-    } catch (error: any) {
-      showNotification(
-        error.response?.data?.message || 'Erro ao salvar usuário',
-        'error'
-      );
+    } catch (error: unknown) {
+      showNotification(getApiErrorMessage(error, 'Erro ao salvar usuário'), 'error');
     }
   };
 
@@ -194,7 +201,7 @@ export default function Usuarios() {
         await usuarioService.excluir(id);
         showNotification('Usuário excluído com sucesso', 'success');
         carregarDados();
-      } catch (error) {
+      } catch {
         showNotification('Erro ao excluir usuário', 'error');
       }
     }
@@ -204,7 +211,7 @@ export default function Usuarios() {
     try {
       const usuariosData = await usuarioService.listar(filtros);
       setUsuarios(usuariosData);
-    } catch (error) {
+    } catch {
       showNotification('Erro ao filtrar usuários', 'error');
     }
   };
