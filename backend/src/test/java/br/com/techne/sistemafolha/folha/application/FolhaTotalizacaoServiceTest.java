@@ -109,6 +109,74 @@ class FolhaTotalizacaoServiceTest {
         assertEquals(0, total.totalBeneficios());
     }
 
+    @Test
+    void calcularTotaisPorFuncionario_proventoEDesconto_descontoImpactaSomenteLiquido() {
+        Funcionario funcionario = funcionario(4L, "Diana Provento");
+        FolhaPagamento provento = linhaFolha(funcionario, rubricaComOperadores((short) 1, (short) 1, (short) 1),
+            new BigDecimal("10000.00"));
+        FolhaPagamento desconto = linhaFolha(funcionario, rubricaComOperadores((short) 0, (short) -1, (short) 0),
+            new BigDecimal("1500.00"));
+
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+                4L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(0);
+        when(beneficioConsultaPort.somarValorPorFuncionarioECompetencia(
+                4L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(BigDecimal.ZERO);
+
+        List<FolhaTotaisFuncionarioDTO> resultado = folhaTotalizacaoService
+            .calcularTotaisPorFuncionario(List.of(provento, desconto));
+
+        FolhaTotaisFuncionarioDTO total = resultado.get(0);
+        assertEquals(new BigDecimal("10000.00"), total.salBruto());
+        assertEquals(new BigDecimal("8500.00"), total.salLiquido());
+        assertEquals(new BigDecimal("10000.00"), total.salCustoFolha());
+    }
+
+    @Test
+    void calcularTotaisPorFuncionario_operadorCustom_descontoSomenteLiquido() {
+        Funcionario funcionario = funcionario(5L, "Eduardo Custom");
+        FolhaPagamento linha = linhaFolha(funcionario, rubricaComOperadores((short) 0, (short) -1, (short) 0),
+            new BigDecimal("500.00"));
+
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+                5L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(0);
+        when(beneficioConsultaPort.somarValorPorFuncionarioECompetencia(
+                5L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(BigDecimal.ZERO);
+
+        List<FolhaTotaisFuncionarioDTO> resultado = folhaTotalizacaoService
+            .calcularTotaisPorFuncionario(List.of(linha));
+
+        FolhaTotaisFuncionarioDTO total = resultado.get(0);
+        assertEquals(new BigDecimal("0.00"), total.salBruto());
+        assertEquals(new BigDecimal("-500.00"), total.salLiquido());
+        assertEquals(new BigDecimal("0.00"), total.salCustoFolha());
+    }
+
+    @Test
+    void calcularTotaisPorFuncionario_arredondaHalfUpDuasCasas() {
+        Funcionario funcionario = funcionario(6L, "Fabio Arredonda");
+        FolhaPagamento linha = linhaFolha(funcionario, rubricaComOperadores((short) 1, (short) 1, (short) 1),
+            new BigDecimal("10.005"));
+
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+                6L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(0);
+        when(beneficioConsultaPort.somarValorPorFuncionarioECompetencia(
+                6L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(BigDecimal.ZERO);
+
+        List<FolhaTotaisFuncionarioDTO> resultado = folhaTotalizacaoService
+            .calcularTotaisPorFuncionario(List.of(linha));
+
+        FolhaTotaisFuncionarioDTO total = resultado.get(0);
+        assertEquals(new BigDecimal("10.01"), total.salBruto());
+        assertEquals(new BigDecimal("10.01"), total.salLiquido());
+        assertEquals(new BigDecimal("10.01"), total.salCustoFolha());
+    }
+
     private Funcionario funcionario(Long id, String nome) {
         Funcionario funcionario = new Funcionario();
         funcionario.setId(id);
@@ -116,13 +184,7 @@ class FolhaTotalizacaoServiceTest {
         return funcionario;
     }
 
-    private FolhaPagamento linhaFolha(Funcionario funcionario, BigDecimal valor) {
-        TipoRubrica tipoProvento = new TipoRubrica();
-        tipoProvento.setDescricao("PROVENTO");
-
-        Rubrica rubrica = new Rubrica();
-        rubrica.setTipoRubrica(tipoProvento);
-
+    private FolhaPagamento linhaFolha(Funcionario funcionario, Rubrica rubrica, BigDecimal valor) {
         FolhaPagamento linha = new FolhaPagamento();
         linha.setFuncionario(funcionario);
         linha.setRubrica(rubrica);
@@ -130,5 +192,25 @@ class FolhaTotalizacaoServiceTest {
         linha.setDataInicio(COMPETENCIA_INICIO);
         linha.setDataFim(COMPETENCIA_FIM);
         return linha;
+    }
+
+    private FolhaPagamento linhaFolha(Funcionario funcionario, BigDecimal valor) {
+        return linhaFolha(funcionario, rubricaProvento(), valor);
+    }
+
+    private Rubrica rubricaProvento() {
+        return rubricaComOperadores((short) 1, (short) 1, (short) 1);
+    }
+
+    private Rubrica rubricaComOperadores(short bruto, short liquido, short custo) {
+        TipoRubrica tipoProvento = new TipoRubrica();
+        tipoProvento.setDescricao("PROVENTO");
+
+        Rubrica rubrica = new Rubrica();
+        rubrica.setTipoRubrica(tipoProvento);
+        rubrica.setOperadorBruto(bruto);
+        rubrica.setOperadorLiquido(liquido);
+        rubrica.setOperadorCusto(custo);
+        return rubrica;
     }
 }

@@ -8,13 +8,11 @@ import br.com.techne.sistemafolha.folha.domain.FolhaPagamento;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
-import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +22,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class FolhaTotalizacaoService {
-
-    private static final int SCALE = 2;
-    private static final RoundingMode ROUNDING = RoundingMode.HALF_UP;
 
     private final BeneficioConsultaPort beneficioConsultaPort;
 
@@ -53,28 +48,23 @@ public class FolhaTotalizacaoService {
                 .max(LocalDate::compareTo)
                 .orElse(referencia.getDataFim());
 
-            BigDecimal bruto = BigDecimal.ZERO;
-            BigDecimal liquido = BigDecimal.ZERO;
-            BigDecimal custoFolha = BigDecimal.ZERO;
-
-            for (FolhaPagamento linha : grupo) {
-                BigDecimal valor = linha.getValor() != null ? linha.getValor() : BigDecimal.ZERO;
-                CoeficientesRubrica coef = coeficientesDe(linha.getRubrica());
-                bruto = bruto.add(valor.multiply(coef.bruto()));
-                liquido = liquido.add(valor.multiply(coef.liquido()));
-                custoFolha = custoFolha.add(valor.multiply(coef.custo()));
-            }
+            List<FolhaMotorCalculo.LinhaCalculoInput> inputs = grupo.stream()
+                .map(this::toInput)
+                .toList();
+            FolhaMotorCalculo.TotaisFuncionario totais = FolhaMotorCalculo.calcularPorLinhas(inputs);
 
             int totalBeneficios = beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
                 funcionario.getId(), competenciaInicio, competenciaFim);
             BigDecimal custoBeneficios = beneficioConsultaPort.somarValorPorFuncionarioECompetencia(
                 funcionario.getId(), competenciaInicio, competenciaFim);
 
-            BigDecimal salBruto = arredondar(bruto);
-            BigDecimal salLiquido = arredondar(liquido);
-            BigDecimal salCustoFolha = arredondar(custoFolha);
-            BigDecimal salCustoBeneficios = arredondar(custoBeneficios);
-            BigDecimal salCustoTechne = salCustoFolha.add(salCustoBeneficios);
+            BigDecimal salBruto = totais.bruto();
+            BigDecimal salLiquido = totais.liquido();
+            BigDecimal salCustoFolha = totais.custoFolha();
+            BigDecimal salCustoBeneficios = FolhaMotorCalculo.arredondar(
+                custoBeneficios != null ? custoBeneficios : BigDecimal.ZERO);
+            BigDecimal salCustoTechne = FolhaCustoEmpresaComposer.compor(
+                salCustoFolha, BigDecimal.ZERO, salCustoBeneficios);
 
             Cargo cargo = referencia.getCargo() != null ? referencia.getCargo() : funcionario.getCargo();
             CentroCusto centroCusto = referencia.getCentroCusto() != null
@@ -107,25 +97,21 @@ public class FolhaTotalizacaoService {
         return resultado;
     }
 
-    private CoeficientesRubrica coeficientesDe(Rubrica rubrica) {
-        if (rubrica == null || rubrica.getTipoRubrica() == null) {
-            return new CoeficientesRubrica(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+    private FolhaMotorCalculo.LinhaCalculoInput toInput(FolhaPagamento linha) {
+        Rubrica rubrica = linha.getRubrica();
+        BigDecimal valor = linha.getValor() != null ? linha.getValor() : BigDecimal.ZERO;
+        if (rubrica == null) {
+            return new FolhaMotorCalculo.LinhaCalculoInput(valor, (short) 0, (short) 0, (short) 0);
         }
-        String tipo = rubrica.getTipoRubrica().getDescricao();
-        if (tipo == null) {
-            return new CoeficientesRubrica(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
-        }
-        return switch (tipo.toUpperCase()) {
-            case "PROVENTO" -> new CoeficientesRubrica(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE);
-            case "DESCONTO" -> new CoeficientesRubrica(BigDecimal.ZERO, BigDecimal.ONE.negate(), BigDecimal.ZERO);
-            case "INFORMATIVO" -> new CoeficientesRubrica(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
-            default -> new CoeficientesRubrica(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
-        };
+        return new FolhaMotorCalculo.LinhaCalculoInput(
+            valor,
+            operadorOuZero(rubrica.getOperadorBruto()),
+            operadorOuZero(rubrica.getOperadorLiquido()),
+            operadorOuZero(rubrica.getOperadorCusto())
+        );
     }
 
-    private BigDecimal arredondar(BigDecimal valor) {
-        return valor.setScale(SCALE, ROUNDING);
+    private short operadorOuZero(Short operador) {
+        return operador != null ? operador : 0;
     }
-
-    private record CoeficientesRubrica(BigDecimal bruto, BigDecimal liquido, BigDecimal custo) {}
 }
