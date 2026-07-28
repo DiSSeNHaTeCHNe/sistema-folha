@@ -58,10 +58,10 @@ export const usuarioService = {
 
   // Alterar senha
   alterarSenha: async (id: number, senhaAtual: string, novaSenha: string): Promise<void> => {
-    await api.put(`/usuarios/${id}/senha`, {
-      senhaAtual,
-      novaSenha
-    });
+    const params = new URLSearchParams();
+    params.append('senhaAtual', senhaAtual);
+    params.append('novaSenha', novaSenha);
+    await api.post(`/usuarios/${id}/alterar-senha?${params.toString()}`);
   },
 
   // Listar permissões disponíveis

@@ -61,6 +61,40 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         @Param("competenciaFim") LocalDate competenciaFim,
         @Param("centroCustoIds") Collection<Long> centroCustoIds);
 
+    @Query("""
+        SELECT bm.competenciaInicio AS competenciaInicio, bm.competenciaFim AS competenciaFim,
+               COUNT(DISTINCT bm.funcionario.id) AS totalFuncionarios,
+               SUM(bm.valor) AS totalBeneficios,
+               COUNT(bm) AS qtdLancamentos
+        FROM BeneficioMensal bm
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio >= :dataInicio
+          AND bm.competenciaFim <= :dataFim
+        GROUP BY bm.competenciaInicio, bm.competenciaFim
+        ORDER BY bm.competenciaInicio DESC
+        """)
+    List<BeneficioMensalCompetenciaProjection> competenciasResumo(
+        @Param("dataInicio") LocalDate dataInicio,
+        @Param("dataFim") LocalDate dataFim);
+
+    @Query("""
+        SELECT bm.competenciaInicio AS competenciaInicio, bm.competenciaFim AS competenciaFim,
+               COUNT(DISTINCT bm.funcionario.id) AS totalFuncionarios,
+               SUM(bm.valor) AS totalBeneficios,
+               COUNT(bm) AS qtdLancamentos
+        FROM BeneficioMensal bm
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio >= :dataInicio
+          AND bm.competenciaFim <= :dataFim
+          AND bm.funcionario.centroCusto.id IN :centroCustoIds
+        GROUP BY bm.competenciaInicio, bm.competenciaFim
+        ORDER BY bm.competenciaInicio DESC
+        """)
+    List<BeneficioMensalCompetenciaProjection> competenciasResumoAndCentroCustoIds(
+        @Param("dataInicio") LocalDate dataInicio,
+        @Param("dataFim") LocalDate dataFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
+
     @Modifying
     @Query("""
         UPDATE BeneficioMensal bm

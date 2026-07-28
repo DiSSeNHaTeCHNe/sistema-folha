@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { AlterarSenhaDialog } from '../AlterarSenhaDialog';
+import { isAdmin } from '../../utils/permissions';
 import {
   AppBar,
   Box,
@@ -48,6 +50,8 @@ export function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [cadastroOpen, setCadastroOpen] = useState(false);
+  const [alterarSenhaOpen, setAlterarSenhaOpen] = useState(false);
+  const userIsAdmin = isAdmin(user);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -64,6 +68,11 @@ export function Layout() {
   const handleLogout = () => {
     handleClose();
     logout();
+  };
+
+  const handleAlterarSenha = () => {
+    handleClose();
+    setAlterarSenhaOpen(true);
   };
 
   const handleCadastroClick = () => {
@@ -106,26 +115,30 @@ export function Layout() {
             </ListItemButton>
           </ListItem>
         ))}
-        <Divider />
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleCadastroClick}>
-            <ListItemIcon><Settings /></ListItemIcon>
-            <ListItemText primary="Cadastros" />
-            {cadastroOpen ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-        <Collapse in={cadastroOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            {cadastroItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton sx={{ pl: 4 }} onClick={() => navigate(item.path)}>
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Collapse>
+        {userIsAdmin && (
+          <>
+            <Divider />
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleCadastroClick}>
+                <ListItemIcon><Settings /></ListItemIcon>
+                <ListItemText primary="Cadastros" />
+                {cadastroOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+            <Collapse in={cadastroOpen} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {cadastroItems.map((item) => (
+                  <ListItem key={item.text} disablePadding>
+                    <ListItemButton sx={{ pl: 4 }} onClick={() => navigate(item.path)}>
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.text} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+            </Collapse>
+          </>
+        )}
       </List>
     </div>
   );
@@ -180,6 +193,7 @@ export function Layout() {
               <MenuItem disabled>
                 <Typography variant="body2">{user?.nome}</Typography>
               </MenuItem>
+              <MenuItem onClick={handleAlterarSenha}>Alterar senha</MenuItem>
               <Divider />
               <MenuItem onClick={handleLogout}>Sair</MenuItem>
             </Menu>
@@ -232,6 +246,13 @@ export function Layout() {
         <Toolbar />
         <Outlet />
       </Box>
+      {user && (
+        <AlterarSenhaDialog
+          open={alterarSenhaOpen}
+          onClose={() => setAlterarSenhaOpen(false)}
+          userId={user.id}
+        />
+      )}
     </Box>
   );
 } 

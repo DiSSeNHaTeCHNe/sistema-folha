@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,13 +39,23 @@ public class FolhaPagamentoService {
     private final FolhaTotalizacaoService folhaTotalizacaoService;
 
     public List<FolhaPagamentoDTO> consultarPorFuncionario(
-            String login, Long funcionarioId, LocalDate dataInicio, LocalDate dataFim) {
+            String login, Long funcionarioId, LocalDate dataInicio, LocalDate dataFim, Boolean decimoTerceiro) {
         AccessContextDTO contexto = obterContextoAcesso(login);
-        return folhaPagamentoRepository
-            .findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(funcionarioId, dataInicio, dataFim)
-            .stream()
+
+        List<FolhaPagamento> linhas;
+        if (decimoTerceiro != null) {
+            linhas = folhaPagamentoRepository.findByFuncionarioIdAndCompetenciaAndDecimoTerceiroAndAtivoTrue(
+                funcionarioId, dataInicio, dataFim, decimoTerceiro);
+        } else {
+            linhas = folhaPagamentoRepository.findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(
+                funcionarioId, dataInicio, dataFim);
+        }
+
+        return linhas.stream()
             .filter(f -> aplicarFiltroAcesso(f, contexto))
             .map(this::toDTO)
+            .sorted(Comparator.comparing(FolhaPagamentoDTO::rubricaCodigo, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                .thenComparing(FolhaPagamentoDTO::id, Comparator.nullsLast(Comparator.naturalOrder())))
             .collect(Collectors.toList());
     }
 
@@ -82,12 +93,17 @@ public class FolhaPagamentoService {
     }
 
     public List<FolhaPagamentoDTO> consultarPorPeriodo(
-            String login, LocalDate dataInicio, LocalDate dataFim) {
+            String login, LocalDate dataInicio, LocalDate dataFim, Boolean decimoTerceiro) {
         AccessContextDTO contexto = obterContextoAcesso(login);
 
         List<FolhaPagamento> resultado;
         if (dataInicio != null && dataFim != null) {
-            resultado = folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(dataInicio, dataFim);
+            if (decimoTerceiro != null) {
+                resultado = folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+                    dataInicio, dataFim, decimoTerceiro);
+            } else {
+                resultado = folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(dataInicio, dataFim);
+            }
         } else {
             resultado = folhaPagamentoRepository.findAll();
         }
@@ -172,7 +188,8 @@ public class FolhaPagamentoService {
             folha.getDataFim(),
             folha.getValor(),
             folha.getQuantidade(),
-            folha.getBaseCalculo()
+            folha.getBaseCalculo(),
+            folha.getDecimoTerceiro()
         );
     }
 }

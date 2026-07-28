@@ -15,8 +15,12 @@ export interface ResumoFolhaPagamento {
 }
 
 const resumoFolhaPagamentoService = {
-  listarTodos: async (): Promise<ResumoFolhaPagamento[]> => {
-    const response = await api.get('/resumo-folha-pagamento');
+  listarPorAno: async (ano: number, mes?: number): Promise<ResumoFolhaPagamento[]> => {
+    const params: { ano: number; mes?: number } = { ano };
+    if (mes !== undefined) {
+      params.mes = mes;
+    }
+    const response = await api.get('/resumo-folha-pagamento', { params });
     return response.data;
   },
 

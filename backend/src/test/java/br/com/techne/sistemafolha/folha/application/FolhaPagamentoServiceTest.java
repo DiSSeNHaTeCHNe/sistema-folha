@@ -74,7 +74,7 @@ class FolhaPagamentoServiceTest {
             .thenReturn(List.of(folha));
 
         List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorPeriodo(
-            LOGIN, DATA_INICIO, DATA_FIM);
+            LOGIN, DATA_INICIO, DATA_FIM, null);
 
         assertEquals(1, result.size());
         assertEquals(10L, result.get(0).id());
@@ -91,9 +91,30 @@ class FolhaPagamentoServiceTest {
             .thenReturn(List.of(folha));
 
         List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorPeriodo(
-            LOGIN, DATA_INICIO, DATA_FIM);
+            LOGIN, DATA_INICIO, DATA_FIM, null);
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void consultarPorPeriodo_comDecimoTerceiro_filtraPorTipo() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoAcessoTotalEarlyReturn());
+
+        FolhaPagamento folhaDecimo = folhaAtiva(11L, 99L);
+        folhaDecimo.setDecimoTerceiro(true);
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+                DATA_INICIO, DATA_FIM, true))
+            .thenReturn(List.of(folhaDecimo));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, DATA_INICIO, DATA_FIM, true);
+
+        assertEquals(1, result.size());
+        assertEquals(11L, result.get(0).id());
+        verify(folhaPagamentoRepository).findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            DATA_INICIO, DATA_FIM, true);
     }
 
     @Test
@@ -107,10 +128,52 @@ class FolhaPagamentoServiceTest {
             .thenReturn(List.of(folha));
 
         List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorFuncionario(
-            LOGIN, 99L, DATA_INICIO, DATA_FIM);
+            LOGIN, 99L, DATA_INICIO, DATA_FIM, null);
 
         assertEquals(1, result.size());
         assertEquals(10L, result.get(0).id());
+    }
+
+    @Test
+    void consultarPorFuncionario_comDecimoTerceiroFalse_filtraSomenteFolhaRegular() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+
+        FolhaPagamento folhaRegular = folhaAtiva(10L, 99L);
+        folhaRegular.setDecimoTerceiro(false);
+        when(folhaPagamentoRepository.findByFuncionarioIdAndCompetenciaAndDecimoTerceiroAndAtivoTrue(
+                99L, DATA_INICIO, DATA_FIM, false))
+            .thenReturn(List.of(folhaRegular));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorFuncionario(
+            LOGIN, 99L, DATA_INICIO, DATA_FIM, false);
+
+        assertEquals(1, result.size());
+        assertEquals(10L, result.get(0).id());
+        assertFalse(result.get(0).decimoTerceiro());
+        verify(folhaPagamentoRepository).findByFuncionarioIdAndCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            99L, DATA_INICIO, DATA_FIM, false);
+        verify(folhaPagamentoRepository, never())
+            .findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(any(), any(), any());
+    }
+
+    @Test
+    void consultarPorFuncionario_comDecimoTerceiroTrue_filtraSomenteFolha13() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+
+        FolhaPagamento folhaDecimo = folhaAtiva(11L, 99L);
+        folhaDecimo.setDecimoTerceiro(true);
+        when(folhaPagamentoRepository.findByFuncionarioIdAndCompetenciaAndDecimoTerceiroAndAtivoTrue(
+                99L, DATA_INICIO, DATA_FIM, true))
+            .thenReturn(List.of(folhaDecimo));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorFuncionario(
+            LOGIN, 99L, DATA_INICIO, DATA_FIM, true);
+
+        assertEquals(1, result.size());
+        assertEquals(11L, result.get(0).id());
+        assertTrue(result.get(0).decimoTerceiro());
     }
 
     @Test
@@ -130,10 +193,48 @@ class FolhaPagamentoServiceTest {
             .thenReturn(List.of(permitido, bloqueado));
 
         List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorFuncionario(
-            LOGIN, 99L, DATA_INICIO, DATA_FIM);
+            LOGIN, 99L, DATA_INICIO, DATA_FIM, null);
 
         assertEquals(1, result.size());
         assertEquals(1L, result.get(0).id());
+    }
+
+    @Test
+    void consultarPorFuncionario_ordenar_por_rubricaCodigo_crescente() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+
+        FolhaPagamento folha200 = folhaComRubricaCodigo(1L, 99L, "200");
+        FolhaPagamento folha100 = folhaComRubricaCodigo(2L, 99L, "100");
+        when(folhaPagamentoRepository.findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(
+                99L, DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folha200, folha100));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorFuncionario(
+            LOGIN, 99L, DATA_INICIO, DATA_FIM, null);
+
+        assertEquals(2, result.size());
+        assertEquals("100", result.get(0).rubricaCodigo());
+        assertEquals("200", result.get(1).rubricaCodigo());
+    }
+
+    @Test
+    void consultarPorFuncionario_mesmo_rubricaCodigo_ordenar_por_id_crescente() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+
+        FolhaPagamento folhaId20 = folhaComRubricaCodigo(20L, 99L, "100");
+        FolhaPagamento folhaId10 = folhaComRubricaCodigo(10L, 99L, "100");
+        when(folhaPagamentoRepository.findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(
+                99L, DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folhaId20, folhaId10));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorFuncionario(
+            LOGIN, 99L, DATA_INICIO, DATA_FIM, null);
+
+        assertEquals(2, result.size());
+        assertEquals(10L, result.get(0).id());
+        assertEquals(20L, result.get(1).id());
     }
 
     @Test
@@ -250,6 +351,12 @@ class FolhaPagamentoServiceTest {
 
     private AccessContextDTO contextoRestrito(Set<Long> centros) {
         return new AccessContextDTO(true, true, false, centros, null, 2L, "TI", 1);
+    }
+
+    private FolhaPagamento folhaComRubricaCodigo(Long id, Long funcionarioId, String rubricaCodigo) {
+        FolhaPagamento folha = folhaAtiva(id, funcionarioId);
+        folha.getRubrica().setCodigo(rubricaCodigo);
+        return folha;
     }
 
     private FolhaPagamento folhaAtiva(Long id, Long funcionarioId) {

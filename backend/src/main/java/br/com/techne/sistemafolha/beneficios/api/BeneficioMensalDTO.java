@@ -35,6 +35,15 @@ public record BeneficioMensalDTO(
     @Schema(description = "Descrição do centro de custo do funcionário", example = "TI")
     String centroCustoDescricao,
 
+    @Schema(description = "Descrição do cargo do funcionário", example = "Analista de Sistemas")
+    String cargoDescricao,
+
+    @Schema(description = "ID da linha de negócio do funcionário", example = "5")
+    Long linhaNegocioId,
+
+    @Schema(description = "Descrição da linha de negócio do funcionário", example = "Tecnologia")
+    String linhaNegocioDescricao,
+
     @NotNull(message = "O valor é obrigatório")
     @Schema(description = "Valor do benefício", example = "450.00", required = true)
     BigDecimal valor,

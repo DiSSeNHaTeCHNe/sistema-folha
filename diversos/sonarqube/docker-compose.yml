@@ -1,0 +1,50 @@
+# SonarQube Community — instância local para desenvolvimento
+#
+# Primeira vez (criar volumes persistentes):
+#   ./diversos/scripts/sonar-up.sh
+#
+# Subir:   docker compose -f diversos/sonarqube/docker-compose.yml up -d
+# Parar:   docker compose -f diversos/sonarqube/docker-compose.yml down
+#          (NÃO use -v — apaga projetos e histórico de análises)
+#
+# UI: http://localhost:9000
+# Login inicial: admin / admin (trocar na primeira sessão)
+
+services:
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_temp:/opt/sonarqube/temp
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'curl -fsS http://localhost:9000/api/system/status | grep -q ''"status":"UP"'' || exit 1',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  sonarqube_data:
+    name: sonarqube_data
+    external: true
+  sonarqube_extensions:
+    name: sonarqube_extensions
+    external: true
+  sonarqube_logs:
+    name: sonarqube_logs
+    external: true
+  sonarqube_temp:
+    name: sonarqube_temp
+    external: true

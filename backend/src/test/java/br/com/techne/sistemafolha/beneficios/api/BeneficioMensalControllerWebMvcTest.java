@@ -55,4 +55,20 @@ class BeneficioMensalControllerWebMvcTest {
         verify(beneficioMensalService).listarPorCompetenciaParaUsuario(
             eq("usuario.teste"), eq(inicio), eq(fim));
     }
+
+    @Test
+    @WithMockUser(username = "usuario.teste", roles = "USER")
+    void listarCompetencias_delegaAoService() throws Exception {
+        when(beneficioMensalService.listarCompetenciasParaUsuario(
+            eq("usuario.teste"), eq(2026), eq(3)))
+            .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/beneficio-mensal/competencias")
+                .param("ano", "2026")
+                .param("mes", "3"))
+            .andExpect(status().isOk());
+
+        verify(beneficioMensalService).listarCompetenciasParaUsuario(
+            eq("usuario.teste"), eq(2026), eq(3));
+    }
 }

@@ -37,9 +37,10 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
 
     @Override
     public List<FolhaLinhaSnapshot> findLinhasAtivasPorCompetencia(
-            LocalDate competenciaInicio, LocalDate competenciaFim, Set<Long> centrosCustoIds) {
-        List<FolhaPagamento> linhas = folhaPagamentoRepository.findByCompetenciaAndAtivoTrue(
-            competenciaInicio, competenciaFim);
+            LocalDate competenciaInicio, LocalDate competenciaFim, boolean decimoTerceiro,
+            Set<Long> centrosCustoIds) {
+        List<FolhaPagamento> linhas = folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            competenciaInicio, competenciaFim, decimoTerceiro);
 
         return linhas.stream()
             .filter(l -> centrosCustoIds == null || pertenceAosCentros(l, centrosCustoIds))
@@ -49,7 +50,7 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
 
     @Override
     public List<FolhaEvolucaoSnapshot> findEvolucaoUltimos12Meses(LocalDate dataInicio) {
-        return resumoFolhaPagamentoRepository.findUltimos12Meses(dataInicio).stream()
+        return resumoFolhaPagamentoRepository.findUltimos12MesesRegulares(dataInicio).stream()
             .map(this::toEvolucaoSnapshot)
             .collect(Collectors.toList());
     }
@@ -63,16 +64,16 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
 
     @Override
     public boolean existsAtivaByCpfAndCompetenciaExcludingFuncionario(
-            String cpf, Long funcionarioId, LocalDate inicio, LocalDate fim) {
+            String cpf, Long funcionarioId, LocalDate inicio, LocalDate fim, boolean decimoTerceiro) {
         return folhaPagamentoRepository.existsAtivaByCpfAndCompetenciaExcludingFuncionario(
-            cpf, funcionarioId, inicio, fim);
+            cpf, funcionarioId, inicio, fim, decimoTerceiro);
     }
 
     @Override
     public boolean existsByFuncionarioIdAndRubricaIdAndPeriodo(
-            Long funcionarioId, Long rubricaId, LocalDate inicio, LocalDate fim) {
-        return folhaPagamentoRepository.existsByFuncionarioIdAndRubricaIdAndDataInicioAndDataFim(
-            funcionarioId, rubricaId, inicio, fim);
+            Long funcionarioId, Long rubricaId, LocalDate inicio, LocalDate fim, boolean decimoTerceiro) {
+        return folhaPagamentoRepository.existsByFuncionarioIdAndRubricaIdAndPeriodoAndDecimoTerceiro(
+            funcionarioId, rubricaId, inicio, fim, decimoTerceiro);
     }
 
     private boolean pertenceAosCentros(FolhaPagamento folha, Set<Long> centrosCustoIds) {
@@ -95,6 +96,7 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
     private FolhaEvolucaoSnapshot toEvolucaoSnapshot(ResumoFolhaPagamento resumo) {
         return new FolhaEvolucaoSnapshot(
             resumo.getCompetenciaInicio(),
+            resumo.getCompetenciaFim(),
             resumo.getTotalLiquido(),
             resumo.getTotalEmpregados()
         );

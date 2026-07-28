@@ -27,8 +27,10 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -69,7 +71,7 @@ class DashboardServiceTest {
 
         assertEmptyStats(stats);
         verify(folhaConsultaPort, never()).findResumoMaisRecente();
-        verify(folhaConsultaPort, never()).findLinhasAtivasPorCompetencia(any(), any(), any());
+        verify(folhaConsultaPort, never()).findLinhasAtivasPorCompetencia(any(), any(), anyBoolean(), any());
         verify(cadastrosImportLookupPort, never()).countFuncionariosAtivos();
         verify(beneficioConsultaPort, never()).contarLancamentosAtivosNaCompetencia(any(), any());
     }
@@ -85,7 +87,7 @@ class DashboardServiceTest {
 
         assertEmptyStats(stats);
         verify(folhaConsultaPort, never()).findResumoMaisRecente();
-        verify(folhaConsultaPort, never()).findLinhasAtivasPorCompetencia(any(), any(), any());
+        verify(folhaConsultaPort, never()).findLinhasAtivasPorCompetencia(any(), any(), anyBoolean(), any());
         verify(cadastrosImportLookupPort, never()).countFuncionariosAtivos();
     }
 
@@ -99,11 +101,11 @@ class DashboardServiceTest {
         FolhaLinhaSnapshot linha = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
         FolhaEvolucaoSnapshot evolucao = new FolhaEvolucaoSnapshot(
-            COMPETENCIA_INICIO, new BigDecimal("50000.00"), 1);
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 1);
 
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
-            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), isNull()))
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), isNull()))
             .thenReturn(List.of(linha));
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
             .thenReturn(5L);
@@ -115,41 +117,81 @@ class DashboardServiceTest {
         assertEquals(new BigDecimal("50000.00"), stats.custoMensalFolha());
         assertEquals(5L, stats.totalBeneficiosAtivos());
         assertEquals(1, stats.evolucaoMensal().size());
+        assertEquals(new BigDecimal("50000.00"), stats.evolucaoMensal().get(0).valorTotal());
+        assertEquals(1, stats.evolucaoMensal().get(0).quantidadeFuncionarios());
         verify(beneficioConsultaPort).contarLancamentosAtivosNaCompetencia(
             eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM));
         verify(folhaConsultaPort).findLinhasAtivasPorCompetencia(
-            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), isNull());
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), isNull());
+        verify(folhaConsultaPort).findEvolucaoUltimos12Meses(any());
     }
 
     @Test
-    void getStats_restritoComCentros_filtraViaPortScopedEEvolucaoVazia() {
+    void getStats_restritoComCentros_calculaEvolucaoScopedNaoGlobal() {
         stubUsuario();
         Set<Long> centros = Set.of(10L);
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoRestrito(centros));
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false);
-        FolhaLinhaSnapshot linha = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
+        FolhaLinhaSnapshot linhaProvento = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
+        FolhaLinhaSnapshot linhaDesconto = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
+            2L, "002", "INSS", "DESCONTO", new BigDecimal("500.00"));
+        FolhaEvolucaoSnapshot evolucaoGlobal = new FolhaEvolucaoSnapshot(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10);
 
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
-            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(centros)))
-            .thenReturn(List.of(linha));
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(centros)))
+            .thenReturn(List.of(linhaProvento, linhaDesconto));
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, centros))
             .thenReturn(2L);
+        when(folhaConsultaPort.findEvolucaoUltimos12Meses(any())).thenReturn(List.of(evolucaoGlobal));
 
         DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
 
         assertEquals(1L, stats.totalFuncionarios());
-        assertEquals(new BigDecimal("5000.00"), stats.custoMensalFolha());
+        assertEquals(new BigDecimal("4500.00"), stats.custoMensalFolha());
         assertEquals(2L, stats.totalBeneficiosAtivos());
-        assertTrue(stats.evolucaoMensal().isEmpty());
-        verify(folhaConsultaPort).findLinhasAtivasPorCompetencia(
-            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(centros));
-        verify(folhaConsultaPort, never()).findEvolucaoUltimos12Meses(any());
+        assertEquals(1, stats.evolucaoMensal().size());
+        assertEquals(new BigDecimal("4500.00"), stats.evolucaoMensal().get(0).valorTotal());
+        assertEquals(1, stats.evolucaoMensal().get(0).quantidadeFuncionarios());
+        assertTrue(stats.evolucaoMensal().get(0).valorTotal().compareTo(evolucaoGlobal.totalLiquido()) != 0);
+        assertTrue(!stats.evolucaoMensal().get(0).quantidadeFuncionarios()
+            .equals(evolucaoGlobal.totalEmpregados()));
+        verify(folhaConsultaPort, atLeastOnce()).findLinhasAtivasPorCompetencia(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(centros));
+        verify(folhaConsultaPort).findEvolucaoUltimos12Meses(any());
         verify(beneficioConsultaPort, never()).contarLancamentosAtivosNaCompetencia(any(), any());
+    }
+
+    @Test
+    void getStats_restritoComCentros_competenciaSemLinhas_pontoZeroNaEvolucao() {
+        stubUsuario();
+        Set<Long> centros = Set.of(10L);
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoRestrito(centros));
+
+        FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false);
+        FolhaEvolucaoSnapshot evolucaoSemLinhas = new FolhaEvolucaoSnapshot(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10);
+
+        when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(centros)))
+            .thenReturn(List.of());
+        when(beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, centros))
+            .thenReturn(0L);
+        when(folhaConsultaPort.findEvolucaoUltimos12Meses(any())).thenReturn(List.of(evolucaoSemLinhas));
+
+        DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
+
+        assertEquals(1, stats.evolucaoMensal().size());
+        assertEquals(0, BigDecimal.ZERO.compareTo(stats.evolucaoMensal().get(0).valorTotal()));
+        assertEquals(0, stats.evolucaoMensal().get(0).quantidadeFuncionarios());
     }
 
     @Test
@@ -176,6 +218,84 @@ class DashboardServiceTest {
         assertEquals(7L, stats.totalBeneficiosAtivos());
         assertEquals(BigDecimal.ZERO, stats.custoMensalFolha());
         verify(beneficioConsultaPort).contarLancamentosAtivosNaCompetencia(any(), any());
+    }
+
+    @Test
+    void getStats_acessoTotal_evolucaoExcluiDecimoTerceiro_quandoPortRetornaApenasRegulares() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+
+        LocalDate dezInicio = LocalDate.of(2024, 12, 1);
+        LocalDate dezFim = LocalDate.of(2024, 12, 31);
+        BigDecimal totalRegularDez = new BigDecimal("50000.00");
+        BigDecimal totalDecimoTerceiroDez = new BigDecimal("80000.00");
+
+        FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
+            dezInicio, dezFim, totalRegularDez, 100, false);
+        FolhaLinhaSnapshot linha = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
+            1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
+        FolhaEvolucaoSnapshot evolucaoRegularDez = new FolhaEvolucaoSnapshot(
+            dezInicio, dezFim, totalRegularDez, 100);
+
+        when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+            eq(dezInicio), eq(dezFim), eq(false), isNull()))
+            .thenReturn(List.of(linha));
+        when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(dezInicio, dezFim))
+            .thenReturn(5L);
+        when(folhaConsultaPort.findEvolucaoUltimos12Meses(any()))
+            .thenReturn(List.of(evolucaoRegularDez));
+
+        DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
+
+        assertEquals(1, stats.evolucaoMensal().size());
+        assertEquals(totalRegularDez, stats.evolucaoMensal().get(0).valorTotal());
+        assertEquals(100, stats.evolucaoMensal().get(0).quantidadeFuncionarios());
+        assertTrue(stats.evolucaoMensal().stream()
+            .noneMatch(e -> e.valorTotal().compareTo(totalDecimoTerceiroDez) == 0));
+        verify(folhaConsultaPort).findEvolucaoUltimos12Meses(any());
+    }
+
+    @Test
+    void getStats_restritoComCentros_evolucaoExcluiDecimoTerceiro_quandoPortRetornaApenasRegulares() {
+        stubUsuario();
+        Set<Long> centros = Set.of(10L);
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoRestrito(centros));
+
+        LocalDate dezInicio = LocalDate.of(2024, 12, 1);
+        LocalDate dezFim = LocalDate.of(2024, 12, 31);
+        BigDecimal totalRegularDez = new BigDecimal("50000.00");
+        BigDecimal totalDecimoTerceiroDez = new BigDecimal("80000.00");
+
+        FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
+            dezInicio, dezFim, new BigDecimal("99999.00"), 10, false);
+        FolhaLinhaSnapshot linhaProvento = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
+            1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
+        FolhaLinhaSnapshot linhaDesconto = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
+            2L, "002", "INSS", "DESCONTO", new BigDecimal("500.00"));
+        FolhaEvolucaoSnapshot evolucaoRegularDez = new FolhaEvolucaoSnapshot(
+            dezInicio, dezFim, totalRegularDez, 100);
+
+        when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+            eq(dezInicio), eq(dezFim), eq(false), eq(centros)))
+            .thenReturn(List.of(linhaProvento, linhaDesconto));
+        when(beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
+            dezInicio, dezFim, centros))
+            .thenReturn(2L);
+        when(folhaConsultaPort.findEvolucaoUltimos12Meses(any()))
+            .thenReturn(List.of(evolucaoRegularDez));
+
+        DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
+
+        assertEquals(1, stats.evolucaoMensal().size());
+        assertEquals(new BigDecimal("4500.00"), stats.evolucaoMensal().get(0).valorTotal());
+        assertEquals(1, stats.evolucaoMensal().get(0).quantidadeFuncionarios());
+        assertTrue(stats.evolucaoMensal().stream()
+            .noneMatch(e -> e.valorTotal().compareTo(totalDecimoTerceiroDez) == 0));
+        verify(folhaConsultaPort).findEvolucaoUltimos12Meses(any());
+        verify(folhaConsultaPort, atLeastOnce()).findLinhasAtivasPorCompetencia(
+            eq(dezInicio), eq(dezFim), eq(false), eq(centros));
     }
 
     @Test

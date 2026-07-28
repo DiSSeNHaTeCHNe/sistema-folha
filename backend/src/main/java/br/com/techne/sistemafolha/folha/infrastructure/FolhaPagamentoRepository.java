@@ -24,6 +24,20 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
         Long funcionarioId, Long rubricaId, LocalDate dataInicio, LocalDate dataFim);
 
     List<FolhaPagamento> findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(Long funcionarioId, LocalDate dataInicio, LocalDate dataFim);
+
+    @Query("""
+        SELECT f FROM FolhaPagamento f
+        WHERE f.ativo = true
+        AND f.funcionario.id = :funcionarioId
+        AND f.dataInicio = :dataInicio
+        AND f.dataFim = :dataFim
+        AND f.decimoTerceiro = :decimoTerceiro
+        """)
+    List<FolhaPagamento> findByFuncionarioIdAndCompetenciaAndDecimoTerceiroAndAtivoTrue(
+        @Param("funcionarioId") Long funcionarioId,
+        @Param("dataInicio") LocalDate dataInicio,
+        @Param("dataFim") LocalDate dataFim,
+        @Param("decimoTerceiro") boolean decimoTerceiro);
     List<FolhaPagamento> findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(CentroCusto centroCusto, LocalDate dataInicio, LocalDate dataFim);
     List<FolhaPagamento> findByDataInicioBetweenAndAtivoTrue(LocalDate dataInicio, LocalDate dataFim);
     
@@ -41,19 +55,21 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
     List<FolhaPagamento> findByFuncionarioIdAndAtivoTrue(Long funcionarioId);
     
     // Métodos para buscar dados da competência mais recente
-    @Query("SELECT f FROM FolhaPagamento f WHERE f.ativo = true AND f.dataInicio = :competenciaInicio AND f.dataFim = :competenciaFim")
-    List<FolhaPagamento> findByCompetenciaAndAtivoTrue(@Param("competenciaInicio") LocalDate competenciaInicio, @Param("competenciaFim") LocalDate competenciaFim);
+    @Query("SELECT f FROM FolhaPagamento f WHERE f.ativo = true AND f.dataInicio = :competenciaInicio AND f.dataFim = :competenciaFim AND f.decimoTerceiro = :decimoTerceiro")
+    List<FolhaPagamento> findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("decimoTerceiro") boolean decimoTerceiro);
     
-    @Query("SELECT f FROM FolhaPagamento f WHERE f.funcionario.id = :funcionarioId AND f.ativo = true AND f.dataInicio = :competenciaInicio AND f.dataFim = :competenciaFim")
-    List<FolhaPagamento> findByFuncionarioIdAndCompetenciaAndAtivoTrue(@Param("funcionarioId") Long funcionarioId, @Param("competenciaInicio") LocalDate competenciaInicio, @Param("competenciaFim") LocalDate competenciaFim);
-    
-    List<FolhaPagamento> findByDataInicioAndDataFim(LocalDate dataInicio, LocalDate dataFim);
+    List<FolhaPagamento> findByDataInicioAndDataFimAndDecimoTerceiro(
+        LocalDate dataInicio, LocalDate dataFim, boolean decimoTerceiro);
 
     @Query("""
         SELECT COUNT(f) > 0 FROM FolhaPagamento f
         WHERE f.ativo = true
         AND f.dataInicio = :dataInicio
         AND f.dataFim = :dataFim
+        AND f.decimoTerceiro = :decimoTerceiro
         AND f.funcionario.cpf = :cpf
         AND f.funcionario.id <> :funcionarioId
         """)
@@ -61,5 +77,22 @@ public interface FolhaPagamentoRepository extends JpaRepository<FolhaPagamento, 
         @Param("cpf") String cpf,
         @Param("funcionarioId") Long funcionarioId,
         @Param("dataInicio") LocalDate dataInicio,
-        @Param("dataFim") LocalDate dataFim);
+        @Param("dataFim") LocalDate dataFim,
+        @Param("decimoTerceiro") boolean decimoTerceiro);
+
+    @Query("""
+        SELECT COUNT(f) > 0 FROM FolhaPagamento f
+        WHERE f.ativo = true
+        AND f.funcionario.id = :funcionarioId
+        AND f.rubrica.id = :rubricaId
+        AND f.dataInicio = :dataInicio
+        AND f.dataFim = :dataFim
+        AND f.decimoTerceiro = :decimoTerceiro
+        """)
+    boolean existsByFuncionarioIdAndRubricaIdAndPeriodoAndDecimoTerceiro(
+        @Param("funcionarioId") Long funcionarioId,
+        @Param("rubricaId") Long rubricaId,
+        @Param("dataInicio") LocalDate dataInicio,
+        @Param("dataFim") LocalDate dataFim,
+        @Param("decimoTerceiro") boolean decimoTerceiro);
 } 

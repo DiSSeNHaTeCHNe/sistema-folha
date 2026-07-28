@@ -1,10 +1,10 @@
 package br.com.techne.sistemafolha.cadastros.api;
 
-import br.com.techne.sistemafolha.cadastros.api.FuncionarioDTO;
 import br.com.techne.sistemafolha.cadastros.application.FuncionarioService;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioJaExisteException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,20 +21,15 @@ public class FuncionarioController {
     private final FuncionarioService funcionarioService;
 
     @GetMapping
-    @Operation(summary = "Lista todos os funcionários ativos com filtros opcionais")
+    @Operation(summary = "Lista funcionários com filtros opcionais e status de ativação")
     public ResponseEntity<List<FuncionarioDTO>> listar(
             @RequestParam(required = false) String nome,
             @RequestParam(required = false) Long cargoId,
             @RequestParam(required = false) Long centroCustoId,
-            @RequestParam(required = false) Long linhaNegocioId) {
-        
-        // Se algum filtro foi fornecido, usar o método de filtros
-        if (nome != null || cargoId != null || centroCustoId != null || linhaNegocioId != null) {
-            return ResponseEntity.ok(funcionarioService.listarComFiltros(nome, cargoId, centroCustoId, linhaNegocioId));
-        }
-        
-        // Caso contrário, usar o método básico
-        return ResponseEntity.ok(funcionarioService.listarTodos());
+            @RequestParam(required = false) Long linhaNegocioId,
+            @Parameter(description = "Filtro de status: ATIVO (padrão), INATIVO ou TODOS")
+            @RequestParam(defaultValue = "ATIVO") FuncionarioStatusFiltro status) {
+        return ResponseEntity.ok(funcionarioService.listar(nome, cargoId, centroCustoId, linhaNegocioId, status));
     }
 
     @GetMapping("/{id}")

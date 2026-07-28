@@ -1,373 +1,577 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
-  Collapse,
-  FormControl,
-  IconButton,
-  InputLabel,
-  MenuItem,
+  Button,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
-  TableFooter,
   TableHead,
   TableRow,
   Typography,
-  useMediaQuery,
-  useTheme,
+  TextField,
+  InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Card,
+  CardContent,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
+  Search as SearchIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
-import type { BeneficioMensal, BeneficioMensalCompetenciaParams, BeneficioMensalResumo } from '../../types';
+import { Controller, useForm } from 'react-hook-form';
+import type { BeneficioMensal, BeneficioMensalCompetenciaResumo } from '../../types';
 import { beneficioMensalService } from '../../services/beneficioMensalService';
+import { centroCustoService } from '../../services/centroCustoService';
+import { linhaNegocioService } from '../../services/linhaNegocioService';
 
-const MESES = [
-  { valor: 1, label: 'Janeiro' },
-  { valor: 2, label: 'Fevereiro' },
-  { valor: 3, label: 'Março' },
-  { valor: 4, label: 'Abril' },
-  { valor: 5, label: 'Maio' },
-  { valor: 6, label: 'Junho' },
-  { valor: 7, label: 'Julho' },
-  { valor: 8, label: 'Agosto' },
-  { valor: 9, label: 'Setembro' },
-  { valor: 10, label: 'Outubro' },
-  { valor: 11, label: 'Novembro' },
-  { valor: 12, label: 'Dezembro' },
-];
+interface CentroCusto {
+  id: number;
+  descricao: string;
+}
 
-const formatarMoeda = (valor: number): string =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(valor);
+interface LinhaNegocio {
+  id: number;
+  descricao: string;
+}
 
-const formatarDataCompetencia = (dataString: string): string => {
-  if (!dataString) return '';
-  if (dataString.includes('-')) {
-    const [ano, mes, dia] = dataString.split('-');
-    return `${dia}/${mes}/${ano}`;
-  }
-  return dataString;
-};
+interface FiltrosResumo {
+  mes: string;
+  ano: string;
+}
 
-const competenciaParams = (mes: number, ano: number): BeneficioMensalCompetenciaParams => {
-  const mesStr = String(mes).padStart(2, '0');
-  const ultimoDia = new Date(ano, mes, 0).getDate();
-  return {
-    competenciaInicio: `${ano}-${mesStr}-01`,
-    competenciaFim: `${ano}-${mesStr}-${String(ultimoDia).padStart(2, '0')}`,
-  };
-};
+interface FiltrosFuncionarios {
+  linhaNegocioId: string | number;
+  centroCustoId: string | number;
+  busca: string;
+}
+
+interface FuncionarioResumo {
+  funcionarioId: number;
+  funcionarioNome: string;
+  competenciaInicio: string;
+  competenciaFim: string;
+  totalBeneficios: number;
+  qtdLancamentos: number;
+  cargoDescricao?: string;
+  centroCustoDescricao?: string;
+  linhaNegocioDescricao?: string;
+}
 
 const gerarAnosDisponiveis = (): number[] => {
   const anoAtual = new Date().getFullYear();
   return Array.from({ length: 6 }, (_, i) => anoAtual - i);
 };
 
-async function encontrarUltimaCompetenciaComDados(): Promise<{ mes: number; ano: number } | null> {
-  const hoje = new Date();
-  for (let offset = 0; offset < 36; offset += 1) {
-    const data = new Date(hoje.getFullYear(), hoje.getMonth() - offset, 1);
-    const mes = data.getMonth() + 1;
-    const ano = data.getFullYear();
-    try {
-      const resumo = await beneficioMensalService.resumo(competenciaParams(mes, ano));
-      if (resumo.length > 0) {
-        return { mes, ano };
-      }
-    } catch {
-      // tenta mês anterior
-    }
+const anoCorrente = (): string => String(new Date().getFullYear());
+
+const formatarDataCompetencia = (dataString: string): string => {
+  if (!dataString) return '';
+
+  if (dataString.includes('-')) {
+    const [ano, mes, dia] = dataString.split('-');
+    return `${dia}/${mes}/${ano}`;
   }
-  return null;
-}
+
+  return dataString;
+};
 
 export function BeneficiosMensais() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const hoje = new Date();
-  const [mes, setMes] = useState(hoje.getMonth() + 1);
-  const [ano, setAno] = useState(hoje.getFullYear());
-  const [resumo, setResumo] = useState<BeneficioMensalResumo[]>([]);
+  const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([]);
+  const [linhasNegocio, setLinhasNegocio] = useState<LinhaNegocio[]>([]);
   const [lancamentos, setLancamentos] = useState<BeneficioMensal[]>([]);
-  const [expandedCodigo, setExpandedCodigo] = useState<string | null>(null);
+  const [funcionariosResumo, setFuncionariosResumo] = useState<FuncionarioResumo[]>([]);
+  const [resumosCompetencia, setResumosCompetencia] = useState<BeneficioMensalCompetenciaResumo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [competenciaInicializada, setCompetenciaInicializada] = useState(false);
+  const [openDetalhesDialog, setOpenDetalhesDialog] = useState(false);
+  const [funcionarioSelecionado, setFuncionarioSelecionado] = useState<FuncionarioResumo | null>(null);
+  const [beneficiosFuncionario, setBeneficiosFuncionario] = useState<BeneficioMensal[]>([]);
+  const [competenciaSelecionada, setCompetenciaSelecionada] = useState<BeneficioMensalCompetenciaResumo | null>(null);
+  const [mostrarFuncionarios, setMostrarFuncionarios] = useState(false);
 
-  const params = useMemo(() => competenciaParams(mes, ano), [mes, ano]);
+  const { control: controlResumo, handleSubmit: handleSubmitResumo, reset: resetResumo, getValues: getValuesResumo } = useForm<FiltrosResumo>({
+    defaultValues: {
+      mes: '',
+      ano: anoCorrente(),
+    },
+  });
+
   const anosDisponiveis = useMemo(() => gerarAnosDisponiveis(), []);
 
-  const totalGeral = useMemo(
-    () => resumo.reduce((acc, item) => acc + item.total, 0),
-    [resumo],
-  );
+  const { control: controlFuncionarios, reset: resetFuncionarios, watch: watchFuncionarios } = useForm<FiltrosFuncionarios>({
+    defaultValues: {
+      linhaNegocioId: '',
+      centroCustoId: '',
+      busca: '',
+    },
+  });
 
-  const lancamentosPorCodigo = useMemo(() => {
-    const map = new Map<string, BeneficioMensal[]>();
-    for (const lancamento of lancamentos) {
-      const codigo = lancamento.tipoBeneficioCodigo ?? '';
-      if (!codigo) continue;
-      const lista = map.get(codigo) ?? [];
-      lista.push(lancamento);
-      map.set(codigo, lista);
-    }
-    for (const [, lista] of map) {
-      lista.sort((a, b) =>
-        (a.funcionarioNome ?? '').localeCompare(b.funcionarioNome ?? '', 'pt-BR'),
+  const filtrosFuncionarios = watchFuncionarios();
+
+  const carregarOpcoesDeFilters = async () => {
+    try {
+      const [centrosCustoData, linhasNegocioData] = await Promise.all([
+        centroCustoService.listarTodos(),
+        linhaNegocioService.listarTodos(),
+      ]);
+
+      const centrosCustoOrdenados = [...centrosCustoData].sort((a, b) =>
+        a.descricao.localeCompare(b.descricao),
       );
-    }
-    return map;
-  }, [lancamentos]);
+      const linhasNegocioOrdenadas = [...linhasNegocioData].sort((a, b) =>
+        a.descricao.localeCompare(b.descricao),
+      );
 
-  const carregarDados = useCallback(async (competencia: BeneficioMensalCompetenciaParams) => {
+      setCentrosCusto(centrosCustoOrdenados);
+      setLinhasNegocio(linhasNegocioOrdenadas);
+    } catch (err) {
+      console.error('Erro ao carregar opções de filtros:', err);
+    }
+  };
+
+  const fetchResumosCompetencia = async (filtros?: FiltrosResumo) => {
     setLoading(true);
     setError('');
-    setExpandedCodigo(null);
     try {
-      const [resumoData, lancamentosData] = await Promise.all([
-        beneficioMensalService.resumo(competencia),
-        beneficioMensalService.listar(competencia),
-      ]);
-      setResumo(resumoData);
-      setLancamentos(lancamentosData);
-    } catch {
-      setError('Erro ao carregar benefícios mensais.');
-      setResumo([]);
-      setLancamentos([]);
+      const ano = Number(filtros?.ano ?? anoCorrente());
+      const mes = filtros?.mes ? Number(filtros.mes) : undefined;
+      const resumos = await beneficioMensalService.listarCompetencias(ano, mes);
+
+      const resumosOrdenados = [...resumos].sort((a, b) => {
+        const dataA = new Date(a.competenciaInicio).getTime();
+        const dataB = new Date(b.competenciaInicio).getTime();
+        return dataB - dataA;
+      });
+
+      setResumosCompetencia(resumosOrdenados);
+    } catch (err) {
+      console.error('Erro ao buscar resumos de competência:', err);
+      setError('Erro ao buscar resumos de benefícios');
+      setResumosCompetencia([]);
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    let ativo = true;
-
-    const inicializar = async () => {
-      setLoading(true);
-      const ultima = await encontrarUltimaCompetenciaComDados();
-      if (!ativo) return;
-
-      const mesInicial = ultima?.mes ?? hoje.getMonth() + 1;
-      const anoInicial = ultima?.ano ?? hoje.getFullYear();
-      setMes(mesInicial);
-      setAno(anoInicial);
-      setCompetenciaInicializada(true);
-    };
-
-    inicializar();
-
-    return () => {
-      ativo = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!competenciaInicializada) return;
-    carregarDados(params);
-  }, [competenciaInicializada, params, carregarDados]);
-
-  const handleToggleRow = (codigo: string) => {
-    setExpandedCodigo((atual) => (atual === codigo ? null : codigo));
   };
 
-  const competenciaLabel = `${MESES.find((m) => m.valor === mes)?.label ?? mes}/${ano}`;
+  const fetchFuncionariosPorCompetencia = async (competencia: BeneficioMensalCompetenciaResumo) => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await beneficioMensalService.listar({
+        competenciaInicio: competencia.competenciaInicio,
+        competenciaFim: competencia.competenciaFim,
+      });
+
+      setLancamentos(data);
+
+      const resumoMap = data.reduce((acc: Record<string, FuncionarioResumo>, item: BeneficioMensal) => {
+        const key = `${item.funcionarioId}`;
+        if (!acc[key]) {
+          acc[key] = {
+            funcionarioId: item.funcionarioId,
+            funcionarioNome: item.funcionarioNome ?? '',
+            competenciaInicio: item.competenciaInicio,
+            competenciaFim: item.competenciaFim,
+            totalBeneficios: 0,
+            qtdLancamentos: 0,
+            cargoDescricao: item.cargoDescricao,
+            centroCustoDescricao: item.centroCustoDescricao,
+            linhaNegocioDescricao: item.linhaNegocioDescricao,
+          };
+        }
+        acc[key].totalBeneficios += item.valor;
+        acc[key].qtdLancamentos += 1;
+        return acc;
+      }, {} as Record<string, FuncionarioResumo>);
+
+      const funcionariosArray = Object.values(resumoMap) as FuncionarioResumo[];
+      const funcionariosOrdenados = funcionariosArray.sort((a, b) =>
+        a.funcionarioNome.localeCompare(b.funcionarioNome),
+      );
+      setFuncionariosResumo(funcionariosOrdenados);
+    } catch (err) {
+      console.error('Erro ao buscar funcionários:', err);
+      setError('Erro ao buscar funcionários');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarOpcoesDeFilters();
+    fetchResumosCompetencia({ ano: anoCorrente(), mes: '' });
+  }, []);
+
+  const handleFiltrarResumos = async (filtros: FiltrosResumo) => {
+    await fetchResumosCompetencia(filtros);
+  };
+
+  const handleLimparFiltrosResumo = () => {
+    const ano = anoCorrente();
+    resetResumo({ mes: '', ano });
+    fetchResumosCompetencia({ mes: '', ano });
+  };
+
+  const handleDetalharBeneficios = (funcionario: FuncionarioResumo) => {
+    setFuncionarioSelecionado(funcionario);
+    const beneficios = lancamentos.filter(
+      (item) => item.funcionarioId === funcionario.funcionarioId,
+    );
+    setBeneficiosFuncionario(beneficios);
+    setOpenDetalhesDialog(true);
+  };
+
+  const handleVerFuncionarios = async (competencia: BeneficioMensalCompetenciaResumo) => {
+    setCompetenciaSelecionada(competencia);
+    setMostrarFuncionarios(true);
+    resetFuncionarios();
+    await fetchFuncionariosPorCompetencia(competencia);
+  };
+
+  const handleVoltarParaResumos = () => {
+    setMostrarFuncionarios(false);
+    setCompetenciaSelecionada(null);
+    setFuncionariosResumo([]);
+    setLancamentos([]);
+    const filtrosAtuais = getValuesResumo();
+    fetchResumosCompetencia(filtrosAtuais);
+  };
+
+  const filteredFuncionarios = funcionariosResumo.filter((item) => {
+    const buscaMatch =
+      !filtrosFuncionarios.busca ||
+      item.funcionarioNome.toLowerCase().includes(filtrosFuncionarios.busca.toLowerCase());
+
+    let linhaNegocioMatch = true;
+    if (filtrosFuncionarios.linhaNegocioId && filtrosFuncionarios.linhaNegocioId !== '') {
+      const linhaSelecionada = linhasNegocio.find(
+        (l) => l.id.toString() === filtrosFuncionarios.linhaNegocioId.toString(),
+      );
+      if (linhaSelecionada) {
+        linhaNegocioMatch = item.linhaNegocioDescricao === linhaSelecionada.descricao;
+      } else {
+        linhaNegocioMatch = false;
+      }
+    }
+
+    let centroCustoMatch = true;
+    if (filtrosFuncionarios.centroCustoId && filtrosFuncionarios.centroCustoId !== '') {
+      const centroSelecionado = centrosCusto.find(
+        (c) => c.id.toString() === filtrosFuncionarios.centroCustoId.toString(),
+      );
+      if (centroSelecionado) {
+        centroCustoMatch = item.centroCustoDescricao === centroSelecionado.descricao;
+      } else {
+        centroCustoMatch = false;
+      }
+    }
+
+    return buscaMatch && linhaNegocioMatch && centroCustoMatch;
+  });
 
   return (
     <Box>
-      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
-        Benefícios Mensais
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4">Benefícios Mensais</Typography>
+      </Box>
 
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Competência
-          </Typography>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: 2,
-              alignItems: { xs: 'stretch', sm: 'center' },
-            }}
-          >
-            <FormControl sx={{ minWidth: { xs: '100%', sm: 180 } }}>
-              <InputLabel id="beneficios-mes-label">Mês</InputLabel>
-              <Select
-                labelId="beneficios-mes-label"
-                label="Mês"
-                value={mes}
-                onChange={(e) => setMes(Number(e.target.value))}
-              >
-                {MESES.map((item) => (
-                  <MenuItem key={item.valor} value={item.valor}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl sx={{ minWidth: { xs: '100%', sm: 120 } }}>
-              <InputLabel id="beneficios-ano-label">Ano</InputLabel>
-              <Select
-                labelId="beneficios-ano-label"
-                label="Ano"
-                value={ano}
-                onChange={(e) => setAno(Number(e.target.value))}
-              >
-                {anosDisponiveis.map((itemAno) => (
-                  <MenuItem key={itemAno} value={itemAno}>
-                    {itemAno}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Typography variant="body2" color="text.secondary">
-              Período: {formatarDataCompetencia(params.competenciaInicio)} a{' '}
-              {formatarDataCompetencia(params.competenciaFim)}
+      {loading ? (
+        <Typography>Carregando...</Typography>
+      ) : error ? (
+        <Typography color="error">{error}</Typography>
+      ) : mostrarFuncionarios ? (
+        <>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={handleVoltarParaResumos}
+              sx={{ mr: 2 }}
+            >
+              ← Voltar
+            </Button>
+            <Typography variant="h5">
+              Funcionários - Competência:{' '}
+              {competenciaSelecionada && (
+                `${formatarDataCompetencia(competenciaSelecionada.competenciaInicio)} a ${formatarDataCompetencia(competenciaSelecionada.competenciaFim)}`
+              )}
             </Typography>
           </Box>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
-          <Typography variant="h6" gutterBottom>
-            Resumo por Tipo — {competenciaLabel}
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <FormControl variant="outlined" sx={{ minWidth: 200 }}>
+              <InputLabel id="linha-negocio-label">Linha de Negócio</InputLabel>
+              <Controller
+                name="linhaNegocioId"
+                control={controlFuncionarios}
+                render={({ field }) => (
+                  <Select
+                    labelId="linha-negocio-label"
+                    label="Linha de Negócio"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    fullWidth
+                  >
+                    <MenuItem value="">Todas</MenuItem>
+                    {linhasNegocio.map((linha) => (
+                      <MenuItem key={linha.id} value={linha.id}>
+                        {linha.descricao}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+            </FormControl>
+            <FormControl variant="outlined" sx={{ minWidth: 200 }}>
+              <InputLabel id="centro-custo-label">Centro de Custo</InputLabel>
+              <Controller
+                name="centroCustoId"
+                control={controlFuncionarios}
+                render={({ field }) => (
+                  <Select
+                    labelId="centro-custo-label"
+                    label="Centro de Custo"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    fullWidth
+                  >
+                    <MenuItem value="">Todos</MenuItem>
+                    {centrosCusto.map((centro) => (
+                      <MenuItem key={centro.id} value={centro.id}>
+                        {centro.descricao}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+            </FormControl>
+            <Controller
+              name="busca"
+              control={controlFuncionarios}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Buscar funcionário"
+                  variant="outlined"
+                  sx={{ minWidth: 300 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
+            <Button variant="text" onClick={() => resetFuncionarios()}>
+              Limpar
+            </Button>
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
+            {filteredFuncionarios.map((funcionario) => (
+              <Card key={`${funcionario.funcionarioId}-${funcionario.competenciaInicio}`}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    {funcionario.funcionarioNome}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Cargo: {funcionario.cargoDescricao || '-'}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Centro de Custo: {funcionario.centroCustoDescricao || '-'}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Linha de Negócio: {funcionario.linhaNegocioDescricao || '-'}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Total:{' '}
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(funcionario.totalBeneficios)}
+                  </Typography>
+                  <Box sx={{ mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => handleDetalharBeneficios(funcionario)}
+                      fullWidth
+                    >
+                      Ver Benefícios
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+
+          {filteredFuncionarios.length === 0 && (
+            <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
+              Nenhum funcionário encontrado para este período.
+            </Typography>
+          )}
+        </>
+      ) : (
+        <>
+          <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
+            Resumos de Benefícios Mensais
           </Typography>
 
-          {loading ? (
-            <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-              Carregando...
-            </Typography>
-          ) : error ? (
-            <Typography color="error" sx={{ py: 4, textAlign: 'center' }}>
-              {error}
-            </Typography>
-          ) : resumo.length === 0 ? (
-            <Box sx={{ py: 6, textAlign: 'center' }}>
-              <Typography color="text.secondary" variant="body1">
-                Nenhum benefício mensal encontrado para {competenciaLabel}.
-              </Typography>
-              <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
-                Selecione outra competência.
-              </Typography>
-            </Box>
-          ) : (
-            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-              <Table size={isMobile ? 'small' : 'medium'}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell padding="checkbox" />
-                    <TableCell>Código</TableCell>
-                    <TableCell>Descrição</TableCell>
-                    <TableCell align="right">Total (R$)</TableCell>
-                    <TableCell align="right">Qtd. Lançamentos</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {resumo.map((item) => {
-                    const expandido = expandedCodigo === item.codigo;
-                    const detalhes = lancamentosPorCodigo.get(item.codigo) ?? [];
+          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+            <Controller
+              name="mes"
+              control={controlResumo}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Mês"
+                  type="number"
+                  sx={{ minWidth: 120 }}
+                  inputProps={{ min: 1, max: 12 }}
+                />
+              )}
+            />
+            <Controller
+              name="ano"
+              control={controlResumo}
+              rules={{ required: 'Ano é obrigatório' }}
+              render={({ field, fieldState: { error: fieldError } }) => (
+                <FormControl sx={{ minWidth: 120 }} error={!!fieldError}>
+                  <InputLabel id="beneficios-ano-label">Ano</InputLabel>
+                  <Select
+                    labelId="beneficios-ano-label"
+                    label="Ano"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  >
+                    {anosDisponiveis.map((itemAno) => (
+                      <MenuItem key={itemAno} value={String(itemAno)}>
+                        {itemAno}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {fieldError && <FormHelperText>{fieldError.message}</FormHelperText>}
+                </FormControl>
+              )}
+            />
+            <Button variant="outlined" onClick={handleSubmitResumo(handleFiltrarResumos)}>
+              Filtrar
+            </Button>
+            <Button variant="text" onClick={handleLimparFiltrosResumo}>
+              Limpar
+            </Button>
+          </Box>
 
-                    return (
-                      <Fragment key={item.codigo}>
-                        <TableRow
-                          hover
-                          onClick={() => handleToggleRow(item.codigo)}
-                          sx={{ cursor: 'pointer' }}
-                        >
-                          <TableCell padding="checkbox">
-                            <IconButton
-                              size="small"
-                              aria-label={expandido ? 'Recolher detalhes' : 'Expandir detalhes'}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleRow(item.codigo);
-                              }}
-                            >
-                              {expandido ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                            </IconButton>
-                          </TableCell>
-                          <TableCell>{item.codigo}</TableCell>
-                          <TableCell>{item.descricao}</TableCell>
-                          <TableCell align="right">{formatarMoeda(item.total)}</TableCell>
-                          <TableCell align="right">{item.qtdLancamentos}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell colSpan={5} sx={{ py: 0, borderBottom: expandido ? undefined : 0 }}>
-                            <Collapse in={expandido} timeout="auto" unmountOnExit>
-                              <Box sx={{ py: 2, px: { xs: 0, sm: 2 } }}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                  Funcionários — {item.descricao}
-                                </Typography>
-                                {detalhes.length === 0 ? (
-                                  <Typography variant="body2" color="text.secondary">
-                                    Nenhum lançamento encontrado para este tipo.
-                                  </Typography>
-                                ) : (
-                                  <Table size="small">
-                                    <TableHead>
-                                      <TableRow>
-                                        <TableCell>Funcionário</TableCell>
-                                        {!isMobile && <TableCell>Centro de Custo</TableCell>}
-                                        <TableCell align="right">Valor (R$)</TableCell>
-                                      </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                      {detalhes.map((lancamento) => (
-                                        <TableRow key={lancamento.id}>
-                                          <TableCell>{lancamento.funcionarioNome ?? '—'}</TableCell>
-                                          {!isMobile && (
-                                            <TableCell>
-                                              {lancamento.centroCustoDescricao ?? '—'}
-                                            </TableCell>
-                                          )}
-                                          <TableCell align="right">
-                                            {formatarMoeda(lancamento.valor)}
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                )}
-                              </Box>
-                            </Collapse>
-                          </TableCell>
-                        </TableRow>
-                      </Fragment>
-                    );
-                  })}
-                </TableBody>
-                <TableFooter>
-                  <TableRow>
-                    <TableCell colSpan={3}>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        Total Geral
-                      </Typography>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Competência</TableCell>
+                  <TableCell align="right">Total Funcionários</TableCell>
+                  <TableCell align="right">Total (R$)</TableCell>
+                  <TableCell align="right">Qtd. Lançamentos</TableCell>
+                  <TableCell align="center">Ações</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {resumosCompetencia.map((resumo) => (
+                  <TableRow
+                    key={`${resumo.competenciaInicio}-${resumo.competenciaFim}`}
+                  >
+                    <TableCell>
+                      {formatarDataCompetencia(resumo.competenciaInicio)} a{' '}
+                      {formatarDataCompetencia(resumo.competenciaFim)}
                     </TableCell>
+                    <TableCell align="right">{resumo.totalFuncionarios}</TableCell>
                     <TableCell align="right">
-                      <Typography variant="subtitle1" fontWeight="bold" color="primary">
-                        {formatarMoeda(totalGeral)}
-                      </Typography>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(resumo.totalBeneficios)}
                     </TableCell>
-                    <TableCell />
+                    <TableCell align="right">{resumo.qtdLancamentos}</TableCell>
+                    <TableCell align="center">
+                      <Button
+                        variant="outlined"
+                        startIcon={<VisibilityIcon />}
+                        onClick={() => handleVerFuncionarios(resumo)}
+                        size="small"
+                      >
+                        Ver Funcionários
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableFooter>
-              </Table>
-            </TableContainer>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {resumosCompetencia.length === 0 && (
+            <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
+              Nenhum benefício mensal encontrado.
+            </Typography>
           )}
-        </CardContent>
-      </Card>
+        </>
+      )}
+
+      <Dialog
+        open={openDetalhesDialog}
+        onClose={() => setOpenDetalhesDialog(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          Benefícios de {funcionarioSelecionado?.funcionarioNome} - Período:{' '}
+          {formatarDataCompetencia(funcionarioSelecionado?.competenciaInicio || '')} a{' '}
+          {formatarDataCompetencia(funcionarioSelecionado?.competenciaFim || '')}
+        </DialogTitle>
+        <DialogContent>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Código</TableCell>
+                  <TableCell>Descrição</TableCell>
+                  <TableCell align="right">Valor</TableCell>
+                  <TableCell>Observação</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {beneficiosFuncionario.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.tipoBeneficioCodigo ?? '—'}</TableCell>
+                    <TableCell>{item.tipoBeneficioDescricao ?? '—'}</TableCell>
+                    <TableCell align="right">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(item.valor)}
+                    </TableCell>
+                    <TableCell>{item.observacao ?? '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDetalhesDialog(false)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

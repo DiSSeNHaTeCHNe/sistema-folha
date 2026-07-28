@@ -13,11 +13,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,6 +43,66 @@ class UsuarioServiceTest {
 
     @InjectMocks
     private UsuarioService usuarioService;
+
+    @Test
+    void listar_sem_filtros_delegates_to_repository() {
+        when(usuarioRepository.findByFiltros(isNull(), isNull(), isNull()))
+                .thenReturn(Collections.emptyList());
+
+        usuarioService.listar(null, null, null);
+
+        verify(usuarioRepository).findByFiltros(isNull(), isNull(), isNull());
+    }
+
+    @Test
+    void listar_nome_passes_ilike_pattern_to_repository() {
+        when(usuarioRepository.findByFiltros(eq("%Maria%"), isNull(), isNull()))
+                .thenReturn(Collections.emptyList());
+
+        usuarioService.listar("Maria", null, null);
+
+        verify(usuarioRepository).findByFiltros(eq("%Maria%"), isNull(), isNull());
+    }
+
+    @Test
+    void listar_login_passes_ilike_pattern_to_repository() {
+        when(usuarioRepository.findByFiltros(isNull(), eq("%adm%"), isNull()))
+                .thenReturn(Collections.emptyList());
+
+        usuarioService.listar(null, "adm", null);
+
+        verify(usuarioRepository).findByFiltros(isNull(), eq("%adm%"), isNull());
+    }
+
+    @Test
+    void listar_funcionarioId_passes_exact_match_to_repository() {
+        when(usuarioRepository.findByFiltros(isNull(), isNull(), eq(FUNCIONARIO_ID)))
+                .thenReturn(Collections.emptyList());
+
+        usuarioService.listar(null, null, FUNCIONARIO_ID);
+
+        verify(usuarioRepository).findByFiltros(isNull(), isNull(), eq(FUNCIONARIO_ID));
+    }
+
+    @Test
+    void listar_trim_ignora_espacos_em_branco() {
+        when(usuarioRepository.findByFiltros(isNull(), isNull(), isNull()))
+                .thenReturn(Collections.emptyList());
+
+        usuarioService.listar("   ", "  ", null);
+
+        verify(usuarioRepository).findByFiltros(isNull(), isNull(), isNull());
+    }
+
+    @Test
+    void listar_combined_filters_delegates_to_repository() {
+        when(usuarioRepository.findByFiltros(eq("%Maria%"), eq("%adm%"), eq(FUNCIONARIO_ID)))
+                .thenReturn(Collections.emptyList());
+
+        usuarioService.listar("Maria", "adm", FUNCIONARIO_ID);
+
+        verify(usuarioRepository).findByFiltros(eq("%Maria%"), eq("%adm%"), eq(FUNCIONARIO_ID));
+    }
 
     @Test
     void atualizar_vincula_funcionario_via_port() {

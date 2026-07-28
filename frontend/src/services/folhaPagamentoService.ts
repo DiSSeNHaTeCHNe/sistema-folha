@@ -7,9 +7,14 @@ export const folhaPagamentoService = {
     return response.data;
   },
 
-  buscarPorFuncionario: async (funcionarioId: number, dataInicio: string, dataFim: string) => {
+  buscarPorFuncionario: async (
+    funcionarioId: number,
+    dataInicio: string,
+    dataFim: string,
+    decimoTerceiro?: boolean,
+  ) => {
     const response = await api.get<FolhaPagamento[]>(`/folha-pagamento/funcionario/${funcionarioId}`, {
-      params: { dataInicio, dataFim },
+      params: { dataInicio, dataFim, decimoTerceiro },
     });
     return response.data;
   },
@@ -28,9 +33,9 @@ export const folhaPagamentoService = {
     return response.data;
   },
 
-  buscarPorPeriodo: async (dataInicio: string, dataFim: string) => {
+  buscarPorPeriodo: async (dataInicio: string, dataFim: string, decimoTerceiro?: boolean) => {
     const response = await api.get<FolhaPagamento[]>('/folha-pagamento', {
-      params: { dataInicio, dataFim },
+      params: { dataInicio, dataFim, decimoTerceiro },
     });
     return response.data;
   },

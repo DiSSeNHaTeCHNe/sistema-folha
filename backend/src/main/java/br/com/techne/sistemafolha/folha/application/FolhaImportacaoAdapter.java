@@ -43,7 +43,8 @@ public class FolhaImportacaoAdapter implements FolhaImportacaoPort {
 
         List<FolhaPagamento> persistidas = new ArrayList<>();
         for (FolhaImportacaoLinhaCommand linha : command.linhas()) {
-            FolhaPagamento folha = montarFolha(linha, command.competenciaInicio(), command.competenciaFim());
+            FolhaPagamento folha = montarFolha(
+                linha, command.competenciaInicio(), command.competenciaFim(), command.decimoTerceiro());
             persistidas.add(folhaPagamentoRepository.save(folha));
         }
 
@@ -59,7 +60,8 @@ public class FolhaImportacaoAdapter implements FolhaImportacaoPort {
             .findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
                 dataInicio, dataFim, decimoTerceiro);
 
-        List<FolhaPagamento> folhasAntigas = folhaPagamentoRepository.findByDataInicioAndDataFim(dataInicio, dataFim);
+        List<FolhaPagamento> folhasAntigas = folhaPagamentoRepository.findByDataInicioAndDataFimAndDecimoTerceiro(
+            dataInicio, dataFim, decimoTerceiro);
         folhaPagamentoRepository.deleteAll(folhasAntigas);
 
         for (ResumoFolhaPagamento resumoAntigo : resumosExistentes) {
@@ -67,7 +69,8 @@ public class FolhaImportacaoAdapter implements FolhaImportacaoPort {
         }
     }
 
-    private FolhaPagamento montarFolha(FolhaImportacaoLinhaCommand linha, LocalDate dataInicio, LocalDate dataFim) {
+    private FolhaPagamento montarFolha(
+            FolhaImportacaoLinhaCommand linha, LocalDate dataInicio, LocalDate dataFim, boolean decimoTerceiro) {
         FolhaPagamento folha = new FolhaPagamento();
         folha.setFuncionario(entityManager.getReference(Funcionario.class, linha.funcionarioId()));
         folha.setRubrica(entityManager.getReference(Rubrica.class, linha.rubricaId()));
@@ -82,6 +85,7 @@ public class FolhaImportacaoAdapter implements FolhaImportacaoPort {
         }
         folha.setDataInicio(dataInicio);
         folha.setDataFim(dataFim);
+        folha.setDecimoTerceiro(decimoTerceiro);
         folha.setValor(linha.valor());
         folha.setValorTotal(linha.valor());
         folha.setQuantidade(linha.quantidade());
@@ -125,7 +129,8 @@ public class FolhaImportacaoAdapter implements FolhaImportacaoPort {
             folha.getDataFim(),
             folha.getValor(),
             folha.getQuantidade(),
-            folha.getBaseCalculo()
+            folha.getBaseCalculo(),
+            folha.getDecimoTerceiro()
         );
     }
 }

@@ -49,10 +49,21 @@ export interface BeneficioMensal {
   tipoBeneficioDescricao?: string;
   centroCustoId?: number;
   centroCustoDescricao?: string;
+  cargoDescricao?: string;
+  linhaNegocioId?: number;
+  linhaNegocioDescricao?: string;
   valor: number;
   competenciaInicio: string;
   competenciaFim: string;
   observacao?: string | null;
+}
+
+export interface BeneficioMensalCompetenciaResumo {
+  competenciaInicio: string;
+  competenciaFim: string;
+  totalFuncionarios: number;
+  totalBeneficios: number;
+  qtdLancamentos: number;
 }
 
 export interface BeneficioMensalResumo {
@@ -103,6 +114,7 @@ export interface FolhaPagamento {
   quantidade: number;
   baseCalculo: number;
   ativo: boolean;
+  decimoTerceiro?: boolean;
 }
 
 export interface LoginRequest {

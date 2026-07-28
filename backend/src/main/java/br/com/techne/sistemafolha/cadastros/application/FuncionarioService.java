@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.cadastros.application;
 
 import br.com.techne.sistemafolha.cadastros.api.FuncionarioDTO;
+import br.com.techne.sistemafolha.cadastros.api.FuncionarioStatusFiltro;
 import br.com.techne.sistemafolha.cadastros.domain.CargoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
@@ -24,21 +25,28 @@ public class FuncionarioService {
     private final CargoRepository cargoRepository;
     private final CentroCustoRepository centroCustoRepository;
 
-    public List<FuncionarioDTO> listarTodos() {
-        return funcionarioRepository.findByAtivoTrue().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    public List<FuncionarioDTO> listarComFiltros(String nome, Long cargoId, Long centroCustoId, Long linhaNegocioId) {
+    public List<FuncionarioDTO> listar(String nome, Long cargoId, Long centroCustoId, Long linhaNegocioId,
+                                       FuncionarioStatusFiltro status) {
         String nomePattern = null;
         if (nome != null && !nome.trim().isEmpty()) {
             nomePattern = "%" + nome + "%";
         }
 
-        return funcionarioRepository.findByFiltros(nomePattern, cargoId, centroCustoId, linhaNegocioId).stream()
+        return funcionarioRepository
+                .findByFiltros(nomePattern, cargoId, centroCustoId, linhaNegocioId, resolverAtivo(status))
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    private Boolean resolverAtivo(FuncionarioStatusFiltro status) {
+        if (status == null || status == FuncionarioStatusFiltro.ATIVO) {
+            return true;
+        }
+        if (status == FuncionarioStatusFiltro.INATIVO) {
+            return false;
+        }
+        return null;
     }
 
     public FuncionarioDTO buscarPorId(Long id) {

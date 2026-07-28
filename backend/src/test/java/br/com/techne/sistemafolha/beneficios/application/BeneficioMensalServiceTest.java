@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.beneficios.application;
 
+import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalCompetenciaResumoDTO;
 import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalDTO;
 import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalResumoDTO;
 import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensalNotFoundException;
@@ -12,6 +13,7 @@ import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import br.com.techne.sistemafolha.organograma.acesso.port.MotivoNegacaoAcesso;
 import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
+import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalCompetenciaProjection;
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalRepository;
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalResumoProjection;
 import br.com.techne.sistemafolha.beneficios.infrastructure.TipoBeneficioRepository;
@@ -157,6 +159,100 @@ class BeneficioMensalServiceTest {
                         COMPETENCIA_INICIO, COMPETENCIA_FIM, centros);
         verify(beneficioMensalRepository, never())
                 .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(any(), any());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_acesso_negado_retorna_vazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoNegado(MotivoNegacaoAcesso.SEM_FUNCIONARIO));
+
+        List<BeneficioMensalCompetenciaResumoDTO> result =
+            beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2024, null);
+
+        assertTrue(result.isEmpty());
+        verify(beneficioMensalRepository, never()).competenciasResumo(any(), any());
+        verify(beneficioMensalRepository, never())
+            .competenciasResumoAndCentroCustoIds(any(), any(), any());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_restrito_sem_centros_retorna_vazio_sem_agregacao_unscoped() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Collections.emptySet()));
+
+        List<BeneficioMensalCompetenciaResumoDTO> result =
+            beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2024, null);
+
+        assertTrue(result.isEmpty());
+        verify(beneficioMensalRepository, never()).competenciasResumo(any(), any());
+        verify(beneficioMensalRepository, never())
+            .competenciasResumoAndCentroCustoIds(any(), any(), any());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_acesso_total_usa_query_sem_filtro_centro() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoAcessoTotal());
+        LocalDate inicioAno = LocalDate.of(2024, 1, 1);
+        LocalDate fimAno = LocalDate.of(2024, 12, 31);
+        BeneficioMensalCompetenciaProjection projection = competenciaProjection(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, 5L, new BigDecimal("3000.00"), 10L);
+        when(beneficioMensalRepository.competenciasResumo(inicioAno, fimAno))
+            .thenReturn(List.of(projection));
+
+        List<BeneficioMensalCompetenciaResumoDTO> result =
+            beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2024, null);
+
+        assertEquals(1, result.size());
+        assertEquals(5L, result.get(0).totalFuncionarios());
+        assertEquals(new BigDecimal("3000.00"), result.get(0).totalBeneficios());
+        assertEquals(10L, result.get(0).qtdLancamentos());
+        verify(beneficioMensalRepository).competenciasResumo(inicioAno, fimAno);
+        verify(beneficioMensalRepository, never())
+            .competenciasResumoAndCentroCustoIds(any(), any(), any());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_restrito_com_centros_usa_query_com_centros() {
+        stubUsuario();
+        Set<Long> centros = Set.of(10L, 20L);
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(centros));
+        LocalDate inicioAno = LocalDate.of(2024, 1, 1);
+        LocalDate fimAno = LocalDate.of(2024, 12, 31);
+        BeneficioMensalCompetenciaProjection projection = competenciaProjection(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, 2L, new BigDecimal("800.00"), 4L);
+        when(beneficioMensalRepository.competenciasResumoAndCentroCustoIds(inicioAno, fimAno, centros))
+            .thenReturn(List.of(projection));
+
+        List<BeneficioMensalCompetenciaResumoDTO> result =
+            beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2024, null);
+
+        assertEquals(1, result.size());
+        verify(beneficioMensalRepository).competenciasResumoAndCentroCustoIds(inicioAno, fimAno, centros);
+        verify(beneficioMensalRepository, never()).competenciasResumo(any(), any());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_filtro_ano_mes_restringe_ao_mes() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoAcessoTotal());
+        LocalDate inicioMes = LocalDate.of(2024, 10, 1);
+        LocalDate fimMes = LocalDate.of(2024, 10, 31);
+        when(beneficioMensalRepository.competenciasResumo(inicioMes, fimMes))
+            .thenReturn(Collections.emptyList());
+
+        List<BeneficioMensalCompetenciaResumoDTO> result =
+            beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2024, 10);
+
+        assertTrue(result.isEmpty());
+        verify(beneficioMensalRepository).competenciasResumo(inicioMes, fimMes);
+        verify(beneficioMensalRepository, never())
+            .competenciasResumoAndCentroCustoIds(any(), any(), any());
     }
 
     @Test
@@ -340,6 +436,9 @@ class BeneficioMensalServiceTest {
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
                 valor,
                 COMPETENCIA_INICIO,
                 COMPETENCIA_FIM,
@@ -397,6 +496,40 @@ class BeneficioMensalServiceTest {
             @Override
             public BigDecimal getTotal() {
                 return total;
+            }
+
+            @Override
+            public Long getQtdLancamentos() {
+                return qtdLancamentos;
+            }
+        };
+    }
+
+    private BeneficioMensalCompetenciaProjection competenciaProjection(
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            Long totalFuncionarios,
+            BigDecimal totalBeneficios,
+            Long qtdLancamentos) {
+        return new BeneficioMensalCompetenciaProjection() {
+            @Override
+            public LocalDate getCompetenciaInicio() {
+                return competenciaInicio;
+            }
+
+            @Override
+            public LocalDate getCompetenciaFim() {
+                return competenciaFim;
+            }
+
+            @Override
+            public Long getTotalFuncionarios() {
+                return totalFuncionarios;
+            }
+
+            @Override
+            public BigDecimal getTotalBeneficios() {
+                return totalBeneficios;
             }
 
             @Override

@@ -20,9 +20,12 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
 
     @GetMapping
-    @Operation(summary = "Lista todos os usuários ativos")
-    public ResponseEntity<List<UsuarioDTO>> listarTodos() {
-        return ResponseEntity.ok(usuarioService.listarTodos());
+    @Operation(summary = "Lista usuários ativos com filtros opcionais")
+    public ResponseEntity<List<UsuarioDTO>> listar(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String login,
+            @RequestParam(required = false) Long funcionarioId) {
+        return ResponseEntity.ok(usuarioService.listar(nome, login, funcionarioId));
     }
 
     @GetMapping("/{id}")

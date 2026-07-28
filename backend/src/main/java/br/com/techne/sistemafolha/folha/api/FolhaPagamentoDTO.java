@@ -21,5 +21,6 @@ public record FolhaPagamentoDTO(
     LocalDate dataFim,
     BigDecimal valor,
     BigDecimal quantidade,
-    BigDecimal baseCalculo
+    BigDecimal baseCalculo,
+    Boolean decimoTerceiro
 ) {} 

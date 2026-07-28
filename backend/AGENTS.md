@@ -22,7 +22,7 @@ Governança geral do monorepo: `../AGENTS.md`. Specs técnicas: `../_docs/specs/
 
 **Lint/Checkstyle:** não configurado no `pom.xml`. Não invente plugins.
 
-**JaCoCo:** `jacoco-maven-plugin` gera relatório na fase `test`. O Sonar (servidor da máquina em `~/devtools/sonarqube`) importa `target/site/jacoco/jacoco.xml` via `./diversos/scripts/sonar-analyze.sh`.
+**JaCoCo:** `jacoco-maven-plugin` gera relatório na fase `test`. O Sonar local (`./diversos/scripts/sonar-up.sh`) importa `target/site/jacoco/jacoco.xml` via `./diversos/scripts/sonar-analyze.sh`.
 
 **Perfis Maven:** nenhum (`-Pdev` / `-Pprod` não existem).
 

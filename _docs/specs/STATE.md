@@ -2,8 +2,8 @@
 
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
-**Last Updated:** 2026-07-27  
-**Current Work:** `acl-acesso-total-role` — Tasks Draft T1–T5 awaiting approval
+**Last Updated:** 2026-07-28  
+**Current Work:** `ajustes-listagens` — Execute complete; Verifier PASS (uncommitted)
 
 ---
 
@@ -101,15 +101,10 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Feature (active)**: `acl-acesso-total-role` → `_docs/specs/features/acl-acesso-total-role/`
-  - **Phase**: Execute **complete** + Independent Verifier **PASS** (after Fix cycle 1 tests-only) + code-review clean
-  - **Branch**: `main`
-  - **Commits**: none (NO COMMITS per user)
-  - **Gates**: `mvn test` → **129** passed, 0 failed; `npm run build` → pass
-  - **Validation**: `_docs/specs/features/acl-acesso-total-role/validation.md` — 10/10 MVP ACs; sensor 2/2 killed
-  - **Fix cycles used**: 1/3 (ATOT-03/04/10/06 tests); no production drift
-  - **Uncommitted (feature)**: OrganogramaAcessoService(+Test), V1.15 SQL, Usuarios/index.tsx, AuthContext.tsx, FolhaPagamentoServiceTest, AuthenticationServiceAcessoTest, SecurityConfigTipoBeneficioTest, feature specs + validation + STATE Handoff
-  - **Deferred**: ATOT-11
+- **Feature (idle)**: `ajustes-listagens` → Execute T1–T6 done; Verifier PASS; validation.md written; uncommitted
+- **Feature (idle)**: `ajustes-sistema` → Execute complete; Verifier PASS (fix cycle 1); uncommitted
+- **Feature (idle)**: `funcionarios-folha-dashboard-ux` → Execute complete; Verifier PASS (uncommitted)
+- **Feature (idle)**: `acl-scoped-folha-resumo` → Execute done; Verifier PASS (uncommitted)
 - **Decisions**: AD-001…AD-008, AD-010, AD-011 active
 ---
 

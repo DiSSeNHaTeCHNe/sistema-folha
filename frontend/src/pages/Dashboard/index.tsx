@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Card, 
@@ -35,6 +36,8 @@ import {
 } from 'recharts';
 import { getDashboardStats } from '../../services/dashboardService';
 import type { DashboardStats } from '../../services/dashboardService';
+import { useNotification } from '../../hooks/useNotification';
+import { Notification } from '../../components/Notification';
 
 const pieColors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'];
 
@@ -42,6 +45,16 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { notification, showNotification, hideNotification } = useNotification();
+
+  useEffect(() => {
+    if (location.state?.acessoNegado) {
+      showNotification('Acesso negado. Apenas administradores.', 'warning');
+      navigate('/dashboard', { replace: true, state: {} });
+    }
+  }, [location.state, navigate, showNotification]);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -75,21 +88,11 @@ export default function Dashboard() {
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!stats) return <Alert severity="info">Nenhum dado disponível</Alert>;
 
-  // Dados para o gráfico de área (evolução mensal) - usar dados reais
-  const areaData = stats.evolucaoMensal?.length > 0 
-    ? stats.evolucaoMensal.map(item => ({
-        mes: item.mesAno,
-        folha: item.valorTotal,
-        funcionarios: item.quantidadeFuncionarios
-      }))
-    : [
-        { mes: 'Jan', folha: 45000, funcionarios: 45 },
-        { mes: 'Fev', folha: 47000, funcionarios: 48 },
-        { mes: 'Mar', folha: 46000, funcionarios: 47 },
-        { mes: 'Abr', folha: 48000, funcionarios: 49 },
-        { mes: 'Mai', folha: 50000, funcionarios: 52 },
-        { mes: 'Jun', folha: stats.custoMensalFolha, funcionarios: stats.totalFuncionarios },
-      ];
+  const areaData = (stats.evolucaoMensal ?? []).map(item => ({
+    mes: item.mesAno,
+    folha: item.valorTotal,
+    funcionarios: item.quantidadeFuncionarios,
+  }));
 
   // Dados para gráfico de pizza - Funcionários por linha de negócio
   const funcionariosPorLinhaPieData = stats.porLinhaNegocio.slice(0, 6).map((item, index) => ({
@@ -148,6 +151,7 @@ export default function Dashboard() {
   );
 
   return (
+    <>
     <Box sx={{ p: 3, backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       {/* Header */}
       <Box mb={4}>
@@ -309,32 +313,45 @@ export default function Dashboard() {
               </Typography>
               <Chip label="Últimos 12 meses" variant="outlined" size="small" />
             </Box>
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={areaData}>
-                <defs>
-                  <linearGradient id="colorFolha" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="mes" />
-                <YAxis tickFormatter={(value) => `R$ ${value.toLocaleString()}`} />
-                <Tooltip 
-                  formatter={(value, name) => [
-                    name === 'folha' ? `R$ ${value.toLocaleString()}` : value,
-                    name === 'folha' ? 'Folha de Pagamento' : 'Funcionários'
-                  ]}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="folha" 
-                  stroke="#4F46E5" 
-                  fillOpacity={1} 
-                  fill="url(#colorFolha)" 
-                  strokeWidth={3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {areaData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={350}>
+                <AreaChart data={areaData}>
+                  <defs>
+                    <linearGradient id="colorFolha" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="mes" />
+                  <YAxis tickFormatter={(value) => `R$ ${value.toLocaleString()}`} />
+                  <Tooltip 
+                    formatter={(value, name) => [
+                      name === 'folha' ? `R$ ${value.toLocaleString()}` : value,
+                      name === 'folha' ? 'Folha de Pagamento' : 'Funcionários'
+                    ]}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="folha" 
+                    stroke="#4F46E5" 
+                    fillOpacity={1} 
+                    fill="url(#colorFolha)" 
+                    strokeWidth={3}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                height={350}
+              >
+                <Typography color="text.secondary" align="center">
+                  Nenhuma folha regular encontrada nos últimos 12 meses.
+                </Typography>
+              </Box>
+            )}
           </CardContent>
         </Card>
       </Box>
@@ -583,5 +600,12 @@ export default function Dashboard() {
         </Box>
       </Box>
     </Box>
+    <Notification
+      open={notification.open}
+      message={notification.message}
+      severity={notification.severity}
+      onClose={hideNotification}
+    />
+    </>
   );
 } 

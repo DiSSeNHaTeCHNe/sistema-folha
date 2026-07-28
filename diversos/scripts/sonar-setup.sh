@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bootstrap SonarQube: cria o projeto neste servidor local, gera user token e grava .sonar.env
-# Pré-requisito: Sonar compartilhado da máquina UP
-#   cd ~/devtools/sonarqube && docker compose up -d
+# Pré-requisito: SonarQube local UP
+#   ./diversos/scripts/sonar-up.sh
 #
 # Uso:
 #   SONAR_USER=admin SONAR_PASSWORD='***' ./diversos/scripts/sonar-setup.sh

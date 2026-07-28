@@ -29,9 +29,24 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     public List<UsuarioDTO> listarTodos() {
-        logger.info("{}Listando todos os usuários", DomainLogging.prefix(DOMAIN));
-        return usuarioRepository.findAll().stream()
-                .filter(u -> u.isAtivo())
+        return listar(null, null, null);
+    }
+
+    public List<UsuarioDTO> listar(String nome, String login, Long funcionarioId) {
+        logger.info("{}Listando usuários com filtros", DomainLogging.prefix(DOMAIN));
+
+        String nomePattern = null;
+        if (nome != null && !nome.trim().isEmpty()) {
+            nomePattern = "%" + nome.trim() + "%";
+        }
+
+        String loginPattern = null;
+        if (login != null && !login.trim().isEmpty()) {
+            loginPattern = "%" + login.trim() + "%";
+        }
+
+        return usuarioRepository.findByFiltros(nomePattern, loginPattern, funcionarioId)
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }

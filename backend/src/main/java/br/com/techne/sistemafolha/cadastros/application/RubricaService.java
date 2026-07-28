@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.cadastros.application;
 
 import br.com.techne.sistemafolha.cadastros.api.RubricaDTO;
+import br.com.techne.sistemafolha.cadastros.api.RubricaStatusFiltro;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
 import br.com.techne.sistemafolha.cadastros.infrastructure.RubricaRepository;
@@ -23,6 +24,34 @@ public class RubricaService {
         return rubricaRepository.findByAtivoTrue().stream()
             .map(this::toDTO)
             .collect(Collectors.toList());
+    }
+
+    public List<RubricaDTO> listar(String codigo, String descricao, RubricaStatusFiltro status) {
+        String codigoPattern = null;
+        if (codigo != null && !codigo.trim().isEmpty()) {
+            codigoPattern = "%" + codigo.trim() + "%";
+        }
+
+        String descricaoPattern = null;
+        if (descricao != null && !descricao.trim().isEmpty()) {
+            descricaoPattern = "%" + descricao.trim() + "%";
+        }
+
+        return rubricaRepository
+                .findByFiltros(codigoPattern, descricaoPattern, resolverAtivo(status))
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    private Boolean resolverAtivo(RubricaStatusFiltro status) {
+        if (status == null || status == RubricaStatusFiltro.ATIVO) {
+            return true;
+        }
+        if (status == RubricaStatusFiltro.INATIVO) {
+            return false;
+        }
+        return null;
     }
 
     public RubricaDTO buscarPorId(Long id) {

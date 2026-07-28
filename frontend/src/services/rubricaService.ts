@@ -8,25 +8,46 @@ interface RubricaFormData {
   porcentagem?: number;
 }
 
+export type RubricaStatusFiltro = 'ATIVO' | 'INATIVO' | 'TODOS';
+
+export interface RubricaFiltros {
+  codigo?: string;
+  descricao?: string;
+  status?: RubricaStatusFiltro;
+}
+
+const mapRubrica = (item: {
+  id: number;
+  codigo: string;
+  descricao: string;
+  tipo: Rubrica['tipo'];
+  tipoRubricaDescricao?: string;
+  porcentagem?: number;
+  ativo: boolean;
+}): Rubrica => ({
+  ...item,
+  tipo: item.tipoRubricaDescricao
+    ? (item.tipoRubricaDescricao as Rubrica['tipo'])
+    : item.tipo,
+  tipoRubricaDescricao: item.tipoRubricaDescricao,
+});
+
 const rubricaService = {
-  listarTodos: async (): Promise<Rubrica[]> => {
-    const response = await api.get('/rubricas');
-    // Mapeia os dados para garantir compatibilidade
-    return response.data.map((item: any) => ({
-      ...item,
-      tipo: item.tipoRubricaDescricao || item.tipo,
-      tipoRubricaDescricao: item.tipoRubricaDescricao
-    }));
+  listar: async (filtros?: RubricaFiltros): Promise<Rubrica[]> => {
+    const params = new URLSearchParams();
+    const codigo = filtros?.codigo?.trim();
+    const descricao = filtros?.descricao?.trim();
+    if (codigo) params.append('codigo', codigo);
+    if (descricao) params.append('descricao', descricao);
+    params.append('status', filtros?.status ?? 'ATIVO');
+
+    const response = await api.get(`/rubricas?${params.toString()}`);
+    return response.data.map(mapRubrica);
   },
 
   buscarPorId: async (id: number): Promise<Rubrica> => {
     const response = await api.get(`/rubricas/${id}`);
-    const item = response.data;
-    return {
-      ...item,
-      tipo: item.tipoRubricaDescricao || item.tipo,
-      tipoRubricaDescricao: item.tipoRubricaDescricao
-    };
+    return mapRubrica(response.data);
   },
 
   cadastrar: async (data: RubricaFormData): Promise<Rubrica> => {
@@ -52,4 +73,4 @@ const rubricaService = {
   }
 };
 
-export { rubricaService }; 
+export { rubricaService };

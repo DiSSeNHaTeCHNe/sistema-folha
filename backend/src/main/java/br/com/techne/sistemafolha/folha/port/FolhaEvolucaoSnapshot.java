@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 public record FolhaEvolucaoSnapshot(
     LocalDate competenciaInicio,
+    LocalDate competenciaFim,
     BigDecimal totalLiquido,
     Integer totalEmpregados
 ) {}

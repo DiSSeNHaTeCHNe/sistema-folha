@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.beneficios.application;
 
+import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalCompetenciaResumoDTO;
 import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalDTO;
 import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalResumoDTO;
 import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensalNotFoundException;
@@ -7,11 +8,13 @@ import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundException;
 import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensal;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
+import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficio;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
+import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalCompetenciaProjection;
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalRepository;
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalResumoProjection;
 import br.com.techne.sistemafolha.beneficios.infrastructure.TipoBeneficioRepository;
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +41,7 @@ public class BeneficioMensalService {
     private final UsuarioLookupPort usuarioLookupPort;
     private final OrganogramaAcessoPort organogramaAcessoPort;
 
+    @Transactional(readOnly = true)
     public List<BeneficioMensalDTO> listarPorCompetenciaParaUsuario(
             String login, LocalDate dataInicio, LocalDate dataFim) {
         AccessContextDTO contexto = obterContextoAcesso(login);
@@ -49,6 +54,7 @@ public class BeneficioMensalService {
         return listarPorCompetencia(dataInicio, dataFim, centrosParaFiltro(contexto));
     }
 
+    @Transactional(readOnly = true)
     public List<BeneficioMensalResumoDTO> resumoPorCompetenciaParaUsuario(
             String login, LocalDate dataInicio, LocalDate dataFim) {
         AccessContextDTO contexto = obterContextoAcesso(login);
@@ -61,6 +67,7 @@ public class BeneficioMensalService {
         return resumoPorCompetencia(dataInicio, dataFim, centrosParaFiltro(contexto));
     }
 
+    @Transactional(readOnly = true)
     public List<BeneficioMensalDTO> listarPorFuncionarioParaUsuario(
             String login, Long funcionarioId, LocalDate dataInicio, LocalDate dataFim) {
         AccessContextDTO contexto = obterContextoAcesso(login);
@@ -71,6 +78,20 @@ public class BeneficioMensalService {
             .stream()
             .filter(dto -> aplicarFiltroAcesso(dto, contexto))
             .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BeneficioMensalCompetenciaResumoDTO> listarCompetenciasParaUsuario(
+            String login, Integer ano, Integer mes) {
+        AccessContextDTO contexto = obterContextoAcesso(login);
+        if (acessoNegado(contexto)) {
+            return List.of();
+        }
+        if (!contexto.acessoTotal() && centrosVazios(contexto)) {
+            return List.of();
+        }
+        PeriodoCompetencia periodo = periodoDe(ano, mes);
+        return listarCompetencias(periodo.inicio(), periodo.fim(), centrosParaFiltro(contexto));
     }
 
     public Optional<BeneficioMensalDTO> criarParaUsuario(String login, BeneficioMensalDTO dto) {
@@ -106,6 +127,13 @@ public class BeneficioMensalService {
             LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
         return buscarResumoPorCompetencia(dataInicio, dataFim, centros).stream()
                 .map(this::toResumoDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<BeneficioMensalCompetenciaResumoDTO> listarCompetencias(
+            LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
+        return buscarCompetenciasResumo(dataInicio, dataFim, centros).stream()
+                .map(this::toCompetenciaResumoDTO)
                 .collect(Collectors.toList());
     }
 
@@ -147,6 +175,24 @@ public class BeneficioMensalService {
                 .orElseThrow(() -> new BeneficioMensalNotFoundException(id));
         beneficio.setAtivo(false);
         beneficioMensalRepository.save(beneficio);
+    }
+
+    private record PeriodoCompetencia(LocalDate inicio, LocalDate fim) {}
+
+    private PeriodoCompetencia periodoDe(Integer ano, Integer mes) {
+        int anoEfetivo = ano != null ? ano : LocalDate.now().getYear();
+        if (anoEfetivo < 2000 || anoEfetivo > 2100) {
+            throw new IllegalArgumentException("Ano deve estar entre 2000 e 2100");
+        }
+        if (mes != null) {
+            LocalDate inicio = LocalDate.of(anoEfetivo, mes, 1);
+            LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
+            return new PeriodoCompetencia(inicio, fim);
+        }
+        return new PeriodoCompetencia(
+            LocalDate.of(anoEfetivo, 1, 1),
+            LocalDate.of(anoEfetivo, 12, 31)
+        );
     }
 
     private AccessContextDTO obterContextoAcesso(String login) {
@@ -222,15 +268,35 @@ public class BeneficioMensalService {
                 dataInicio, dataFim, centros);
     }
 
+    private List<BeneficioMensalCompetenciaProjection> buscarCompetenciasResumo(
+            LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
+        if (centros.isEmpty()) {
+            return beneficioMensalRepository.competenciasResumo(dataInicio, dataFim);
+        }
+        return beneficioMensalRepository.competenciasResumoAndCentroCustoIds(
+                dataInicio, dataFim, centros);
+    }
+
     private BeneficioMensalDTO toDTO(BeneficioMensal beneficio) {
         Funcionario funcionario = beneficio.getFuncionario();
         TipoBeneficio tipo = beneficio.getTipoBeneficio();
 
         Long centroCustoId = null;
         String centroCustoDescricao = null;
+        String cargoDescricao = null;
+        Long linhaNegocioId = null;
+        String linhaNegocioDescricao = null;
         if (funcionario != null && funcionario.getCentroCusto() != null) {
             centroCustoId = funcionario.getCentroCusto().getId();
             centroCustoDescricao = funcionario.getCentroCusto().getDescricao();
+            LinhaNegocio linhaNegocio = funcionario.getCentroCusto().getLinhaNegocio();
+            if (linhaNegocio != null) {
+                linhaNegocioId = linhaNegocio.getId();
+                linhaNegocioDescricao = linhaNegocio.getDescricao();
+            }
+        }
+        if (funcionario != null && funcionario.getCargo() != null) {
+            cargoDescricao = funcionario.getCargo().getDescricao();
         }
 
         return new BeneficioMensalDTO(
@@ -242,6 +308,9 @@ public class BeneficioMensalService {
                 tipo != null ? tipo.getDescricao() : null,
                 centroCustoId,
                 centroCustoDescricao,
+                cargoDescricao,
+                linhaNegocioId,
+                linhaNegocioDescricao,
                 beneficio.getValor(),
                 beneficio.getCompetenciaInicio(),
                 beneficio.getCompetenciaFim(),
@@ -255,6 +324,17 @@ public class BeneficioMensalService {
                 projection.getDescricao(),
                 projection.getTotal(),
                 projection.getQtdLancamentos()
+        );
+    }
+
+    private BeneficioMensalCompetenciaResumoDTO toCompetenciaResumoDTO(
+            BeneficioMensalCompetenciaProjection projection) {
+        return new BeneficioMensalCompetenciaResumoDTO(
+                projection.getCompetenciaInicio(),
+                projection.getCompetenciaFim(),
+                projection.getTotalFuncionarios() != null ? projection.getTotalFuncionarios() : 0L,
+                projection.getTotalBeneficios() != null ? projection.getTotalBeneficios() : BigDecimal.ZERO,
+                projection.getQtdLancamentos() != null ? projection.getQtdLancamentos() : 0L
         );
     }
 }

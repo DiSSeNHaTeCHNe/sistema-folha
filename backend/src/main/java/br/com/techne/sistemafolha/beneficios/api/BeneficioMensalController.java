@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.beneficios.api;
 
+import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalCompetenciaResumoDTO;
 import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalDTO;
 import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalResumoDTO;
 import br.com.techne.sistemafolha.beneficios.application.BeneficioMensalService;
@@ -7,6 +8,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -43,6 +46,18 @@ public class BeneficioMensalController {
             Authentication authentication) {
         return ResponseEntity.ok(beneficioMensalService.resumoPorCompetenciaParaUsuario(
             authentication.getName(), competenciaInicio, competenciaFim));
+    }
+
+    @GetMapping("/competencias")
+    @Operation(summary = "Lista resumos de benefícios mensais agrupados por competência")
+    public ResponseEntity<List<BeneficioMensalCompetenciaResumoDTO>> listarCompetencias(
+            @Parameter(description = "Ano de competência (2000–2100). Default: ano corrente quando omitido.")
+            @RequestParam(required = false) @Min(2000) @Max(2100) Integer ano,
+            @Parameter(description = "Mês de competência (1–12). Opcional; restringe ao mês dentro do ano.")
+            @RequestParam(required = false) @Min(1) @Max(12) Integer mes,
+            Authentication authentication) {
+        return ResponseEntity.ok(beneficioMensalService.listarCompetenciasParaUsuario(
+            authentication.getName(), ano, mes));
     }
 
     @GetMapping("/funcionario/{id}")

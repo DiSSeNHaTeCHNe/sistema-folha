@@ -16,10 +16,19 @@ import {
   TextField,
   Typography,
   FormHelperText,
+  Chip,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  PersonOff as PersonOffIcon,
+} from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
-import { funcionarioService } from '../../services/funcionarioService';
+import {
+  funcionarioService,
+  type FuncionarioStatusFiltro,
+} from '../../services/funcionarioService';
 import { cargoService } from '../../services/cargoService';
 import { centroCustoService } from '../../services/centroCustoService';
 import { linhaNegocioService } from '../../services/linhaNegocioService';
@@ -80,6 +89,7 @@ interface Filtros {
   cargoId: string;
   centroCustoId: string;
   linhaNegocioId: string;
+  status: FuncionarioStatusFiltro;
 }
 
 // Função utilitária para formatar datas do backend (formato ISO)
@@ -104,14 +114,15 @@ export default function Funcionarios() {
   // Para novo funcionário: mostrar todos os centros de custo
   // Para edição: também mostrar todos (a linha de negócio será atualizada automaticamente)
   const centrosCustoFiltrados = centrosCusto;
-  const { register, handleSubmit, reset, control } = useForm<Filtros>({
+  const { register, handleSubmit, reset, control, getValues } = useForm<Filtros>({
     defaultValues: {
       nome: '',
       cpf: '',
       dataAdmissao: '',
       cargoId: '',
       centroCustoId: '',
-      linhaNegocioId: ''
+      linhaNegocioId: '',
+      status: 'ATIVO' as FuncionarioStatusFiltro,
     }
   });
   const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, control: controlEdit, setValue: setValueEdit } = useForm({
@@ -252,7 +263,8 @@ export default function Funcionarios() {
           'Para efetivação ou nova matrícula: use "Novo Funcionário" com o mesmo CPF e um ID externo (matrícula) diferente.',
           { autoClose: 8000 }
         );
-        carregarDados();
+        const data = await funcionarioService.filtrar(getValues());
+        setFuncionarios(data);
       } catch (error) {
         toast.error(getApiErrorMessage(error, 'Erro ao inativar funcionário'));
       }
@@ -360,6 +372,25 @@ export default function Funcionarios() {
                   )}
                 />
               </Box>
+              <Box flex="1" minWidth="250px">
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel>Status</InputLabel>
+                      <Select
+                        {...field}
+                        label="Status"
+                      >
+                        <MenuItem value="ATIVO">Ativo</MenuItem>
+                        <MenuItem value="INATIVO">Inativo</MenuItem>
+                        <MenuItem value="TODOS">Todos</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+              </Box>
               <Box width="100%">
                 <Button type="submit" variant="contained" color="primary" sx={{ mr: 2 }}>
                   Filtrar
@@ -368,8 +399,16 @@ export default function Funcionarios() {
                   variant="outlined" 
                   color="secondary"
                   onClick={() => {
-                    reset();
-                    carregarDados(); // Recarregar todos os funcionários
+                    reset({
+                      nome: '',
+                      cpf: '',
+                      dataAdmissao: '',
+                      cargoId: '',
+                      centroCustoId: '',
+                      linhaNegocioId: '',
+                      status: 'ATIVO',
+                    });
+                    carregarDados();
                   }}
                 >
                   Limpar Filtros
@@ -396,6 +435,7 @@ export default function Funcionarios() {
         {funcionarios.map((funcionario) => {
           const isHovered = hoveredCardId === funcionario.id;
           const showDetails = isHovered;
+          const inativo = funcionario.ativo === false;
 
           return (
             <Box 
@@ -420,6 +460,9 @@ export default function Funcionarios() {
                   height: showDetails ? 'auto' : '85px',
                   minHeight: showDetails ? '280px' : '85px',
                   transform: showDetails ? 'scale(1.05)' : 'scale(1)',
+                  bgcolor: inativo ? 'grey.100' : undefined,
+                  opacity: inativo ? 0.85 : 1,
+                  color: inativo ? 'text.disabled' : undefined,
                   boxShadow: showDetails 
                     ? '0 8px 24px rgba(0,0,0,0.15)' 
                     : '0 2px 4px rgba(0,0,0,0.1)',
@@ -452,43 +495,57 @@ export default function Funcionarios() {
                     >
                       {funcionario.nome}
                     </Typography>
+
+                    {inativo && (
+                      <Chip
+                        icon={<PersonOffIcon aria-hidden />}
+                        label="Inativo"
+                        size="small"
+                        aria-label="Inativo"
+                        sx={{ mr: 0.5 }}
+                      />
+                    )}
                     
-                    <Box display="flex" gap={0.5}>
-                      <IconButton 
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpen(funcionario);
-                        }}
-                        title="Editar"
-                        sx={{
-                          color: 'primary.main',
-                          '&:hover': {
-                            backgroundColor: 'primary.light',
-                            color: 'white',
-                          },
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton 
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(funcionario.id);
-                        }}
-                        title="Inativar"
-                        sx={{
-                          color: 'error.main',
-                          '&:hover': {
-                            backgroundColor: 'error.light',
-                            color: 'white',
-                          },
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
+                    {funcionario.ativo !== false && (
+                      <Box display="flex" gap={0.5}>
+                        <IconButton 
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpen(funcionario);
+                          }}
+                          title="Editar"
+                          aria-label="Editar"
+                          sx={{
+                            color: 'primary.main',
+                            '&:hover': {
+                              backgroundColor: 'primary.light',
+                              color: 'white',
+                            },
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(funcionario.id);
+                          }}
+                          title="Inativar"
+                          aria-label="Inativar"
+                          sx={{
+                            color: 'error.main',
+                            '&:hover': {
+                              backgroundColor: 'error.light',
+                              color: 'white',
+                            },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
                   </Box>
 
                   {/* Detalhes - Só aparecem no hover */}

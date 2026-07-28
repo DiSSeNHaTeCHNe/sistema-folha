@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Compila o backend (binários Java) e envia análise ao SonarQube local (máquina).
 # Pré-requisitos:
-#   - Sonar UP: cd ~/devtools/sonarqube && docker compose up -d
+#   - Sonar UP: ./diversos/scripts/sonar-up.sh
 #   - .sonar.env com SONAR_TOKEN (via sonar-setup.sh)
 set -euo pipefail
 
@@ -19,6 +19,12 @@ set -a; source "$ENV_FILE"; set +a
 : "${SONAR_HOST_URL:=http://localhost:9000}"
 : "${SONAR_TOKEN:?SONAR_TOKEN ausente em ${ENV_FILE}}"
 : "${SONAR_PROJECT_KEY:=sistema-folha}"
+
+echo "==> Compilando backend + dependências para análise Java"
+(cd backend && mvn -q -DskipTests compile test-compile dependency:copy-dependencies \
+  -DoutputDirectory=target/dependency -DincludeScope=compile)
+(cd backend && mvn -q dependency:copy-dependencies \
+  -DoutputDirectory=target/test-dependency -DincludeScope=test)
 
 echo "==> Testes + JaCoCo (cobertura para o Sonar)"
 (cd backend && mvn -q test)

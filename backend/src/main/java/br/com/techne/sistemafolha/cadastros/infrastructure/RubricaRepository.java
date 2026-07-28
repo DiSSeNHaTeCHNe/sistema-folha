@@ -20,4 +20,17 @@ public interface RubricaRepository extends JpaRepository<Rubrica, Long> {
 
     Optional<Rubrica> findByCodigo(String codigo);
     boolean existsByCodigo(String codigo);
+
+    @Query("""
+        SELECT r FROM Rubrica r
+        WHERE (:ativo IS NULL OR r.ativo = :ativo)
+          AND (:codigoPattern IS NULL OR r.codigo ILIKE :codigoPattern)
+          AND (:descricaoPattern IS NULL OR r.descricao ILIKE :descricaoPattern)
+        ORDER BY r.codigo ASC
+        """)
+    List<Rubrica> findByFiltros(
+        @Param("codigoPattern") String codigoPattern,
+        @Param("descricaoPattern") String descricaoPattern,
+        @Param("ativo") Boolean ativo
+    );
 } 

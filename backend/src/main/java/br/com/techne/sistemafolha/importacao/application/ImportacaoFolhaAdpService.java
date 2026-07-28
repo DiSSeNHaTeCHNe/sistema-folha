@@ -147,7 +147,7 @@ public class ImportacaoFolhaAdpService {
                     }
 
                     processarRubrica(linha, 0, 31, 32, 65, funcionarioAtual, dataInicio, dataFim,
-                        linhas, conflitosCpfCompetencia, substituirExistente);
+                        linhas, conflitosCpfCompetencia, substituirExistente, isDecimoTerceiro);
 
                     if (linha.length() > 130 &&
                         !linha.substring(66, 97).trim().isEmpty() &&
@@ -158,7 +158,7 @@ public class ImportacaoFolhaAdpService {
 
                         if (!segundaRubrica.isEmpty() && !segundaValores.isEmpty()) {
                             processarRubrica(linha, 66, 97, 98, 131, funcionarioAtual, dataInicio, dataFim,
-                                linhas, conflitosCpfCompetencia, substituirExistente);
+                                linhas, conflitosCpfCompetencia, substituirExistente, isDecimoTerceiro);
                         } else {
                             logger.debug("Segunda rubrica vazia ou sem valores válidos, pulando");
                         }
@@ -258,7 +258,7 @@ public class ImportacaoFolhaAdpService {
             String linha, int inicioRubrica, int fimRubrica, int inicioValores, int fimValores,
             FuncionarioImportRef funcionario, LocalDate dataInicio, LocalDate dataFim,
             List<FolhaImportacaoLinhaCommand> linhas, Set<String> conflitosCpfCompetencia,
-            boolean substituirExistente) {
+            boolean substituirExistente, boolean decimoTerceiro) {
 
         if (funcionario == null) {
             logger.warn("Funcionário não encontrado, pulando rubrica");
@@ -319,7 +319,7 @@ public class ImportacaoFolhaAdpService {
                 codigoRubrica, descricaoRubrica, tipoRubricaDescricao);
 
             if (folhaConsultaPort.existsAtivaByCpfAndCompetenciaExcludingFuncionario(
-                    funcionario.cpf(), funcionario.id(), dataInicio, dataFim)) {
+                    funcionario.cpf(), funcionario.id(), dataInicio, dataFim, decimoTerceiro)) {
                 String msg = String.format(
                     "CPF %s já possui folha ativa no período %s a %s (funcionário atual: %s, matrícula %s)",
                     funcionario.cpf(), dataInicio, dataFim, funcionario.nome(), funcionario.idExterno());
@@ -331,7 +331,7 @@ public class ImportacaoFolhaAdpService {
             // Em substituição, as linhas antigas serão apagadas — não pular por existência prévia.
             boolean jaExiste = !substituirExistente
                 && folhaConsultaPort.existsByFuncionarioIdAndRubricaIdAndPeriodo(
-                    funcionario.id(), rubrica.id(), dataInicio, dataFim);
+                    funcionario.id(), rubrica.id(), dataInicio, dataFim, decimoTerceiro);
 
             if (!jaExiste) {
                 linhas.add(new FolhaImportacaoLinhaCommand(

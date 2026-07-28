@@ -28,6 +28,12 @@ public interface ResumoFolhaPagamentoRepository extends JpaRepository<ResumoFolh
     @Query("SELECT r FROM ResumoFolhaPagamento r WHERE r.ativo = true ORDER BY r.competenciaInicio DESC")
     List<ResumoFolhaPagamento> findByCompetenciaMaisRecente();
     
-    @Query("SELECT r FROM ResumoFolhaPagamento r WHERE r.ativo = true AND r.competenciaInicio >= :dataInicio ORDER BY r.competenciaInicio ASC")
-    List<ResumoFolhaPagamento> findUltimos12Meses(@Param("dataInicio") LocalDate dataInicio);
+    @Query("""
+        SELECT r FROM ResumoFolhaPagamento r
+        WHERE r.ativo = true
+          AND r.competenciaInicio >= :dataInicio
+          AND (r.decimoTerceiro = false OR r.decimoTerceiro IS NULL)
+        ORDER BY r.competenciaInicio ASC
+        """)
+    List<ResumoFolhaPagamento> findUltimos12MesesRegulares(@Param("dataInicio") LocalDate dataInicio);
 } 

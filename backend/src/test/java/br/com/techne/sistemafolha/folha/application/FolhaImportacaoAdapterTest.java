@@ -30,6 +30,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -127,7 +128,8 @@ class FolhaImportacaoAdapterTest {
             .findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(resumoAntigo));
-        when(folhaPagamentoRepository.findByDataInicioAndDataFim(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+        when(folhaPagamentoRepository.findByDataInicioAndDataFimAndDecimoTerceiro(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(folhaAntiga));
         when(folhaPagamentoRepository.save(any(FolhaPagamento.class))).thenAnswer(inv -> {
             FolhaPagamento f = inv.getArgument(0);
@@ -194,6 +196,24 @@ class FolhaImportacaoAdapterTest {
         verify(entityManager, never()).getReference(eq(Cargo.class), isNull());
         verify(entityManager, never()).getReference(eq(CentroCusto.class), isNull());
         verify(entityManager, never()).getReference(eq(LinhaNegocio.class), isNull());
+    }
+
+    @Test
+    void persistirImportacao_decimoTerceiro_gravaFlagNaLinha() {
+        ArgumentCaptor<FolhaPagamento> captor = ArgumentCaptor.forClass(FolhaPagamento.class);
+        when(folhaPagamentoRepository.save(captor.capture())).thenAnswer(inv -> {
+            FolhaPagamento f = inv.getArgument(0);
+            f.setId(103L);
+            return f;
+        });
+
+        FolhaImportacaoCommand command = new FolhaImportacaoCommand(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, true, false,
+            List.of(linhaCommand()), null);
+
+        adapter.persistirImportacao(command);
+
+        assertTrue(captor.getValue().getDecimoTerceiro());
     }
 
     private FolhaImportacaoLinhaCommand linhaCommand() {

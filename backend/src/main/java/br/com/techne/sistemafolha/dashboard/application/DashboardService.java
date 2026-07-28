@@ -103,7 +103,7 @@ public class DashboardService {
         LocalDate competenciaFim = resumo.competenciaFim();
 
         List<FolhaLinhaSnapshot> folhaCompetencia = folhaConsultaPort.findLinhasAtivasPorCompetencia(
-            competenciaInicio, competenciaFim, centrosScoped);
+            competenciaInicio, competenciaFim, resumo.decimoTerceiro(), centrosScoped);
 
         long totalFuncionarios = folhaCompetencia.stream()
             .map(FolhaLinhaSnapshot::funcionarioId)
@@ -131,7 +131,7 @@ public class DashboardService {
 
         List<EvolucaoMensalDTO> evolucaoMensal = contexto.acessoTotal()
             ? calcularEvolucaoMensal()
-            : List.of();
+            : calcularEvolucaoMensalScoped(centrosScoped);
 
         return new DashboardStatsDTO(
             totalFuncionarios,
@@ -337,6 +337,30 @@ public class DashboardService {
                 item.totalLiquido(),
                 item.totalEmpregados()
             ))
+            .collect(Collectors.toList());
+    }
+
+    private List<EvolucaoMensalDTO> calcularEvolucaoMensalScoped(Set<Long> centros) {
+        LocalDate dataInicio = LocalDate.now().minusMonths(11).withDayOfMonth(1);
+        List<FolhaEvolucaoSnapshot> competencias = folhaConsultaPort.findEvolucaoUltimos12Meses(dataInicio);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM/yyyy");
+        return competencias.stream()
+            .map(item -> {
+                List<FolhaLinhaSnapshot> linhas = folhaConsultaPort.findLinhasAtivasPorCompetencia(
+                    item.competenciaInicio(), item.competenciaFim(), false, centros);
+                BigDecimal liquido = calcularTotalProventos(linhas)
+                    .subtract(calcularTotalDescontos(linhas));
+                int empregados = (int) linhas.stream()
+                    .map(FolhaLinhaSnapshot::funcionarioId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+                return new EvolucaoMensalDTO(
+                    item.competenciaInicio().format(formatter),
+                    liquido,
+                    empregados
+                );
+            })
             .collect(Collectors.toList());
     }
 }

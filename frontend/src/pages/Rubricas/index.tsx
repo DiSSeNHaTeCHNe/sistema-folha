@@ -25,7 +25,10 @@ import {
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { rubricaService } from '../../services/rubricaService';
+import {
+  rubricaService,
+  type RubricaFiltros,
+} from '../../services/rubricaService';
 import type { Rubrica } from '../../types';
 
 interface RubricaFormData {
@@ -34,6 +37,12 @@ interface RubricaFormData {
   tipo: string;
   porcentagem?: number;
 }
+
+const DEFAULT_FILTROS: RubricaFiltros = {
+  codigo: '',
+  descricao: '',
+  status: 'ATIVO',
+};
 
 const tiposRubrica = [
   { value: 'PROVENTO', label: 'Provento' },
@@ -47,17 +56,46 @@ export default function Rubricas() {
   const [selectedRubrica, setSelectedRubrica] = useState<Rubrica | null>(null);
   const { register, handleSubmit, reset, setValue, control } = useForm<RubricaFormData>();
 
+  const {
+    register: registerFilter,
+    handleSubmit: handleFilterSubmit,
+    reset: resetFilter,
+    control: filterControl,
+    getValues: getFilterValues,
+  } = useForm<RubricaFiltros>({
+    defaultValues: DEFAULT_FILTROS,
+  });
+
   useEffect(() => {
-    carregarRubricas();
+    carregarRubricas(DEFAULT_FILTROS);
   }, []);
 
-  const carregarRubricas = async () => {
+  const carregarRubricas = async (filtros?: RubricaFiltros) => {
     try {
-      const data = await rubricaService.listarTodos();
+      const applied = filtros ?? {
+        codigo: getFilterValues('codigo'),
+        descricao: getFilterValues('descricao'),
+        status: getFilterValues('status') ?? 'ATIVO',
+      };
+      const data = await rubricaService.listar(applied);
       setRubricas(data);
-    } catch (error) {
+    } catch {
       toast.error('Erro ao carregar rubricas');
     }
+  };
+
+  const handleFilter = async (filtros: RubricaFiltros) => {
+    try {
+      const data = await rubricaService.listar(filtros);
+      setRubricas(data);
+    } catch {
+      toast.error('Erro ao filtrar rubricas');
+    }
+  };
+
+  const handleClearFilter = () => {
+    resetFilter(DEFAULT_FILTROS);
+    carregarRubricas(DEFAULT_FILTROS);
   };
 
   const handleOpen = (rubrica?: Rubrica) => {
@@ -65,9 +103,8 @@ export default function Rubricas() {
       setSelectedRubrica(rubrica);
       setValue('codigo', rubrica.codigo);
       setValue('descricao', rubrica.descricao);
-      // Mapeia a descrição para o valor correto do dropdown
       const tipoValue = rubrica.tipoRubricaDescricao || rubrica.tipo;
-      let mappedTipo = 'INFORMATIVO'; // valor padrão
+      let mappedTipo = 'INFORMATIVO';
       if (tipoValue === 'PROVENTO') mappedTipo = 'PROVENTO';
       else if (tipoValue === 'DESCONTO') mappedTipo = 'DESCONTO';
       else if (tipoValue === 'INFORMATIVO') mappedTipo = 'INFORMATIVO';
@@ -76,7 +113,6 @@ export default function Rubricas() {
     } else {
       setSelectedRubrica(null);
       reset();
-      // Define valor padrão de 100 para nova rubrica
       setValue('porcentagem', 100);
     }
     setOpen(true);
@@ -98,7 +134,7 @@ export default function Rubricas() {
       }
       handleClose();
       carregarRubricas();
-    } catch (error) {
+    } catch {
       toast.error('Erro ao salvar rubrica');
     }
   };
@@ -109,7 +145,7 @@ export default function Rubricas() {
         await rubricaService.remover(id);
         toast.success('Rubrica excluída com sucesso');
         carregarRubricas();
-      } catch (error) {
+      } catch {
         toast.error('Erro ao excluir rubrica');
       }
     }
@@ -129,6 +165,62 @@ export default function Rubricas() {
         </Button>
       </Box>
 
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Filtros
+          </Typography>
+          <form onSubmit={handleFilterSubmit(handleFilter)}>
+            <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+              <Box flex="1" minWidth={200}>
+                <TextField
+                  {...registerFilter('codigo')}
+                  label="Id/Código"
+                  fullWidth
+                  size="small"
+                />
+              </Box>
+              <Box flex="1" minWidth={200}>
+                <TextField
+                  {...registerFilter('descricao')}
+                  label="Descrição"
+                  fullWidth
+                  size="small"
+                />
+              </Box>
+              <Box flex="1" minWidth={200}>
+                <Controller
+                  name="status"
+                  control={filterControl}
+                  render={({ field }) => (
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Status</InputLabel>
+                      <Select
+                        {...field}
+                        label="Status"
+                        value={field.value ?? 'ATIVO'}
+                      >
+                        <MenuItem value="ATIVO">Ativo</MenuItem>
+                        <MenuItem value="INATIVO">Inativo</MenuItem>
+                        <MenuItem value="TODOS">Todos</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+              </Box>
+              <Box display="flex" gap={1}>
+                <Button type="submit" variant="contained">
+                  Filtrar
+                </Button>
+                <Button variant="outlined" onClick={handleClearFilter}>
+                  Limpar
+                </Button>
+              </Box>
+            </Box>
+          </form>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent>
           <TableContainer>
@@ -144,33 +236,41 @@ export default function Rubricas() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rubricas.map((rubrica) => (
-                  <TableRow key={rubrica.id}>
-                    <TableCell>{rubrica.codigo}</TableCell>
-                    <TableCell>{rubrica.descricao}</TableCell>
-                    <TableCell>
-                      {rubrica.tipoRubricaDescricao || rubrica.tipo || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {rubrica.porcentagem ? `${rubrica.porcentagem}%` : '-'}
-                    </TableCell>
-                    <TableCell>{rubrica.ativo ? 'Ativo' : 'Inativo'}</TableCell>
-                    <TableCell align="center">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpen(rubrica)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDelete(rubrica.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                {rubricas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      Nenhuma rubrica encontrada
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  rubricas.map((rubrica) => (
+                    <TableRow key={rubrica.id}>
+                      <TableCell>{rubrica.codigo}</TableCell>
+                      <TableCell>{rubrica.descricao}</TableCell>
+                      <TableCell>
+                        {rubrica.tipoRubricaDescricao || rubrica.tipo || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {rubrica.porcentagem ? `${rubrica.porcentagem}%` : '-'}
+                      </TableCell>
+                      <TableCell>{rubrica.ativo ? 'Ativo' : 'Inativo'}</TableCell>
+                      <TableCell align="center">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleOpen(rubrica)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDelete(rubrica.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -240,4 +340,4 @@ export default function Rubricas() {
       </Dialog>
     </Box>
   );
-} 
+}

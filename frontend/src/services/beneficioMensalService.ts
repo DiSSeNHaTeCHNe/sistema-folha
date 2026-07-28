@@ -2,12 +2,30 @@ import api from './api';
 import type {
   BeneficioMensal,
   BeneficioMensalCompetenciaParams,
+  BeneficioMensalCompetenciaResumo,
   BeneficioMensalCreateDTO,
   BeneficioMensalResumo,
   ImportacaoBeneficioMensalResultado,
 } from '../types';
 
+export type { BeneficioMensalCompetenciaResumo };
+
 export const beneficioMensalService = {
+  listarCompetencias: async (
+    ano: number,
+    mes?: number,
+  ): Promise<BeneficioMensalCompetenciaResumo[]> => {
+    const params: { ano: number; mes?: number } = { ano };
+    if (mes !== undefined) {
+      params.mes = mes;
+    }
+    const response = await api.get<BeneficioMensalCompetenciaResumo[]>(
+      '/beneficio-mensal/competencias',
+      { params },
+    );
+    return response.data;
+  },
+
   listar: async (params: BeneficioMensalCompetenciaParams): Promise<BeneficioMensal[]> => {
     const response = await api.get<BeneficioMensal[]>('/beneficio-mensal', { params });
     return response.data;

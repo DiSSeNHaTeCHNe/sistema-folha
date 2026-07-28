@@ -80,7 +80,7 @@ class ImportacaoFolhaAdpServiceTest {
             1L, 10L, "João", 2L, "001", "Salário", "PROVENTO",
             3L, "Analista", 4L, "CC", 5L, "LN",
             COMPETENCIA_INICIO, COMPETENCIA_FIM,
-            new BigDecimal("1000"), BigDecimal.ONE, new BigDecimal("1000")
+            new BigDecimal("1000"), BigDecimal.ONE, new BigDecimal("1000"), false
         );
         when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of(dto));
 
@@ -124,7 +124,7 @@ class ImportacaoFolhaAdpServiceTest {
         when(cadastrosImportLookupPort.findOrCreateRubrica(eq("0010"), anyString(), anyString()))
             .thenReturn(new RubricaImportRef(2L, "0010", "PROVENTO"));
         when(folhaConsultaPort.existsAtivaByCpfAndCompetenciaExcludingFuncionario(
-            eq("12345678901"), eq(1L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM)))
+            eq("12345678901"), eq(1L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false)))
             .thenReturn(false);
         when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
 
@@ -138,7 +138,7 @@ class ImportacaoFolhaAdpServiceTest {
         assertEquals(1L, command.linhas().get(0).funcionarioId());
         assertEquals(2L, command.linhas().get(0).rubricaId());
         verify(folhaConsultaPort, never()).existsByFuncionarioIdAndRubricaIdAndPeriodo(
-            any(), any(), any(), any());
+            any(), any(), any(), any(), anyBoolean());
     }
 
     private MockMultipartFile arquivoComCompetencia() {

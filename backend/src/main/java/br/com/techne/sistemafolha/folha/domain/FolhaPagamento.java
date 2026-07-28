@@ -63,4 +63,7 @@ public class FolhaPagamento {
 
     @Column(nullable = false)
     private Boolean ativo = true;
+
+    @Column(name = "decimo_terceiro", nullable = false)
+    private Boolean decimoTerceiro = false;
 } 

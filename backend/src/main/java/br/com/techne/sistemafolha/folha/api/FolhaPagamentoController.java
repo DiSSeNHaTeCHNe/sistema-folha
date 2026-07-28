@@ -28,9 +28,10 @@ public class FolhaPagamentoController {
             @PathVariable Long funcionarioId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) Boolean decimoTerceiro,
             Authentication authentication) {
         return ResponseEntity.ok(folhaPagamentoService.consultarPorFuncionario(
-            authentication.getName(), funcionarioId, dataInicio, dataFim));
+            authentication.getName(), funcionarioId, dataInicio, dataFim, decimoTerceiro));
     }
 
     @GetMapping("/centro-custo/{centroCustoId}")
@@ -60,9 +61,10 @@ public class FolhaPagamentoController {
     public ResponseEntity<List<FolhaPagamentoDTO>> consultarPorPeriodo(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) Boolean decimoTerceiro,
             Authentication authentication) {
         return ResponseEntity.ok(folhaPagamentoService.consultarPorPeriodo(
-            authentication.getName(), dataInicio, dataFim));
+            authentication.getName(), dataInicio, dataFim, decimoTerceiro));
     }
 
     @GetMapping("/totais-funcionarios")

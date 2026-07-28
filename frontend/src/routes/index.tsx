@@ -12,6 +12,7 @@ import Importacao from '../pages/Importacao';
 import { Relatorios } from '../pages/Relatorios';
 import { AuthProvider } from '../contexts/AuthContext';
 import { Layout } from '../components/Layout';
+import { AdminRoute } from './AdminRoute';
 import Cargos from '../pages/Cargos';
 import CentrosCusto from '../pages/CentrosCusto';
 import LinhasNegocio from '../pages/LinhasNegocio';
@@ -47,19 +48,21 @@ export function RouterWithAuth() {
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/usuarios" element={<Usuarios />} />
               <Route path="/funcionarios" element={<Funcionarios />} />
               <Route path="/folha-pagamento" element={<FolhaPagamento />} />
               <Route path="/beneficios-mensais" element={<BeneficiosMensais />} />
-              <Route path="/rubricas" element={<Rubricas />} />
               <Route path="/beneficios" element={<Navigate to="/beneficios-mensais" replace />} />
-              <Route path="/importacao" element={<Importacao />} />
               <Route path="/relatorios" element={<Relatorios />} />
-              <Route path="/cargos" element={<Cargos />} />
-              <Route path="/centros-custo" element={<CentrosCusto />} />
-              <Route path="/linhas-negocio" element={<LinhasNegocio />} />
-              <Route path="/organograma" element={<Organograma />} />
-              <Route path="/tipos-beneficio" element={<TiposBeneficio />} />
+              <Route element={<AdminRoute />}>
+                <Route path="/usuarios" element={<Usuarios />} />
+                <Route path="/linhas-negocio" element={<LinhasNegocio />} />
+                <Route path="/centros-custo" element={<CentrosCusto />} />
+                <Route path="/cargos" element={<Cargos />} />
+                <Route path="/rubricas" element={<Rubricas />} />
+                <Route path="/tipos-beneficio" element={<TiposBeneficio />} />
+                <Route path="/organograma" element={<Organograma />} />
+                <Route path="/importacao" element={<Importacao />} />
+              </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Route>

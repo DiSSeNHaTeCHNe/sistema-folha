@@ -4,6 +4,7 @@ import br.com.techne.sistemafolha.cadastros.api.RubricaDTO;
 import br.com.techne.sistemafolha.cadastros.application.RubricaService;
 import br.com.techne.sistemafolha.cadastros.domain.RubricaNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +21,13 @@ public class RubricaController {
     private final RubricaService rubricaService;
 
     @GetMapping
-    @Operation(summary = "Lista todas as rubricas ativas")
-    public ResponseEntity<List<RubricaDTO>> listar() {
-        return ResponseEntity.ok(rubricaService.listarTodas());
+    @Operation(summary = "Lista rubricas com filtros opcionais")
+    public ResponseEntity<List<RubricaDTO>> listar(
+            @RequestParam(required = false) String codigo,
+            @RequestParam(required = false) String descricao,
+            @Parameter(description = "Filtro de status: ATIVO (padrão), INATIVO ou TODOS")
+            @RequestParam(defaultValue = "ATIVO") RubricaStatusFiltro status) {
+        return ResponseEntity.ok(rubricaService.listar(codigo, descricao, status));
     }
 
     @GetMapping("/{id}")

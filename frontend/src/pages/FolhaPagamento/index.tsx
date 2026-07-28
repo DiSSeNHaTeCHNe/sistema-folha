@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -19,6 +19,7 @@ import {
   Card,
   CardContent,
   FormControl,
+  FormHelperText,
   InputLabel,
   Select,
   MenuItem,
@@ -69,6 +70,13 @@ interface FuncionarioResumo {
   linhaNegocioDescricao?: string;
 }
 
+const gerarAnosDisponiveis = (): number[] => {
+  const anoAtual = new Date().getFullYear();
+  return Array.from({ length: 6 }, (_, i) => anoAtual - i);
+};
+
+const anoCorrente = (): string => String(new Date().getFullYear());
+
 // Função utilitária para formatar datas do backend (formato ISO)
 const formatarDataCompetencia = (dataString: string): string => {
   if (!dataString) return '';
@@ -86,7 +94,6 @@ const formatarDataCompetencia = (dataString: string): string => {
 export function FolhaPagamento() {
   const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([]);
   const [linhasNegocio, setLinhasNegocio] = useState<LinhaNegocio[]>([]);
-  const [folha, setFolha] = useState<FolhaPagamento[]>([]);
   const [funcionariosResumo, setFuncionariosResumo] = useState<FuncionarioResumo[]>([]);
   const [resumosFolha, setResumosFolha] = useState<ResumoFolhaPagamento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,9 +108,11 @@ export function FolhaPagamento() {
   const { control: controlResumo, handleSubmit: handleSubmitResumo, reset: resetResumo } = useForm<FiltrosResumo>({
     defaultValues: {
       mes: '',
-      ano: ''
-    }
+      ano: anoCorrente(),
+    },
   });
+
+  const anosDisponiveis = useMemo(() => gerarAnosDisponiveis(), []);
 
   // Formulário para filtros da tela de Funcionários
   const { control: controlFuncionarios, reset: resetFuncionarios, watch: watchFuncionarios } = useForm<FiltrosFuncionarios>({
@@ -144,33 +153,16 @@ export function FolhaPagamento() {
   const fetchResumosFolha = async (filtros?: FiltrosResumo) => {
     setLoading(true);
     try {
-      const resumos = await resumoFolhaPagamentoService.listarTodos();
-      
-      let resumosFiltrados = resumos;
-      
-      // Aplicar filtros de mês e ano se fornecidos
-      if (filtros?.mes || filtros?.ano) {
-        resumosFiltrados = resumos.filter(resumo => {
-          // Extrai mês e ano diretamente da string no formato YYYY-MM-DD
-          const [anoResumo, mesResumo] = resumo.competenciaInicio.split('-');
-          
-          // Remove zeros à esquerda para comparação
-          const mesResumoNum = parseInt(mesResumo, 10).toString();
-          
-          const mesMatch = !filtros.mes || mesResumoNum === filtros.mes;
-          const anoMatch = !filtros.ano || anoResumo === filtros.ano;
-          
-          return mesMatch && anoMatch;
-        });
-      }
-      
-      // Ordenar da mais nova para a mais antiga
-      const resumosOrdenados = resumosFiltrados.sort((a, b) => {
+      const ano = Number(filtros?.ano ?? anoCorrente());
+      const mes = filtros?.mes ? Number(filtros.mes) : undefined;
+      const resumos = await resumoFolhaPagamentoService.listarPorAno(ano, mes);
+
+      const resumosOrdenados = [...resumos].sort((a, b) => {
         const dataA = new Date(a.competenciaInicio).getTime();
         const dataB = new Date(b.competenciaInicio).getTime();
         return dataB - dataA;
       });
-      
+
       setResumosFolha(resumosOrdenados);
     } catch (err) {
       console.log('Nenhum resumo encontrado', err);
@@ -185,10 +177,9 @@ export function FolhaPagamento() {
     try {
       const data = await folhaPagamentoService.buscarPorPeriodo(
         resumo.competenciaInicio,
-        resumo.competenciaFim
+        resumo.competenciaFim,
+        resumo.decimoTerceiro ?? false,
       );
-      
-      setFolha(data);
       
       // Criar resumo por funcionário
       const resumoMap = data.reduce((acc: Record<string, FuncionarioResumo>, item: FolhaPagamento) => {
@@ -242,7 +233,7 @@ export function FolhaPagamento() {
 
   useEffect(() => {
     carregarOpcoesDeFilters();
-    fetchResumosFolha();
+    fetchResumosFolha({ ano: anoCorrente(), mes: '' });
   }, []);
 
   const handleFiltrarResumos = async (filtros: FiltrosResumo) => {
@@ -250,19 +241,33 @@ export function FolhaPagamento() {
   };
 
   const handleLimparFiltrosResumo = () => {
-    resetResumo();
-    fetchResumosFolha();
+    const ano = anoCorrente();
+    resetResumo({ mes: '', ano });
+    fetchResumosFolha({ mes: '', ano });
   };
 
   const handleDetalharRubricas = async (funcionario: FuncionarioResumo) => {
+    if (!resumoSelecionado) {
+      return;
+    }
+
     setFuncionarioSelecionado(funcionario);
-    const rubricas = folha.filter(item => 
-      item.funcionarioId === funcionario.funcionarioId &&
-      item.dataInicio === funcionario.dataInicio &&
-      item.dataFim === funcionario.dataFim
-    );
-    setRubricasFuncionario(rubricas);
-    setOpenDetalhesDialog(true);
+    setLoading(true);
+    try {
+      const rubricas = await folhaPagamentoService.buscarPorFuncionario(
+        funcionario.funcionarioId,
+        funcionario.dataInicio,
+        funcionario.dataFim,
+        resumoSelecionado.decimoTerceiro ?? false,
+      );
+      setRubricasFuncionario(rubricas);
+      setOpenDetalhesDialog(true);
+    } catch (err) {
+      console.error('Erro ao carregar rubricas do funcionário:', err);
+      setError('Erro ao carregar rubricas do funcionário');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerFuncionarios = async (resumo: ResumoFolhaPagamento) => {
@@ -276,7 +281,6 @@ export function FolhaPagamento() {
     setMostrarFuncionarios(false);
     setResumoSelecionado(null);
     setFuncionariosResumo([]);
-    setFolha([]);
   };
 
   // Aplicar filtros na lista de funcionários
@@ -488,14 +492,25 @@ export function FolhaPagamento() {
             <Controller
               name="ano"
               control={controlResumo}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Ano"
-                  type="number"
-                  sx={{ minWidth: 120 }}
-                  inputProps={{ min: 2000, max: 2100 }}
-                />
+              rules={{ required: 'Ano é obrigatório' }}
+              render={({ field, fieldState: { error } }) => (
+                <FormControl sx={{ minWidth: 120 }} error={!!error}>
+                  <InputLabel id="folha-ano-label">Ano</InputLabel>
+                  <Select
+                    labelId="folha-ano-label"
+                    label="Ano"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  >
+                    {anosDisponiveis.map((itemAno) => (
+                      <MenuItem key={itemAno} value={String(itemAno)}>
+                        {itemAno}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {error && <FormHelperText>{error.message}</FormHelperText>}
+                </FormControl>
               )}
             />
             <Button 
@@ -599,8 +614,10 @@ export function FolhaPagamento() {
       {/* Dialog para detalhes das rubricas */}
       <Dialog open={openDetalhesDialog} onClose={() => setOpenDetalhesDialog(false)} maxWidth="lg" fullWidth>
         <DialogTitle>
-          Rubricas de {funcionarioSelecionado?.funcionarioNome} - 
-          Período: {formatarDataCompetencia(funcionarioSelecionado?.dataInicio || '')} a {formatarDataCompetencia(funcionarioSelecionado?.dataFim || '')}
+          Rubricas de {funcionarioSelecionado?.funcionarioNome} —{' '}
+          {resumoSelecionado?.decimoTerceiro ? '13º salário' : 'Folha regular'} — Período:{' '}
+          {formatarDataCompetencia(funcionarioSelecionado?.dataInicio || '')} a{' '}
+          {formatarDataCompetencia(funcionarioSelecionado?.dataFim || '')}
         </DialogTitle>
         <DialogContent>
           <TableContainer component={Paper}>
