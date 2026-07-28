@@ -28,15 +28,22 @@ import { toast } from 'react-toastify';
 import {
   rubricaService,
   type RubricaFiltros,
+  type RubricaFormData,
+  type OperadorRubrica,
 } from '../../services/rubricaService';
 import type { Rubrica } from '../../types';
 
-interface RubricaFormData {
-  codigo: string;
-  descricao: string;
-  tipo: string;
-  porcentagem?: number;
-}
+const DEFAULT_OPERADORES: Pick<RubricaFormData, 'operadorBruto' | 'operadorLiquido' | 'operadorCusto'> = {
+  operadorBruto: 1,
+  operadorLiquido: 1,
+  operadorCusto: 1,
+};
+
+const operadorOptions: { value: OperadorRubrica; label: string }[] = [
+  { value: 1, label: '+1 (soma)' },
+  { value: 0, label: '0 (ignora)' },
+  { value: -1, label: '−1 (subtrai)' },
+];
 
 const DEFAULT_FILTROS: RubricaFiltros = {
   codigo: '',
@@ -54,7 +61,11 @@ export default function Rubricas() {
   const [rubricas, setRubricas] = useState<Rubrica[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedRubrica, setSelectedRubrica] = useState<Rubrica | null>(null);
-  const { register, handleSubmit, reset, setValue, control } = useForm<RubricaFormData>();
+  const { register, handleSubmit, reset, setValue, control } = useForm<RubricaFormData>({
+    defaultValues: {
+      ...DEFAULT_OPERADORES,
+    },
+  });
 
   const {
     register: registerFilter,
@@ -110,10 +121,15 @@ export default function Rubricas() {
       else if (tipoValue === 'INFORMATIVO') mappedTipo = 'INFORMATIVO';
       setValue('tipo', mappedTipo);
       setValue('porcentagem', rubrica.porcentagem);
+      setValue('operadorBruto', (rubrica.operadorBruto ?? 1) as OperadorRubrica);
+      setValue('operadorLiquido', (rubrica.operadorLiquido ?? 1) as OperadorRubrica);
+      setValue('operadorCusto', (rubrica.operadorCusto ?? 1) as OperadorRubrica);
     } else {
       setSelectedRubrica(null);
-      reset();
-      setValue('porcentagem', 100);
+      reset({
+        ...DEFAULT_OPERADORES,
+        porcentagem: 100,
+      });
     }
     setOpen(true);
   };
@@ -329,6 +345,78 @@ export default function Rubricas() {
               margin="normal"
               inputProps={{ min: 0, step: 0.01 }}
             />
+            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+              Operadores de totalização
+            </Typography>
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel id="operador-bruto-label">Operador Bruto</InputLabel>
+              <Controller
+                name="operadorBruto"
+                control={control}
+                rules={{ required: 'Operador bruto é obrigatório' }}
+                render={({ field }) => (
+                  <Select
+                    labelId="operador-bruto-label"
+                    id="operador-bruto"
+                    label="Operador Bruto"
+                    {...field}
+                    value={field.value ?? 1}
+                  >
+                    {operadorOptions.map((op) => (
+                      <MenuItem key={`bruto-${op.value}`} value={op.value}>
+                        {op.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+            </FormControl>
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel id="operador-liquido-label">Operador Líquido</InputLabel>
+              <Controller
+                name="operadorLiquido"
+                control={control}
+                rules={{ required: 'Operador líquido é obrigatório' }}
+                render={({ field }) => (
+                  <Select
+                    labelId="operador-liquido-label"
+                    id="operador-liquido"
+                    label="Operador Líquido"
+                    {...field}
+                    value={field.value ?? 1}
+                  >
+                    {operadorOptions.map((op) => (
+                      <MenuItem key={`liquido-${op.value}`} value={op.value}>
+                        {op.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+            </FormControl>
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel id="operador-custo-label">Operador Custo</InputLabel>
+              <Controller
+                name="operadorCusto"
+                control={control}
+                rules={{ required: 'Operador custo é obrigatório' }}
+                render={({ field }) => (
+                  <Select
+                    labelId="operador-custo-label"
+                    id="operador-custo"
+                    label="Operador Custo"
+                    {...field}
+                    value={field.value ?? 1}
+                  >
+                    {operadorOptions.map((op) => (
+                      <MenuItem key={`custo-${op.value}`} value={op.value}>
+                        {op.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+            </FormControl>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancelar</Button>

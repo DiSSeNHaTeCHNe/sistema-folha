@@ -30,6 +30,9 @@ export interface Rubrica {
   tipo: 'PROVENTO' | 'DESCONTO' | 'INFORMATIVO';
   tipoRubricaDescricao?: string;
   porcentagem?: number;
+  operadorBruto?: number;
+  operadorLiquido?: number;
+  operadorCusto?: number;
   ativo: boolean;
 }
 

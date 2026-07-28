@@ -1,11 +1,16 @@
 import api from './api';
 import type { Rubrica } from '../types';
 
-interface RubricaFormData {
+export type OperadorRubrica = -1 | 0 | 1;
+
+export interface RubricaFormData {
   codigo: string;
   descricao: string;
   tipo: string;
   porcentagem?: number;
+  operadorBruto: OperadorRubrica;
+  operadorLiquido: OperadorRubrica;
+  operadorCusto: OperadorRubrica;
 }
 
 export type RubricaStatusFiltro = 'ATIVO' | 'INATIVO' | 'TODOS';
@@ -23,6 +28,9 @@ const mapRubrica = (item: {
   tipo: Rubrica['tipo'];
   tipoRubricaDescricao?: string;
   porcentagem?: number;
+  operadorBruto?: number;
+  operadorLiquido?: number;
+  operadorCusto?: number;
   ativo: boolean;
 }): Rubrica => ({
   ...item,
@@ -30,6 +38,9 @@ const mapRubrica = (item: {
     ? (item.tipoRubricaDescricao as Rubrica['tipo'])
     : item.tipo,
   tipoRubricaDescricao: item.tipoRubricaDescricao,
+  operadorBruto: item.operadorBruto,
+  operadorLiquido: item.operadorLiquido,
+  operadorCusto: item.operadorCusto,
 });
 
 const rubricaService = {
