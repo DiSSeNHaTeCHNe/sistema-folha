@@ -353,9 +353,9 @@ T27
 - Skill: `jpa-performance`
 
 **Done when**:
-- [ ] Pós-processamento usa ficha; pré-processamento fallback ADP
-- [ ] `@EntityGraph` ou fetch join para evitar N+1
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaConsultaAdapterTest`
+- [x] Pós-processamento usa ficha; pré-processamento fallback ADP
+- [x] `@EntityGraph` ou fetch join para evitar N+1
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaConsultaAdapterTest`
 
 **Tests**: unit  
 **Gate**: quick  
