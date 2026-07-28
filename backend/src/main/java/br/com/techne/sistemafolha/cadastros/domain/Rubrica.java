@@ -29,6 +29,15 @@ public class Rubrica {
     @Column
     private Double porcentagem;
 
+    @Column(name = "operador_bruto", nullable = false)
+    private Short operadorBruto = 1;
+
+    @Column(name = "operador_liquido", nullable = false)
+    private Short operadorLiquido = 1;
+
+    @Column(name = "operador_custo", nullable = false)
+    private Short operadorCusto = 1;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 } 
