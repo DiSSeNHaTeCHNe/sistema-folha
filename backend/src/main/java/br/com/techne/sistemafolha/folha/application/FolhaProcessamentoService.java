@@ -4,6 +4,7 @@ import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixa;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.infrastructure.FuncionarioRubricaFixaRepository;
+import br.com.techne.sistemafolha.cadastros.infrastructure.RubricaRepository;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoOpcoes;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FichaLinha;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,11 +37,15 @@ public class FolhaProcessamentoService {
 
     private static final Logger logger = LoggerFactory.getLogger(FolhaProcessamentoService.class);
     private static final String DOMAIN = "folha";
+    private static final String CODIGO_RUBRICA_FERIAS = "5000";
+    private static final BigDecimal FATOR_FERIAS = new BigDecimal("2.5");
+    private static final BigDecimal MESES_ANO = new BigDecimal("12");
 
     private final FolhaPagamentoRepository folhaPagamentoRepository;
     private final FichaMensalRepository fichaMensalRepository;
     private final FichaLinhaRepository fichaLinhaRepository;
     private final FuncionarioRubricaFixaRepository funcionarioRubricaFixaRepository;
+    private final RubricaRepository rubricaRepository;
 
     @Transactional
     public ProcessamentoResultadoDTO processar(
@@ -62,6 +68,7 @@ public class FolhaProcessamentoService {
 
         int totalLinhas = 0;
         List<FichaMensal> fichas = new ArrayList<>();
+        ProcessamentoOpcoes opcoesEfetivas = opcoes != null ? opcoes : new ProcessamentoOpcoes(false);
 
         for (List<FolhaPagamento> grupo : porFuncionario.values()) {
             Funcionario funcionario = grupo.get(0).getFuncionario();
@@ -94,6 +101,15 @@ public class FolhaProcessamentoService {
                 fichaLinhaRepository.save(linhaFixa);
                 totalLinhas++;
                 inputsMotor.add(toInput(linhaFixa));
+            }
+
+            if (opcoesEfetivas.recalcularFerias()) {
+                FichaLinha linhaFerias = montarLinhaFeriasCalculada(ficha, inputsMotor);
+                if (linhaFerias != null) {
+                    fichaLinhaRepository.save(linhaFerias);
+                    totalLinhas++;
+                    inputsMotor.add(toInput(linhaFerias));
+                }
             }
 
             FolhaMotorCalculo.TotaisFuncionario totais = FolhaMotorCalculo.calcularPorLinhas(inputsMotor);
@@ -156,6 +172,30 @@ public class FolhaProcessamentoService {
         linha.setOperadorCusto(rubrica.getOperadorCusto());
         linha.setAtivo(true);
         return linha;
+    }
+
+    private FichaLinha montarLinhaFeriasCalculada(
+            FichaMensal ficha, List<FolhaMotorCalculo.LinhaCalculoInput> inputsAtuais) {
+        return rubricaRepository.findByCodigo(CODIGO_RUBRICA_FERIAS)
+            .filter(r -> Boolean.TRUE.equals(r.getAtivo()))
+            .map(rubrica -> {
+                FolhaMotorCalculo.TotaisFuncionario parcial = FolhaMotorCalculo.calcularPorLinhas(inputsAtuais);
+                BigDecimal valorFerias = parcial.bruto()
+                    .multiply(FATOR_FERIAS)
+                    .divide(MESES_ANO, 2, RoundingMode.HALF_UP);
+
+                FichaLinha linha = new FichaLinha();
+                linha.setFichaMensal(ficha);
+                linha.setRubrica(rubrica);
+                linha.setValor(valorFerias);
+                linha.setOrigemLinha(OrigemLinha.CALCULADO);
+                linha.setOperadorBruto(rubrica.getOperadorBruto());
+                linha.setOperadorLiquido(rubrica.getOperadorLiquido());
+                linha.setOperadorCusto(rubrica.getOperadorCusto());
+                linha.setAtivo(true);
+                return linha;
+            })
+            .orElse(null);
     }
 
     private FolhaMotorCalculo.LinhaCalculoInput toInput(FichaLinha linha) {

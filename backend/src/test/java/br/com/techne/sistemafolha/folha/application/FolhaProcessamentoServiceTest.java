@@ -5,6 +5,7 @@ import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixa;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
 import br.com.techne.sistemafolha.cadastros.infrastructure.FuncionarioRubricaFixaRepository;
+import br.com.techne.sistemafolha.cadastros.infrastructure.RubricaRepository;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoOpcoes;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FichaLinha;
@@ -24,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,6 +51,9 @@ class FolhaProcessamentoServiceTest {
 
     @Mock
     private FuncionarioRubricaFixaRepository funcionarioRubricaFixaRepository;
+
+    @Mock
+    private RubricaRepository rubricaRepository;
 
     @InjectMocks
     private FolhaProcessamentoService folhaProcessamentoService;
@@ -177,6 +182,64 @@ class FolhaProcessamentoServiceTest {
         verify(fichaLinhaRepository, times(1)).save(linhaCaptor.capture());
         assertEquals(OrigemLinha.FOLHA_ADP, linhaCaptor.getValue().getOrigemLinha());
         assertEquals(new BigDecimal("10000.00"), linhaCaptor.getValue().getValor());
+    }
+
+    @Test
+    void processar_recalcularFerias_injetarLinhaCalculada() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        Rubrica ferias = rubricaFerias();
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("12000.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(funcionarioRubricaFixaRepository.findVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(rubricaRepository.findByCodigo("5000")).thenReturn(Optional.of(ferias));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(true));
+
+        assertEquals(2, resultado.totalLinhas());
+
+        ArgumentCaptor<FichaLinha> linhaCaptor = ArgumentCaptor.forClass(FichaLinha.class);
+        verify(fichaLinhaRepository, times(2)).save(linhaCaptor.capture());
+        FichaLinha linhaFerias = linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.CALCULADO)
+            .findFirst()
+            .orElseThrow();
+        assertEquals(new BigDecimal("2500.00"), linhaFerias.getValor());
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("14500.00"), fichaFinal.getBruto());
+        assertEquals(new BigDecimal("14500.00"), fichaFinal.getCustoFolha());
+    }
+
+    private Rubrica rubricaFerias() {
+        TipoRubrica tipo = new TipoRubrica();
+        tipo.setDescricao("PROVENTO");
+        Rubrica rubrica = new Rubrica();
+        rubrica.setId(50L);
+        rubrica.setCodigo("5000");
+        rubrica.setDescricao("Férias proporcionais");
+        rubrica.setTipoRubrica(tipo);
+        rubrica.setOperadorBruto((short) 1);
+        rubrica.setOperadorLiquido((short) 1);
+        rubrica.setOperadorCusto((short) 1);
+        rubrica.setAtivo(true);
+        return rubrica;
     }
 
     private FuncionarioRubricaFixa rubricaFixa(Funcionario funcionario, Rubrica rubrica, BigDecimal valor) {
