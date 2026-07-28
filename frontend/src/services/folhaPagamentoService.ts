@@ -1,6 +1,16 @@
 import api from './api';
 import type { FolhaPagamento } from '../types';
 
+export type TotalizadorFolha = 'GROSS' | 'NET' | 'COMPANY_COST';
+
+export interface FichaLinhaDetalhe {
+  valor: string | number;
+  contribuicao: string | number;
+  origemLinha: string;
+  rubricaCodigo: string;
+  rubricaDescricao: string;
+}
+
 export interface FolhaTotaisFuncionario {
   funcionarioId: number;
   funcionarioNome: string;
@@ -68,6 +78,32 @@ export const folhaPagamentoService = {
   ): Promise<FolhaTotaisFuncionario[]> => {
     const response = await api.get<FolhaTotaisFuncionario[]>('/folha-pagamento/totais-funcionarios', {
       params: { dataInicio, dataFim, decimoTerceiro },
+    });
+    return response.data;
+  },
+
+  buscarFichaPorFuncionario: async (
+    funcionarioId: number,
+    dataInicio: string,
+    dataFim: string,
+    decimoTerceiro?: boolean,
+  ): Promise<number | null> => {
+    try {
+      const response = await api.get<{ id: number }>('/folha-pagamento/fichas/por-funcionario', {
+        params: { funcionarioId, dataInicio, dataFim, decimoTerceiro },
+      });
+      return response.data.id;
+    } catch {
+      return null;
+    }
+  },
+
+  listarLinhasPorTotalizador: async (
+    fichaId: number,
+    totalizer: TotalizadorFolha,
+  ): Promise<FichaLinhaDetalhe[]> => {
+    const response = await api.get<FichaLinhaDetalhe[]>(`/folha-pagamento/fichas/${fichaId}/linhas`, {
+      params: { totalizer },
     });
     return response.data;
   },

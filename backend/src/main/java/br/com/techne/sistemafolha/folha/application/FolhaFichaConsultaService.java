@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -89,6 +90,25 @@ public class FolhaFichaConsultaService {
 
         detalhes.sort(Comparator.comparing(FichaLinhaDetalheDTO::rubricaCodigo, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
         return detalhes;
+    }
+
+    @Transactional(readOnly = true)
+    public Long buscarFichaIdPorFuncionario(
+            String login,
+            Long funcionarioId,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            boolean decimoTerceiro) {
+        AccessContextDTO contexto = obterContextoAcesso(login);
+        FichaMensal ficha = fichaMensalRepository.findByFuncionarioAndCompetencia(
+                funcionarioId, competenciaInicio, competenciaFim, decimoTerceiro)
+            .orElseThrow(() -> new FichaMensalNotFoundException(funcionarioId));
+
+        if (!podeAcessarFicha(ficha, contexto)) {
+            throw new FichaMensalNotFoundException(funcionarioId);
+        }
+
+        return ficha.getId();
     }
 
     boolean podeAcessarFicha(FichaMensal ficha, AccessContextDTO contexto) {

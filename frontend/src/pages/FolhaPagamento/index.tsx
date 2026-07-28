@@ -23,6 +23,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -31,8 +33,11 @@ import {
   AttachMoney as AttachMoneyIcon,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
-import type { FolhaPagamento } from '../../types';
-import { folhaPagamentoService } from '../../services/folhaPagamentoService';
+import {
+  folhaPagamentoService,
+  type FichaLinhaDetalhe,
+  type TotalizadorFolha,
+} from '../../services/folhaPagamentoService';
 import { resumoFolhaPagamentoService, type ResumoFolhaPagamento } from '../../services/resumoFolhaPagamentoService';
 import { centroCustoService } from '../../services/centroCustoService';
 import { linhaNegocioService } from '../../services/linhaNegocioService';
@@ -73,6 +78,19 @@ interface FuncionarioResumo {
   linhaNegocioDescricao?: string;
 }
 
+const TOTALIZADORES: { label: string; value: TotalizadorFolha; panelId: string; tabId: string }[] = [
+  { label: 'Bruto', value: 'GROSS', panelId: 'folha-detalhe-bruto', tabId: 'folha-tab-bruto' },
+  { label: 'Líquido', value: 'NET', panelId: 'folha-detalhe-liquido', tabId: 'folha-tab-liquido' },
+  { label: 'Custo', value: 'COMPANY_COST', panelId: 'folha-detalhe-custo', tabId: 'folha-tab-custo' },
+];
+
+const ORIGEM_LABELS: Record<string, string> = {
+  FOLHA_ADP: 'Folha ADP',
+  CUSTO_FIXO: 'Custo Fixo',
+  CALCULADO: 'Calculado',
+  BENEFICIO: 'Benefício',
+};
+
 const gerarAnosDisponiveis = (): number[] => {
   const anoAtual = new Date().getFullYear();
   return Array.from({ length: 6 }, (_, i) => anoAtual - i);
@@ -103,7 +121,10 @@ export function FolhaPagamento() {
   const [error, setError] = useState('');
   const [openDetalhesDialog, setOpenDetalhesDialog] = useState(false);
   const [funcionarioSelecionado, setFuncionarioSelecionado] = useState<FuncionarioResumo | null>(null);
-  const [rubricasFuncionario, setRubricasFuncionario] = useState<FolhaPagamento[]>([]);
+  const [fichaId, setFichaId] = useState<number | null>(null);
+  const [abaDetalhe, setAbaDetalhe] = useState(0);
+  const [linhasDetalhe, setLinhasDetalhe] = useState<FichaLinhaDetalhe[]>([]);
+  const [detalheErro, setDetalheErro] = useState('');
   const [resumoSelecionado, setResumoSelecionado] = useState<ResumoFolhaPagamento | null>(null);
   const [mostrarFuncionarios, setMostrarFuncionarios] = useState(false);
 
@@ -222,28 +243,151 @@ export function FolhaPagamento() {
     fetchResumosFolha({ mes: '', ano });
   };
 
+  const carregarLinhasDetalhe = async (fichaMensalId: number, totalizer: TotalizadorFolha) => {
+    const linhas = await folhaPagamentoService.listarLinhasPorTotalizador(fichaMensalId, totalizer);
+    setLinhasDetalhe(linhas);
+  };
+
   const handleDetalharRubricas = async (funcionario: FuncionarioResumo) => {
     if (!resumoSelecionado) {
       return;
     }
 
     setFuncionarioSelecionado(funcionario);
+    setAbaDetalhe(0);
+    setLinhasDetalhe([]);
+    setDetalheErro('');
     setLoading(true);
     try {
-      const rubricas = await folhaPagamentoService.buscarPorFuncionario(
+      const idFicha = await folhaPagamentoService.buscarFichaPorFuncionario(
         funcionario.funcionarioId,
         funcionario.dataInicio,
         funcionario.dataFim,
         resumoSelecionado.decimoTerceiro ?? false,
       );
-      setRubricasFuncionario(rubricas);
+
+      if (idFicha === null) {
+        setDetalheErro('Ficha não processada para este funcionário. Execute o processamento da competência.');
+        setFichaId(null);
+        setOpenDetalhesDialog(true);
+        return;
+      }
+
+      setFichaId(idFicha);
+      await carregarLinhasDetalhe(idFicha, TOTALIZADORES[0].value);
       setOpenDetalhesDialog(true);
     } catch (err) {
-      console.error('Erro ao carregar rubricas do funcionário:', err);
-      setError('Erro ao carregar rubricas do funcionário');
+      console.error('Erro ao carregar detalhe do funcionário:', err);
+      setDetalheErro('Erro ao carregar detalhe do funcionário');
+      setOpenDetalhesDialog(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleChangeAbaDetalhe = async (_event: React.SyntheticEvent, newValue: number) => {
+    setAbaDetalhe(newValue);
+    if (fichaId === null) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await carregarLinhasDetalhe(fichaId, TOTALIZADORES[newValue].value);
+    } catch (err) {
+      console.error('Erro ao carregar linhas do totalizador:', err);
+      setDetalheErro('Erro ao carregar linhas do totalizador');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderLinhasDetalhe = (totalizer: TotalizadorFolha) => {
+    if (detalheErro) {
+      return (
+        <Typography color="error" sx={{ py: 2 }}>
+          {detalheErro}
+        </Typography>
+      );
+    }
+
+    if (linhasDetalhe.length === 0) {
+      return (
+        <Typography color="textSecondary" sx={{ py: 2 }}>
+          Nenhuma rubrica encontrada para este totalizador.
+        </Typography>
+      );
+    }
+
+    if (totalizer === 'COMPANY_COST') {
+      const grupos = linhasDetalhe.reduce<Record<string, FichaLinhaDetalhe[]>>((acc, linha) => {
+        const origem = linha.origemLinha || 'FOLHA_ADP';
+        if (!acc[origem]) {
+          acc[origem] = [];
+        }
+        acc[origem].push(linha);
+        return acc;
+      }, {});
+
+      return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {Object.entries(grupos).map(([origem, linhas]) => (
+            <Box key={origem}>
+              <Typography variant="subtitle1" gutterBottom>
+                {ORIGEM_LABELS[origem] ?? origem}
+              </Typography>
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Rubrica</TableCell>
+                      <TableCell align="right">Valor</TableCell>
+                      <TableCell align="right">Contribuição</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {linhas.map((item, index) => (
+                      <TableRow key={`${origem}-${item.rubricaCodigo}-${index}`}>
+                        <TableCell>
+                          {item.rubricaCodigo} - {item.rubricaDescricao}
+                        </TableCell>
+                        <TableCell align="right">{formatMoneyDisplay(item.valor)}</TableCell>
+                        <TableCell align="right">{formatMoneyDisplay(item.contribuicao)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          ))}
+        </Box>
+      );
+    }
+
+    return (
+      <TableContainer component={Paper}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Rubrica</TableCell>
+              <TableCell align="right">Valor</TableCell>
+              <TableCell align="right">Contribuição</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {linhasDetalhe.map((item, index) => (
+              <TableRow key={`${item.rubricaCodigo}-${index}`}>
+                <TableCell>
+                  {item.rubricaCodigo} - {item.rubricaDescricao}
+                </TableCell>
+                <TableCell align="right">{formatMoneyDisplay(item.valor)}</TableCell>
+                <TableCell align="right">{formatMoneyDisplay(item.contribuicao)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
   };
 
   const handleVerFuncionarios = async (resumo: ResumoFolhaPagamento) => {
@@ -588,53 +732,49 @@ export function FolhaPagamento() {
         </>
       )}
 
-      {/* Dialog para detalhes das rubricas */}
-      <Dialog open={openDetalhesDialog} onClose={() => setOpenDetalhesDialog(false)} maxWidth="lg" fullWidth>
+      {/* Dialog para detalhes por totalizador */}
+      <Dialog
+        open={openDetalhesDialog}
+        onClose={() => setOpenDetalhesDialog(false)}
+        maxWidth="lg"
+        fullWidth
+      >
         <DialogTitle>
-          Rubricas de {funcionarioSelecionado?.funcionarioNome} —{' '}
+          Detalhe de {funcionarioSelecionado?.funcionarioNome} —{' '}
           {resumoSelecionado?.decimoTerceiro ? '13º salário' : 'Folha regular'} — Período:{' '}
           {formatarDataCompetencia(funcionarioSelecionado?.dataInicio || '')} a{' '}
           {formatarDataCompetencia(funcionarioSelecionado?.dataFim || '')}
         </DialogTitle>
         <DialogContent>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Rubrica</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Valor</TableCell>
-                  <TableCell>Quantidade</TableCell>
-                  <TableCell>Base de Cálculo</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rubricasFuncionario.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      {item.rubricaCodigo} - {item.rubricaDescricao}
-                    </TableCell>
-                    <TableCell>
-                      {item.rubricaTipo}
-                    </TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(item.valor)}
-                    </TableCell>
-                    <TableCell>{item.quantidade}</TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(item.baseCalculo)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {fichaId !== null && (
+            <Tabs
+              value={abaDetalhe}
+              onChange={handleChangeAbaDetalhe}
+              aria-label="Totalizadores da folha"
+              sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+            >
+              {TOTALIZADORES.map((tab, index) => (
+                <Tab
+                  key={tab.value}
+                  label={tab.label}
+                  id={tab.tabId}
+                  aria-controls={tab.panelId}
+                  disabled={loading && abaDetalhe !== index}
+                />
+              ))}
+            </Tabs>
+          )}
+          {TOTALIZADORES.map((tab, index) => (
+            <Box
+              key={tab.value}
+              role="tabpanel"
+              hidden={abaDetalhe !== index}
+              id={tab.panelId}
+              aria-labelledby={tab.tabId}
+            >
+              {abaDetalhe === index && renderLinhasDetalhe(tab.value)}
+            </Box>
+          ))}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDetalhesDialog(false)}>Fechar</Button>

@@ -25,6 +25,20 @@ public interface FichaMensalRepository extends JpaRepository<FichaMensal, Long> 
     @Query("""
         SELECT f FROM FichaMensal f
         WHERE f.ativo = true
+        AND f.funcionario.id = :funcionarioId
+        AND f.competenciaInicio = :competenciaInicio
+        AND f.competenciaFim = :competenciaFim
+        AND f.decimoTerceiro = :decimoTerceiro
+        """)
+    Optional<FichaMensal> findByFuncionarioAndCompetencia(
+        @Param("funcionarioId") Long funcionarioId,
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("decimoTerceiro") boolean decimoTerceiro);
+
+    @Query("""
+        SELECT f FROM FichaMensal f
+        WHERE f.ativo = true
         AND f.competenciaInicio = :competenciaInicio
         AND f.competenciaFim = :competenciaFim
         AND f.decimoTerceiro = :decimoTerceiro
