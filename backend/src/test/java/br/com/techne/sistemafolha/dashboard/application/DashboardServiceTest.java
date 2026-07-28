@@ -104,7 +104,7 @@ class DashboardServiceTest {
         FolhaLinhaSnapshot linha = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
         FolhaEvolucaoSnapshot evolucao = new FolhaEvolucaoSnapshot(
-            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 1);
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 1, false);
 
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
@@ -146,7 +146,7 @@ class DashboardServiceTest {
         FolhaLinhaSnapshot linhaDesconto = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             2L, "002", "INSS", "DESCONTO", new BigDecimal("500.00"));
         FolhaEvolucaoSnapshot evolucaoGlobal = new FolhaEvolucaoSnapshot(
-            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10);
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false);
 
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
@@ -187,7 +187,7 @@ class DashboardServiceTest {
             COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false,
             BigDecimal.ZERO);
         FolhaEvolucaoSnapshot evolucaoSemLinhas = new FolhaEvolucaoSnapshot(
-            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10);
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false);
 
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
@@ -246,7 +246,7 @@ class DashboardServiceTest {
         FolhaLinhaSnapshot linha = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
         FolhaEvolucaoSnapshot evolucaoRegularDez = new FolhaEvolucaoSnapshot(
-            dezInicio, dezFim, totalRegularDez, 100);
+            dezInicio, dezFim, totalRegularDez, 100, false);
 
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
@@ -288,7 +288,7 @@ class DashboardServiceTest {
         FolhaLinhaSnapshot linhaDesconto = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             2L, "002", "INSS", "DESCONTO", new BigDecimal("500.00"));
         FolhaEvolucaoSnapshot evolucaoRegularDez = new FolhaEvolucaoSnapshot(
-            dezInicio, dezFim, totalRegularDez, 100);
+            dezInicio, dezFim, totalRegularDez, 100, false);
 
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(

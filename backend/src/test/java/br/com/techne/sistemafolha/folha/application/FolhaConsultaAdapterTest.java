@@ -167,6 +167,7 @@ class FolhaConsultaAdapterTest {
         assertEquals(1, result.size());
         assertEquals(new BigDecimal("50000.00"), result.get(0).totalLiquido());
         assertEquals(10, result.get(0).totalEmpregados());
+        assertEquals(false, result.get(0).decimoTerceiro());
     }
 
     @Test

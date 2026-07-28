@@ -436,7 +436,7 @@ public class DashboardService {
         return competencias.stream()
             .map(item -> {
                 List<FolhaLinhaSnapshot> linhas = folhaConsultaPort.findLinhasAtivasPorCompetencia(
-                    item.competenciaInicio(), item.competenciaFim(), false, centros);
+                    item.competenciaInicio(), item.competenciaFim(), item.decimoTerceiro(), centros);
                 BigDecimal custoEmpresa = calcularCustoEmpresa(
                     linhas, item.competenciaInicio(), item.competenciaFim(), BigDecimal.ZERO);
                 int empregados = (int) linhas.stream()

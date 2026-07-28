@@ -7,5 +7,6 @@ public record FolhaEvolucaoSnapshot(
     LocalDate competenciaInicio,
     LocalDate competenciaFim,
     BigDecimal totalLiquido,
-    Integer totalEmpregados
+    Integer totalEmpregados,
+    boolean decimoTerceiro
 ) {}
