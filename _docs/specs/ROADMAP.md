@@ -56,11 +56,11 @@
 - Documentação e objetos de importação em `_docs/IMPORTACAO_*.md`
 - Ajustes em `ImportacaoFolhaAdpService` e repositórios relacionados
 
-**Totalização bruto / líquido / custo** — IN PROGRESS
+**Totalização bruto / líquido / custo (CLT)** — IN PROGRESS
 
-- `FolhaTotalizacaoService` e endpoint `/totais-funcionarios`
-- DTO `FolhaTotaisFuncionarioDTO` exposto pela API de folha
-- Integração frontend na tela de folha (pendente de conclusão)
+- Spec TLC: `_docs/specs/features/folha-custo-clt/` (ACL dual-path explícito)
+- Baseline: `FolhaTotalizacaoService`, `/totais-funcionarios`, `FolhaTotaisFuncionarioDTO`
+- Pendente: ficha mensal, operadores rubrica, rateio encargos (acesso total), FE resumo/cards/abas
 
 **Benefícios mensais** — PLANNED
 

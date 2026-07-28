@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-07-28  
-**Current Work:** `ajustes-listagens` — Execute complete; Verifier PASS (uncommitted)
+**Current Work:** `folha-custo-clt` — Tasks draft (`tasks.md` T1–T27); Execute pending approval
 
 ---
 
@@ -104,6 +104,7 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 - **Feature (idle)**: `ajustes-listagens` → Execute T1–T6 done; Verifier PASS; validation.md written; uncommitted
 - **Feature (idle)**: `ajustes-sistema` → Execute complete; Verifier PASS (fix cycle 1); uncommitted
 - **Feature (idle)**: `funcionarios-folha-dashboard-ux` → Execute complete; Verifier PASS (uncommitted)
+- **Feature (active)**: `folha-custo-clt` → Specify + context + design approved; **Tasks draft** T1–T27 (`tasks.md` 2026-07-28); awaiting approval → Execute (4 batches)
 - **Feature (idle)**: `acl-scoped-folha-resumo` → Execute done; Verifier PASS (uncommitted)
 - **Decisions**: AD-001…AD-008, AD-010, AD-011 active
 ---
