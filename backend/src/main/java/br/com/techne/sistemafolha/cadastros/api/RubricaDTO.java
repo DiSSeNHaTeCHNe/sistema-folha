@@ -7,19 +7,26 @@ public class RubricaDTO {
     private String tipoRubricaDescricao;
     private String tipo;
     private Double porcentagem;
+    private Short operadorBruto;
+    private Short operadorLiquido;
+    private Short operadorCusto;
     private Boolean ativo;
 
-    public RubricaDTO(Long id, String codigo, String descricao, String tipoRubricaDescricao, String tipo, Double porcentagem, Boolean ativo) {
+    public RubricaDTO(Long id, String codigo, String descricao, String tipoRubricaDescricao, String tipo,
+                      Double porcentagem, Short operadorBruto, Short operadorLiquido, Short operadorCusto,
+                      Boolean ativo) {
         this.id = id;
         this.codigo = codigo;
         this.descricao = descricao;
         this.tipoRubricaDescricao = tipoRubricaDescricao;
         this.tipo = tipo;
         this.porcentagem = porcentagem;
+        this.operadorBruto = operadorBruto;
+        this.operadorLiquido = operadorLiquido;
+        this.operadorCusto = operadorCusto;
         this.ativo = ativo;
     }
 
-    // getters e setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getCodigo() { return codigo; }
@@ -32,6 +39,12 @@ public class RubricaDTO {
     public void setTipo(String tipo) { this.tipo = tipo; }
     public Double getPorcentagem() { return porcentagem; }
     public void setPorcentagem(Double porcentagem) { this.porcentagem = porcentagem; }
+    public Short getOperadorBruto() { return operadorBruto; }
+    public void setOperadorBruto(Short operadorBruto) { this.operadorBruto = operadorBruto; }
+    public Short getOperadorLiquido() { return operadorLiquido; }
+    public void setOperadorLiquido(Short operadorLiquido) { this.operadorLiquido = operadorLiquido; }
+    public Short getOperadorCusto() { return operadorCusto; }
+    public void setOperadorCusto(Short operadorCusto) { this.operadorCusto = operadorCusto; }
     public Boolean getAtivo() { return ativo; }
     public void setAtivo(Boolean ativo) { this.ativo = ativo; }
-} 
+}

@@ -12,11 +12,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RubricaService {
+
+    private static final Set<Short> OPERADORES_VALIDOS = Set.of((short) -1, (short) 0, (short) 1);
+
     private final RubricaRepository rubricaRepository;
     private final TipoRubricaRepository tipoRubricaRepository;
 
@@ -103,6 +107,9 @@ public class RubricaService {
             tipoDescricao,
             tipoDescricao,
             rubrica.getPorcentagem(),
+            rubrica.getOperadorBruto(),
+            rubrica.getOperadorLiquido(),
+            rubrica.getOperadorCusto(),
             rubrica.getAtivo()
         );
     }
@@ -118,6 +125,55 @@ public class RubricaService {
         }
         rubrica.setPorcentagem(dto.getPorcentagem());
         rubrica.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+        configurarOperadores(rubrica, dto);
         return rubrica;
     }
-} 
+
+    private void configurarOperadores(Rubrica rubrica, RubricaDTO dto) {
+        if (dto.getOperadorBruto() != null || dto.getOperadorLiquido() != null || dto.getOperadorCusto() != null) {
+            if (dto.getOperadorBruto() == null || dto.getOperadorLiquido() == null || dto.getOperadorCusto() == null) {
+                throw new IllegalArgumentException("Todos os operadores (bruto, líquido e custo) devem ser informados");
+            }
+            validarOperador(dto.getOperadorBruto(), "operadorBruto");
+            validarOperador(dto.getOperadorLiquido(), "operadorLiquido");
+            validarOperador(dto.getOperadorCusto(), "operadorCusto");
+            rubrica.setOperadorBruto(dto.getOperadorBruto());
+            rubrica.setOperadorLiquido(dto.getOperadorLiquido());
+            rubrica.setOperadorCusto(dto.getOperadorCusto());
+            return;
+        }
+        aplicarOperadoresDeTipo(rubrica);
+    }
+
+    private void aplicarOperadoresDeTipo(Rubrica rubrica) {
+        if (rubrica.getTipoRubrica() == null || rubrica.getTipoRubrica().getDescricao() == null) {
+            rubrica.setOperadorBruto((short) 0);
+            rubrica.setOperadorLiquido((short) 0);
+            rubrica.setOperadorCusto((short) 0);
+            return;
+        }
+        switch (rubrica.getTipoRubrica().getDescricao().toUpperCase()) {
+            case "PROVENTO" -> {
+                rubrica.setOperadorBruto((short) 1);
+                rubrica.setOperadorLiquido((short) 1);
+                rubrica.setOperadorCusto((short) 1);
+            }
+            case "DESCONTO" -> {
+                rubrica.setOperadorBruto((short) 0);
+                rubrica.setOperadorLiquido((short) -1);
+                rubrica.setOperadorCusto((short) 0);
+            }
+            default -> {
+                rubrica.setOperadorBruto((short) 0);
+                rubrica.setOperadorLiquido((short) 0);
+                rubrica.setOperadorCusto((short) 0);
+            }
+        }
+    }
+
+    private void validarOperador(Short operador, String campo) {
+        if (operador == null || !OPERADORES_VALIDOS.contains(operador)) {
+            throw new IllegalArgumentException(campo + " deve ser -1, 0 ou 1");
+        }
+    }
+}
