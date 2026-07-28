@@ -8,5 +8,6 @@ public record FolhaResumoSnapshot(
     LocalDate competenciaFim,
     BigDecimal totalLiquido,
     Integer totalEmpregados,
-    boolean decimoTerceiro
+    boolean decimoTerceiro,
+    BigDecimal totalEncargos
 ) {}

@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -98,7 +99,8 @@ class DashboardServiceTest {
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
-            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 1, false);
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 1, false,
+            new BigDecimal("1000.00"));
         FolhaLinhaSnapshot linha = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
         FolhaEvolucaoSnapshot evolucao = new FolhaEvolucaoSnapshot(
@@ -108,6 +110,9 @@ class DashboardServiceTest {
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
             eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), isNull()))
             .thenReturn(List.of(linha));
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(
+            eq(Set.of(1L)), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM)))
+            .thenReturn(Map.of(1L, new BigDecimal("500.00")));
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
             .thenReturn(5L);
         when(folhaConsultaPort.findEvolucaoUltimos12Meses(any())).thenReturn(List.of(evolucao));
@@ -115,7 +120,7 @@ class DashboardServiceTest {
         DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
 
         assertEquals(1L, stats.totalFuncionarios());
-        assertEquals(new BigDecimal("50000.00"), stats.custoMensalFolha());
+        assertEquals(new BigDecimal("6500.00"), stats.custoMensalFolha());
         assertEquals(5L, stats.totalBeneficiosAtivos());
         assertEquals(1, stats.evolucaoMensal().size());
         assertEquals(new BigDecimal("50000.00"), stats.evolucaoMensal().get(0).valorTotal());
@@ -134,7 +139,8 @@ class DashboardServiceTest {
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoRestrito(centros));
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
-            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false);
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false,
+            new BigDecimal("5000.00"));
         FolhaLinhaSnapshot linhaProvento = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
         FolhaLinhaSnapshot linhaDesconto = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
@@ -146,6 +152,9 @@ class DashboardServiceTest {
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
             eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(centros)))
             .thenReturn(List.of(linhaProvento, linhaDesconto));
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(
+            eq(Set.of(1L)), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM)))
+            .thenReturn(Map.of(1L, new BigDecimal("200.00")));
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, centros))
             .thenReturn(2L);
@@ -154,10 +163,10 @@ class DashboardServiceTest {
         DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
 
         assertEquals(1L, stats.totalFuncionarios());
-        assertEquals(new BigDecimal("4500.00"), stats.custoMensalFolha());
+        assertEquals(new BigDecimal("5200.00"), stats.custoMensalFolha());
         assertEquals(2L, stats.totalBeneficiosAtivos());
         assertEquals(1, stats.evolucaoMensal().size());
-        assertEquals(new BigDecimal("4500.00"), stats.evolucaoMensal().get(0).valorTotal());
+        assertEquals(new BigDecimal("5200.00"), stats.evolucaoMensal().get(0).valorTotal());
         assertEquals(1, stats.evolucaoMensal().get(0).quantidadeFuncionarios());
         assertTrue(stats.evolucaoMensal().get(0).valorTotal().compareTo(evolucaoGlobal.totalLiquido()) != 0);
         assertTrue(!stats.evolucaoMensal().get(0).quantidadeFuncionarios()
@@ -175,7 +184,8 @@ class DashboardServiceTest {
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoRestrito(centros));
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
-            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false);
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false,
+            BigDecimal.ZERO);
         FolhaEvolucaoSnapshot evolucaoSemLinhas = new FolhaEvolucaoSnapshot(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10);
 
@@ -232,7 +242,7 @@ class DashboardServiceTest {
         BigDecimal totalDecimoTerceiroDez = new BigDecimal("80000.00");
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
-            dezInicio, dezFim, totalRegularDez, 100, false);
+            dezInicio, dezFim, totalRegularDez, 100, false, new BigDecimal("2000.00"));
         FolhaLinhaSnapshot linha = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
         FolhaEvolucaoSnapshot evolucaoRegularDez = new FolhaEvolucaoSnapshot(
@@ -242,6 +252,9 @@ class DashboardServiceTest {
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
             eq(dezInicio), eq(dezFim), eq(false), isNull()))
             .thenReturn(List.of(linha));
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(
+            eq(Set.of(1L)), eq(dezInicio), eq(dezFim)))
+            .thenReturn(Map.of(1L, new BigDecimal("300.00")));
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(dezInicio, dezFim))
             .thenReturn(5L);
         when(folhaConsultaPort.findEvolucaoUltimos12Meses(any()))
@@ -269,7 +282,7 @@ class DashboardServiceTest {
         BigDecimal totalDecimoTerceiroDez = new BigDecimal("80000.00");
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
-            dezInicio, dezFim, new BigDecimal("99999.00"), 10, false);
+            dezInicio, dezFim, new BigDecimal("99999.00"), 10, false, BigDecimal.ZERO);
         FolhaLinhaSnapshot linhaProvento = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
         FolhaLinhaSnapshot linhaDesconto = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
@@ -281,6 +294,9 @@ class DashboardServiceTest {
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
             eq(dezInicio), eq(dezFim), eq(false), eq(centros)))
             .thenReturn(List.of(linhaProvento, linhaDesconto));
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(
+            eq(Set.of(1L)), eq(dezInicio), eq(dezFim)))
+            .thenReturn(Map.of(1L, new BigDecimal("200.00")));
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
             dezInicio, dezFim, centros))
             .thenReturn(2L);
@@ -290,7 +306,7 @@ class DashboardServiceTest {
         DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
 
         assertEquals(1, stats.evolucaoMensal().size());
-        assertEquals(new BigDecimal("4500.00"), stats.evolucaoMensal().get(0).valorTotal());
+        assertEquals(new BigDecimal("5200.00"), stats.evolucaoMensal().get(0).valorTotal());
         assertEquals(1, stats.evolucaoMensal().get(0).quantidadeFuncionarios());
         assertTrue(stats.evolucaoMensal().stream()
             .noneMatch(e -> e.valorTotal().compareTo(totalDecimoTerceiroDez) == 0));

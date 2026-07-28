@@ -120,7 +120,8 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
             resumo.getCompetenciaFim(),
             resumo.getTotalLiquido(),
             resumo.getTotalEmpregados(),
-            Boolean.TRUE.equals(resumo.getDecimoTerceiro())
+            Boolean.TRUE.equals(resumo.getDecimoTerceiro()),
+            resumo.getTotalEncargos() != null ? resumo.getTotalEncargos() : BigDecimal.ZERO
         );
     }
 
