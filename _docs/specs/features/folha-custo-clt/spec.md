@@ -129,7 +129,7 @@ Ver decisões em `context.md` (ACL-1…5, INT-1, INT-2).
 
 **Acceptance Criteria**:
 
-1. (FCLT-04) WHEN importação ADP concluir para competência THEN SHALL existir `ficha_mensal` por funcionário importado com `bruto`, `liquido`, `custoFolha` persistidos (derivados das `ficha_linha`)
+1. (FCLT-04) WHEN importação ADP concluir para competência THEN SHALL existir `ficha_mensal` por funcionário importado com `bruto`, `liquido`, `custoFolha` persistidos (derivados das `ficha_linha`). **Refinado por `folha-custo-clt-fix1`:** processamento encadeado automaticamente após import ADP (`FolhaProcessamentoPort`) e reprocesso manual em `/importacao`; ver FIX1-01…05.
 2. (FCLT-05) WHEN motor recalcular ficha THEN `bruto = Σ(valor × operador_bruto)`, `liquido = Σ(valor × operador_liquido)`, `custoFolha = Σ(valor × operador_custo)` das `ficha_linha`
 3. (FCLT-06) WHEN qualquer endpoint de consulta calcular `custoEmpresa` THEN SHALL compor na leitura: `custoFolha + encargosRateados + custoBeneficios`, onde `custoBeneficios` vem de `BeneficioConsultaPort` para a competência — **sem** depender de valor persistido de benefícios na ficha
 4. (FCLT-07) WHEN linha inserida na ficha THEN operadores SHALL ser **copiados** da rubrica (snapshot na linha) e `origemLinha` SHALL ser persistido (`FOLHA_ADP`, `CUSTO_FIXO` ou `CALCULADO`)
@@ -351,7 +351,7 @@ Ver decisões em `context.md` (ACL-1…5, INT-1, INT-2).
 | FCLT-01 | P1: Operadores migração | T1 | Done |
 | FCLT-02 | P1: Operadores API | T2 | Done |
 | FCLT-03 | P1: Operadores UI | T21 | Done |
-| FCLT-04 | P1: Ficha pós-import | T3, T4, T6 | Done |
+| FCLT-04 | P1: Ficha pós-import | T3, T4, T6; **fix1:** T1–T4 | Done (auto-encadeamento fix1) |
 | FCLT-05 | P1: Motor fórmulas | T5, T6, T7 | Done |
 | FCLT-06 | P1: Custo empresa global | T5, T12, T13 | Done |
 | FCLT-07 | P1: Snapshot operadores linha | T3, T4, T6 | Done |
