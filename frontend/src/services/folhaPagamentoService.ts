@@ -1,6 +1,27 @@
 import api from './api';
 import type { FolhaPagamento } from '../types';
 
+export interface FolhaTotaisFuncionario {
+  funcionarioId: number;
+  funcionarioNome: string;
+  competenciaInicio: string;
+  competenciaFim: string;
+  cargoId?: number;
+  cargoDescricao?: string;
+  centroCustoId?: number;
+  centroCustoDescricao?: string;
+  linhaNegocioId?: number;
+  linhaNegocioDescricao?: string;
+  totalRubricas: number;
+  totalBeneficios: number;
+  salBruto: string | number;
+  salLiquido: string | number;
+  salCustoFolha: string | number;
+  salCustoBeneficios: string | number;
+  encargosRateados: string | number;
+  custoEmpresa: string | number;
+}
+
 export const folhaPagamentoService = {
   listar: async () => {
     const response = await api.get<FolhaPagamento[]>('/folha-pagamento');
@@ -35,6 +56,17 @@ export const folhaPagamentoService = {
 
   buscarPorPeriodo: async (dataInicio: string, dataFim: string, decimoTerceiro?: boolean) => {
     const response = await api.get<FolhaPagamento[]>('/folha-pagamento', {
+      params: { dataInicio, dataFim, decimoTerceiro },
+    });
+    return response.data;
+  },
+
+  consultarTotaisPorFuncionario: async (
+    dataInicio: string,
+    dataFim: string,
+    decimoTerceiro?: boolean,
+  ): Promise<FolhaTotaisFuncionario[]> => {
+    const response = await api.get<FolhaTotaisFuncionario[]>('/folha-pagamento/totais-funcionarios', {
       params: { dataInicio, dataFim, decimoTerceiro },
     });
     return response.data;

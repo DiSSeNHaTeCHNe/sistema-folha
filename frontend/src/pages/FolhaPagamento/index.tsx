@@ -65,7 +65,9 @@ interface FuncionarioResumo {
   dataInicio: string;
   dataFim: string;
   totalRubricas: number;
-  valorTotal: number;
+  salBruto: string | number;
+  salLiquido: string | number;
+  custoEmpresa: string | number;
   cargoDescricao?: string;
   centroCustoDescricao?: string;
   linhaNegocioDescricao?: string;
@@ -176,54 +178,27 @@ export function FolhaPagamento() {
   const fetchFuncionariosPorResumo = async (resumo: ResumoFolhaPagamento) => {
     setLoading(true);
     try {
-      const data = await folhaPagamentoService.buscarPorPeriodo(
+      const totais = await folhaPagamentoService.consultarTotaisPorFuncionario(
         resumo.competenciaInicio,
         resumo.competenciaFim,
         resumo.decimoTerceiro ?? false,
       );
-      
-      // Criar resumo por funcionário
-      const resumoMap = data.reduce((acc: Record<string, FuncionarioResumo>, item: FolhaPagamento) => {
-        const key = `${item.funcionarioId}`;
-        if (!acc[key]) {
-          acc[key] = {
-            funcionarioId: item.funcionarioId,
-            funcionarioNome: item.funcionarioNome,
-            dataInicio: item.dataInicio,
-            dataFim: item.dataFim,
-            totalRubricas: 0,
-            valorTotal: 0,
-            cargoDescricao: item.cargoDescricao,
-            centroCustoDescricao: item.centroCustoDescricao,
-            linhaNegocioDescricao: item.linhaNegocioDescricao,
-          };
-        }
-        acc[key].totalRubricas += 1;
-        
-        // Calcula o total baseado no tipo da rubrica
-        switch (item.rubricaTipo) {
-          case 'PROVENTO':
-            acc[key].valorTotal += item.valor;
-            break;
-          case 'DESCONTO':
-            acc[key].valorTotal -= item.valor;
-            break;
-          case 'INFORMATIVO':
-            // Ignora rubricas informativas no cálculo
-            break;
-          default:
-            // Fallback: soma o valor
-            acc[key].valorTotal += item.valor;
-        }
-        
-        return acc;
-      }, {} as Record<string, FuncionarioResumo>);
-      
-      const funcionariosArray = Object.values(resumoMap) as FuncionarioResumo[];
-      const funcionariosOrdenados = funcionariosArray.sort((a, b) => 
-        a.funcionarioNome.localeCompare(b.funcionarioNome)
-      );
-      setFuncionariosResumo(funcionariosOrdenados);
+
+      const funcionariosArray: FuncionarioResumo[] = totais.map((item) => ({
+        funcionarioId: item.funcionarioId,
+        funcionarioNome: item.funcionarioNome,
+        dataInicio: item.competenciaInicio,
+        dataFim: item.competenciaFim,
+        totalRubricas: item.totalRubricas,
+        salBruto: item.salBruto,
+        salLiquido: item.salLiquido,
+        custoEmpresa: item.custoEmpresa,
+        cargoDescricao: item.cargoDescricao,
+        centroCustoDescricao: item.centroCustoDescricao,
+        linhaNegocioDescricao: item.linhaNegocioDescricao,
+      }));
+
+      setFuncionariosResumo(funcionariosArray);
     } catch (err) {
       console.error('Erro ao buscar funcionários:', err);
       setError('Erro ao buscar funcionários');
@@ -442,10 +417,13 @@ export function FolhaPagamento() {
                     Linha de Negócio: {funcionario.linhaNegocioDescricao || '-'}
                   </Typography>
                   <Typography color="textSecondary" gutterBottom>
-                    Total: {new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }).format(funcionario.valorTotal)}
+                    Bruto: {formatMoneyDisplay(funcionario.salBruto)}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Líquido: {formatMoneyDisplay(funcionario.salLiquido)}
+                  </Typography>
+                  <Typography color="textSecondary" gutterBottom>
+                    Custo Empresa: {formatMoneyDisplay(funcionario.custoEmpresa)}
                   </Typography>
                   <Box sx={{ mt: 2 }}>
                     <Button
