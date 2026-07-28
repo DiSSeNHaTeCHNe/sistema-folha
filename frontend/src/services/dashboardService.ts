@@ -2,7 +2,7 @@ import api from './api';
 
 export interface DashboardStats {
   totalFuncionarios: number;
-  custoMensalFolha: number;
+  custoMensalFolha: string | number;
   totalBeneficiosAtivos: number;
   porLinhaNegocio: LinhaNegocioStats[];
   porCentroCusto: CentroCustoStats[];
@@ -46,7 +46,7 @@ export interface RubricaStats {
 
 export interface EvolucaoMensal {
   mesAno: string;
-  valorTotal: number;
+  valorTotal: string | number;
   quantidadeFuncionarios: number;
 }
 

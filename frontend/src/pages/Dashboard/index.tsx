@@ -38,6 +38,7 @@ import { getDashboardStats } from '../../services/dashboardService';
 import type { DashboardStats } from '../../services/dashboardService';
 import { useNotification } from '../../hooks/useNotification';
 import { Notification } from '../../components/Notification';
+import { formatMoneyDisplay } from '../../utils/money';
 
 const pieColors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'];
 
@@ -210,15 +211,10 @@ export default function Dashboard() {
               <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                    Custo Mensal da Folha
+                    Custo Empresa
                   </Typography>
                   <Typography variant="h4" fontWeight="bold" color="success.main">
-                    {stats.custoMensalFolha.toLocaleString('pt-BR', { 
-                      style: 'currency', 
-                      currency: 'BRL',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0
-                    })}
+                    {formatMoneyDisplay(stats.custoMensalFolha)}
                   </Typography>
                   <Chip 
                     label="+5.2% este mês" 
