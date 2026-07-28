@@ -36,6 +36,7 @@ import { folhaPagamentoService } from '../../services/folhaPagamentoService';
 import { resumoFolhaPagamentoService, type ResumoFolhaPagamento } from '../../services/resumoFolhaPagamentoService';
 import { centroCustoService } from '../../services/centroCustoService';
 import { linhaNegocioService } from '../../services/linhaNegocioService';
+import { formatMoneyDisplay } from '../../utils/money';
 
 interface CentroCusto {
   id: number;
@@ -537,7 +538,9 @@ export function FolhaPagamento() {
                   <TableCell align="right">Total Encargos</TableCell>
                   <TableCell align="right">Total Pagamentos</TableCell>
                   <TableCell align="right">Total Descontos</TableCell>
+                  <TableCell align="right">Total Bruto</TableCell>
                   <TableCell align="right">Total Líquido</TableCell>
+                  <TableCell align="right">Custo Empresa</TableCell>
                   <TableCell align="center">Ações</TableCell>
                 </TableRow>
               </TableHead>
@@ -562,29 +565,25 @@ export function FolhaPagamento() {
                     </TableCell>
                     <TableCell align="right">{resumo.totalEmpregados}</TableCell>
                     <TableCell align="right">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(resumo.totalEncargos)}
+                      {formatMoneyDisplay(resumo.totalEncargos)}
                     </TableCell>
                     <TableCell align="right">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(resumo.totalPagamentos)}
+                      {formatMoneyDisplay(resumo.totalPagamentos)}
                     </TableCell>
                     <TableCell align="right">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(resumo.totalDescontos)}
+                      {formatMoneyDisplay(resumo.totalDescontos)}
                     </TableCell>
                     <TableCell align="right">
-                      <Typography color="primary" variant="h6">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(resumo.totalLiquido)}
+                      {formatMoneyDisplay(resumo.totalBruto)}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography color="primary" variant="body1">
+                        {formatMoneyDisplay(resumo.totalLiquido)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography color="success.main" variant="body1" fontWeight="medium">
+                        {formatMoneyDisplay(resumo.totalCustoEmpresa)}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">

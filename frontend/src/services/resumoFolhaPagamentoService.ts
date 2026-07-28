@@ -3,10 +3,12 @@ import api from './api';
 export interface ResumoFolhaPagamento {
   id: number;
   totalEmpregados: number;
-  totalEncargos: number;
-  totalPagamentos: number;
-  totalDescontos: number;
-  totalLiquido: number;
+  totalEncargos: string | number;
+  totalPagamentos: string | number;
+  totalDescontos: string | number;
+  totalLiquido: string | number;
+  totalBruto: string | number;
+  totalCustoEmpresa: string | number;
   competenciaInicio: string;
   competenciaFim: string;
   dataImportacao: string;
