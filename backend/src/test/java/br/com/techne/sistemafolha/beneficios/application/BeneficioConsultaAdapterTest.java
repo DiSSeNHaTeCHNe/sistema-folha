@@ -13,11 +13,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -135,6 +138,59 @@ class BeneficioConsultaAdapterTest {
         long count = adapter.contarLancamentosAtivosNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM);
 
         assertEquals(3L, count);
+    }
+
+    @Test
+    void somarValorPorFuncionariosECompetencia_batchRetornaMapaPorFuncionario() {
+        when(beneficioMensalRepository.sumValorPorFuncionariosECompetencia(
+                Set.of(1L, 2L), COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(
+                new Object[] {1L, new BigDecimal("700.00")},
+                new Object[] {2L, new BigDecimal("300.00")}));
+
+        Map<Long, BigDecimal> totais = adapter.somarValorPorFuncionariosECompetencia(
+            Set.of(1L, 2L), COMPETENCIA_INICIO, COMPETENCIA_FIM);
+
+        assertEquals(new BigDecimal("700.00"), totais.get(1L));
+        assertEquals(new BigDecimal("300.00"), totais.get(2L));
+        verify(beneficioMensalRepository).sumValorPorFuncionariosECompetencia(
+            Set.of(1L, 2L), COMPETENCIA_INICIO, COMPETENCIA_FIM);
+    }
+
+    @Test
+    void somarValorPorFuncionariosECompetencia_setVazio_retornaMapaVazio() {
+        Map<Long, BigDecimal> totais = adapter.somarValorPorFuncionariosECompetencia(
+            Set.of(), COMPETENCIA_INICIO, COMPETENCIA_FIM);
+
+        assertTrue(totais.isEmpty());
+    }
+
+    @Test
+    void somarValorPorCompetenciaECentros_filtraCentrosNaQuery() {
+        when(beneficioMensalRepository.sumValorPorCompetenciaECentros(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)))
+            .thenReturn(new BigDecimal("1250.00"));
+
+        BigDecimal total = adapter.somarValorPorCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+
+        assertEquals(new BigDecimal("1250.00"), total);
+        verify(beneficioMensalRepository).sumValorPorCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+    }
+
+    @Test
+    void somarValorPorCompetenciaECentros_centrosVazios_retornaZero() {
+        BigDecimal total = adapter.somarValorPorCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of());
+
+        assertEquals(BigDecimal.ZERO, total);
+    }
+
+    @Test
+    void somarValorPorCompetenciaECentros_competenciaNula_lancaIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () ->
+            adapter.somarValorPorCompetenciaECentros(null, COMPETENCIA_FIM, Set.of(100L)));
     }
 
     private Funcionario funcionario(Long id) {

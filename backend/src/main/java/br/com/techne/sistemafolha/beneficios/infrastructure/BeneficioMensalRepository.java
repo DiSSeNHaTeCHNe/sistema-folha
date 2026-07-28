@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -116,4 +117,31 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
     void deleteByCompetenciaInicioAndCompetenciaFim(
         @Param("competenciaInicio") LocalDate competenciaInicio,
         @Param("competenciaFim") LocalDate competenciaFim);
+
+    @Query("""
+        SELECT bm.funcionario.id, COALESCE(SUM(bm.valor), 0)
+        FROM BeneficioMensal bm
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND bm.funcionario.id IN :funcionarioIds
+        GROUP BY bm.funcionario.id
+        """)
+    List<Object[]> sumValorPorFuncionariosECompetencia(
+        @Param("funcionarioIds") Collection<Long> funcionarioIds,
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim);
+
+    @Query("""
+        SELECT COALESCE(SUM(bm.valor), 0)
+        FROM BeneficioMensal bm
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND bm.funcionario.centroCusto.id IN :centroCustoIds
+        """)
+    BigDecimal sumValorPorCompetenciaECentros(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
 }

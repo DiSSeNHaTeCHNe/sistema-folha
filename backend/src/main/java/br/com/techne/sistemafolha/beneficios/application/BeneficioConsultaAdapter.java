@@ -8,7 +8,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -69,6 +72,35 @@ public class BeneficioConsultaAdapter implements BeneficioConsultaPort {
                 && b.getFuncionario().getCentroCusto() != null
                 && centrosCustoIds.contains(b.getFuncionario().getCentroCusto().getId()))
             .count();
+    }
+
+    @Override
+    public Map<Long, BigDecimal> somarValorPorFuncionariosECompetencia(
+            Set<Long> funcionarioIds, LocalDate competenciaInicio, LocalDate competenciaFim) {
+        validarCompetencia(competenciaInicio, competenciaFim);
+        if (funcionarioIds == null || funcionarioIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Long, BigDecimal> resultado = new HashMap<>();
+        for (Object[] row : beneficioMensalRepository.sumValorPorFuncionariosECompetencia(
+                funcionarioIds, competenciaInicio, competenciaFim)) {
+            Long funcionarioId = (Long) row[0];
+            BigDecimal total = row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO;
+            resultado.put(funcionarioId, total);
+        }
+        return resultado;
+    }
+
+    @Override
+    public BigDecimal somarValorPorCompetenciaECentros(
+            LocalDate competenciaInicio, LocalDate competenciaFim, Set<Long> centrosCustoIds) {
+        validarCompetencia(competenciaInicio, competenciaFim);
+        if (centrosCustoIds == null || centrosCustoIds.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal total = beneficioMensalRepository.sumValorPorCompetenciaECentros(
+            competenciaInicio, competenciaFim, centrosCustoIds);
+        return total != null ? total : BigDecimal.ZERO;
     }
 
     private void validarFuncionarioECompetencia(
