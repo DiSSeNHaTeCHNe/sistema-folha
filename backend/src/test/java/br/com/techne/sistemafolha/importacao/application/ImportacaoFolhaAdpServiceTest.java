@@ -6,6 +6,7 @@ import br.com.techne.sistemafolha.cadastros.port.RubricaImportRef;
 import br.com.techne.sistemafolha.folha.api.FolhaPagamentoDTO;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FolhaDuplicadaException;
+import br.com.techne.sistemafolha.folha.domain.FolhaProcessamentoFalhaException;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoCommand;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoPort;
@@ -163,21 +164,21 @@ class ImportacaoFolhaAdpServiceTest {
     }
 
     @Test
-    void importar_processamentoFalha_propagaExcecao() throws Exception {
+    void importar_processamentoFalha_propagaFolhaProcessamentoFalhaException() throws Exception {
         MockMultipartFile arquivo = arquivoComCompetencia();
         when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(false);
         when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
         when(folhaProcessamentoPort.processar(
             eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
-            .thenThrow(new RuntimeException("Erro no processamento da ficha"));
+            .thenThrow(new RuntimeException("Falha interna do motor"));
 
-        RuntimeException ex = assertThrows(
-            RuntimeException.class,
+        FolhaProcessamentoFalhaException ex = assertThrows(
+            FolhaProcessamentoFalhaException.class,
             () -> importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false)
         );
 
-        assertEquals("Erro no processamento da ficha", ex.getMessage());
+        assertEquals("Falha interna do motor", ex.getMessage());
         verify(folhaImportacaoPort).persistirImportacao(any());
         verify(folhaProcessamentoPort).processar(COMPETENCIA_INICIO, COMPETENCIA_FIM, false, false);
     }

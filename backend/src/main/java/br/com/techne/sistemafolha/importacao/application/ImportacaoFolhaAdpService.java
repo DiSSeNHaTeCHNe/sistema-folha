@@ -6,6 +6,7 @@ import br.com.techne.sistemafolha.cadastros.port.RubricaImportRef;
 import br.com.techne.sistemafolha.folha.api.FolhaPagamentoDTO;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FolhaDuplicadaException;
+import br.com.techne.sistemafolha.folha.domain.FolhaProcessamentoFalhaException;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoCommand;
 import br.com.techne.sistemafolha.folha.port.FolhaImportacaoLinhaCommand;
@@ -257,8 +258,16 @@ public class ImportacaoFolhaAdpService {
         List<FolhaPagamentoDTO> persistidas = folhaImportacaoPort.persistirImportacao(command);
         logger.info("Importação de folha ADP concluída - Registros processados: {}", persistidas.size());
 
-        ProcessamentoResultadoDTO processamento = folhaProcessamentoPort.processar(
-            dataInicio, dataFim, isDecimoTerceiro, false);
+        ProcessamentoResultadoDTO processamento;
+        try {
+            processamento = folhaProcessamentoPort.processar(
+                dataInicio, dataFim, isDecimoTerceiro, false);
+        } catch (FolhaProcessamentoFalhaException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            throw new FolhaProcessamentoFalhaException(detail, e);
+        }
         logger.info("Processamento de ficha concluído - Fichas: {}, Linhas: {}",
             processamento.totalFichas(), processamento.totalLinhas());
 
