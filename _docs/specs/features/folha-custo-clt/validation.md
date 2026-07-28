@@ -1,8 +1,9 @@
 # Folha CLT — Bruto, Líquido e Custo Empresa Validation
 
 **Date**: 2026-07-28  
+**Re-run (cycle 1)**: 2026-07-28 17:44 UTC-3 — commits `b78ba23`..`3d14347`  
 **Spec**: `_docs/specs/features/folha-custo-clt/spec.md`  
-**Diff range**: `c4ac1699a03f4acc20f7066eacda95d698c488b2..cd046e4d1b662c7852c4415d6948f2fcc7f3eeec`  
+**Diff range**: `c4ac1699a03f4acc20f7066eacda95d698c488b2..HEAD`  
 **Verifier**: independent sub-agent (author ≠ verifier)
 
 ---
@@ -133,14 +134,27 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 ---
 
+## Cycle 1 Re-check (targeted gaps)
+
+| Target | Expected | Evidence (re-run) | Result |
+| ------ | -------- | ----------------- | ------ |
+| FCLT-ACL-11 | Sum cards = scoped resumo | `FolhaAclParidadeResumoCardsTest.java:150-152` — `compareTo` paridade bruto/líquido/custoEmpresa | ✅ PASS |
+| FCLT-24 | Cadastro fixo stale until reprocess | `FolhaProcessamentoServiceTest.java:258-274` — 10500 unchanged; 10800 after reprocess | ✅ PASS |
+| FCLT-INT-02 | Scoped CUSTO_FIXO ACL by CC | `FolhaConsultaAdapterTest.java:192-210` — `Set.of(100L)` + `verify(findByCompetenciaAndCentrosCustoIds)` | ✅ PASS |
+| Security processar | ADMIN only | `SecurityConfigFolhaProcessamentoTest.java:47-74` — 403 USER/ACESSO_TOTAL | ✅ PASS |
+| Security rubrica-fixa | ADMIN only | `SecurityConfigFuncionarioRubricaFixaTest.java:47-64` — 403 USER on GET/POST | ✅ PASS |
+| FE lint (feature scope) | 0 errors on touched pages | `eslint` on Dashboard/FolhaPagamento/Rubricas/RubricasFixas/folhaPagamentoService — 0 errors, 1 warning | ✅ PASS |
+
+---
+
 ## Gate Check
 
 - **Gate command**: `cd backend && mvn test && cd ../frontend && npm run lint && npm run build`
-- **Backend**: ✅ BUILD SUCCESS — **222** tests, **0** failed, **0** skipped
-- **Frontend lint (feature files)**: ✅ 0 errors on Dashboard/FolhaPagamento/Rubricas/RubricasFixas/folhaPagamentoService (1 hook-deps warning in Rubricas pre-existing)
-- **Frontend lint (repo-wide)**: ❌ pre-existing debt outside feature scope
+- **Backend**: ✅ BUILD SUCCESS — **232** tests, **0** failed, **0** skipped (re-run 2026-07-28)
+- **Frontend lint (feature files)**: ✅ 0 errors on Dashboard/FolhaPagamento/Rubricas/RubricasFixas/folhaPagamentoService (1 hook-deps warning in Rubricas)
+- **Frontend lint (repo-wide)**: ❌ **36 errors**, 8 warnings — pre-existing debt (`api.ts`, Cargos, Organograma, etc.)
 - **Frontend build**: ✅ `tsc -b && vite build` success
-- **Test files**: base `c4ac169` → **26**; HEAD → **32** (+6 feature test classes)
+- **Test files**: base `c4ac169` → **26**; HEAD → **35** (+9 test classes incl. cycle-1 security + paridade)
 - **ModularArchitectureTest**: ✅ 18 rules passed
 
 ---
@@ -200,14 +214,15 @@ Scope: 40 ACs (FCLT-17 P3 deferred). Evidence-or-zero: no `file:line` + assertio
 
 ## Summary
 
-**Overall**: ❌ **FAIL**
+**Overall**: ❌ **FAIL** (cycle 1 re-run)
 
-**Spec-anchored check**: 28/40 ACs with test assertions matching spec outcomes; 8 spec-precision gaps (FE); 5 true gaps  
+**Cycle 1 targets**: FCLT-ACL-11, FCLT-24, FCLT-INT-02, security fixes, FE lint (feature scope) — all ✅  
+**Spec-anchored check**: **31/40** ACs with test assertions; **8/40** ⚠️ impl-only (FE); **3/40** ❌ schema/migration evidence  
 **Sensor**: 5 injected, 5 killed, 0 survived  
-**Gate**: backend 222/222 pass; frontend lint fail; frontend build pass
+**Gate**: backend **232/232** pass; frontend **repo-wide lint fail** (36 errors); frontend build pass
 
-**What works**: Backend motor, ACL dual-path, rateio, processamento (ADP + fixo + férias), dashboard custo empresa, discrimination sensor on critical paths.
+**What works**: Backend motor, ACL dual-path, rateio, processamento (ADP + fixo + férias), paridade resumo↔cards, stale custo fixo, scoped CUSTO_FIXO ACL, ADMIN-only processar/rubrica-fixa, dashboard custo empresa.
 
-**Next steps**: (1) add FE tests per AD-004 for visible ACs; (2) optional Flyway smoke for FCLT-01/15/18; (3) address repo-wide lint debt outside feature scope.
+**Remaining gaps**: (1) FE Vitest/Playwright per AD-004; (2) Flyway smoke for FCLT-01/15/18; (3) repo-wide lint debt (blocks full gate).
 
 **Lessons**: not recorded (`lessons.py` requires `--feature/--signal/--source`; manual follow-up recommended).
