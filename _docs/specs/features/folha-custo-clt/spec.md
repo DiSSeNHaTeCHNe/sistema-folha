@@ -350,49 +350,49 @@ Ver decisões em `context.md` (ACL-1…5, INT-1, INT-2).
 | --- | --- | --- | --- |
 | FCLT-01 | P1: Operadores migração | T1 | Done |
 | FCLT-02 | P1: Operadores API | T2 | Done |
-| FCLT-03 | P1: Operadores UI | T21 | Tasks |
+| FCLT-03 | P1: Operadores UI | T21 | Done |
 | FCLT-04 | P1: Ficha pós-import | T3, T4, T6 | Done |
 | FCLT-05 | P1: Motor fórmulas | T5, T6, T7 | Done |
-| FCLT-06 | P1: Custo empresa global | T5, T12, T13 | Tasks |
+| FCLT-06 | P1: Custo empresa global | T5, T12, T13 | Done |
 | FCLT-07 | P1: Snapshot operadores linha | T3, T4, T6 | Done |
 | FCLT-08 | P1: Testes motor | T5, T7 | Done |
-| FCLT-INT-01 | P1: Benefícios pós-import folha | T8, T13 | Tasks |
-| FCLT-09 | P1: FE resumo colunas | T22 | Tasks |
-| FCLT-10 | P1: FE cards | T23 | Tasks |
-| FCLT-11 | P1: FE abas | T24 | Tasks |
-| FCLT-12 | P1: FE dinheiro string | T22, T23 | Tasks |
-| FCLT-13 | P2: Rateio encargos | T9 | Tasks |
-| FCLT-14 | P2: Rateio só total | T9 | Tasks |
-| FCLT-15 | P2: Regime CLT | T17 | Tasks |
-| FCLT-16 | P2: Férias 2,5 | T20 | Tasks |
+| FCLT-INT-01 | P1: Benefícios pós-import folha | T8, T13 | Done |
+| FCLT-09 | P1: FE resumo colunas | T22 | Done |
+| FCLT-10 | P1: FE cards | T23 | Done |
+| FCLT-11 | P1: FE abas | T24 | Done |
+| FCLT-12 | P1: FE dinheiro string | T22, T23 | Done |
+| FCLT-13 | P2: Rateio encargos | T9 | Done |
+| FCLT-14 | P2: Rateio só total | T9 | Done |
+| FCLT-15 | P2: Regime CLT | T17 | Done |
+| FCLT-16 | P2: Férias 2,5 | T20 | Done |
 | FCLT-17 | P3: Rubricas calc. avançadas | — | Deferred |
-| FCLT-18 | P2: Schema custo fixo | T17 | Tasks |
-| FCLT-19 | P2: API custo fixo CRUD | T18 | Tasks |
-| FCLT-20 | P2: Conflito vigência | T18 | Tasks |
-| FCLT-21 | P2: UI Rubricas Fixas | T25 | Tasks |
-| FCLT-22 | P2: Injeção processamento | T19 | Tasks |
-| FCLT-23 | P2: Dedup ADP vs fixo | T19 | Tasks |
-| FCLT-24 | P2: Stale até reprocess | T19 | Tasks |
-| FCLT-25 | P2: Férias operadores | T20 | Tasks |
-| FCLT-INT-02 | P2: ACL custo fixo | T19 | Tasks |
-| FCLT-ACL-01 | P1: Resumo scoped 3 totais | T11, T12 | Tasks |
-| FCLT-ACL-02 | P1: Resumo scoped encargos 0 | T11, T12 | Tasks |
-| FCLT-ACL-03 | P1: Resumo global | T12 | Tasks |
-| FCLT-ACL-04 | P1: Resumo zeros A2 | T12 | Tasks |
-| FCLT-ACL-05 | P1: Deny | T12 | Tasks |
-| FCLT-ACL-06 | P1: Teste discrimination | T12 | Tasks |
-| FCLT-ACL-07 | P1: API totais campos | T13 | Tasks |
-| FCLT-ACL-08 | P1: Totais scoped | T10, T13 | Tasks |
-| FCLT-ACL-09 | P1: Totais + rateio total | T9, T13 | Tasks |
-| FCLT-ACL-10 | P1: FE sem agregação local | T23 | Tasks |
-| FCLT-ACL-11 | P1: Paridade resumo↔cards | T23 | Tasks |
-| FCLT-ACL-12 | P1: API linhas totalizer | T14 | Tasks |
-| FCLT-ACL-13 | P1: Detalhe deny out-of-scope | T14 | Tasks |
-| FCLT-ACL-14 | P1: FE abas a11y | T24 | Tasks |
-| FCLT-ACL-15 | P1: Aba custo scoped | T14, T24 | Tasks |
-| FCLT-ACL-16 | P1: Dashboard scoped custo | T15, T26 | Tasks |
-| FCLT-ACL-17 | P1: Dashboard global custo | T15 | Tasks |
-| FCLT-ACL-18 | P1: Evolução custo scoped | T15, T16 | Tasks |
+| FCLT-18 | P2: Schema custo fixo | T17 | Done |
+| FCLT-19 | P2: API custo fixo CRUD | T18 | Done |
+| FCLT-20 | P2: Conflito vigência | T18 | Done |
+| FCLT-21 | P2: UI Rubricas Fixas | T25 | Done |
+| FCLT-22 | P2: Injeção processamento | T19 | Done |
+| FCLT-23 | P2: Dedup ADP vs fixo | T19 | Done |
+| FCLT-24 | P2: Stale até reprocess | T19 | Done |
+| FCLT-25 | P2: Férias operadores | T20 | Done |
+| FCLT-INT-02 | P2: ACL custo fixo | T19 | Done |
+| FCLT-ACL-01 | P1: Resumo scoped 3 totais | T11, T12 | Done |
+| FCLT-ACL-02 | P1: Resumo scoped encargos 0 | T11, T12 | Done |
+| FCLT-ACL-03 | P1: Resumo global | T12 | Done |
+| FCLT-ACL-04 | P1: Resumo zeros A2 | T12 | Done |
+| FCLT-ACL-05 | P1: Deny | T12 | Done |
+| FCLT-ACL-06 | P1: Teste discrimination | T12 | Done |
+| FCLT-ACL-07 | P1: API totais campos | T13 | Done |
+| FCLT-ACL-08 | P1: Totais scoped | T10, T13 | Done |
+| FCLT-ACL-09 | P1: Totais + rateio total | T9, T13 | Done |
+| FCLT-ACL-10 | P1: FE sem agregação local | T23 | Done |
+| FCLT-ACL-11 | P1: Paridade resumo↔cards | T23 | Done |
+| FCLT-ACL-12 | P1: API linhas totalizer | T14 | Done |
+| FCLT-ACL-13 | P1: Detalhe deny out-of-scope | T14 | Done |
+| FCLT-ACL-14 | P1: FE abas a11y | T24 | Done |
+| FCLT-ACL-15 | P1: Aba custo scoped | T14, T24 | Done |
+| FCLT-ACL-16 | P1: Dashboard scoped custo | T15, T26 | Done |
+| FCLT-ACL-17 | P1: Dashboard global custo | T15 | Done |
+| FCLT-ACL-18 | P1: Evolução custo scoped | T15, T16 | Done |
 
 **Coverage:** 41 requirements mapped (FCLT-17 P3 deferred) → 27 tasks T1–T27
 

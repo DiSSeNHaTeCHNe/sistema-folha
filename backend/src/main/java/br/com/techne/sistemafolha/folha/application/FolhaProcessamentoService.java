@@ -3,8 +3,7 @@ package br.com.techne.sistemafolha.folha.application;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixa;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
-import br.com.techne.sistemafolha.cadastros.infrastructure.FuncionarioRubricaFixaRepository;
-import br.com.techne.sistemafolha.cadastros.infrastructure.RubricaRepository;
+import br.com.techne.sistemafolha.cadastros.port.CadastrosLookupPort;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoOpcoes;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FichaLinha;
@@ -44,8 +43,7 @@ public class FolhaProcessamentoService {
     private final FolhaPagamentoRepository folhaPagamentoRepository;
     private final FichaMensalRepository fichaMensalRepository;
     private final FichaLinhaRepository fichaLinhaRepository;
-    private final FuncionarioRubricaFixaRepository funcionarioRubricaFixaRepository;
-    private final RubricaRepository rubricaRepository;
+    private final CadastrosLookupPort cadastrosLookupPort;
 
     @Transactional
     public ProcessamentoResultadoDTO processar(
@@ -61,8 +59,8 @@ public class FolhaProcessamentoService {
         Map<Long, List<FolhaPagamento>> porFuncionario = linhasAdp.stream()
             .collect(Collectors.groupingBy(l -> l.getFuncionario().getId()));
 
-        Map<Long, List<FuncionarioRubricaFixa>> fixosPorFuncionario = funcionarioRubricaFixaRepository
-            .findVigentesNaCompetencia(competenciaInicio, competenciaFim)
+        Map<Long, List<FuncionarioRubricaFixa>> fixosPorFuncionario = cadastrosLookupPort
+            .findRubricasFixasVigentesNaCompetencia(competenciaInicio, competenciaFim)
             .stream()
             .collect(Collectors.groupingBy(f -> f.getFuncionario().getId()));
 
@@ -176,8 +174,7 @@ public class FolhaProcessamentoService {
 
     private FichaLinha montarLinhaFeriasCalculada(
             FichaMensal ficha, List<FolhaMotorCalculo.LinhaCalculoInput> inputsAtuais) {
-        return rubricaRepository.findByCodigo(CODIGO_RUBRICA_FERIAS)
-            .filter(r -> Boolean.TRUE.equals(r.getAtivo()))
+        return cadastrosLookupPort.findRubricaAtivaByCodigo(CODIGO_RUBRICA_FERIAS)
             .map(rubrica -> {
                 FolhaMotorCalculo.TotaisFuncionario parcial = FolhaMotorCalculo.calcularPorLinhas(inputsAtuais);
                 BigDecimal valorFerias = parcial.bruto()

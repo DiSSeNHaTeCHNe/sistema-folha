@@ -4,8 +4,7 @@ import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixa;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
-import br.com.techne.sistemafolha.cadastros.infrastructure.FuncionarioRubricaFixaRepository;
-import br.com.techne.sistemafolha.cadastros.infrastructure.RubricaRepository;
+import br.com.techne.sistemafolha.cadastros.port.CadastrosLookupPort;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoOpcoes;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FichaLinha;
@@ -50,10 +49,7 @@ class FolhaProcessamentoServiceTest {
     private FichaLinhaRepository fichaLinhaRepository;
 
     @Mock
-    private FuncionarioRubricaFixaRepository funcionarioRubricaFixaRepository;
-
-    @Mock
-    private RubricaRepository rubricaRepository;
+    private CadastrosLookupPort cadastrosLookupPort;
 
     @InjectMocks
     private FolhaProcessamentoService folhaProcessamentoService;
@@ -70,7 +66,7 @@ class FolhaProcessamentoServiceTest {
         when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(linhaSalario, linhaInss));
-        when(funcionarioRubricaFixaRepository.findVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
             .thenReturn(List.of());
         when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
             FichaMensal ficha = inv.getArgument(0);
@@ -121,7 +117,7 @@ class FolhaProcessamentoServiceTest {
         when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(linhaSalario));
-        when(funcionarioRubricaFixaRepository.findVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
             .thenReturn(List.of(fixo));
         when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
             FichaMensal ficha = inv.getArgument(0);
@@ -163,7 +159,7 @@ class FolhaProcessamentoServiceTest {
         when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(linhaSalario));
-        when(funcionarioRubricaFixaRepository.findVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
             .thenReturn(List.of(fixo));
         when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
             FichaMensal ficha = inv.getArgument(0);
@@ -195,9 +191,9 @@ class FolhaProcessamentoServiceTest {
         when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(linhaSalario));
-        when(funcionarioRubricaFixaRepository.findVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
             .thenReturn(List.of());
-        when(rubricaRepository.findByCodigo("5000")).thenReturn(Optional.of(ferias));
+        when(cadastrosLookupPort.findRubricaAtivaByCodigo("5000")).thenReturn(Optional.of(ferias));
         when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
             FichaMensal ficha = inv.getArgument(0);
             if (ficha.getId() == null) {

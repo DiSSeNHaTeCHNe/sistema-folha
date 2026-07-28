@@ -465,10 +465,10 @@ T27
 - Skill: `spring-boot-new-endpoint`, `spring-security`
 
 **Done when**:
-- [ ] GROSS/NET/COMPANY_COST filtram operador ≠ 0
-- [ ] COMPANY_COST lista ficha_linha por origem + benefícios (origem=BENEFICIO)
-- [ ] Scoped: encargos não listados
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaFichaConsultaServiceTest`
+- [x] GROSS/NET/COMPANY_COST filtram operador ≠ 0
+- [x] COMPANY_COST lista ficha_linha por origem + benefícios (origem=BENEFICIO)
+- [x] Scoped: encargos não listados
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaFichaConsultaServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -493,10 +493,10 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] Scoped KPI ≠ liquido global snapshot
-- [ ] Global inclui encargos
-- [ ] Evolução scoped usa custo empresa por competência
-- [ ] Gate: `cd backend && mvn test -Dtest=DashboardServiceTest`
+- [x] Scoped KPI ≠ liquido global snapshot
+- [x] Global inclui encargos
+- [x] Evolução scoped usa custo empresa por competência
+- [x] Gate: `cd backend && mvn test -Dtest=DashboardServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -521,8 +521,8 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] Evolução scoped não mistura folha regular e 13º
-- [ ] Gate: `cd backend && mvn test -Dtest=DashboardServiceTest,FolhaConsultaAdapterTest`
+- [x] Evolução scoped não mistura folha regular e 13º
+- [x] Gate: `cd backend && mvn test -Dtest=DashboardServiceTest,FolhaConsultaAdapterTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -547,8 +547,8 @@ T27
 - Skill: `flyway-migration-writer`, `jpa-performance`
 
 **Done when**:
-- [ ] Schema + entities compilam
-- [ ] Gate: `cd backend && mvn clean compile`
+- [x] Schema + entities compilam
+- [x] Gate: `cd backend && mvn clean compile`
 
 **Tests**: none  
 **Gate**: build  
@@ -573,8 +573,8 @@ T27
 - Skill: `spring-boot-new-endpoint`, `spring-security`
 
 **Done when**:
-- [ ] CRUD funcional; 409 em overlap; 400 sem valor
-- [ ] Gate: `cd backend && mvn test -Dtest=FuncionarioRubricaFixaServiceTest`
+- [x] CRUD funcional; 409 em overlap; 400 sem valor
+- [x] Gate: `cd backend && mvn test -Dtest=FuncionarioRubricaFixaServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -598,10 +598,10 @@ T27
 - Skill: `jpa-performance`
 
 **Done when**:
-- [ ] Linha CUSTO_FIXO na ficha após processar
-- [ ] Alteração cadastro não reflete até reprocessar
-- [ ] ACL scoped filtra por CC do funcionário
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaProcessamentoServiceTest`
+- [x] Linha CUSTO_FIXO na ficha após processar
+- [x] Alteração cadastro não reflete até reprocessar
+- [x] ACL scoped filtra por CC do funcionário
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaProcessamentoServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -625,9 +625,9 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] Linha férias presente com origem CALCULADO
-- [ ] Totais refletem operadores da rubrica
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaProcessamentoServiceTest`
+- [x] Linha férias presente com origem CALCULADO
+- [x] Totais refletem operadores da rubrica
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaProcessamentoServiceTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -650,8 +650,8 @@ T27
 - Skill: `forms-validation`, `component-architecture` (target/AD-004)
 
 **Done when**:
-- [ ] Campos operador visíveis e persistem via API
-- [ ] Gate: `cd frontend && npm run lint && npm run build`
+- [x] Campos operador visíveis e persistem via API
+- [x] Gate: `cd frontend && npm run lint && npm run build`
 
 **Tests**: none  
 **Gate**: build  
@@ -676,8 +676,8 @@ T27
 - Skill: `api-client`
 
 **Done when**:
-- [ ] Colunas exibidas; sem `Number()` para cálculo
-- [ ] Gate: `cd frontend && npm run lint && npm run build`
+- [x] Colunas exibidas; sem `Number()` para cálculo
+- [x] Gate: `cd frontend && npm run lint && npm run build`
 
 **Tests**: none  
 **Gate**: build  
@@ -701,9 +701,9 @@ T27
 - Skill: `api-client`
 
 **Done when**:
-- [ ] Cards usam API; sem reduce de linhas
-- [ ] Três valores por funcionário
-- [ ] Gate: `cd frontend && npm run lint && npm run build`
+- [x] Cards usam API; sem reduce de linhas
+- [x] Três valores por funcionário
+- [x] Gate: `cd frontend && npm run lint && npm run build`
 
 **Tests**: none  
 **Gate**: build  
@@ -726,9 +726,9 @@ T27
 - Skill: `component-architecture`, `testing-a11y` (target)
 
 **Done when**:
-- [ ] Abas keyboard-navigable; cada aba lista rubricas filtradas pela API
-- [ ] Aba Custo distingue origens incl. BENEFICIO
-- [ ] Gate: `cd frontend && npm run lint && npm run build`
+- [x] Abas keyboard-navigable; cada aba lista rubricas filtradas pela API
+- [x] Aba Custo distingue origens incl. BENEFICIO
+- [x] Gate: `cd frontend && npm run lint && npm run build`
 
 **Tests**: none  
 **Gate**: build  
@@ -752,8 +752,8 @@ T27
 - Skill: `routing-perf`, `forms-validation`, `component-architecture`
 
 **Done when**:
-- [ ] CRUD funcional; campos valor/vigência acessíveis
-- [ ] Gate: `cd frontend && npm run lint && npm run build`
+- [x] CRUD funcional; campos valor/vigência acessíveis
+- [x] Gate: `cd frontend && npm run lint && npm run build`
 
 **Tests**: none  
 **Gate**: build  
@@ -776,8 +776,8 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] Label "Custo Empresa"; valor formatado sem recalcular
-- [ ] Gate: `cd frontend && npm run lint && npm run build`
+- [x] Label "Custo Empresa"; valor formatado sem recalcular
+- [x] Gate: `cd frontend && npm run lint && npm run build`
 
 **Tests**: none  
 **Gate**: build  
@@ -798,10 +798,10 @@ T27
 - Skill: NONE
 
 **Done when**:
-- [ ] `cd backend && mvn test` — all green
-- [ ] `cd frontend && npm run lint && npm run build` — success
-- [ ] `ModularArchitectureTest` passa
-- [ ] Atualizar traceability em `spec.md` (Execute → Done por task)
+- [x] `cd backend && mvn test` — all green
+- [x] `cd frontend && npm run lint && npm run build` — success
+- [x] `ModularArchitectureTest` passa
+- [x] Atualizar traceability em `spec.md` (Execute → Done por task)
 - [ ] Verifier automático pós-T27 (skill Execute)
 
 **Tests**: unit (full suite)  
