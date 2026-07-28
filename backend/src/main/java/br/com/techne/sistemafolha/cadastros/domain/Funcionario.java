@@ -47,6 +47,10 @@ public class Funcionario {
     @JoinColumn(name = "centro_custo_id", nullable = false)
     private CentroCusto centroCusto;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "regime_trabalho_id")
+    private RegimeTrabalho regimeTrabalho;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 
