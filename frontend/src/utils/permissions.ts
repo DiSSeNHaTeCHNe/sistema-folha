@@ -6,6 +6,7 @@ export const CADASTRO_ROUTES = [
   '/centros-custo',
   '/cargos',
   '/rubricas',
+  '/rubricas-fixas',
   '/tipos-beneficio',
   '/organograma',
   '/importacao',

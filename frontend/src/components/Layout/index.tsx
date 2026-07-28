@@ -93,6 +93,7 @@ export function Layout() {
     { text: 'Centros de Custo', icon: <Business />, path: '/centros-custo' },
     { text: 'Cargos', icon: <Work />, path: '/cargos' },
     { text: 'Rubricas', icon: <Receipt />, path: '/rubricas' },
+    { text: 'Rubricas Fixas', icon: <Receipt />, path: '/rubricas-fixas' },
     { text: 'Tipos de Benefício', icon: <CardGiftcard />, path: '/tipos-beneficio' },
     { text: 'Organograma', icon: <AccountTree />, path: '/organograma' },
     { text: 'Importação', icon: <CloudUpload />, path: '/importacao' },

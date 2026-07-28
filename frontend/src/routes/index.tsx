@@ -8,6 +8,7 @@ import Funcionarios from '../pages/Funcionarios';
 import { FolhaPagamento } from '../pages/FolhaPagamento';
 import BeneficiosMensais from '../pages/BeneficiosMensais';
 import Rubricas from '../pages/Rubricas';
+import RubricasFixas from '../pages/RubricasFixas';
 import Importacao from '../pages/Importacao';
 import { Relatorios } from '../pages/Relatorios';
 import { AuthProvider } from '../contexts/AuthContext';
@@ -59,6 +60,7 @@ export function RouterWithAuth() {
                 <Route path="/centros-custo" element={<CentrosCusto />} />
                 <Route path="/cargos" element={<Cargos />} />
                 <Route path="/rubricas" element={<Rubricas />} />
+                <Route path="/rubricas-fixas" element={<RubricasFixas />} />
                 <Route path="/tipos-beneficio" element={<TiposBeneficio />} />
                 <Route path="/organograma" element={<Organograma />} />
                 <Route path="/importacao" element={<Importacao />} />
