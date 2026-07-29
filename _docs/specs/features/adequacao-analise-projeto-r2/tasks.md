@@ -558,12 +558,12 @@ T20
 - Skill: NONE
 
 **Done when**:
-- [ ] `cd backend && mvn test` — ≥359 tests, 0 failures
-- [ ] `bash diversos/scripts/check-jacoco-thresholds.sh` exit 0
-- [ ] `cd frontend && npm run test:coverage` — ≥15 tests
-- [ ] `./diversos/scripts/sonar-analyze.sh` exit 0; bugs=0; vulns CR+MAJOR=0
-- [ ] `ModularArchitectureTest` zero violações
-- [ ] QG OK **or** ≤2 exceções anotadas para Verifier escrever em `validation.md`
+- [x] `cd backend && mvn test` — ≥359 tests, 0 failures
+- [x] `bash diversos/scripts/check-jacoco-thresholds.sh` exit 0
+- [x] `cd frontend && npm run test:coverage` — ≥15 tests
+- [x] `./diversos/scripts/sonar-analyze.sh` exit 0; bugs=0; vulns CR+MAJOR=0
+- [x] `ModularArchitectureTest` zero violações
+- [x] QG OK **or** ≤2 exceções anotadas para Verifier escrever em `validation.md`
 
 **Tests**: none (gate-only)  
 **Gate**: Full BE + JaCoCo + FE Coverage + Sonar + Arch
@@ -571,6 +571,8 @@ T20
 **Commit**: `chore(r2): phase2 full gate evidence`
 
 > **Note:** `validation.md` is written by the Verifier after T19, not in this task.
+
+**Gate evidence (2026-07-29):** BE 411 tests 0 failures; JaCoCo global 76.8% PASS; FE 16 Vitest PASS; sonar-analyze exit 0.
 
 ---
 
@@ -593,7 +595,7 @@ T20
 **Done when**:
 - [ ] Teste persiste ≥1 linha com `@Transactional` rollback **or** Testcontainers teardown
 - [ ] Gate: `cd backend && mvn test -Dtest=ImportacaoFolhaAdpIntegrationTest`
-- [ ] Se Docker indisponível: documentar N/A em validation (não bloqueia R2)
+- [x] Se Docker indisponível: documentar N/A em validation (não bloqueia R2) — Testcontainers: `Could not find a valid Docker environment` (2026-07-29)
 
 **Tests**: integration  
 **Gate**: Quick BE (integration class)
