@@ -171,7 +171,11 @@ class ResumoFolhaPagamentoServiceTest {
         ResumoFolhaPagamentoDTO dto = result.get(0);
         assertEquals(5L, dto.id());
         assertEquals(2, dto.totalEmpregados());
-        assertEquals(0, BigDecimal.ZERO.compareTo(dto.totalEncargos()));
+        assertEquals(0, new BigDecimal("10000.00").compareTo(dto.totalEncargos()));
+        assertEquals(0, new BigDecimal("8000.00").compareTo(dto.totalCustoEmpresa()));
+        assertNotEquals(0, dto.totalEncargos().compareTo(BigDecimal.ZERO));
+        assertNotEquals(0, dto.totalEncargos().add(dto.totalCustoEmpresa())
+            .compareTo(dto.totalCustoEmpresa()));
         assertEquals(0, new BigDecimal("8000.00").compareTo(dto.totalPagamentos()));
         assertEquals(0, new BigDecimal("700.00").compareTo(dto.totalDescontos()));
         assertEquals(0, new BigDecimal("7300.00").compareTo(dto.totalLiquido()));

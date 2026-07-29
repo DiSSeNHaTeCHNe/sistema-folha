@@ -105,7 +105,7 @@ public class ResumoFolhaPagamentoService {
         List<FolhaLinhaSnapshot> linhas = folhaConsultaPort.findLinhasAtivasPorCompetencia(
             resumo.getCompetenciaInicio(), resumo.getCompetenciaFim(), decimoTerceiro, null);
         if (!linhas.isEmpty()) {
-            return toDtoFromLinhas(resumo, linhas);
+            return toDtoFromLinhas(resumo, linhas, resumo.getTotalEncargos());
         }
 
         BigDecimal totalCustoEmpresa = FolhaCustoEmpresaComposer.compor(
@@ -125,11 +125,13 @@ public class ResumoFolhaPagamentoService {
         List<FolhaLinhaSnapshot> linhas = folhaConsultaPort.findLinhasAtivasPorCompetencia(
             resumo.getCompetenciaInicio(), resumo.getCompetenciaFim(),
             Boolean.TRUE.equals(resumo.getDecimoTerceiro()), centros);
-        return toDtoFromLinhas(resumo, linhas);
+        return toDtoFromLinhas(resumo, linhas, BigDecimal.ZERO);
     }
 
     private ResumoFolhaPagamentoDTO toDtoFromLinhas(
-            ResumoFolhaPagamento resumo, List<FolhaLinhaSnapshot> linhas) {
+            ResumoFolhaPagamento resumo,
+            List<FolhaLinhaSnapshot> linhas,
+            BigDecimal totalEncargosInformativo) {
         Set<Long> funcionarioIds = linhas.stream()
             .map(FolhaLinhaSnapshot::funcionarioId)
             .filter(Objects::nonNull)
@@ -147,7 +149,7 @@ public class ResumoFolhaPagamentoService {
         return montarDto(
             resumo,
             Math.toIntExact(totais.empregados()),
-            totais.totalEncargos(),
+            totalEncargosInformativo,
             pagamentos,
             descontos,
             totais.totalLiquido(),
