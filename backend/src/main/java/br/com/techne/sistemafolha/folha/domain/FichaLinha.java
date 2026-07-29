@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.math.BigDecimal;
 
@@ -31,6 +33,7 @@ public class FichaLinha {
     private BigDecimal valor;
 
     @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Column(name = "origem_linha", nullable = false, columnDefinition = "origem_linha")
     private OrigemLinha origemLinha;
 
@@ -42,6 +45,9 @@ public class FichaLinha {
 
     @Column(name = "operador_custo", nullable = false)
     private Short operadorCusto;
+
+    @Column(precision = 7, scale = 4)
+    private BigDecimal porcentagem;
 
     @Column(nullable = false)
     private Boolean ativo = true;
