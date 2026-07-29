@@ -10,7 +10,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design**: `_docs/specs/features/organograma-linhas-hierarquia/design.md`  
 **Spec**: `_docs/specs/features/organograma-linhas-hierarquia/spec.md`  
-**Status**: Draft — aguardando aprovação
+**Status**: Execute complete — T1–T6 done (commits 573dcd7…616cee6)
 
 ---
 
@@ -244,7 +244,7 @@ Phase 1:  T1 ──→ T2
 Phase 2:  T3 ──→ T4
 Phase 3:  T5 ──→ T6 ──→ [Verifier automático]
 
-Batch único (6 tasks) — Execute inline, sem sub-agents.
+Batch único (6 tasks) — Worker 1 complete (573dcd7…616cee6).
 ```
 
 ---

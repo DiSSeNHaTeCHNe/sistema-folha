@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-07-29  
-**Current Work:** `folha-custo-clt-fix3` — Execute T1–T12 complete @ `69f4258` on `feat/folha-custo-clt` → pronto para Verifier
+**Current Work:** _None — organograma-linhas-hierarquia merged to main (2026-07-29)_
 
 ---
 
@@ -109,7 +109,8 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Feature (active)**: `folha-custo-clt-fix3` → **Execute complete** (2026-07-29) — T1–T12 @ `69f4258` on `feat/folha-custo-clt`; pronto para Verifier
+- **Feature (done)**: `organograma-linhas-hierarquia` → Execute + Verifier PASS @ `260aeeb` (fix cycle 1) — merged to `main` (2026-07-29)
+- **Feature (idle)**: `folha-custo-clt-fix3` → **Execute complete** (2026-07-29) — T1–T12 @ `69f4258` on `feat/folha-custo-clt`; pronto para Verifier
 - **Feature (done)**: `folha-custo-clt-fix2` → Execute + Verifier PASS @ `a31bc15` on `feat/folha-custo-clt`
 - **Feature (branch)**: `folha-custo-clt` → fix2 layered on same branch; squash merge pendente pelo usuário
 - **Feature (idle)**: `ajustes-listagens` → Verifier PASS (uncommitted)
