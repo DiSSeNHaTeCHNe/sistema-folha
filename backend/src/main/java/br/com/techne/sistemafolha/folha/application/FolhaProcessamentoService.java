@@ -154,6 +154,7 @@ public class FolhaProcessamentoService {
         linha.setOperadorBruto(rubrica.getOperadorBruto());
         linha.setOperadorLiquido(rubrica.getOperadorLiquido());
         linha.setOperadorCusto(rubrica.getOperadorCusto());
+        linha.setPorcentagem(snapshotPorcentagem(rubrica.getPorcentagem()));
         linha.setAtivo(true);
         return linha;
     }
@@ -168,6 +169,7 @@ public class FolhaProcessamentoService {
         linha.setOperadorBruto(rubrica.getOperadorBruto());
         linha.setOperadorLiquido(rubrica.getOperadorLiquido());
         linha.setOperadorCusto(rubrica.getOperadorCusto());
+        linha.setPorcentagem(snapshotPorcentagem(rubrica.getPorcentagem()));
         linha.setAtivo(true);
         return linha;
     }
@@ -189,6 +191,7 @@ public class FolhaProcessamentoService {
                 linha.setOperadorBruto(rubrica.getOperadorBruto());
                 linha.setOperadorLiquido(rubrica.getOperadorLiquido());
                 linha.setOperadorCusto(rubrica.getOperadorCusto());
+                linha.setPorcentagem(snapshotPorcentagem(rubrica.getPorcentagem()));
                 linha.setAtivo(true);
                 return linha;
             })
@@ -200,7 +203,12 @@ public class FolhaProcessamentoService {
             linha.getValor(),
             linha.getOperadorBruto(),
             linha.getOperadorLiquido(),
-            linha.getOperadorCusto()
+            linha.getOperadorCusto(),
+            linha.getPorcentagem()
         );
+    }
+
+    private BigDecimal snapshotPorcentagem(Double porcentagem) {
+        return porcentagem != null ? BigDecimal.valueOf(porcentagem) : null;
     }
 }

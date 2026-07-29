@@ -274,6 +274,164 @@ class FolhaProcessamentoServiceTest {
         assertEquals(new BigDecimal("10800.00"), fichaAposReprocessamento.getCustoFolha());
     }
 
+    @Test
+    void processar_copiaPorcentagemSnapshotAdpCustoFixoECalculado() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        provento.setPorcentagem(138.63);
+        Rubrica ajuda = rubricaProvento(3L);
+        ajuda.setCodigo("900");
+        ajuda.setPorcentagem(100.0);
+        Rubrica ferias = rubricaFerias();
+        ferias.setPorcentagem(50.0);
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("7258.43"));
+        FuncionarioRubricaFixa fixo = rubricaFixa(funcionario, ajuda, new BigDecimal("688.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(fixo));
+        when(cadastrosLookupPort.findRubricaAtivaByCodigo("5000")).thenReturn(Optional.of(ferias));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(true));
+
+        ArgumentCaptor<FichaLinha> linhaCaptor = ArgumentCaptor.forClass(FichaLinha.class);
+        verify(fichaLinhaRepository, times(3)).save(linhaCaptor.capture());
+
+        FichaLinha linhaAdp = linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.FOLHA_ADP)
+            .findFirst().orElseThrow();
+        assertEquals(new BigDecimal("138.63"), linhaAdp.getPorcentagem());
+
+        FichaLinha linhaFixa = linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.CUSTO_FIXO)
+            .findFirst().orElseThrow();
+        assertEquals(new BigDecimal("100.0"), linhaFixa.getPorcentagem());
+
+        FichaLinha linhaFerias = linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.CALCULADO)
+            .findFirst().orElseThrow();
+        assertEquals(new BigDecimal("50.0"), linhaFerias.getPorcentagem());
+    }
+
+    @Test
+    void processar_custoFixo688Porcentagem100_custoFolhaInclui688BrutoUsaValorOriginal() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        Rubrica fixaRh = rubricaProvento(3L);
+        fixaRh.setCodigo("RH");
+        fixaRh.setPorcentagem(100.0);
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        FuncionarioRubricaFixa fixo = rubricaFixa(funcionario, fixaRh, new BigDecimal("688.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(fixo));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("10688.00"), fichaFinal.getBruto());
+        assertEquals(new BigDecimal("10688.00"), fichaFinal.getCustoFolha());
+    }
+
+    @Test
+    void processar_porcentagem13863_persisteCustoFolhaComFormula() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        provento.setPorcentagem(138.63);
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("7258.43"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("7258.43"), fichaFinal.getBruto());
+        assertEquals(new BigDecimal("10062.36"), fichaFinal.getCustoFolha());
+    }
+
+    @Test
+    void processar_reprocessoAposAlterarPorcentagemCadastro_refleteNovaPorcentagem() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        provento.setPorcentagem(100.0);
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("7258.43"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaPrimeiro = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("7258.43"), fichaPrimeiro.getCustoFolha());
+
+        provento.setPorcentagem(138.63);
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(4)).save(fichaCaptor.capture());
+        FichaMensal fichaReprocesso = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("10062.36"), fichaReprocesso.getCustoFolha());
+        assertEquals(new BigDecimal("7258.43"), fichaReprocesso.getBruto());
+    }
+
     private Rubrica rubricaFerias() {
         TipoRubrica tipo = new TipoRubrica();
         tipo.setDescricao("PROVENTO");
