@@ -13,6 +13,8 @@ import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
 import br.com.techne.sistemafolha.folha.infrastructure.FichaLinhaRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.FichaMensalRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.FolhaPagamentoRepository;
+import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
+import br.com.techne.sistemafolha.shared.access.CentroCustoEfetivo;
 import br.com.techne.sistemafolha.shared.logging.DomainLogging;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -165,7 +167,25 @@ public class FolhaProcessamentoService {
         ficha.setCompetenciaFim(competenciaFim);
         ficha.setDecimoTerceiro(decimoTerceiro);
         ficha.setAtivo(true);
+        ficha.setCentroCusto(centroCustoEfetivoDoGrupo(grupo));
         return ficha;
+    }
+
+    private CentroCusto centroCustoEfetivoDoGrupo(List<FolhaPagamento> grupo) {
+        FolhaPagamento primeiraLinha = grupo.get(0);
+        Funcionario funcionario = primeiraLinha.getFuncionario();
+        Long linhaCcId = primeiraLinha.getCentroCusto() != null ? primeiraLinha.getCentroCusto().getId() : null;
+        Long funcCcId = funcionario != null && funcionario.getCentroCusto() != null
+            ? funcionario.getCentroCusto().getId() : null;
+        Long effectiveId = CentroCustoEfetivo.idOf(linhaCcId, funcCcId);
+        if (effectiveId == null) {
+            return null;
+        }
+        if (primeiraLinha.getCentroCusto() != null
+                && effectiveId.equals(primeiraLinha.getCentroCusto().getId())) {
+            return primeiraLinha.getCentroCusto();
+        }
+        return funcionario != null ? funcionario.getCentroCusto() : null;
     }
 
     private FichaLinha montarLinhaAdp(FichaMensal ficha, FolhaPagamento linhaAdp) {
