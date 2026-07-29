@@ -23,7 +23,7 @@ thresholds = {
     "organograma": 50.0,
     "security": 40.0,
     "importacao": 75.0,
-    "global": 65.0,
+    "global": 75.0,
 }
 
 def domain_lines(key: str) -> tuple[int, int]:
