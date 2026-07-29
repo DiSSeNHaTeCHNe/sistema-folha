@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-07-29  
-**Current Work:** `folha-custo-clt-fix2` — Execute complete (pre-Verifier); T1–T15 @ 2b96196
+**Current Work:** `folha-custo-clt-fix3` — Execute T1–T12 complete @ `69f4258` on `feat/folha-custo-clt` → pronto para Verifier
 
 ---
 
@@ -109,12 +109,12 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Feature (active)**: `folha-custo-clt-fix2` → **Execute complete (pre-Verifier)** — T1–T15 done @ `2b96196` on `feat/folha-custo-clt`; next: Verifier (FIX2-09/10 discrimination, paridade global, caso 138,63%)
-- **Feature (done)**: `folha-custo-clt-fix1` → Execute T1–T8 Done (processamento pós-import ADP)
-- **Feature (branch)**: `folha-custo-clt` → Execute T1–T27 + fix cycles done; Verifier PASS cycle 2; branch `feat/folha-custo-clt` (gap UX: processamento manual — endereçado por `folha-custo-clt-fix1`)
+- **Feature (active)**: `folha-custo-clt-fix3` → **Execute complete** (2026-07-29) — T1–T12 @ `69f4258` on `feat/folha-custo-clt`; pronto para Verifier
+- **Feature (done)**: `folha-custo-clt-fix2` → Execute + Verifier PASS @ `a31bc15` on `feat/folha-custo-clt`
+- **Feature (branch)**: `folha-custo-clt` → fix2 layered on same branch; squash merge pendente pelo usuário
 - **Feature (idle)**: `ajustes-listagens` → Verifier PASS (uncommitted)
 - **Feature (idle)**: `acl-scoped-folha-resumo` → Verifier PASS (uncommitted)
-- **Decisions**: AD-001…AD-008, AD-010, AD-011 active
+- **Decisions**: AD-001…AD-012 active
 ---
 
 ## Blockers

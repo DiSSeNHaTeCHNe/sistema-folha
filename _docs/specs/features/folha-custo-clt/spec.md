@@ -286,6 +286,8 @@ Ver decisões em `context.md` (ACL-1…5, INT-1, INT-2).
 3. (FCLT-24) WHEN custo fixo alterado no cadastro **após** processamento THEN totais SHALL atualizar **somente** após novo `POST /processar` na competência — consulta **não** lê cadastro diretamente (diferente de BENEFICIO)
 4. (FCLT-INT-02) WHEN usuário scoped consultar totais THEN linhas `CUSTO_FIXO` SHALL respeitar ACL por CC do funcionário (mesmo critério `FOLHA_ADP`)
 
+> **Evolução fix3 (`folha-custo-clt-fix3`):** INT-2 passa a admitir rubrica fixa **global** (`funcionario_id` null) aplicada a todos os CLT processados na competência, com prioridade individual > global e dedup ADP preservado (FCLT-23). Ver `_docs/specs/features/folha-custo-clt-fix3/spec.md`.
+
 **Independent Test**: Processar out/2024 → ficha inclui linha CUSTO_FIXO; alterar cadastro → totais unchanged até reprocessar.
 
 ---
