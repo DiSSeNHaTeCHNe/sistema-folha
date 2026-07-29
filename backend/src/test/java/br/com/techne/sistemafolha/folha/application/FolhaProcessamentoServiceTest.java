@@ -432,6 +432,167 @@ class FolhaProcessamentoServiceTest {
         assertEquals(new BigDecimal("7258.43"), fichaReprocesso.getBruto());
     }
 
+    @Test
+    void processar_globalFixaVigente_aplicaEmDoisClt() {
+        Funcionario func1 = funcionario(1L);
+        Funcionario func2 = funcionario(2L);
+        Rubrica provento = rubricaProvento(1L);
+        Rubrica ajuda = rubricaProvento(3L);
+        ajuda.setCodigo("900");
+
+        FolhaPagamento linha1 = linhaAdp(func1, provento, new BigDecimal("10000.00"));
+        FolhaPagamento linha2 = linhaAdp(func2, provento, new BigDecimal("8000.00"));
+        FuncionarioRubricaFixa global = rubricaFixaGlobal(ajuda, new BigDecimal("500.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha1, linha2));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(global));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(ficha.getFuncionario().getId() * 100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        assertEquals(2, resultado.totalFichas());
+        assertEquals(4, resultado.totalLinhas());
+
+        ArgumentCaptor<FichaLinha> linhaCaptor = ArgumentCaptor.forClass(FichaLinha.class);
+        verify(fichaLinhaRepository, times(4)).save(linhaCaptor.capture());
+        long linhasCustoFixo = linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.CUSTO_FIXO)
+            .count();
+        assertEquals(2, linhasCustoFixo);
+        linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.CUSTO_FIXO)
+            .forEach(l -> assertEquals(new BigDecimal("500.00"), l.getValor()));
+    }
+
+    @Test
+    void processar_individualPrevaleceSobreGlobal_mesmaRubrica() {
+        Funcionario func1 = funcionario(1L);
+        Funcionario func2 = funcionario(2L);
+        Rubrica provento = rubricaProvento(1L);
+        Rubrica rh = rubricaProvento(3L);
+        rh.setCodigo("RH");
+
+        FolhaPagamento linha1 = linhaAdp(func1, provento, new BigDecimal("10000.00"));
+        FolhaPagamento linha2 = linhaAdp(func2, provento, new BigDecimal("8000.00"));
+        FuncionarioRubricaFixa individual = rubricaFixa(func1, rh, new BigDecimal("688.00"));
+        FuncionarioRubricaFixa global = rubricaFixaGlobal(rh, new BigDecimal("500.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha1, linha2));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(individual, global));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(ficha.getFuncionario().getId() * 100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaLinha> linhaCaptor = ArgumentCaptor.forClass(FichaLinha.class);
+        verify(fichaLinhaRepository, times(4)).save(linhaCaptor.capture());
+
+        FichaLinha fixaFunc1 = linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.CUSTO_FIXO
+                && l.getFichaMensal().getFuncionario().getId().equals(1L))
+            .findFirst().orElseThrow();
+        assertEquals(new BigDecimal("688.00"), fixaFunc1.getValor());
+
+        FichaLinha fixaFunc2 = linhaCaptor.getAllValues().stream()
+            .filter(l -> l.getOrigemLinha() == OrigemLinha.CUSTO_FIXO
+                && l.getFichaMensal().getFuncionario().getId().equals(2L))
+            .findFirst().orElseThrow();
+        assertEquals(new BigDecimal("500.00"), fixaFunc2.getValor());
+    }
+
+    @Test
+    void processar_globalFixaDuplicataAdp_prefereAdp() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        FuncionarioRubricaFixa global = rubricaFixaGlobal(provento, new BigDecimal("999.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(global));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        assertEquals(1, resultado.totalLinhas());
+        ArgumentCaptor<FichaLinha> linhaCaptor = ArgumentCaptor.forClass(FichaLinha.class);
+        verify(fichaLinhaRepository, times(1)).save(linhaCaptor.capture());
+        assertEquals(OrigemLinha.FOLHA_ADP, linhaCaptor.getValue().getOrigemLinha());
+    }
+
+    @Test
+    void processar_globalFixaAlteradaAposProcessamento_sóRefleteNoReprocesso() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        Rubrica ajuda = rubricaProvento(3L);
+        ajuda.setCodigo("900");
+
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        FuncionarioRubricaFixa global = rubricaFixaGlobal(ajuda, new BigDecimal("500.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(global));
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaPrimeiro = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("10500.00"), fichaPrimeiro.getCustoFolha());
+
+        global.setValor(new BigDecimal("700.00"));
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(4)).save(fichaCaptor.capture());
+        FichaMensal fichaReprocesso = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(new BigDecimal("10700.00"), fichaReprocesso.getCustoFolha());
+    }
+
     private Rubrica rubricaFerias() {
         TipoRubrica tipo = new TipoRubrica();
         tipo.setDescricao("PROVENTO");
@@ -450,6 +611,16 @@ class FolhaProcessamentoServiceTest {
     private FuncionarioRubricaFixa rubricaFixa(Funcionario funcionario, Rubrica rubrica, BigDecimal valor) {
         FuncionarioRubricaFixa fixo = new FuncionarioRubricaFixa();
         fixo.setFuncionario(funcionario);
+        fixo.setRubrica(rubrica);
+        fixo.setValor(valor);
+        fixo.setVigenciaInicio(COMPETENCIA_INICIO);
+        fixo.setAtivo(true);
+        return fixo;
+    }
+
+    private FuncionarioRubricaFixa rubricaFixaGlobal(Rubrica rubrica, BigDecimal valor) {
+        FuncionarioRubricaFixa fixo = new FuncionarioRubricaFixa();
+        fixo.setFuncionario(null);
         fixo.setRubrica(rubrica);
         fixo.setValor(valor);
         fixo.setVigenciaInicio(COMPETENCIA_INICIO);

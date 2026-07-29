@@ -59,9 +59,15 @@ public class FolhaProcessamentoService {
         Map<Long, List<FolhaPagamento>> porFuncionario = linhasAdp.stream()
             .collect(Collectors.groupingBy(l -> l.getFuncionario().getId()));
 
-        Map<Long, List<FuncionarioRubricaFixa>> fixosPorFuncionario = cadastrosLookupPort
-            .findRubricasFixasVigentesNaCompetencia(competenciaInicio, competenciaFim)
-            .stream()
+        List<FuncionarioRubricaFixa> vigentes = cadastrosLookupPort
+            .findRubricasFixasVigentesNaCompetencia(competenciaInicio, competenciaFim);
+
+        List<FuncionarioRubricaFixa> globais = vigentes.stream()
+            .filter(f -> f.getFuncionario() == null)
+            .toList();
+
+        Map<Long, List<FuncionarioRubricaFixa>> individuaisPorFuncionario = vigentes.stream()
+            .filter(f -> f.getFuncionario() != null)
             .collect(Collectors.groupingBy(f -> f.getFuncionario().getId()));
 
         int totalLinhas = 0;
@@ -88,14 +94,32 @@ public class FolhaProcessamentoService {
                 inputsMotor.add(toInput(fichaLinha));
             }
 
-            List<FuncionarioRubricaFixa> fixos = fixosPorFuncionario.getOrDefault(funcionario.getId(), List.of());
-            for (FuncionarioRubricaFixa fixo : fixos) {
+            List<FuncionarioRubricaFixa> fixosIndividuais =
+                individuaisPorFuncionario.getOrDefault(funcionario.getId(), List.of());
+            Set<Long> rubricasFixasIndividuais = new HashSet<>();
+            for (FuncionarioRubricaFixa fixo : fixosIndividuais) {
                 if (rubricasAdp.contains(fixo.getRubrica().getId())) {
                     logger.warn("{}Rubrica fixa ignorada (duplicata ADP): funcionario={}, rubrica={}",
                         DomainLogging.prefix(DOMAIN), funcionario.getId(), fixo.getRubrica().getCodigo());
                     continue;
                 }
                 FichaLinha linhaFixa = montarLinhaCustoFixo(ficha, fixo);
+                fichaLinhaRepository.save(linhaFixa);
+                totalLinhas++;
+                inputsMotor.add(toInput(linhaFixa));
+                rubricasFixasIndividuais.add(fixo.getRubrica().getId());
+            }
+
+            for (FuncionarioRubricaFixa global : globais) {
+                if (rubricasAdp.contains(global.getRubrica().getId())) {
+                    logger.warn("{}Rubrica fixa global ignorada (duplicata ADP): funcionario={}, rubrica={}",
+                        DomainLogging.prefix(DOMAIN), funcionario.getId(), global.getRubrica().getCodigo());
+                    continue;
+                }
+                if (rubricasFixasIndividuais.contains(global.getRubrica().getId())) {
+                    continue;
+                }
+                FichaLinha linhaFixa = montarLinhaCustoFixo(ficha, global);
                 fichaLinhaRepository.save(linhaFixa);
                 totalLinhas++;
                 inputsMotor.add(toInput(linhaFixa));
