@@ -9,11 +9,13 @@ import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
 import br.com.techne.sistemafolha.folha.api.FichaLinhaDetalheDTO;
+import br.com.techne.sistemafolha.folha.api.FolhaTotaisFuncionarioDTO;
 import br.com.techne.sistemafolha.folha.api.Totalizador;
 import br.com.techne.sistemafolha.folha.domain.FichaLinha;
 import br.com.techne.sistemafolha.folha.domain.FichaMensal;
 import br.com.techne.sistemafolha.folha.domain.FichaMensalNotFoundException;
 import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
+import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import br.com.techne.sistemafolha.folha.infrastructure.FichaLinhaRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.FichaMensalRepository;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
@@ -27,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -199,6 +202,53 @@ class FolhaFichaConsultaServiceTest {
         assertTrue(result.stream().anyMatch(l -> "BENEFICIO".equals(l.origemLinha()) && "VR".equals(l.rubricaCodigo())));
     }
 
+    /** FIX2-12: Σ contribuições aba Custo+benefícios = card custoEmpresa (±0,01). */
+    @Test
+    void listarLinhasPorTotalizador_companyCost_somaContribuicoes_igualCustoEmpresaCard() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linhaComPorcentagem("0010", "Salário Base", (short) 1, (short) 1, (short) 1,
+                    new BigDecimal("7258.43"), new BigDecimal("138.63"), OrigemLinha.FOLHA_ADP),
+                linha("900", "Ajuda RH", (short) 1, (short) 1, (short) 1,
+                    new BigDecimal("688.00"), OrigemLinha.CUSTO_FIXO)
+            ));
+        when(beneficioConsultaPort.findLinhasPorFuncionarioECompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(new BeneficioLinhaSnapshot(1L, "VR", "Vale Refeição", new BigDecimal("600.00"))));
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(
+            Set.of(FUNCIONARIO_ID), COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(Map.of(FUNCIONARIO_ID, new BigDecimal("600.00")));
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(1);
+
+        List<FichaLinhaDetalheDTO> linhasCusto = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.COMPANY_COST);
+
+        BigDecimal somaContribuicoes = linhasCusto.stream()
+            .map(FichaLinhaDetalheDTO::contribuicao)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        FolhaTotalizacaoService totalizacaoService = new FolhaTotalizacaoService(beneficioConsultaPort);
+        FolhaTotaisFuncionarioDTO card = totalizacaoService.calcularTotaisPorFuncionario(
+            List.of(
+                linhaSnapshot("0010", "7258.43", new BigDecimal("138.63"), OrigemLinha.FOLHA_ADP),
+                linhaSnapshot("900", "688.00", null, OrigemLinha.CUSTO_FIXO)),
+            contextoRestrito(Set.of(CENTRO_A)),
+            BigDecimal.ZERO,
+            COMPETENCIA_INICIO,
+            COMPETENCIA_FIM).get(0);
+
+        assertEquals(3, linhasCusto.size());
+        assertEquals(new BigDecimal("11350.36"), card.custoEmpresa());
+        BigDecimal diferenca = card.custoEmpresa().subtract(somaContribuicoes).abs();
+        assertTrue(diferenca.compareTo(new BigDecimal("0.01")) <= 0,
+            () -> "soma aba Custo+benefícios deve igualar card custoEmpresa (±0,01), diff=" + diferenca);
+    }
+
     @Test
     void listarLinhasPorTotalizador_scopedForaDoEscopo_retorna404() {
         stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
@@ -279,5 +329,13 @@ class FolhaFichaConsultaServiceTest {
         linha.setOrigemLinha(origem);
         linha.setAtivo(true);
         return linha;
+    }
+
+    private FolhaLinhaSnapshot linhaSnapshot(
+            String codigo, String valor, BigDecimal porcentagem, OrigemLinha origem) {
+        return new FolhaLinhaSnapshot(
+            FUNCIONARIO_ID, "Funcionário", CENTRO_A, "CC", 1L, "LN", 1L, "Cargo",
+            1L, codigo, "Rubrica", "PROVENTO", new BigDecimal(valor),
+            (short) 1, (short) 1, (short) 1, origem, porcentagem);
     }
 }
