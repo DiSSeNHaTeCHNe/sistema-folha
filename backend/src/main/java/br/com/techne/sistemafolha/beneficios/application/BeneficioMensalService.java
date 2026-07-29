@@ -5,6 +5,7 @@ import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalDTO;
 import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalResumoDTO;
 import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensalNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
+import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundException;
 import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensal;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
@@ -19,6 +20,7 @@ import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalRepos
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalResumoProjection;
 import br.com.techne.sistemafolha.beneficios.infrastructure.TipoBeneficioRepository;
 import br.com.techne.sistemafolha.cadastros.port.FuncionarioConsultaPort;
+import br.com.techne.sistemafolha.shared.access.CentroCustoEfetivo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -163,6 +165,7 @@ public class BeneficioMensalService {
         beneficio.setCompetenciaInicio(dto.competenciaInicio());
         beneficio.setCompetenciaFim(dto.competenciaFim());
         beneficio.setObservacao(dto.observacao());
+        beneficio.setCentroCusto(funcionario.getCentroCusto());
         beneficio.setAtivo(true);
 
         return toDTO(beneficioMensalRepository.save(beneficio));
@@ -219,7 +222,17 @@ public class BeneficioMensalService {
     }
 
     private boolean aplicarFiltroAcesso(BeneficioMensal beneficio, AccessContextDTO contexto) {
-        return aplicarFiltroAcesso(beneficio.getFuncionario(), contexto);
+        if (contexto.acessoTotal()) {
+            return true;
+        }
+        if (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma()) {
+            return false;
+        }
+        Long linhaCcId = beneficio.getCentroCusto() != null ? beneficio.getCentroCusto().getId() : null;
+        Long funcCcId = beneficio.getFuncionario() != null && beneficio.getFuncionario().getCentroCusto() != null
+            ? beneficio.getFuncionario().getCentroCusto().getId() : null;
+        return CentroCustoEfetivo.pertenceAoEscopo(
+            CentroCustoEfetivo.idOf(linhaCcId, funcCcId), contexto.centrosCustoIds());
     }
 
     boolean aplicarFiltroAcesso(Funcionario funcionario, AccessContextDTO contexto) {
@@ -283,18 +296,21 @@ public class BeneficioMensalService {
 
         Long centroCustoId = null;
         String centroCustoDescricao = null;
-        String cargoDescricao = null;
         Long linhaNegocioId = null;
         String linhaNegocioDescricao = null;
-        if (funcionario != null && funcionario.getCentroCusto() != null) {
-            centroCustoId = funcionario.getCentroCusto().getId();
-            centroCustoDescricao = funcionario.getCentroCusto().getDescricao();
-            LinhaNegocio linhaNegocio = funcionario.getCentroCusto().getLinhaNegocio();
+        CentroCusto centroCusto = beneficio.getCentroCusto() != null
+            ? beneficio.getCentroCusto()
+            : (funcionario != null ? funcionario.getCentroCusto() : null);
+        if (centroCusto != null) {
+            centroCustoId = centroCusto.getId();
+            centroCustoDescricao = centroCusto.getDescricao();
+            LinhaNegocio linhaNegocio = centroCusto.getLinhaNegocio();
             if (linhaNegocio != null) {
                 linhaNegocioId = linhaNegocio.getId();
                 linhaNegocioDescricao = linhaNegocio.getDescricao();
             }
         }
+        String cargoDescricao = null;
         if (funcionario != null && funcionario.getCargo() != null) {
             cargoDescricao = funcionario.getCargo().getDescricao();
         }

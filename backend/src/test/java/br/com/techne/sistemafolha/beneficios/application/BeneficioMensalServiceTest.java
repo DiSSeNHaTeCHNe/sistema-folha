@@ -388,6 +388,80 @@ class BeneficioMensalServiceTest {
     }
 
     @Test
+    void criar_persisteCentroCustoSnapshot_fcc13() {
+        BeneficioMensalDTO dto = dtoBase(null, 1L, 2L, new BigDecimal("450.00"));
+        Funcionario funcionario = funcionarioAtivo(1L);
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(1L)).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findById(2L)).thenReturn(Optional.of(tipoAtivo(2L, "VALE_REFEICAO")));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> {
+            BeneficioMensal bm = inv.getArgument(0);
+            bm.setId(10L);
+            return bm;
+        });
+
+        beneficioMensalService.criar(dto);
+
+        verify(beneficioMensalRepository).save(org.mockito.ArgumentMatchers.argThat(bm ->
+            bm.getCentroCusto() != null && bm.getCentroCusto().getId().equals(10L)));
+    }
+
+    @Test
+    void removerSeAutorizado_usaCcSnapshotNaoCcAtual_fcc15() {
+        stubUsuario();
+        CentroCusto ccSnapshot = new CentroCusto();
+        ccSnapshot.setId(100L);
+        CentroCusto ccAtual = new CentroCusto();
+        ccAtual.setId(200L);
+
+        Funcionario funcionario = funcionarioAtivo(99L);
+        funcionario.setCentroCusto(ccAtual);
+
+        BeneficioMensal beneficio = beneficioAtivo(7L);
+        beneficio.setFuncionario(funcionario);
+        beneficio.setCentroCusto(ccSnapshot);
+
+        when(beneficioMensalRepository.findById(7L)).thenReturn(Optional.of(beneficio));
+        when(beneficioMensalRepository.save(beneficio)).thenReturn(beneficio);
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(100L)));
+        assertTrue(beneficioMensalService.removerSeAutorizado(LOGIN, 7L));
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(200L)));
+        assertFalse(beneficioMensalService.removerSeAutorizado(LOGIN, 7L));
+    }
+
+    @Test
+    void toDTO_refleteCcDaLinhaComFallback_fcc17() {
+        CentroCusto ccSnapshot = new CentroCusto();
+        ccSnapshot.setId(100L);
+        ccSnapshot.setDescricao("CC Alpha");
+
+        CentroCusto ccAtual = new CentroCusto();
+        ccAtual.setId(200L);
+        ccAtual.setDescricao("CC Beta");
+
+        Funcionario funcionario = funcionarioAtivo(99L);
+        funcionario.setCentroCusto(ccAtual);
+
+        BeneficioMensal beneficio = beneficioAtivo(5L);
+        beneficio.setFuncionario(funcionario);
+        beneficio.setCentroCusto(ccSnapshot);
+
+        when(beneficioMensalRepository
+                .findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                        99L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+                .thenReturn(List.of(beneficio));
+
+        List<BeneficioMensalDTO> result = beneficioMensalService.listarPorFuncionario(
+                99L, COMPETENCIA_INICIO, COMPETENCIA_FIM);
+
+        assertEquals(100L, result.get(0).centroCustoId());
+        assertEquals("CC Alpha", result.get(0).centroCustoDescricao());
+    }
+
+    @Test
     void criar_persiste_beneficio_ativo() {
         BeneficioMensalDTO dto = dtoBase(null, 1L, 2L, new BigDecimal("450.00"));
         when(funcionarioConsultaPort.findByIdAndAtivoTrue(1L)).thenReturn(Optional.of(funcionarioAtivo(1L)));
