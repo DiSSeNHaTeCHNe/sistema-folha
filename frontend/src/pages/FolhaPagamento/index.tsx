@@ -93,6 +93,35 @@ const ORIGEM_LABELS: Record<string, string> = {
   BENEFICIO: 'Benefício',
 };
 
+const ORIGEM_ORDER = ['FOLHA_ADP', 'CUSTO_FIXO', 'CALCULADO', 'BENEFICIO'] as const;
+
+const parseMoneyValue = (value: string | number): number => {
+  const normalized = typeof value === 'string' ? value.replace(',', '.') : String(value);
+  const parsed = Number.parseFloat(normalized);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const sumContribuicoes = (linhas: FichaLinhaDetalhe[]): number =>
+  linhas.reduce((acc, linha) => acc + parseMoneyValue(linha.contribuicao), 0);
+
+const formatPercentual = (
+  porcentagem: string | number | null | undefined,
+  origemLinha: string,
+): string => {
+  if (origemLinha === 'BENEFICIO') {
+    return '—';
+  }
+  if (porcentagem === null || porcentagem === undefined || porcentagem === '') {
+    return '100,00%';
+  }
+  const normalized = typeof porcentagem === 'string' ? porcentagem.replace(',', '.') : String(porcentagem);
+  const parsed = Number.parseFloat(normalized);
+  if (Number.isNaN(parsed)) {
+    return '100,00%';
+  }
+  return `${parsed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+};
+
 const gerarAnosDisponiveis = (): number[] => {
   const anoAtual = new Date().getFullYear();
   return Array.from({ length: 6 }, (_, i) => anoAtual - i);
@@ -306,36 +335,62 @@ export function FolhaPagamento() {
     }
   };
 
-  const renderLinhasDetalhe = (totalizer: TotalizadorFolha) => {
-    if (detalheErro) {
+  const getCardTotal = (totalizer: TotalizadorFolha): string | number => {
+    if (!funcionarioSelecionado) {
+      return 0;
+    }
+    switch (totalizer) {
+      case 'GROSS':
+        return funcionarioSelecionado.salBruto;
+      case 'NET':
+        return funcionarioSelecionado.salLiquido;
+      case 'COMPANY_COST':
+        return funcionarioSelecionado.custoEmpresa;
+    }
+  };
+
+  const renderDetalheAgrupado = (
+    totalizer: TotalizadorFolha,
+    linhas: FichaLinhaDetalhe[],
+    cardTotal: string | number,
+  ) => {
+    const origensPermitidas =
+      totalizer === 'COMPANY_COST'
+        ? ORIGEM_ORDER
+        : ORIGEM_ORDER.filter((origem) => origem !== 'BENEFICIO');
+
+    const grupos = linhas.reduce<Record<string, FichaLinhaDetalhe[]>>((acc, linha) => {
+      const origem = linha.origemLinha || 'FOLHA_ADP';
+      if (!acc[origem]) {
+        acc[origem] = [];
+      }
+      acc[origem].push(linha);
+      return acc;
+    }, {});
+
+    const origensOrdenadas = origensPermitidas.filter((origem) => (grupos[origem]?.length ?? 0) > 0);
+
+    if (linhas.length === 0) {
       return (
-        <Typography color="error" sx={{ py: 2 }}>
-          {detalheErro}
-        </Typography>
+        <Box>
+          <Typography color="textSecondary" sx={{ py: 2 }}>
+            Nenhuma rubrica encontrada para este totalizador.
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Typography variant="subtitle1" fontWeight="bold">
+              Total: {formatMoneyDisplay(0)}
+            </Typography>
+          </Box>
+        </Box>
       );
     }
 
-    if (linhasDetalhe.length === 0) {
-      return (
-        <Typography color="textSecondary" sx={{ py: 2 }}>
-          Nenhuma rubrica encontrada para este totalizador.
-        </Typography>
-      );
-    }
-
-    if (totalizer === 'COMPANY_COST') {
-      const grupos = linhasDetalhe.reduce<Record<string, FichaLinhaDetalhe[]>>((acc, linha) => {
-        const origem = linha.origemLinha || 'FOLHA_ADP';
-        if (!acc[origem]) {
-          acc[origem] = [];
-        }
-        acc[origem].push(linha);
-        return acc;
-      }, {});
-
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {Object.entries(grupos).map(([origem, linhas]) => (
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {origensOrdenadas.map((origem) => {
+          const linhasGrupo = grupos[origem];
+          const subtotal = sumContribuicoes(linhasGrupo);
+          return (
             <Box key={origem}>
               <Typography variant="subtitle1" gutterBottom>
                 {ORIGEM_LABELS[origem] ?? origem}
@@ -346,52 +401,54 @@ export function FolhaPagamento() {
                     <TableRow>
                       <TableCell>Rubrica</TableCell>
                       <TableCell align="right">Valor</TableCell>
+                      <TableCell align="right">Percentual</TableCell>
                       <TableCell align="right">Contribuição</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {linhas.map((item, index) => (
+                    {linhasGrupo.map((item, index) => (
                       <TableRow key={`${origem}-${item.rubricaCodigo}-${index}`}>
                         <TableCell>
                           {item.rubricaCodigo} - {item.rubricaDescricao}
                         </TableCell>
                         <TableCell align="right">{formatMoneyDisplay(item.valor)}</TableCell>
+                        <TableCell align="right">{formatPercentual(item.porcentagem, origem)}</TableCell>
                         <TableCell align="right">{formatMoneyDisplay(item.contribuicao)}</TableCell>
                       </TableRow>
                     ))}
+                    <TableRow>
+                      <TableCell colSpan={3} align="right">
+                        <strong>Subtotal</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>{formatMoneyDisplay(subtotal)}</strong>
+                      </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </TableContainer>
             </Box>
-          ))}
+          );
+        })}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Typography variant="subtitle1" fontWeight="bold">
+            Total: {formatMoneyDisplay(cardTotal)}
+          </Typography>
         </Box>
+      </Box>
+    );
+  };
+
+  const renderLinhasDetalhe = (totalizer: TotalizadorFolha) => {
+    if (detalheErro) {
+      return (
+        <Typography color="error" sx={{ py: 2 }}>
+          {detalheErro}
+        </Typography>
       );
     }
 
-    return (
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Rubrica</TableCell>
-              <TableCell align="right">Valor</TableCell>
-              <TableCell align="right">Contribuição</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {linhasDetalhe.map((item, index) => (
-              <TableRow key={`${item.rubricaCodigo}-${index}`}>
-                <TableCell>
-                  {item.rubricaCodigo} - {item.rubricaDescricao}
-                </TableCell>
-                <TableCell align="right">{formatMoneyDisplay(item.valor)}</TableCell>
-                <TableCell align="right">{formatMoneyDisplay(item.contribuicao)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
+    return renderDetalheAgrupado(totalizer, linhasDetalhe, getCardTotal(totalizer));
   };
 
   const handleVerFuncionarios = async (resumo: ResumoFolhaPagamento) => {
