@@ -2,8 +2,8 @@
 
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
-**Last Updated:** 2026-07-28  
-**Current Work:** `folha-custo-clt` — Tasks draft (`tasks.md` T1–T27); Execute pending approval
+**Last Updated:** 2026-07-29  
+**Current Work:** `folha-custo-clt-fix2` — Execute complete (pre-Verifier); T1–T15 @ 2b96196
 
 ---
 
@@ -97,15 +97,23 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 **Scope:** ACL organograma + consumidores Folha/Benefícios/Dashboard; feature `acl-acesso-total-role`.  
 **Status:** active
 
+### AD-012: Custo Empresa = ficha × % + benefícios (sem rateio ADP) (2026-07-29)
+
+**Decision:** Supersede D4-CLT na composição de `custoEmpresa`: custo usa `valorOriginal × operador_custo × porcentagem/100` (folha ADP + fixas + calculadas) + `custoBeneficios`; bruto/líquido usam **valor original** sem `%`. Feature: `folha-custo-clt-fix2`.  
+**Reason:** Paridade card↔aba Custo; alinhamento Custo Techne legado; rateio rodapé ADP rejeitado.  
+**Trade-off:** `total_encargos` snapshot ADP permanece informativo; migração de % legado em P2 (FIX2-17).  
+**Scope:** Motor folha, totais, resumo, dashboard, detalhe; bruto/líquido inalterados (sem %).  
+**Status:** active (spec draft fix2, refinado 2026-07-29)
+
 ---
 
 ## Handoff
 
-- **Feature (idle)**: `ajustes-listagens` → Execute T1–T6 done; Verifier PASS; validation.md written; uncommitted
-- **Feature (idle)**: `ajustes-sistema` → Execute complete; Verifier PASS (fix cycle 1); uncommitted
-- **Feature (idle)**: `funcionarios-folha-dashboard-ux` → Execute complete; Verifier PASS (uncommitted)
-- **Feature (active)**: `folha-custo-clt` → Specify + context + design approved; **Tasks draft** T1–T27 (`tasks.md` 2026-07-28); awaiting approval → Execute (4 batches)
-- **Feature (idle)**: `acl-scoped-folha-resumo` → Execute done; Verifier PASS (uncommitted)
+- **Feature (active)**: `folha-custo-clt-fix2` → **Execute complete (pre-Verifier)** — T1–T15 done @ `2b96196` on `feat/folha-custo-clt`; next: Verifier (FIX2-09/10 discrimination, paridade global, caso 138,63%)
+- **Feature (done)**: `folha-custo-clt-fix1` → Execute T1–T8 Done (processamento pós-import ADP)
+- **Feature (branch)**: `folha-custo-clt` → Execute T1–T27 + fix cycles done; Verifier PASS cycle 2; branch `feat/folha-custo-clt` (gap UX: processamento manual — endereçado por `folha-custo-clt-fix1`)
+- **Feature (idle)**: `ajustes-listagens` → Verifier PASS (uncommitted)
+- **Feature (idle)**: `acl-scoped-folha-resumo` → Verifier PASS (uncommitted)
 - **Decisions**: AD-001…AD-008, AD-010, AD-011 active
 ---
 

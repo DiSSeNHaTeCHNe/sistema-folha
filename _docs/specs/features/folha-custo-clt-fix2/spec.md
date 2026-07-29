@@ -243,7 +243,7 @@ Decisões: `context.md` FIX2-CTX-01…09.
 | FIX2-06 | P1 composer sem encargos | T5,T6 | Done |
 | FIX2-07 | P1 DTO encargos 0 | T5 | Done |
 | FIX2-08 | P1 resumo sem rateio | T6,T8 | Done |
-| FIX2-09 | P1 dashboard | T10,T11 | Pending |
+| FIX2-09 | P1 dashboard | T10,T11 | Done |
 | FIX2-10 | P1 sensor rateio | T5 | Done |
 | FIX2-11 | P1 API detalhe contribuição | T7 | Done |
 | FIX2-12 | P1 paridade aba = card | T7 | Done |
@@ -254,11 +254,11 @@ Decisões: `context.md` FIX2-CTX-01…09.
 | FIX2-22 | P1 resumo totalBruto = Σ cards | T9 | Done |
 | FIX2-23 | P1 resumo totalLiquido = Σ cards | T9 | Done |
 | FIX2-24 | P1 resumo não usa pagamentos ADP como bruto | T8 | Done |
-| FIX2-17 | P2 seed % legado | T12 | Pending |
+| FIX2-17 | P2 seed % legado | T12 | Done |
 | FIX2-18 | P2 cadastro + reprocesso | T3 | Done |
-| FIX2-19 | P2 FE decomposição | T13 | Pending |
+| FIX2-19 | P2 FE decomposição | T13 | Done |
 
-**Coverage:** 24 requirements mapped → T1–T15 (Execute pending)
+**Coverage:** 24 requirements mapped → T1–T15 (Execute complete, pre-Verifier)
 
 **Cross-ref:** Atualizar `folha-custo-clt/spec.md` composição e FCLT-06/FCLT-13 na Execute de `fix2` (nota superseded, não reabrir feature pai).
 

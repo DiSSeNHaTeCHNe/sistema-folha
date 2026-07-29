@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `_docs/specs/features/folha-custo-clt-fix2/design.md`  
-**Status**: Execute in progress — Batch 1 done (T1–T6 @ 3692702); Batch 2 running  
+**Status**: Execute complete (pre-Verifier) — Batch 3 done (T10–T15 @ 2b96196)  
 **Approach**: A — Motor único + snapshot `%` + remover rateio ADP (AD-012)  
 **User preference (project):** sem commits automáticos salvo pedido explícito — Execute pode pular `git commit` se o usuário disser “sem commit”.
 
@@ -354,9 +354,9 @@ T12 → T13 → T14 → T15
 - Skill: `modular-design-principles`
 
 **Done when**:
-- [ ] Port expõe agregação custo empresa sem rateio
-- [ ] Implementação reutiliza motor/composer de T5
-- [ ] Gate: `cd backend && mvn clean compile && mvn test -Dtest=ModularArchitectureTest`
+- [x] Port expõe agregação custo empresa sem rateio
+- [x] Implementação reutiliza motor/composer de T5
+- [x] Gate: `cd backend && mvn clean compile && mvn test -Dtest=ModularArchitectureTest`
 
 **Tests**: none (validado via T11 + ArchUnit)  
 **Gate**: build + ArchUnit  
@@ -380,9 +380,9 @@ T12 → T13 → T14 → T15
 - Skill: NONE
 
 **Done when**:
-- [ ] `custoMensalFolha` = composição FIX2-06 (sem rateio)
-- [ ] Método local `ratearEncargos` removido ou morto
-- [ ] Gate: `cd backend && mvn test -Dtest=DashboardServiceTest,ModularArchitectureTest`
+- [x] `custoMensalFolha` = composição FIX2-06 (sem rateio)
+- [x] Método local `ratearEncargos` removido ou morto
+- [x] Gate: `cd backend && mvn test -Dtest=DashboardServiceTest,ModularArchitectureTest`
 
 **Tests**: unit  
 **Gate**: quick  
@@ -405,8 +405,8 @@ T12 → T13 → T14 → T15
 - Skill: `flyway-migration-writer`
 
 **Done when**:
-- [ ] UPDATE idempotente com comentário mapeamento mínimo
-- [ ] Gate: `cd backend && mvn clean compile`
+- [x] UPDATE idempotente com comentário mapeamento mínimo
+- [x] Gate: `cd backend && mvn clean compile`
 
 **Tests**: none  
 **Gate**: build  
@@ -430,9 +430,9 @@ T12 → T13 → T14 → T15
 - Skill: `component-architecture` (target AD-004)
 
 **Done when**:
-- [ ] Subtexto visível quando dados presentes; total = folha + benefícios
-- [ ] `encargosRateados` não renderizado
-- [ ] Gate: `cd frontend && npm run lint && npm run build`
+- [x] Subtexto visível quando dados presentes; total = folha + benefícios
+- [x] `encargosRateados` não renderizado
+- [x] Gate: `cd frontend && npm run lint && npm run build`
 
 **Tests**: none  
 **Gate**: build  
@@ -455,8 +455,8 @@ T12 → T13 → T14 → T15
 - Skill: NONE
 
 **Done when**:
-- [ ] Seção superseded documentada com link para fix2
-- [ ] Nenhuma alteração de código
+- [x] Seção superseded documentada com link para fix2
+- [x] Nenhuma alteração de código
 
 **Tests**: none  
 **Gate**: n/a  
@@ -478,10 +478,10 @@ T12 → T13 → T14 → T15
 - Skill: NONE
 
 **Done when**:
-- [ ] Gate: `cd backend && mvn test`
-- [ ] Gate: `cd frontend && npm run lint && npm run build`
-- [ ] `tasks.md` status → Execute complete (pré-Verifier)
-- [ ] Handoff `STATE.md` atualizado
+- [x] Gate: `cd backend && mvn test`
+- [x] Gate: `cd frontend && npm run lint && npm run build`
+- [x] `tasks.md` status → Execute complete (pré-Verifier)
+- [x] Handoff `STATE.md` atualizado
 
 **Tests**: full suite  
 **Gate**: full  
