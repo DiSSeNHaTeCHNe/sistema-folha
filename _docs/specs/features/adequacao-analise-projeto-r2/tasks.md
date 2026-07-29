@@ -426,9 +426,9 @@ T20
 - Skill: `flyway-migration-writer` (consulta — sem migration nesta task)
 
 **Done when**:
-- [ ] `application.yml`: `ddl-auto: validate`
-- [ ] `application-dev.yml`: `ddl-auto: update`
-- [ ] Gate: `cd backend && mvn test` — 0 failures
+- [x] `application.yml`: `ddl-auto: validate`
+- [x] `application-dev.yml`: `ddl-auto: update`
+- [x] Gate: `cd backend && mvn test` — 0 failures
 
 **Tests**: none  
 **Gate**: Full BE
