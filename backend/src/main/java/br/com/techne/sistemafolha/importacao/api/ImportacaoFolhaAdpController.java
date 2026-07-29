@@ -38,10 +38,17 @@ public class ImportacaoFolhaAdpController {
                     .body(ImportacaoFolhaAdpResponseDTO.error("Arquivo vazio", arquivo.getOriginalFilename()));
             }
 
-            if (!arquivo.getOriginalFilename().toLowerCase().endsWith(".txt")) {
+            String nomeArquivo = arquivo.getOriginalFilename();
+            if (nomeArquivo == null || nomeArquivo.isBlank()) {
                 return ResponseEntity.badRequest()
                     .body(ImportacaoFolhaAdpResponseDTO.error(
-                        "Formato de arquivo inválido. Use apenas arquivos .txt", arquivo.getOriginalFilename()));
+                        "Nome do arquivo não informado", null));
+            }
+
+            if (!nomeArquivo.toLowerCase().endsWith(".txt")) {
+                return ResponseEntity.badRequest()
+                    .body(ImportacaoFolhaAdpResponseDTO.error(
+                        "Formato de arquivo inválido. Use apenas arquivos .txt", nomeArquivo));
             }
 
             ImportacaoFolhaAdpResult resultado = importacaoFolhaAdpService.importarFolhaAdp(

@@ -1,6 +1,7 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-07-25
+**Analysis Date:** 2026-07-25  
+**Last sync (adequação P2):** 2026-07-29
 
 ## Known Bugs
 
@@ -11,6 +12,7 @@
 - Files: `frontend/src/services/relatorioService.ts`, `frontend/src/pages/Relatorios/index.tsx` — sem controller Java correspondente
 - Workaround: Usar resumo de folha / exports existentes; evitar menu Relatórios até backend existir.
 - Root cause: Frontend à frente do backend; README menciona PDF sem dependência PDF no `pom.xml`.
+- **Status:** Open (fora escopo adequação P2)
 
 ## Security Considerations
 
@@ -18,33 +20,38 @@
 
 - Risk: Chave de assinatura previsível se `JWT_SECRET` não for definido no deploy.
 - Files: `backend/src/main/resources/application.yml` (`jwt.secret` com default longo)
-- Current mitigation: Override via `${JWT_SECRET:...}`.
+- Current mitigation: Override via `${JWT_SECRET:...}`; **`JwtSecretStartupValidator` fail-fast em prod** (adequação P1 T6 / AAP-09).
 - Recommendations: Exigir secret em produção; rotacionar; nunca commitár secrets reais.
+- **Status:** Mitigated (startup validator); monitorar deploy env
 
 **SecurityConfig path prefix inconsistency:**
 
-- Risk: Matchers explícitos com `/api/...` podem não alinhar com `context-path: /api` (controllers sem prefixo). Matcher legado `/api/beneficios/**` não corresponde mais às rotas `/beneficio-mensal` e `/tipo-beneficio`.
+- Risk: Matchers explícitos com `/api/...` podem não alinhar com `context-path: /api`.
 - Files: `backend/.../config/SecurityConfig.java`
-- Current mitigation: `anyRequest().authenticated()` ainda protege rotas novas; regras `ADMIN` em tipo-benefício usam paths com `/api`.
-- Recommendations: Auditar matchers contra `context-path`; remover `/api/beneficios/**` obsoleto; testes de segurança por endpoint.
+- Current mitigation: Auditado em P1 T5; CSRF/JWT documentados em `_docs/specs/INTEGRATIONS.md`.
+- Recommendations: Manter testes regressão `SecurityConfig*Test`.
+- **Status:** Mitigated (audit + docs); Sonar S4502 (CSRF) permanece — aceito para API JWT stateless
 
 **CSRF disabled:**
 
 - Risk: Aceitável para API JWT stateless; perigoso se auth por cookie for introduzida.
 - Files: `SecurityConfig.java` — `csrf.disable()`
 - Recommendations: Manter stateless documentado; reavaliar se cookies de sessão forem usados.
+- **Status:** Documented (INTEGRATIONS.md, AAP-07)
 
 **Hardcoded CORS / credentials in repo:**
 
 - Risk: Origins LAN embutidas; password `postgres` em YAML/Compose.
 - Files: `config/WebConfig.java`, `application.yml`, `docker-compose.yml`
 - Recommendations: Externalizar origins e secrets por ambiente.
+- **Status:** Open — follow-up infra
 
 **Organograma access edge cases:**
 
-- Risk: Usuário sem `funcionario` → sem acesso; funcionário sem nó → **acesso total** (regra 4).
-- Files: `service/OrganogramaAcessoService.java`
-- Recommendations: Decisão de produto explícita + testes de integração por regra.
+- Risk: Usuário sem `funcionario` → sem acesso; permissão `ACESSO_TOTAL` → acesso amplo.
+- Files: `organograma/acesso/application/OrganogramaAcessoService.java`
+- Current mitigation: Testes unitários expandidos (adequação P2 T8 / AAP-11).
+- **Status:** Mitigated (unit coverage); integração E2E pendente
 
 ## Tech Debt
 
@@ -54,6 +61,7 @@
 - Files: `application.yml`, `db/migration/*.sql`
 - Impact: Schemas não reproduzíveis entre ambientes.
 - Fix approach: `validate`/`none` fora de dev; schema só via Flyway.
+- **Status:** Open
 
 **Datasource LAN commitado:**
 
@@ -61,13 +69,15 @@
 - Files: `application.yml`
 - Impact: Falha local ou escrita acidental em DB compartilhado.
 - Fix approach: Default `localhost:5433`; override por env no Compose.
+- **Status:** Open
 
 **Dual model de benefícios (legado + mensal):**
 
-- Issue: CRUD/API legado `/beneficios` removido, mas entity `Beneficio`, `BeneficioRepository`, tabela `beneficios` e fallback em totalização/dashboard permanecem; frontend `beneficioService.ts` órfão.
-- Files: `model/Beneficio.java`, `repository/BeneficioRepository.java`, `FolhaTotalizacaoService.java`, `DashboardService.java`, `frontend/src/services/beneficioService.ts`
-- Impact: Dois caminhos de custo de benefício; risco de dados inconsistentes se competência mensal e legado coexistirem.
-- Fix approach: Plano de migração de dados → retirar fallback e código morto quando `beneficio_mensal` for fonte única.
+- Issue: Entity `Beneficio`, fallback em totalização/dashboard permanecem; frontend `beneficioService.ts` órfão.
+- Files: `model/Beneficio.java`, `FolhaTotalizacaoService.java`, `frontend/src/services/beneficioService.ts`
+- Impact: Dois caminhos de custo de benefício.
+- Fix approach: Plano de migração quando `beneficio_mensal` for fonte única.
+- **Status:** Open
 
 **ADP import hardcoded mappings:**
 
@@ -75,26 +85,24 @@
 - Files: `ImportacaoFolhaAdpService.java`
 - Impact: Nova filial/rubrica exige redeploy.
 - Fix approach: Tabelas de config ou YAML administrável.
+- **Status:** Open; **test coverage added** (P2 T10, fixture `folha-adp-minimal.txt`)
 
 **Docker Java 21 vs pom Java 17:**
 
 - Issue: Bytecode alvo 17; imagem build/runtime Temurin 21.
 - Files: `pom.xml`, `Dockerfile`
-- Impact: Confusão de versão para contribuidores.
-- Fix approach: Alinhar 17 ou 21 de ponta a ponta.
+- **Status:** Open
 
 **Unused frontend dependency / dead code:**
 
-- Issue: `@tanstack/react-query` instalado sem uso; `beneficioService.ts`, `pages/Example`, `App.tsx`/`App.css` fora do entry `main.tsx`.
-- Files: `frontend/package.json`, `frontend/src/services/beneficioService.ts`, `frontend/src/main.tsx`
-- Impact: Ruído e falsa expectativa de padrões.
-- Fix approach: Remover ou adotar Query; limpar órfãos.
+- Issue: `@tanstack/react-query` instalado sem uso; órfãos em `frontend/src/`.
+- **Status:** Open — P3 cleanup
 
 **Axios typing shortcuts:**
 
 - Issue: `@ts-ignore` e `any` nos interceptors.
 - Files: `frontend/src/services/api.ts`
-- Fix approach: Instância Axios tipada.
+- **Status:** Open
 
 ## Fragile Areas
 
@@ -102,57 +110,61 @@
 
 - Files: `ImportacaoFolhaAdpService.java`
 - Why fragile: Arquivo grande + `@Transactional` amplo — timeout/rollback total.
-- Common failures: Upload > limites, layout divergente, mapeamento de empresa ausente.
-- Safe modification: Mudar parse/mapeamento com fixtures; evitar side effects fora da transação.
-- Test coverage: Sem unit test dedicado à importação ADP (há testes para benefício mensal).
+- Safe modification: Mudar parse/mapeamento com fixtures.
+- Test coverage: **`ImportacaoFolhaAdpServiceTest` + fixtures** (adequação P2 T10 / AAP-13).
+- **Status:** Mitigated (unit tests); integração com DB real pendente
 
 **FolhaTotalizacaoService dual source:**
 
 - Files: `FolhaTotalizacaoService.java`
-- Why fragile: Presença de qualquer `BeneficioMensal` ativo na competência muda a fonte para todos os funcionários daquele período (via `existsByCompetencia...`).
-- Common failures: Competência parcialmente importada mascara legado.
-- Safe modification: Cobrir com testes de ambos os ramos (já parcialmente em `FolhaTotalizacaoServiceTest`).
-- Test coverage: Unitário presente; falta cenário de “parcialidade” de importação.
+- Why fragile: Presença de `BeneficioMensal` muda fonte para competência inteira.
+- Test coverage: Unitário presente (`FolhaTotalizacaoServiceTest`).
+- **Status:** Open — cenário importação parcial
 
 **Security matchers + role ADMIN:**
 
-- Files: `SecurityConfig.java`, `TipoBeneficioController.java`
-- Why fragile: Paths com/sem `/api` e mudança recente de domínio benefícios.
-- Safe modification: Validar com testes `MockMvc`/`@SpringBootTest` + `spring-security-test`.
+- Files: `SecurityConfig.java`, controllers benefícios
+- Why fragile: Paths com/sem `/api`.
+- Safe modification: Validar com `MockMvc`/`SecurityConfig*Test`.
+- **Status:** Mitigated (regressão P1 T5)
 
 ## Missing Critical Features
 
 **Backend de Relatórios / PDF:**
 
 - Problem: UI e service frontend existem sem API.
-- Current workaround: Outras telas de resumo.
-- Blocks: Entrega de relatórios oficiais pelo menu Relatórios.
-- Implementation complexity: Média–alta (agregações + geração PDF/export).
+- **Status:** Open
 
 ## Test Coverage Gaps
 
 **Controllers / Security / Repositories:**
 
-- What's not tested: Camada HTTP, JWT filter, queries SQL reais, importação ADP.
-- Risk: Regressões de auth/path e SQL só aparecem em runtime.
-- Priority: High (security + importação), Medium (CRUD controllers)
-- Difficulty: Precisa Testcontainers ou DB de teste + `@SpringBootTest`.
+- What's not tested: Repositories SQL reais, integração end-to-end.
+- Progress (adequação P2): JWT filter/service tests (T9), GlobalExceptionHandler (T11), importação ADP (T10), organograma service+ACL+controller smoke (T8/T8-ext).
+- **Status:** Partially closed; Testcontainers follow-up
 
 **Frontend:**
 
-- What's not tested: Páginas, interceptors de auth, organograma.
-- Risk: Quebras de UX/ACL sem detecção no CI.
-- Priority: Medium
-- Difficulty: Requer setup Vitest/RTL do zero.
+- What's not tested: Páginas, interceptors, organograma.
+- **Status:** Open — AAP-23 Vitest baseline (Batch 3)
 
-**Exception handler incompleto:**
+**Exception handler:**
 
-- What's not tested / uncovered: Algumas exceções de domínio fora do `GlobalExceptionHandler`; sem handler explícito para `MethodArgumentNotValidException`.
-- Risk: Respostas 500 genéricas ou tratamento inconsistente.
-- Priority: Medium
-- Files: `exception/GlobalExceptionHandler.java`
+- Progress: `GlobalExceptionHandlerTest` (T11 / AAP-15).
+- Remaining: `MethodArgumentNotValidException` handler ausente.
+- **Status:** Partially closed
+
+## Sonar follow-ups (post P2 gate)
+
+| Item | Severity | Location | Target | Status (P3 T15) |
+| ---- | -------- | -------- | ------ | --------------- |
+| S5804 user enumeration | MAJOR | `AuthenticationService` | Unified login/refresh failure paths | **Mitigated** (T15) |
+| S4502 CSRF disabled | CRITICAL | `SecurityConfig` | `@SuppressWarnings` + INTEGRATIONS.md | **Suppressed** (T15) |
+| S2245 pseudorandom | MAJOR | `FolhaPagamento/index.tsx` | Replace `Math.random` key | **Open** — fora escopo P1/P2; fix in follow-up |
+| `@Transactional` via `this` | CRITICAL | `FolhaTotalizacaoService`, `OrganogramaAcessoService` | Self-invocation bypasses proxy | **Open** — services não alterados em P1/P2 (AAP-22) |
 
 ---
 
 _Concerns audit: 2026-07-25_  
-_Update as issues are fixed or new ones discovered_
+_Sync adequação P2: 2026-07-29 (JaCoCo gate pass; Sonar bugs=0; vulns CRITICAL+MAJOR=4 documented in validation.md)_  
+_Sync adequação P3 T15: 2026-07-29 (S1149 logger→log in touched files; S5804/S4502 addressed)_

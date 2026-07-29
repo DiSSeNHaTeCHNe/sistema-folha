@@ -17,8 +17,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
@@ -58,6 +61,129 @@ class ImportacaoFolhaAdpServiceTest {
 
     @InjectMocks
     private ImportacaoFolhaAdpService importacaoFolhaAdpService;
+
+    @Test
+    void importar_fixtureMinimal_happyPathPersisteZeroLinhas() throws Exception {
+        MockMultipartFile arquivo = fixture("importacao/folha-adp-minimal.txt");
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenReturn(new ProcessamentoResultadoDTO(0, 0, 0));
+
+        ImportacaoFolhaAdpResult result = importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false);
+
+        assertTrue(result.folhasPagamento().isEmpty());
+        verify(folhaImportacaoPort).persistirImportacao(any());
+        verify(folhaProcessamentoPort).processar(COMPETENCIA_INICIO, COMPETENCIA_FIM, false, false);
+    }
+
+    @Test
+    void importar_fixtureLayoutInvalido_funcionarioInexistente_lancaRuntimeException() throws Exception {
+        MockMultipartFile arquivo = fixture("importacao/folha-adp-invalid.txt");
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(cadastrosImportLookupPort.findFuncionarioByIdExterno("99999"))
+            .thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false)
+        );
+
+        assertTrue(ex.getMessage().contains("Funcionários não encontrados"));
+        verify(folhaImportacaoPort, never()).persistirImportacao(any());
+        verify(folhaProcessamentoPort, never()).processar(any(), any(), anyBoolean(), anyBoolean());
+    }
+
+    @Test
+    void importar_comTotaisNoArquivo_montaResumoNoCommand() throws Exception {
+        MockMultipartFile arquivo = arquivoComTotaisResumo();
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenReturn(new ProcessamentoResultadoDTO(1, 1, 1));
+
+        importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false);
+
+        ArgumentCaptor<FolhaImportacaoCommand> captor = ArgumentCaptor.forClass(FolhaImportacaoCommand.class);
+        verify(folhaImportacaoPort).persistirImportacao(captor.capture());
+        assertNotNull(captor.getValue().resumo());
+        assertEquals(1, captor.getValue().resumo().totalEmpregados());
+    }
+
+    @Test
+    void importar_decimoTerceiroDetectadoPorCompetenciaDezembro() throws Exception {
+        MockMultipartFile arquivo = arquivoComCompetenciaDezembro();
+        when(folhaConsultaPort.existsResumoAtivo(
+            eq(LocalDate.of(2024, 12, 1)), eq(LocalDate.of(2024, 12, 31)), eq(true)))
+            .thenReturn(false);
+        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(folhaProcessamentoPort.processar(
+            eq(LocalDate.of(2024, 12, 1)), eq(LocalDate.of(2024, 12, 31)), eq(true), eq(false)))
+            .thenReturn(new ProcessamentoResultadoDTO(0, 0, 0));
+
+        importacaoFolhaAdpService.importarFolhaAdp(arquivo, null, false);
+
+        verify(folhaProcessamentoPort).processar(
+            LocalDate.of(2024, 12, 1), LocalDate.of(2024, 12, 31), true, false);
+    }
+
+    @Test
+    void importar_conflitoCpfCompetencia_lancaRuntimeException() throws Exception {
+        MockMultipartFile arquivo = arquivoComFuncionarioERubrica();
+        FuncionarioImportRef funcionario = new FuncionarioImportRef(
+            1L, "12345", "João", "12345678901", 3L, 4L, 5L);
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(cadastrosImportLookupPort.findFuncionarioByIdExterno("12345"))
+            .thenReturn(Optional.of(funcionario));
+        when(cadastrosImportLookupPort.findOrCreateRubrica(eq("0010"), anyString(), anyString()))
+            .thenReturn(new RubricaImportRef(2L, "0010", "PROVENTO"));
+        when(folhaConsultaPort.existsAtivaByCpfAndCompetenciaExcludingFuncionario(
+            eq("12345678901"), eq(1L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false)))
+            .thenReturn(true);
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false)
+        );
+
+        assertTrue(ex.getMessage().contains("Folha duplicada por CPF"));
+        verify(folhaImportacaoPort, never()).persistirImportacao(any());
+    }
+
+    @Test
+    void importar_linhaJaExistente_naoDuplicaNoCommand() throws Exception {
+        MockMultipartFile arquivo = arquivoComFuncionarioERubrica();
+        FuncionarioImportRef funcionario = new FuncionarioImportRef(
+            1L, "12345", "João", "12345678901", 3L, 4L, 5L);
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(cadastrosImportLookupPort.findFuncionarioByIdExterno("12345"))
+            .thenReturn(Optional.of(funcionario));
+        when(cadastrosImportLookupPort.findOrCreateRubrica(eq("0010"), anyString(), anyString()))
+            .thenReturn(new RubricaImportRef(2L, "0010", "PROVENTO"));
+        when(folhaConsultaPort.existsAtivaByCpfAndCompetenciaExcludingFuncionario(
+            eq("12345678901"), eq(1L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false)))
+            .thenReturn(false);
+        when(folhaConsultaPort.existsByFuncionarioIdAndRubricaIdAndPeriodo(
+            eq(1L), eq(2L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false)))
+            .thenReturn(true);
+        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenReturn(new ProcessamentoResultadoDTO(0, 0, 0));
+
+        importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false);
+
+        ArgumentCaptor<FolhaImportacaoCommand> captor = ArgumentCaptor.forClass(FolhaImportacaoCommand.class);
+        verify(folhaImportacaoPort).persistirImportacao(captor.capture());
+        assertTrue(captor.getValue().linhas().isEmpty());
+    }
 
     @Test
     void importar_duplicidadeSemConfirmar_lancaFolhaDuplicadaENaoPersiste() throws Exception {
@@ -218,6 +344,45 @@ class ImportacaoFolhaAdpServiceTest {
         assertTrue(ex.getMessage().contains("Funcionários não encontrados"));
         verify(folhaImportacaoPort, never()).persistirImportacao(any());
         verify(folhaProcessamentoPort, never()).processar(any(), any(), anyBoolean(), anyBoolean());
+    }
+
+    private MockMultipartFile fixture(String classpathLocation) throws IOException {
+        ClassPathResource resource = new ClassPathResource(classpathLocation);
+        byte[] bytes;
+        try (InputStream in = resource.getInputStream()) {
+            bytes = in.readAllBytes();
+        }
+        return new MockMultipartFile(
+            "arquivo",
+            resource.getFilename(),
+            "text/plain",
+            bytes
+        );
+    }
+
+    private MockMultipartFile arquivoComTotaisResumo() {
+        String conteudo = "Competência: 01/10/2024 a 31/10/2024\n"
+            + "Total de Empregados: 1\n"
+            + "Total de Encargos: 100,00\n"
+            + "Total de Pagamentos: 1000,00\n"
+            + "Total de Descontos: 200,00\n"
+            + "Total Líquido: 800,00\n";
+        return new MockMultipartFile(
+            "arquivo",
+            "folha.txt",
+            "text/plain",
+            conteudo.getBytes(Charset.forName("WINDOWS-1252"))
+        );
+    }
+
+    private MockMultipartFile arquivoComCompetenciaDezembro() {
+        String conteudo = "Competência: 01/12/2024 a 31/12/2024\n";
+        return new MockMultipartFile(
+            "arquivo",
+            "folha-dez.txt",
+            "text/plain",
+            conteudo.getBytes(Charset.forName("WINDOWS-1252"))
+        );
     }
 
     private MockMultipartFile arquivoComCompetencia() {

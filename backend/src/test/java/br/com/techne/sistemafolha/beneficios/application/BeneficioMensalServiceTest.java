@@ -256,6 +256,27 @@ class BeneficioMensalServiceTest {
     }
 
     @Test
+    void criarParaUsuario_com_acesso_persiste_beneficio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(1L)).thenReturn(Optional.of(funcionarioAtivo(1L)));
+        when(tipoBeneficioRepository.findById(2L)).thenReturn(Optional.of(tipoAtivo(2L, "VALE_REFEICAO")));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> {
+            BeneficioMensal bm = inv.getArgument(0);
+            bm.setId(10L);
+            return bm;
+        });
+
+        BeneficioMensalDTO dto = dtoBase(null, 1L, 2L, new BigDecimal("450.00"));
+        Optional<BeneficioMensalDTO> result = beneficioMensalService.criarParaUsuario(LOGIN, dto);
+
+        assertTrue(result.isPresent());
+        assertEquals(10L, result.get().id());
+        verify(beneficioMensalRepository).save(any(BeneficioMensal.class));
+    }
+
+    @Test
     void criarParaUsuario_sem_acesso_ao_centro_retorna_vazio() {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))

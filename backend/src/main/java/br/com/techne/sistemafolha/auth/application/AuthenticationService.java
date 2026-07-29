@@ -26,8 +26,10 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
-    private static final Logger logger = LoggerFactory.getLogger(AuthenticationService.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
     private static final String DOMAIN = "auth";
+    private static final String MENSAGEM_LOGIN_INVALIDO = "Usuário ou senha inválidos";
+    private static final String MENSAGEM_REFRESH_INVALIDO = "Refresh token inválido ou expirado";
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -38,64 +40,62 @@ public class AuthenticationService {
     private final OrganogramaAcessoPort organogramaAcessoPort;
 
     @Transactional
+    @SuppressWarnings("java:S5804") // Mensagem unificada login/senha (AAP-08); UsernameNotFoundException exigido pelo contrato de auth
     public TokenDTO authenticate(LoginDTO loginDTO) {
-        logger.info("{}Iniciando autenticação para o usuário: {}", DomainLogging.prefix(DOMAIN), loginDTO.login());
-        
+        log.info("{}Iniciando autenticação para o usuário: {}", DomainLogging.prefix(DOMAIN), loginDTO.login());
+
+        Usuario usuario = usuarioRepository.findByLoginAndAtivoTrue(loginDTO.login()).orElse(null);
+        if (usuario == null || !passwordEncoder.matches(loginDTO.senha(), usuario.getSenha())) {
+            log.debug("Falha na autenticação para o usuário: {}", loginDTO.login());
+            throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
+        }
+
+        log.info("Senha verificada com sucesso para o usuário: {}", loginDTO.login());
+
         try {
-            Usuario usuario = usuarioRepository.findByLoginAndAtivoTrue(loginDTO.login())
-                    .orElseThrow(() -> {
-                        logger.error("Usuário não encontrado: {}", loginDTO.login());
-                        return new UsernameNotFoundException("Usuário não encontrado");
-                    });
-
-            logger.debug("Hash da senha armazenada: {}", usuario.getSenha());
-            
-            if (!passwordEncoder.matches(loginDTO.senha(), usuario.getSenha())) {
-                logger.error("Senha incorreta para o usuário: {}", loginDTO.login());
-                throw new UsernameNotFoundException("Senha incorreta");
-            }
-
-            logger.info("Senha verificada com sucesso para o usuário: {}", loginDTO.login());
-
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.login());
             String jwtToken = jwtService.generateToken(userDetails);
-            
+
             RefreshToken refreshToken = refreshTokenService.criarRefreshToken(loginDTO.login());
-            
+
             LocalDateTime tokenExpiration = LocalDateTime.now().plusSeconds(jwtService.getJwtExpirationTime() / 1000);
             LocalDateTime refreshExpiration = refreshToken.getDataExpiracao();
-            
+
             AcessoUsuarioDTO acessoUsuario = obterAcessoUsuario(usuario.getId());
-            
-            logger.info("Token JWT e refresh token gerados com sucesso para o usuário: {}", loginDTO.login());
+
+            log.info("Token JWT e refresh token gerados com sucesso para o usuário: {}", loginDTO.login());
 
             return new TokenDTO(
-                loginDTO.login(), 
-                jwtToken, 
+                loginDTO.login(),
+                jwtToken,
                 refreshToken.getToken(),
                 tokenExpiration,
                 refreshExpiration,
                 acessoUsuario
             );
+        } catch (UsernameNotFoundException e) {
+            log.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
+            throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
         } catch (Exception e) {
-            logger.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
-            throw new UsernameNotFoundException("Usuário ou senha inválidos");
+            log.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
+            throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
         }
     }
 
     @Transactional
+    @SuppressWarnings("java:S5804") // Mensagem unificada para refresh inválido/expirado (AAP-08)
     public TokenDTO refreshToken(String refreshTokenString) {
-        logger.info("Processando refresh token");
-        
+        log.info("Processando refresh token");
+
         RefreshToken refreshToken = refreshTokenService.buscarPorToken(refreshTokenString)
-                .orElseThrow(() -> new RuntimeException("Refresh token não encontrado"));
-        
+                .orElseThrow(() -> new RuntimeException(MENSAGEM_REFRESH_INVALIDO));
+
         if (!refreshTokenService.validarRefreshToken(refreshToken)) {
-            throw new RuntimeException("Refresh token inválido ou expirado");
+            throw new RuntimeException(MENSAGEM_REFRESH_INVALIDO);
         }
-        
+
         Usuario usuario = refreshToken.getUsuario();
-        logger.info("Gerando novo token para o usuário: {}", usuario.getLogin());
+        log.info("Gerando novo token para o usuário: {}", usuario.getLogin());
         
         UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getLogin());
         String newJwtToken = jwtService.generateToken(userDetails);
@@ -107,7 +107,7 @@ public class AuthenticationService {
         
         AcessoUsuarioDTO acessoUsuario = obterAcessoUsuario(usuario.getId());
         
-        logger.info("Tokens renovados com sucesso para o usuário: {}", usuario.getLogin());
+        log.info("Tokens renovados com sucesso para o usuário: {}", usuario.getLogin());
         
         return new TokenDTO(
             usuario.getLogin(), 
@@ -121,11 +121,11 @@ public class AuthenticationService {
 
     @Transactional
     public void logout(String refreshTokenString) {
-        logger.info("Processando logout");
+        log.info("Processando logout");
         
         if (refreshTokenString != null && !refreshTokenString.isEmpty()) {
             refreshTokenService.revogarToken(refreshTokenString);
-            logger.info("Refresh token revogado no logout");
+            log.info("Refresh token revogado no logout");
         }
     }
 

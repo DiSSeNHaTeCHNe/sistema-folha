@@ -96,6 +96,7 @@ public class BeneficioMensalService {
         return listarCompetencias(periodo.inicio(), periodo.fim(), centrosParaFiltro(contexto));
     }
 
+    @Transactional
     public Optional<BeneficioMensalDTO> criarParaUsuario(String login, BeneficioMensalDTO dto) {
         AccessContextDTO contexto = obterContextoAcesso(login);
         Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
@@ -103,16 +104,17 @@ public class BeneficioMensalService {
         if (!aplicarFiltroAcesso(funcionario, contexto)) {
             return Optional.empty();
         }
-        return Optional.of(criar(dto));
+        return Optional.of(persistirNovoBeneficio(dto));
     }
 
+    @Transactional
     public boolean removerSeAutorizado(String login, Long id) {
         AccessContextDTO contexto = obterContextoAcesso(login);
         return beneficioMensalRepository.findById(id)
             .filter(b -> Boolean.TRUE.equals(b.getAtivo()))
             .filter(b -> aplicarFiltroAcesso(b, contexto))
             .map(b -> {
-                remover(id);
+                desativarBeneficio(id);
                 return true;
             })
             .orElse(false);
@@ -151,6 +153,15 @@ public class BeneficioMensalService {
 
     @Transactional
     public BeneficioMensalDTO criar(BeneficioMensalDTO dto) {
+        return persistirNovoBeneficio(dto);
+    }
+
+    @Transactional
+    public void remover(Long id) {
+        desativarBeneficio(id);
+    }
+
+    private BeneficioMensalDTO persistirNovoBeneficio(BeneficioMensalDTO dto) {
         Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
                 .orElseThrow(() -> new FuncionarioNotFoundException(dto.funcionarioId()));
 
@@ -171,8 +182,7 @@ public class BeneficioMensalService {
         return toDTO(beneficioMensalRepository.save(beneficio));
     }
 
-    @Transactional
-    public void remover(Long id) {
+    private void desativarBeneficio(Long id) {
         BeneficioMensal beneficio = beneficioMensalRepository.findById(id)
                 .filter(b -> Boolean.TRUE.equals(b.getAtivo()))
                 .orElseThrow(() -> new BeneficioMensalNotFoundException(id));

@@ -30,6 +30,16 @@ Não há integrações online com terceiros (sem SDKs de cloud, e-mail, filas ou
 
 ## API Surface (first-party)
 
+### Security (Spring Security + JWT)
+
+**Purpose:** Autenticação stateless e autorização por rota  
+**Location:** `backend/src/main/java/br/com/techne/sistemafolha/config/SecurityConfig.java`, `security/*`  
+**Authentication:** Bearer JWT no header `Authorization`; login/refresh públicos; demais rotas autenticadas  
+**CSRF:** **Desabilitado** (`csrf.disable()`). A API é stateless — tokens via header Bearer, sem cookie de sessão. CSRF protege sessões baseadas em cookie; não se aplica a este modelo. Reavaliar se auth migrar para cookie HttpOnly.  
+**Matchers:** Paths relativos ao `context-path` (`/api`); controllers mapeiam sem prefixo `/api` (ex.: `/beneficio-mensal`, `/tipo-beneficio`, `/importacao`). Rotas não listadas explicitamente caem em `anyRequest().authenticated()`.  
+**Roles:** Mutações em `tipo-beneficio` e `funcionario-rubrica-fixa` exigem `ADMIN`; `POST /folha-pagamento/processar` exige `ADMIN`.  
+**Audit (2026-07-29):** Matchers obsoletos (`/api/beneficios/**`) ausentes; alinhados com controllers modulares atuais.
+
 ### Auth API
 
 **Purpose:** Login, refresh, logout, acesso organograma  

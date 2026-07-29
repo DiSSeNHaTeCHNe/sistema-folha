@@ -17,7 +17,7 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -38,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String login;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.debug("Header de autorização não encontrado ou inválido: {}", authHeader);
+            log.debug("Header de autorização não encontrado ou inválido: {}", authHeader);
             filterChain.doFilter(request, response);
             return;
         }
@@ -46,14 +46,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             jwt = authHeader.substring(7);
             login = jwtService.extractLogin(jwt);
-            logger.debug("Token JWT extraído para o usuário: {}", login);
+            log.debug("Token JWT extraído para o usuário: {}", login);
 
             if (login != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(login);
-                logger.debug("UserDetails carregado para o usuário: {}", login);
+                log.debug("UserDetails carregado para o usuário: {}", login);
                 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
-                    logger.debug("Token JWT válido para o usuário: {}", login);
+                    log.debug("Token JWT válido para o usuário: {}", login);
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -61,13 +61,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    logger.debug("Autenticação configurada no SecurityContext para o usuário: {}", login);
+                    log.debug("Autenticação configurada no SecurityContext para o usuário: {}", login);
                 } else {
-                    logger.error("Token JWT inválido para o usuário: {}", login);
+                    log.error("Token JWT inválido para o usuário: {}", login);
                 }
             }
         } catch (Exception e) {
-            logger.error("Erro ao processar token JWT: {}", e.getMessage(), e);
+            log.error("Erro ao processar token JWT: {}", e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);

@@ -736,7 +736,7 @@ export function FolhaPagamento() {
               </TableHead>
               <TableBody>
                 {resumosFolha.map((resumo) => (
-                  <TableRow key={resumo.id || Math.random()}>
+                  <TableRow key={resumo.id}>
                     <TableCell>
                       {formatarDataCompetencia(resumo.competenciaInicio)} a {formatarDataCompetencia(resumo.competenciaFim)}
                     </TableCell>
