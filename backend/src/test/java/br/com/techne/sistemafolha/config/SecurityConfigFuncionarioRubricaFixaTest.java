@@ -56,7 +56,7 @@ class SecurityConfigFuncionarioRubricaFixaTest {
     void postRubricaFixa_semAdmin_retorna403() throws Exception {
         FuncionarioRubricaFixaDTO body = new FuncionarioRubricaFixaDTO(
             null, 1L, 2L, new BigDecimal("500.00"),
-            LocalDate.of(2024, 10, 1), null, null, true, null, null, null);
+            LocalDate.of(2024, 10, 1), null, null, true, null, null, null, null);
 
         mockMvc.perform(post("/funcionario-rubrica-fixa")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -78,10 +78,10 @@ class SecurityConfigFuncionarioRubricaFixaTest {
     void postRubricaFixa_comAdmin_retorna2xx() throws Exception {
         FuncionarioRubricaFixaDTO request = new FuncionarioRubricaFixaDTO(
             null, 1L, 2L, new BigDecimal("500.00"),
-            LocalDate.of(2024, 10, 1), null, null, true, null, null, null);
+            LocalDate.of(2024, 10, 1), null, null, true, null, null, null, null);
         FuncionarioRubricaFixaDTO response = new FuncionarioRubricaFixaDTO(
             10L, 1L, 2L, new BigDecimal("500.00"),
-            LocalDate.of(2024, 10, 1), null, null, true, "João", "900", "Ajuda");
+            LocalDate.of(2024, 10, 1), null, null, true, "João", "900", "Ajuda", null);
         when(funcionarioRubricaFixaService.criar(any(FuncionarioRubricaFixaDTO.class))).thenReturn(response);
 
         mockMvc.perform(post("/funcionario-rubrica-fixa")
