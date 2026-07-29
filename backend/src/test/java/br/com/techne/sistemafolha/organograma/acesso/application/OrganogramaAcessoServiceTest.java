@@ -143,6 +143,58 @@ class OrganogramaAcessoServiceTest {
     }
 
     @Test
+    void obterContextoAcesso_noComFilho_agregaCentrosDosDescendentes() {
+        Funcionario funcionario = funcionario(1L);
+        Usuario usuario = usuario(USUARIO_ID, funcionario);
+        NoOrganograma pai = no(5L, "Diretoria", 1);
+        NoOrganograma filho = no(6L, "Gerência", 2);
+        filho.setParent(pai);
+        FuncionarioOrganograma vinculo = vinculo(funcionario, pai);
+        CentroCusto centroPai = centro(100L);
+        CentroCusto centroFilho = centro(200L);
+
+        when(usuarioLookupPort.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(funcionarioOrganogramaRepository.findByFuncionarioWithNoAtivo(funcionario))
+            .thenReturn(List.of(vinculo));
+        when(centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(pai))
+            .thenReturn(List.of(centroNoOrganograma(centroPai)));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(pai))
+            .thenReturn(List.of(filho));
+        when(centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(filho))
+            .thenReturn(List.of(centroNoOrganograma(centroFilho)));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(filho))
+            .thenReturn(Collections.emptyList());
+
+        AccessContextDTO contexto = service.obterContextoAcesso(USUARIO_ID);
+
+        assertEquals(Set.of(100L, 200L), contexto.centrosCustoIds());
+        assertTrue(service.usuarioPodeAcessarCentroCusto(USUARIO_ID, 100L));
+        assertTrue(service.usuarioPodeAcessarCentroCusto(USUARIO_ID, 200L));
+        assertFalse(service.usuarioPodeAcessarCentroCusto(USUARIO_ID, 300L));
+    }
+
+    @Test
+    void usuarioPodeAcessarCentroCusto_escopoParcial_naoConcedeCentroForaDaSubarvore() {
+        Funcionario funcionario = funcionario(1L);
+        Usuario usuario = usuario(USUARIO_ID, funcionario);
+        NoOrganograma noUsuario = no(5L, "Gerência A", 2);
+        FuncionarioOrganograma vinculo = vinculo(funcionario, noUsuario);
+        CentroCusto centroEscopo = centro(100L);
+
+        when(usuarioLookupPort.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(funcionarioOrganogramaRepository.findByFuncionarioWithNoAtivo(funcionario))
+            .thenReturn(List.of(vinculo));
+        when(centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(noUsuario))
+            .thenReturn(List.of(centroNoOrganograma(centroEscopo)));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(noUsuario))
+            .thenReturn(Collections.emptyList());
+
+        assertTrue(service.usuarioPodeAcessarCentroCusto(USUARIO_ID, 100L));
+        assertFalse(service.usuarioPodeAcessarCentroCusto(USUARIO_ID, 101L));
+        assertEquals(Set.of(100L), service.obterCentrosCustoAcessiveis(USUARIO_ID));
+    }
+
+    @Test
     void usuarioPodeAcessarCentroCusto_comNo_verificaPertencimentoAoConjunto() {
         Funcionario funcionario = funcionario(1L);
         Usuario usuario = usuario(USUARIO_ID, funcionario);
