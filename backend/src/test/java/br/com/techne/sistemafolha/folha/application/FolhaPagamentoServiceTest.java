@@ -196,6 +196,7 @@ class FolhaPagamentoServiceTest {
         CentroCusto outroCentro = new CentroCusto();
         outroCentro.setId(20L);
         bloqueado.getFuncionario().setCentroCusto(outroCentro);
+        bloqueado.setCentroCusto(outroCentro);
 
         when(folhaPagamentoRepository.findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(
                 99L, DATA_INICIO, DATA_FIM))
@@ -244,6 +245,44 @@ class FolhaPagamentoServiceTest {
         assertEquals(2, result.size());
         assertEquals(10L, result.get(0).id());
         assertEquals(20L, result.get(1).id());
+    }
+
+    @Test
+    void consultarPorPeriodo_linhaCcDiferenteDoFuncionarioAtual_filtraPorCcDaLinha_fcc06() {
+        // FCC-06: linha CC-A, funcionário CC-B atual — gestor A vê, gestor B não
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(100L)));
+
+        CentroCusto ccLinha = new CentroCusto();
+        ccLinha.setId(100L);
+        ccLinha.setDescricao("CC Alpha");
+
+        CentroCusto ccFuncionarioAtual = new CentroCusto();
+        ccFuncionarioAtual.setId(200L);
+        ccFuncionarioAtual.setDescricao("CC Beta");
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(50L);
+        funcionario.setNome("Transferido");
+        funcionario.setCentroCusto(ccFuncionarioAtual);
+
+        FolhaPagamento folha = folhaAtiva(1L, 50L);
+        folha.setFuncionario(funcionario);
+        folha.setCentroCusto(ccLinha);
+
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folha));
+
+        List<FolhaPagamentoDTO> gestorA = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, DATA_INICIO, DATA_FIM, null);
+        assertEquals(1, gestorA.size());
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(200L)));
+        List<FolhaPagamentoDTO> gestorB = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, DATA_INICIO, DATA_FIM, null);
+        assertTrue(gestorB.isEmpty());
     }
 
     @Test

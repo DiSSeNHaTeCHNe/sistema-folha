@@ -83,6 +83,44 @@ class FolhaConsultaAdapterTest {
     }
 
     @Test
+    void findLinhasAtivasPorCompetencia_linhaCcDiferenteDoFuncionarioAtual_filtraPorCcDaLinha_fcc06() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+
+        CentroCusto ccLinha = new CentroCusto();
+        ccLinha.setId(100L);
+        ccLinha.setDescricao("CC Alpha");
+        ccLinha.setLinhaNegocio(linhaNegocio(10L));
+
+        CentroCusto ccFuncionarioAtual = new CentroCusto();
+        ccFuncionarioAtual.setId(200L);
+        ccFuncionarioAtual.setDescricao("CC Beta");
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(50L);
+        funcionario.setNome("Transferido");
+        funcionario.setCentroCusto(ccFuncionarioAtual);
+        funcionario.setCargo(cargo(5L));
+
+        FolhaPagamento folha = folhaPagamento(50L, 100L, "CC Alpha", new BigDecimal("1000.00"), false);
+        folha.setFuncionario(funcionario);
+        folha.setCentroCusto(ccLinha);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(folha));
+
+        List<FolhaLinhaSnapshot> gestorA = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L));
+        assertEquals(1, gestorA.size());
+        assertEquals(100L, gestorA.get(0).centroCustoId());
+
+        List<FolhaLinhaSnapshot> gestorB = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(200L));
+        assertTrue(gestorB.isEmpty());
+    }
+
+    @Test
     void findLinhasAtivasPorCompetencia_semFicha_fallbackAdpFiltraPorCentroCusto() {
         when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(false);
@@ -255,6 +293,20 @@ class FolhaConsultaAdapterTest {
         resumo.setDecimoTerceiro(decimoTerceiro);
         resumo.setAtivo(true);
         return resumo;
+    }
+
+    private LinhaNegocio linhaNegocio(Long id) {
+        LinhaNegocio linhaNegocio = new LinhaNegocio();
+        linhaNegocio.setId(id);
+        linhaNegocio.setDescricao("LN Teste");
+        return linhaNegocio;
+    }
+
+    private Cargo cargo(Long id) {
+        Cargo cargo = new Cargo();
+        cargo.setId(id);
+        cargo.setDescricao("Analista");
+        return cargo;
     }
 
     private FolhaPagamento folhaPagamento(
