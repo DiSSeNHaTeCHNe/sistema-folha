@@ -38,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String login;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.debug("Header de autorização não encontrado ou inválido: {}", authHeader);
+            log.debug("Header de autorização ausente ou malformado (Bearer esperado)");
             filterChain.doFilter(request, response);
             return;
         }
