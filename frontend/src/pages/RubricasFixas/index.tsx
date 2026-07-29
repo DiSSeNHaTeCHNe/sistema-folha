@@ -43,9 +43,6 @@ const getApiErrorMessage = (error: unknown, fallback: string): string => {
   }
 
   const response = (error as { response?: { status?: number; data?: unknown } }).response;
-  if (response?.status === 409) {
-    return 'Já existe rubrica fixa com vigência sobreposta para este funcionário.';
-  }
   if (response?.data && typeof response.data === 'object') {
     const data = response.data as { message?: string };
     if (data.message) {
@@ -53,6 +50,18 @@ const getApiErrorMessage = (error: unknown, fallback: string): string => {
     }
   }
   return fallback;
+};
+
+const formatPercentualFixa = (porcentagem?: number | null): string => {
+  const value = porcentagem ?? 100;
+  return `${value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`;
+};
+
+const formatFuncionarioFixa = (item: FuncionarioRubricaFixa): string => {
+  if (item.funcionarioId == null) {
+    return 'Todos';
+  }
+  return item.funcionarioNome ?? String(item.funcionarioId);
 };
 
 export default function RubricasFixas() {
@@ -234,6 +243,7 @@ export default function RubricasFixas() {
                   <TableCell>Funcionário</TableCell>
                   <TableCell>Rubrica</TableCell>
                   <TableCell>Valor</TableCell>
+                  <TableCell>Percentual</TableCell>
                   <TableCell>Vigência</TableCell>
                   <TableCell>Comentário</TableCell>
                   <TableCell align="center">Ações</TableCell>
@@ -242,18 +252,19 @@ export default function RubricasFixas() {
               <TableBody>
                 {registros.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={7} align="center">
                       Nenhuma rubrica fixa encontrada
                     </TableCell>
                   </TableRow>
                 ) : (
                   registros.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{item.funcionarioNome ?? item.funcionarioId}</TableCell>
+                      <TableCell>{formatFuncionarioFixa(item)}</TableCell>
                       <TableCell>
                         {item.rubricaCodigo} - {item.rubricaDescricao}
                       </TableCell>
                       <TableCell>{formatMoneyDisplay(item.valor)}</TableCell>
+                      <TableCell>{formatPercentualFixa(item.porcentagem)}</TableCell>
                       <TableCell>
                         {item.vigenciaInicio}
                         {item.vigenciaFim ? ` a ${item.vigenciaFim}` : ' (aberta)'}
