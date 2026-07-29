@@ -71,14 +71,11 @@ class FolhaLinhaAgregacao {
 
         Map<Long, BigDecimal> beneficios = custoBeneficiosPorFuncionario != null
             ? custoBeneficiosPorFuncionario : Map.of();
-        Map<Long, BigDecimal> encargos = encargosPorFuncionario != null
-            ? encargosPorFuncionario : Map.of();
 
         BigDecimal totalBruto = BigDecimal.ZERO;
         BigDecimal totalLiquido = BigDecimal.ZERO;
         BigDecimal totalCustoFolha = BigDecimal.ZERO;
         BigDecimal totalCustoBeneficios = BigDecimal.ZERO;
-        BigDecimal totalEncargos = BigDecimal.ZERO;
         BigDecimal totalCustoEmpresa = BigDecimal.ZERO;
 
         for (Map.Entry<Long, List<FolhaLinhaSnapshot>> entry : porFuncionario.entrySet()) {
@@ -90,16 +87,13 @@ class FolhaLinhaAgregacao {
 
             BigDecimal custoBeneficios = FolhaMotorCalculo.arredondar(
                 beneficios.getOrDefault(funcionarioId, BigDecimal.ZERO));
-            BigDecimal encargosFuncionario = FolhaMotorCalculo.arredondar(
-                encargos.getOrDefault(funcionarioId, BigDecimal.ZERO));
             BigDecimal custoEmpresa = FolhaCustoEmpresaComposer.compor(
-                totais.custoFolha(), encargosFuncionario, custoBeneficios);
+                totais.custoFolha(), BigDecimal.ZERO, custoBeneficios);
 
             totalBruto = totalBruto.add(totais.bruto());
             totalLiquido = totalLiquido.add(totais.liquido());
             totalCustoFolha = totalCustoFolha.add(totais.custoFolha());
             totalCustoBeneficios = totalCustoBeneficios.add(custoBeneficios);
-            totalEncargos = totalEncargos.add(encargosFuncionario);
             totalCustoEmpresa = totalCustoEmpresa.add(custoEmpresa);
         }
 
@@ -110,14 +104,14 @@ class FolhaLinhaAgregacao {
             FolhaMotorCalculo.arredondar(totalCustoFolha),
             FolhaMotorCalculo.arredondar(totalCustoBeneficios),
             FolhaMotorCalculo.arredondar(totalCustoEmpresa),
-            FolhaMotorCalculo.arredondar(totalEncargos)
+            BigDecimal.ZERO.setScale(2)
         );
     }
 
     private FolhaMotorCalculo.LinhaCalculoInput toInput(FolhaLinhaSnapshot linha) {
         BigDecimal valor = linha.valor() != null ? linha.valor() : BigDecimal.ZERO;
         return new FolhaMotorCalculo.LinhaCalculoInput(
-            valor, linha.operadorBruto(), linha.operadorLiquido(), linha.operadorCusto());
+            valor, linha.operadorBruto(), linha.operadorLiquido(), linha.operadorCusto(), linha.porcentagem());
     }
 
     private TotaisResumo zerosResumo() {

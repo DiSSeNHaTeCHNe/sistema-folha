@@ -85,8 +85,34 @@ class FolhaLinhaAgregacaoTest {
         assertEquals(0, new BigDecimal("7500.00").compareTo(totais.totalLiquido()));
         assertEquals(0, new BigDecimal("8000.00").compareTo(totais.totalCustoFolha()));
         assertEquals(0, new BigDecimal("300.00").compareTo(totais.totalCustoBeneficios()));
-        assertEquals(0, new BigDecimal("1000.00").compareTo(totais.totalEncargos()));
-        assertEquals(0, new BigDecimal("9300.00").compareTo(totais.totalCustoEmpresa()));
+        assertEquals(0, BigDecimal.ZERO.setScale(2).compareTo(totais.totalEncargos()));
+        assertEquals(0, new BigDecimal("8300.00").compareTo(totais.totalCustoEmpresa()));
+    }
+
+    @Test
+    void agregarComBeneficiosEEncargos_encargosIgnoradosNaComposicao() {
+        List<FolhaLinhaSnapshot> linhas = List.of(
+            linhaOperadores(1L, "8000.00", (short) 1, (short) 1, (short) 1, null)
+        );
+        Map<Long, BigDecimal> encargos = Map.of(1L, new BigDecimal("800.00"));
+
+        FolhaLinhaAgregacao.TotaisResumo totais = agregacao.agregar(linhas, Map.of(), encargos);
+
+        assertEquals(0, BigDecimal.ZERO.setScale(2).compareTo(totais.totalEncargos()));
+        assertEquals(0, new BigDecimal("8000.00").compareTo(totais.totalCustoEmpresa()));
+    }
+
+    @Test
+    void agregarComBeneficiosEEncargos_porcentagemSnapshot_aplicaNoCusto() {
+        List<FolhaLinhaSnapshot> linhas = List.of(
+            linhaOperadores(1L, "7258.43", (short) 1, (short) 1, (short) 1, new BigDecimal("138.63"))
+        );
+
+        FolhaLinhaAgregacao.TotaisResumo totais = agregacao.agregar(linhas, Map.of(), Map.of());
+
+        assertEquals(0, new BigDecimal("7258.43").compareTo(totais.totalBruto()));
+        assertEquals(0, new BigDecimal("10062.36").compareTo(totais.totalCustoFolha()));
+        assertEquals(0, new BigDecimal("10062.36").compareTo(totais.totalCustoEmpresa()));
     }
 
     @Test
@@ -112,9 +138,14 @@ class FolhaLinhaAgregacaoTest {
     }
 
     private static FolhaLinhaSnapshot linhaOperadores(
-            Long funcionarioId, String valor, short ob, short ol, short oc) {
+            Long funcionarioId, String valor, short ob, short ol, short oc, BigDecimal porcentagem) {
         return new FolhaLinhaSnapshot(
             funcionarioId, "Func " + funcionarioId, 1L, "CC", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", "PROVENTO", new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, null);
+            1L, "001", "Rubrica", "PROVENTO", new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, porcentagem);
+    }
+
+    private static FolhaLinhaSnapshot linhaOperadores(
+            Long funcionarioId, String valor, short ob, short ol, short oc) {
+        return linhaOperadores(funcionarioId, valor, ob, ol, oc, null);
     }
 }
