@@ -52,26 +52,34 @@ public class AuthenticationService {
 
         log.info("Senha verificada com sucesso para o usuário: {}", loginDTO.login());
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.login());
-        String jwtToken = jwtService.generateToken(userDetails);
+        try {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.login());
+            String jwtToken = jwtService.generateToken(userDetails);
 
-        RefreshToken refreshToken = refreshTokenService.criarRefreshToken(loginDTO.login());
+            RefreshToken refreshToken = refreshTokenService.criarRefreshToken(loginDTO.login());
 
-        LocalDateTime tokenExpiration = LocalDateTime.now().plusSeconds(jwtService.getJwtExpirationTime() / 1000);
-        LocalDateTime refreshExpiration = refreshToken.getDataExpiracao();
+            LocalDateTime tokenExpiration = LocalDateTime.now().plusSeconds(jwtService.getJwtExpirationTime() / 1000);
+            LocalDateTime refreshExpiration = refreshToken.getDataExpiracao();
 
-        AcessoUsuarioDTO acessoUsuario = obterAcessoUsuario(usuario.getId());
+            AcessoUsuarioDTO acessoUsuario = obterAcessoUsuario(usuario.getId());
 
-        log.info("Token JWT e refresh token gerados com sucesso para o usuário: {}", loginDTO.login());
+            log.info("Token JWT e refresh token gerados com sucesso para o usuário: {}", loginDTO.login());
 
-        return new TokenDTO(
-            loginDTO.login(),
-            jwtToken,
-            refreshToken.getToken(),
-            tokenExpiration,
-            refreshExpiration,
-            acessoUsuario
-        );
+            return new TokenDTO(
+                loginDTO.login(),
+                jwtToken,
+                refreshToken.getToken(),
+                tokenExpiration,
+                refreshExpiration,
+                acessoUsuario
+            );
+        } catch (UsernameNotFoundException e) {
+            log.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
+            throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
+        } catch (Exception e) {
+            log.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
+            throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
+        }
     }
 
     @Transactional

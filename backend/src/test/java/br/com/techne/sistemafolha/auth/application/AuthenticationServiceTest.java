@@ -11,10 +11,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -68,6 +71,23 @@ class AuthenticationServiceTest {
         Usuario usuario = usuarioAtivo();
         when(usuarioRepository.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(SENHA, usuario.getSenha())).thenReturn(false);
+
+        UsernameNotFoundException ex = assertThrows(
+            UsernameNotFoundException.class,
+            () -> authenticationService.authenticate(new LoginDTO(LOGIN, SENHA)));
+
+        assertEquals(MENSAGEM_GENERICA, ex.getMessage());
+    }
+
+    @Test
+    void authenticate_falhaPosCredencial_lancaMensagemGenerica() {
+        Usuario usuario = usuarioAtivo();
+        UserDetails userDetails = User.withUsername(LOGIN).password("hash").authorities(List.of()).build();
+
+        when(usuarioRepository.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(SENHA, usuario.getSenha())).thenReturn(true);
+        when(userDetailsService.loadUserByUsername(LOGIN)).thenReturn(userDetails);
+        when(jwtService.generateToken(userDetails)).thenThrow(new RuntimeException("JWT indisponível"));
 
         UsernameNotFoundException ex = assertThrows(
             UsernameNotFoundException.class,
