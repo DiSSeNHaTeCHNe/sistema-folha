@@ -296,7 +296,60 @@ class FolhaPagamentoServiceTest {
         assertTrue(result.isEmpty());
         verify(cadastrosLookupPort, never()).findCentroCustoById(any());
         verify(folhaPagamentoRepository, never())
+            .findByCentroCustoAndDataInicioBetweenAndAtivoTrue(any(), any(), any());
+    }
+
+    @Test
+    void consultarPorCentroCusto_comPermissao_consultaCcDaLinha_fcc10() {
+        stubUsuario();
+        when(organogramaAcessoPort.usuarioPodeAcessarCentroCusto(USUARIO_ID, 100L)).thenReturn(true);
+
+        CentroCusto ccConsulta = new CentroCusto();
+        ccConsulta.setId(100L);
+        ccConsulta.setDescricao("CC Alpha");
+        when(cadastrosLookupPort.findCentroCustoById(100L)).thenReturn(Optional.of(ccConsulta));
+
+        FolhaPagamento folhaCcAntigo = folhaAtiva(1L, 50L);
+        folhaCcAntigo.getCentroCusto().setId(100L);
+        CentroCusto ccFuncionarioAtual = new CentroCusto();
+        ccFuncionarioAtual.setId(200L);
+        folhaCcAntigo.getFuncionario().setCentroCusto(ccFuncionarioAtual);
+
+        when(folhaPagamentoRepository.findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
+                ccConsulta, DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folhaCcAntigo));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorCentroCusto(
+            LOGIN, 100L, DATA_INICIO, DATA_FIM);
+
+        assertEquals(1, result.size());
+        assertEquals(100L, result.get(0).centroCustoId());
+        verify(folhaPagamentoRepository).findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
+            ccConsulta, DATA_INICIO, DATA_FIM);
+        verify(folhaPagamentoRepository, never())
             .findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(any(), any(), any());
+    }
+
+    @Test
+    void consultarPorCentroCusto_comPermissao_retorna_linhas() {
+        stubUsuario();
+        when(organogramaAcessoPort.usuarioPodeAcessarCentroCusto(USUARIO_ID, 5L)).thenReturn(true);
+
+        CentroCusto centroCusto = new CentroCusto();
+        centroCusto.setId(5L);
+        when(cadastrosLookupPort.findCentroCustoById(5L)).thenReturn(Optional.of(centroCusto));
+
+        FolhaPagamento folha = folhaAtiva(10L, 99L);
+        when(folhaPagamentoRepository.findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
+                centroCusto, DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folha));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorCentroCusto(
+            LOGIN, 5L, DATA_INICIO, DATA_FIM);
+
+        assertEquals(1, result.size());
+        verify(folhaPagamentoRepository).findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
+            centroCusto, DATA_INICIO, DATA_FIM);
     }
 
     @Test

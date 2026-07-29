@@ -80,7 +80,7 @@ public class FolhaPagamentoService {
             .orElseThrow(() -> new CentroCustoNotFoundException(centroCustoId));
 
         return folhaPagamentoRepository
-            .findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(centroCusto, dataInicio, dataFim)
+            .findByCentroCustoAndDataInicioBetweenAndAtivoTrue(centroCusto, dataInicio, dataFim)
             .stream()
             .map(this::toDTO)
             .collect(Collectors.toList());
