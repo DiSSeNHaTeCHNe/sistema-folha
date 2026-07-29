@@ -44,15 +44,15 @@ public class AuthenticationService {
         try {
             Usuario usuario = usuarioRepository.findByLoginAndAtivoTrue(loginDTO.login())
                     .orElseThrow(() -> {
-                        logger.error("Usuário não encontrado: {}", loginDTO.login());
-                        return new UsernameNotFoundException("Usuário não encontrado");
+                        logger.debug("Falha na autenticação para o usuário: {}", loginDTO.login());
+                        return new UsernameNotFoundException("Usuário ou senha inválidos");
                     });
 
             logger.debug("Hash da senha armazenada: {}", usuario.getSenha());
             
             if (!passwordEncoder.matches(loginDTO.senha(), usuario.getSenha())) {
-                logger.error("Senha incorreta para o usuário: {}", loginDTO.login());
-                throw new UsernameNotFoundException("Senha incorreta");
+                logger.debug("Falha na autenticação para o usuário: {}", loginDTO.login());
+                throw new UsernameNotFoundException("Usuário ou senha inválidos");
             }
 
             logger.info("Senha verificada com sucesso para o usuário: {}", loginDTO.login());
