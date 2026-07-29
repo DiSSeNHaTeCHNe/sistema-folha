@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.folha.domain;
 
+import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,10 @@ public class FichaMensal {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "funcionario_id", nullable = false)
     private Funcionario funcionario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "centro_custo_id")
+    private CentroCusto centroCusto;
 
     @Column(name = "competencia_inicio", nullable = false)
     private LocalDate competenciaInicio;

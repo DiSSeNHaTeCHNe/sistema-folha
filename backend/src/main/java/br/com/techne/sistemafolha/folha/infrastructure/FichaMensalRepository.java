@@ -18,12 +18,16 @@ public interface FichaMensalRepository extends JpaRepository<FichaMensal, Long> 
         SELECT f FROM FichaMensal f
         JOIN FETCH f.funcionario func
         LEFT JOIN FETCH func.centroCusto
+        LEFT JOIN FETCH f.centroCusto
         WHERE f.id = :id AND f.ativo = true
         """)
     Optional<FichaMensal> findByIdAtivoWithFuncionario(@Param("id") Long id);
 
     @Query("""
         SELECT f FROM FichaMensal f
+        JOIN FETCH f.funcionario func
+        LEFT JOIN FETCH func.centroCusto
+        LEFT JOIN FETCH f.centroCusto
         WHERE f.ativo = true
         AND f.funcionario.id = :funcionarioId
         AND f.competenciaInicio = :competenciaInicio

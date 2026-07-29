@@ -66,13 +66,8 @@ public class BeneficioConsultaAdapter implements BeneficioConsultaPort {
         if (centrosCustoIds == null || centrosCustoIds.isEmpty()) {
             return 0L;
         }
-        return beneficioMensalRepository
-            .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(competenciaInicio, competenciaFim)
-            .stream()
-            .filter(b -> b.getFuncionario() != null
-                && b.getFuncionario().getCentroCusto() != null
-                && centrosCustoIds.contains(b.getFuncionario().getCentroCusto().getId()))
-            .count();
+        return beneficioMensalRepository.countByCompetenciaECentros(
+            competenciaInicio, competenciaFim, centrosCustoIds);
     }
 
     @Override

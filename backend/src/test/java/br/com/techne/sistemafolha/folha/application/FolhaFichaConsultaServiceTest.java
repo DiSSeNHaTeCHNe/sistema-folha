@@ -292,6 +292,65 @@ class FolhaFichaConsultaServiceTest {
         verify(fichaLinhaRepository, never()).findByFichaMensalIdAndAtivoTrue(FICHA_ID);
     }
 
+    /** FCC-27: CC efetivo da ficha (snapshot) prevalece sobre CC atual do funcionário. */
+    @Test
+    void listarLinhasPorTotalizador_snapshotCentroA_funcionarioCentroB_gestorA_acessa() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A, CENTRO_B);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linha("001", "Salário", (short) 1, (short) 1, (short) 1, new BigDecimal("10000.00"), OrigemLinha.FOLHA_ADP)
+            ));
+
+        List<FichaLinhaDetalheDTO> result = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.GROSS);
+
+        assertEquals(1, result.size());
+    }
+
+    /** FCC-28: gestor do CC atual do funcionário não acessa ficha com snapshot de outro CC. */
+    @Test
+    void listarLinhasPorTotalizador_snapshotCentroA_funcionarioCentroB_gestorB_retorna404() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_B)));
+        FichaMensal ficha = ficha(CENTRO_A, CENTRO_B);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+
+        assertThrows(FichaMensalNotFoundException.class, () ->
+            folhaFichaConsultaService.listarLinhasPorTotalizador(LOGIN, FICHA_ID, Totalizador.GROSS));
+
+        verify(fichaLinhaRepository, never()).findByFichaMensalIdAndAtivoTrue(FICHA_ID);
+    }
+
+    /** FCC-27: buscarFichaIdPorFuncionario usa CC efetivo (snapshot) para ACL. */
+    @Test
+    void buscarFichaIdPorFuncionario_snapshotCentroA_funcionarioCentroB_gestorA_retornaId() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A, CENTRO_B);
+        when(fichaMensalRepository.findByFuncionarioAndCompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(Optional.of(ficha));
+
+        Long result = folhaFichaConsultaService.buscarFichaIdPorFuncionario(
+            LOGIN, FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
+
+        assertEquals(FICHA_ID, result);
+    }
+
+    /** FCC-28: buscarFichaIdPorFuncionario nega gestor do CC atual quando snapshot difere. */
+    @Test
+    void buscarFichaIdPorFuncionario_snapshotCentroA_funcionarioCentroB_gestorB_retorna404() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_B)));
+        FichaMensal ficha = ficha(CENTRO_A, CENTRO_B);
+        when(fichaMensalRepository.findByFuncionarioAndCompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(Optional.of(ficha));
+
+        assertThrows(FichaMensalNotFoundException.class, () ->
+            folhaFichaConsultaService.buscarFichaIdPorFuncionario(
+                LOGIN, FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
     @Test
     void listarLinhasPorTotalizador_fichaInexistente_retorna404() {
         stubUsuario(contextoAcessoTotal());
@@ -318,18 +377,27 @@ class FolhaFichaConsultaServiceTest {
         return new AccessContextDTO(true, true, false, centros, null, 2L, "TI", 1);
     }
 
-    private FichaMensal ficha(Long centroCustoId) {
-        CentroCusto centro = new CentroCusto();
-        centro.setId(centroCustoId);
+    private FichaMensal ficha(Long funcionarioCentroCustoId) {
+        return ficha(null, funcionarioCentroCustoId);
+    }
+
+    private FichaMensal ficha(Long snapshotCentroCustoId, Long funcionarioCentroCustoId) {
+        CentroCusto centroFuncionario = new CentroCusto();
+        centroFuncionario.setId(funcionarioCentroCustoId);
         Funcionario funcionario = new Funcionario();
         funcionario.setId(FUNCIONARIO_ID);
-        funcionario.setCentroCusto(centro);
+        funcionario.setCentroCusto(centroFuncionario);
         FichaMensal ficha = new FichaMensal();
         ficha.setId(FICHA_ID);
         ficha.setFuncionario(funcionario);
         ficha.setCompetenciaInicio(COMPETENCIA_INICIO);
         ficha.setCompetenciaFim(COMPETENCIA_FIM);
         ficha.setAtivo(true);
+        if (snapshotCentroCustoId != null) {
+            CentroCusto centroSnapshot = new CentroCusto();
+            centroSnapshot.setId(snapshotCentroCustoId);
+            ficha.setCentroCusto(centroSnapshot);
+        }
         return ficha;
     }
 

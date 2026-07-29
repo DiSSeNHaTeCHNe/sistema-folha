@@ -12,6 +12,7 @@ import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaEvolucaoSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaResumoSnapshot;
+import br.com.techne.sistemafolha.shared.access.CentroCustoEfetivo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -108,10 +109,11 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
     }
 
     private boolean pertenceAosCentros(FolhaPagamento folha, Set<Long> centrosCustoIds) {
-        if (folha.getFuncionario() == null || folha.getFuncionario().getCentroCusto() == null) {
-            return false;
-        }
-        return centrosCustoIds.contains(folha.getFuncionario().getCentroCusto().getId());
+        Long linhaCcId = folha.getCentroCusto() != null ? folha.getCentroCusto().getId() : null;
+        Long funcCcId = folha.getFuncionario() != null && folha.getFuncionario().getCentroCusto() != null
+            ? folha.getFuncionario().getCentroCusto().getId() : null;
+        return CentroCustoEfetivo.pertenceAoEscopo(
+            CentroCustoEfetivo.idOf(linhaCcId, funcCcId), centrosCustoIds);
     }
 
     private FolhaResumoSnapshot toResumoSnapshot(ResumoFolhaPagamento resumo) {
@@ -137,8 +139,9 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
 
     private FolhaLinhaSnapshot toLinhaSnapshotFromFolhaPagamento(FolhaPagamento folha) {
         var funcionario = folha.getFuncionario();
-        var centroCusto = funcionario.getCentroCusto();
-        var linhaNegocio = centroCusto != null ? centroCusto.getLinhaNegocio() : null;
+        var centroCusto = folha.getCentroCusto() != null ? folha.getCentroCusto() : funcionario.getCentroCusto();
+        var linhaNegocio = folha.getLinhaNegocio() != null ? folha.getLinhaNegocio()
+            : (centroCusto != null ? centroCusto.getLinhaNegocio() : null);
         var cargo = folha.getCargo() != null ? folha.getCargo() : funcionario.getCargo();
         var rubrica = folha.getRubrica();
 
@@ -167,7 +170,9 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
     private FolhaLinhaSnapshot toLinhaSnapshotFromFicha(FichaLinha linha) {
         var fichaMensal = linha.getFichaMensal();
         var funcionario = fichaMensal.getFuncionario();
-        var centroCusto = funcionario.getCentroCusto();
+        var centroCusto = fichaMensal.getCentroCusto() != null
+            ? fichaMensal.getCentroCusto()
+            : funcionario.getCentroCusto();
         var linhaNegocio = centroCusto != null ? centroCusto.getLinhaNegocio() : null;
         var cargo = funcionario.getCargo();
         var rubrica = linha.getRubrica();

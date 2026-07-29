@@ -20,6 +20,7 @@ import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import br.com.techne.sistemafolha.shared.access.CentroCustoEfetivo;
 import br.com.techne.sistemafolha.shared.logging.DomainLogging;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,7 +80,7 @@ public class FolhaPagamentoService {
             .orElseThrow(() -> new CentroCustoNotFoundException(centroCustoId));
 
         return folhaPagamentoRepository
-            .findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(centroCusto, dataInicio, dataFim)
+            .findByCentroCustoAndDataInicioBetweenAndAtivoTrue(centroCusto, dataInicio, dataFim)
             .stream()
             .map(this::toDTO)
             .collect(Collectors.toList());
@@ -191,11 +192,11 @@ public class FolhaPagamentoService {
         if (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma()) {
             return false;
         }
-        if (folha.getFuncionario() != null &&
-            folha.getFuncionario().getCentroCusto() != null) {
-            return contexto.centrosCustoIds().contains(folha.getFuncionario().getCentroCusto().getId());
-        }
-        return false;
+        Long linhaCcId = folha.getCentroCusto() != null ? folha.getCentroCusto().getId() : null;
+        Long funcCcId = folha.getFuncionario() != null && folha.getFuncionario().getCentroCusto() != null
+            ? folha.getFuncionario().getCentroCusto().getId() : null;
+        return CentroCustoEfetivo.pertenceAoEscopo(
+            CentroCustoEfetivo.idOf(linhaCcId, funcCcId), contexto.centrosCustoIds());
     }
 
     private FolhaPagamentoDTO toDTO(FolhaPagamento folha) {

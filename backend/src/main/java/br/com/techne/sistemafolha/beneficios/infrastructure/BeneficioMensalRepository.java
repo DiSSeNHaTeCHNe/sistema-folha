@@ -18,8 +18,29 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
     List<BeneficioMensal> findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
         LocalDate competenciaInicio, LocalDate competenciaFim);
 
-    List<BeneficioMensal> findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
-        LocalDate competenciaInicio, LocalDate competenciaFim, Collection<Long> centroCustoIds);
+    @Query("""
+        SELECT COUNT(bm) FROM BeneficioMensal bm
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
+        """)
+    long countByCompetenciaECentros(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
+
+    @Query("""
+        SELECT bm FROM BeneficioMensal bm
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
+        """)
+    List<BeneficioMensal> findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
 
     List<BeneficioMensal> findByFuncionarioIdAndCompetenciaInicioAndAtivoTrue(
         Long funcionarioId, LocalDate competenciaInicio);
@@ -53,7 +74,7 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         WHERE bm.ativo = true
           AND bm.competenciaInicio = :competenciaInicio
           AND bm.competenciaFim = :competenciaFim
-          AND bm.funcionario.centroCusto.id IN :centroCustoIds
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
         GROUP BY tb.id, tb.codigo, tb.descricao
         ORDER BY tb.codigo
         """)
@@ -87,7 +108,7 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         WHERE bm.ativo = true
           AND bm.competenciaInicio >= :dataInicio
           AND bm.competenciaFim <= :dataFim
-          AND bm.funcionario.centroCusto.id IN :centroCustoIds
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
         GROUP BY bm.competenciaInicio, bm.competenciaFim
         ORDER BY bm.competenciaInicio DESC
         """)
@@ -138,7 +159,7 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         WHERE bm.ativo = true
           AND bm.competenciaInicio = :competenciaInicio
           AND bm.competenciaFim = :competenciaFim
-          AND bm.funcionario.centroCusto.id IN :centroCustoIds
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
         """)
     BigDecimal sumValorPorCompetenciaECentros(
         @Param("competenciaInicio") LocalDate competenciaInicio,

@@ -196,6 +196,7 @@ class FolhaPagamentoServiceTest {
         CentroCusto outroCentro = new CentroCusto();
         outroCentro.setId(20L);
         bloqueado.getFuncionario().setCentroCusto(outroCentro);
+        bloqueado.setCentroCusto(outroCentro);
 
         when(folhaPagamentoRepository.findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(
                 99L, DATA_INICIO, DATA_FIM))
@@ -247,6 +248,106 @@ class FolhaPagamentoServiceTest {
     }
 
     @Test
+    void consultarPorPeriodo_duasCompetenciasCcDistintos_gestorVeSoCompetenciaDoEscopo_fcc02_fcc03() {
+        // FCC-02 / FCC-03: jan CC-A (100L), fev CC-B (200L), funcionário atual CC-B
+        stubUsuario();
+
+        LocalDate janInicio = LocalDate.of(2026, 1, 1);
+        LocalDate janFim = LocalDate.of(2026, 1, 31);
+        LocalDate fevInicio = LocalDate.of(2026, 2, 1);
+        LocalDate fevFim = LocalDate.of(2026, 2, 28);
+
+        CentroCusto ccA = new CentroCusto();
+        ccA.setId(100L);
+        ccA.setDescricao("CC Alpha");
+        CentroCusto ccB = new CentroCusto();
+        ccB.setId(200L);
+        ccB.setDescricao("CC Beta");
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(50L);
+        funcionario.setNome("Transferido");
+        funcionario.setCentroCusto(ccB);
+
+        FolhaPagamento folhaJan = folhaAtiva(1L, 50L);
+        folhaJan.setFuncionario(funcionario);
+        folhaJan.setCentroCusto(ccA);
+        folhaJan.setDataInicio(janInicio);
+        folhaJan.setDataFim(janFim);
+
+        FolhaPagamento folhaFev = folhaAtiva(2L, 50L);
+        folhaFev.setFuncionario(funcionario);
+        folhaFev.setCentroCusto(ccB);
+        folhaFev.setDataInicio(fevInicio);
+        folhaFev.setDataFim(fevFim);
+
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(janInicio, janFim))
+            .thenReturn(List.of(folhaJan));
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(fevInicio, fevFim))
+            .thenReturn(List.of(folhaFev));
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(100L)));
+        List<FolhaPagamentoDTO> gestorAJan = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, janInicio, janFim, null);
+        assertEquals(1, gestorAJan.size());
+        assertEquals(1L, gestorAJan.get(0).id());
+
+        List<FolhaPagamentoDTO> gestorAFev = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, fevInicio, fevFim, null);
+        assertTrue(gestorAFev.isEmpty());
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(200L)));
+        List<FolhaPagamentoDTO> gestorBFev = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, fevInicio, fevFim, null);
+        assertEquals(1, gestorBFev.size());
+        assertEquals(2L, gestorBFev.get(0).id());
+
+        List<FolhaPagamentoDTO> gestorBJan = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, janInicio, janFim, null);
+        assertTrue(gestorBJan.isEmpty());
+    }
+
+    @Test
+    void consultarPorPeriodo_linhaCcDiferenteDoFuncionarioAtual_filtraPorCcDaLinha_fcc06() {
+        // FCC-06: linha CC-A, funcionário CC-B atual — gestor A vê, gestor B não
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(100L)));
+
+        CentroCusto ccLinha = new CentroCusto();
+        ccLinha.setId(100L);
+        ccLinha.setDescricao("CC Alpha");
+
+        CentroCusto ccFuncionarioAtual = new CentroCusto();
+        ccFuncionarioAtual.setId(200L);
+        ccFuncionarioAtual.setDescricao("CC Beta");
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(50L);
+        funcionario.setNome("Transferido");
+        funcionario.setCentroCusto(ccFuncionarioAtual);
+
+        FolhaPagamento folha = folhaAtiva(1L, 50L);
+        folha.setFuncionario(funcionario);
+        folha.setCentroCusto(ccLinha);
+
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folha));
+
+        List<FolhaPagamentoDTO> gestorA = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, DATA_INICIO, DATA_FIM, null);
+        assertEquals(1, gestorA.size());
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(200L)));
+        List<FolhaPagamentoDTO> gestorB = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, DATA_INICIO, DATA_FIM, null);
+        assertTrue(gestorB.isEmpty());
+    }
+
+    @Test
     void consultarPorCentroCusto_sem_permissao_retorna_lista_vazia() {
         stubUsuario();
         when(organogramaAcessoPort.usuarioPodeAcessarCentroCusto(USUARIO_ID, 5L)).thenReturn(false);
@@ -257,7 +358,58 @@ class FolhaPagamentoServiceTest {
         assertTrue(result.isEmpty());
         verify(cadastrosLookupPort, never()).findCentroCustoById(any());
         verify(folhaPagamentoRepository, never())
-            .findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(any(), any(), any());
+            .findByCentroCustoAndDataInicioBetweenAndAtivoTrue(any(), any(), any());
+    }
+
+    @Test
+    void consultarPorCentroCusto_comPermissao_consultaCcDaLinha_fcc10() {
+        stubUsuario();
+        when(organogramaAcessoPort.usuarioPodeAcessarCentroCusto(USUARIO_ID, 100L)).thenReturn(true);
+
+        CentroCusto ccConsulta = new CentroCusto();
+        ccConsulta.setId(100L);
+        ccConsulta.setDescricao("CC Alpha");
+        when(cadastrosLookupPort.findCentroCustoById(100L)).thenReturn(Optional.of(ccConsulta));
+
+        FolhaPagamento folhaCcAntigo = folhaAtiva(1L, 50L);
+        folhaCcAntigo.getCentroCusto().setId(100L);
+        CentroCusto ccFuncionarioAtual = new CentroCusto();
+        ccFuncionarioAtual.setId(200L);
+        folhaCcAntigo.getFuncionario().setCentroCusto(ccFuncionarioAtual);
+
+        when(folhaPagamentoRepository.findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
+                ccConsulta, DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folhaCcAntigo));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorCentroCusto(
+            LOGIN, 100L, DATA_INICIO, DATA_FIM);
+
+        assertEquals(1, result.size());
+        assertEquals(100L, result.get(0).centroCustoId());
+        verify(folhaPagamentoRepository).findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
+            ccConsulta, DATA_INICIO, DATA_FIM);
+    }
+
+    @Test
+    void consultarPorCentroCusto_comPermissao_retorna_linhas() {
+        stubUsuario();
+        when(organogramaAcessoPort.usuarioPodeAcessarCentroCusto(USUARIO_ID, 5L)).thenReturn(true);
+
+        CentroCusto centroCusto = new CentroCusto();
+        centroCusto.setId(5L);
+        when(cadastrosLookupPort.findCentroCustoById(5L)).thenReturn(Optional.of(centroCusto));
+
+        FolhaPagamento folha = folhaAtiva(10L, 99L);
+        when(folhaPagamentoRepository.findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
+                centroCusto, DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folha));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorCentroCusto(
+            LOGIN, 5L, DATA_INICIO, DATA_FIM);
+
+        assertEquals(1, result.size());
+        verify(folhaPagamentoRepository).findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
+            centroCusto, DATA_INICIO, DATA_FIM);
     }
 
     @Test

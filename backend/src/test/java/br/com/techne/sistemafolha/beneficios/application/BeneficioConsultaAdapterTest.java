@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -100,21 +102,60 @@ class BeneficioConsultaAdapterTest {
     }
 
     @Test
-    void contarLancamentosAtivosNaCompetenciaPorCentros_retornaSubset() {
-        Funcionario fCc1 = funcionarioComCentro(1L, 100L);
-        Funcionario fCc2 = funcionarioComCentro(2L, 200L);
+    void contarLancamentosAtivosNaCompetenciaPorCentros_linhaCcDiferenteDoFuncionarioAtual_fcc16() {
+        when(beneficioMensalRepository.countByCompetenciaECentros(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)))
+            .thenReturn(1L);
+        when(beneficioMensalRepository.countByCompetenciaECentros(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(200L)))
+            .thenReturn(0L);
 
-        when(beneficioMensalRepository.findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
-                COMPETENCIA_INICIO, COMPETENCIA_FIM))
-            .thenReturn(List.of(
-                lancamento(fCc1, new BigDecimal("100.00")),
-                lancamento(fCc1, new BigDecimal("150.00")),
-                lancamento(fCc2, new BigDecimal("75.00"))));
+        long gestorA = adapter.contarLancamentosAtivosNaCompetenciaPorCentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+        assertEquals(1L, gestorA);
+
+        long gestorB = adapter.contarLancamentosAtivosNaCompetenciaPorCentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(200L));
+        assertEquals(0L, gestorB);
+
+        verify(beneficioMensalRepository).countByCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+        verify(beneficioMensalRepository).countByCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(200L));
+        verify(beneficioMensalRepository, never())
+            .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(COMPETENCIA_INICIO, COMPETENCIA_FIM);
+    }
+
+    @Test
+    void contarLancamentosAtivosNaCompetenciaPorCentros_usaCountSqlNaoFullFetch_fcc23() {
+        when(beneficioMensalRepository.countByCompetenciaECentros(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)))
+            .thenReturn(2L);
 
         long count = adapter.contarLancamentosAtivosNaCompetenciaPorCentros(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
 
         assertEquals(2L, count);
+        verify(beneficioMensalRepository).countByCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+        verify(beneficioMensalRepository, never())
+            .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(any(), any());
+    }
+
+    @Test
+    void contarLancamentosAtivosNaCompetenciaPorCentros_retornaSubset() {
+        when(beneficioMensalRepository.countByCompetenciaECentros(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)))
+            .thenReturn(2L);
+
+        long count = adapter.contarLancamentosAtivosNaCompetenciaPorCentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+
+        assertEquals(2L, count);
+        verify(beneficioMensalRepository).countByCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+        verify(beneficioMensalRepository, never())
+            .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(any(), any());
     }
 
     @Test

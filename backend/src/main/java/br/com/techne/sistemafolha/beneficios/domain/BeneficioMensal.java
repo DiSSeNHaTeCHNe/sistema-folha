@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.beneficios.domain;
 
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
+import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -31,6 +32,10 @@ public class BeneficioMensal {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tipo_beneficio_id", nullable = false)
     private TipoBeneficio tipoBeneficio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "centro_custo_id")
+    private CentroCusto centroCusto;
 
     @NotNull(message = "O valor é obrigatório")
     @Column(nullable = false, precision = 10, scale = 2)

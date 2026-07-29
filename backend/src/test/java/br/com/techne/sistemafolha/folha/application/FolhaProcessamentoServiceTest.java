@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.folha.application;
 
+import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixa;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -522,6 +524,119 @@ class FolhaProcessamentoServiceTest {
     }
 
     @Test
+    void processar_linhaAdpComCcDistintoDoFuncionario_persisteSnapshotCcDaLinha_fcc18() {
+        CentroCusto ccLinha = centroCusto(100L);
+        CentroCusto ccFuncionario = centroCusto(200L);
+
+        Funcionario funcionario = funcionario(1L);
+        funcionario.setCentroCusto(ccFuncionario);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        linhaSalario.setCentroCusto(ccLinha);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertNotNull(fichaFinal.getCentroCusto());
+        assertEquals(100L, fichaFinal.getCentroCusto().getId());
+    }
+
+    @Test
+    void processar_reprocessoAposAlterarCcLinhaAdp_atualizaSnapshotCc_fcc21() {
+        CentroCusto ccAlpha = centroCusto(100L);
+        CentroCusto ccBeta = centroCusto(200L);
+
+        Funcionario funcionario = funcionario(1L);
+        funcionario.setCentroCusto(ccBeta);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        linhaSalario.setCentroCusto(ccAlpha);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaPrimeiro = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(100L, fichaPrimeiro.getCentroCusto().getId());
+
+        linhaSalario.setCentroCusto(ccBeta);
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(4)).save(fichaCaptor.capture());
+        FichaMensal fichaReprocesso = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(200L, fichaReprocesso.getCentroCusto().getId());
+    }
+
+    @Test
+    void processar_semCcNaLinha_fallbackFuncionarioCentroCusto_fcc18() {
+        CentroCusto ccFuncionario = centroCusto(200L);
+
+        Funcionario funcionario = funcionario(1L);
+        funcionario.setCentroCusto(ccFuncionario);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertNotNull(fichaFinal.getCentroCusto());
+        assertEquals(200L, fichaFinal.getCentroCusto().getId());
+    }
+
+    @Test
     void processar_globalFixaDuplicataAdp_prefereAdp() {
         Funcionario funcionario = funcionario(1L);
         Rubrica provento = rubricaProvento(1L);
@@ -626,6 +741,12 @@ class FolhaProcessamentoServiceTest {
         fixo.setVigenciaInicio(COMPETENCIA_INICIO);
         fixo.setAtivo(true);
         return fixo;
+    }
+
+    private CentroCusto centroCusto(Long id) {
+        CentroCusto centroCusto = new CentroCusto();
+        centroCusto.setId(id);
+        return centroCusto;
     }
 
     private Funcionario funcionario(Long id) {
