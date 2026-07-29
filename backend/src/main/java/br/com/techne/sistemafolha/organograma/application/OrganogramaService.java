@@ -418,6 +418,9 @@ public class OrganogramaService {
         // Primeiro, converter todos os nós para DTO
         for (NoOrganograma no : nos) {
             NoOrganogramaDTO dto = toDTOCompleto(no);
+            if (dto == null || dto.id() == null) {
+                continue;
+            }
             noMap.put(dto.id(), dto);
         }
 
