@@ -207,8 +207,90 @@ class FuncionarioRubricaFixaServiceTest {
             eq(FUNCIONARIO_ID), eq(RUBRICA_ID), eq(VIGENCIA_INICIO), isNull(), isNull()))
             .thenReturn(true);
 
-        assertThrows(FuncionarioRubricaFixaVigenciaConflictException.class,
+        FuncionarioRubricaFixaVigenciaConflictException ex = assertThrows(
+            FuncionarioRubricaFixaVigenciaConflictException.class,
             () -> funcionarioRubricaFixaService.criar(dto));
+        assertEquals(
+            "Já existe rubrica fixa ativa com vigência sobreposta para este funcionário e rubrica",
+            ex.getMessage());
+    }
+
+    @Test
+    void atualizar_global_semFuncionario_persisteFuncionarioNull() {
+        Long id = 200L;
+        Rubrica rubrica = rubrica("900", false);
+        FuncionarioRubricaFixaDTO dto = dto(null, new BigDecimal("500.00"), "Global RH");
+        FuncionarioRubricaFixa entity = entityAtiva(id, funcionario(), rubrica);
+
+        when(funcionarioRubricaFixaRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(rubricaRepository.findByIdAndAtivoTrue(RUBRICA_ID)).thenReturn(Optional.of(rubrica));
+        when(funcionarioRubricaFixaRepository.existsVigenciaSobrepostaGlobal(
+            eq(RUBRICA_ID), eq(VIGENCIA_INICIO), isNull(), eq(id)))
+            .thenReturn(false);
+        when(funcionarioRubricaFixaRepository.save(any(FuncionarioRubricaFixa.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        FuncionarioRubricaFixaDTO result = funcionarioRubricaFixaService.atualizar(id, dto);
+
+        assertEquals(id, result.id());
+        assertNull(result.funcionarioId());
+        assertNull(result.funcionarioNome());
+
+        ArgumentCaptor<FuncionarioRubricaFixa> captor = ArgumentCaptor.forClass(FuncionarioRubricaFixa.class);
+        verify(funcionarioRubricaFixaRepository).save(captor.capture());
+        assertNull(captor.getValue().getFuncionario());
+        verify(funcionarioConsultaPort, never()).findByIdAndAtivoTrue(any());
+    }
+
+    @Test
+    void atualizar_global_vigenciaSobreposta_lanca409Global() {
+        Long id = 200L;
+        Rubrica rubrica = rubrica("900", false);
+        FuncionarioRubricaFixaDTO dto = dto(null, new BigDecimal("500.00"), null);
+        FuncionarioRubricaFixa entity = entityAtiva(id, null, rubrica);
+
+        when(funcionarioRubricaFixaRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(rubricaRepository.findByIdAndAtivoTrue(RUBRICA_ID)).thenReturn(Optional.of(rubrica));
+        when(funcionarioRubricaFixaRepository.existsVigenciaSobrepostaGlobal(
+            eq(RUBRICA_ID), eq(VIGENCIA_INICIO), isNull(), eq(id)))
+            .thenReturn(true);
+
+        FuncionarioRubricaFixaVigenciaConflictException ex = assertThrows(
+            FuncionarioRubricaFixaVigenciaConflictException.class,
+            () -> funcionarioRubricaFixaService.atualizar(id, dto));
+        assertEquals(
+            "Já existe rubrica fixa global ativa com vigência sobreposta para esta rubrica",
+            ex.getMessage());
+    }
+
+    @Test
+    void atualizar_individual_comportamentoInalterado() {
+        Long id = 101L;
+        Funcionario funcionario = funcionario();
+        Rubrica rubrica = rubrica("900", false);
+        FuncionarioRubricaFixaDTO dto = dto(FUNCIONARIO_ID, new BigDecimal("688.00"), null);
+        FuncionarioRubricaFixa entity = entityAtiva(id, funcionario, rubrica);
+
+        when(funcionarioRubricaFixaRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(FUNCIONARIO_ID)).thenReturn(Optional.of(funcionario));
+        when(rubricaRepository.findByIdAndAtivoTrue(RUBRICA_ID)).thenReturn(Optional.of(rubrica));
+        when(funcionarioRubricaFixaRepository.existsVigenciaSobreposta(
+            eq(FUNCIONARIO_ID), eq(RUBRICA_ID), eq(VIGENCIA_INICIO), isNull(), eq(id)))
+            .thenReturn(false);
+        when(funcionarioRubricaFixaRepository.save(any(FuncionarioRubricaFixa.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        FuncionarioRubricaFixaDTO result = funcionarioRubricaFixaService.atualizar(id, dto);
+
+        assertEquals(FUNCIONARIO_ID, result.funcionarioId());
+        assertEquals("Funcionário Teste", result.funcionarioNome());
+        assertEquals(new BigDecimal("688.00"), result.valor());
+
+        ArgumentCaptor<FuncionarioRubricaFixa> captor = ArgumentCaptor.forClass(FuncionarioRubricaFixa.class);
+        verify(funcionarioRubricaFixaRepository).save(captor.capture());
+        assertEquals(FUNCIONARIO_ID, captor.getValue().getFuncionario().getId());
+        verify(funcionarioRubricaFixaRepository, never()).existsVigenciaSobrepostaGlobal(
+            any(), any(), any(), any());
     }
 
     @Test
@@ -261,5 +343,16 @@ class FuncionarioRubricaFixaServiceTest {
         rubrica.setTipoRubrica(tipo);
         rubrica.setAtivo(true);
         return rubrica;
+    }
+
+    private FuncionarioRubricaFixa entityAtiva(Long id, Funcionario funcionario, Rubrica rubrica) {
+        FuncionarioRubricaFixa entity = new FuncionarioRubricaFixa();
+        entity.setId(id);
+        entity.setFuncionario(funcionario);
+        entity.setRubrica(rubrica);
+        entity.setValor(new BigDecimal("500.00"));
+        entity.setVigenciaInicio(VIGENCIA_INICIO);
+        entity.setAtivo(true);
+        return entity;
     }
 }
