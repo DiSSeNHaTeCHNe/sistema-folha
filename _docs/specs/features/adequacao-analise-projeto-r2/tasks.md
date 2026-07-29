@@ -453,10 +453,10 @@ T20
 - Skill: `spring-security`
 
 **Done when**:
-- [ ] Blank secret → `IllegalStateException` (non-dev/test)
-- [ ] Default secret + profile staging/default (sem dev/test) → fail
-- [ ] dev/test + default → warn only
-- [ ] Gate: `cd backend && mvn test -Dtest=JwtSecretStartupValidatorTest,ModularArchitectureTest`
+- [x] Blank secret → `IllegalStateException` (non-dev/test)
+- [x] Default secret + profile staging/default (sem dev/test) → fail
+- [x] dev/test + default → warn only
+- [x] Gate: `cd backend && mvn test -Dtest=JwtSecretStartupValidatorTest,ModularArchitectureTest`
 
 **Tests**: unit  
 **Gate**: Quick BE + Arch
