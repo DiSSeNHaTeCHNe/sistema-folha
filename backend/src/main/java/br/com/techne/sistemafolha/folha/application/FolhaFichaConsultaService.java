@@ -151,7 +151,8 @@ public class FolhaFichaConsultaService {
             linha.getValor(),
             linha.getOperadorBruto() != null ? linha.getOperadorBruto() : 0,
             linha.getOperadorLiquido() != null ? linha.getOperadorLiquido() : 0,
-            linha.getOperadorCusto() != null ? linha.getOperadorCusto() : 0
+            linha.getOperadorCusto() != null ? linha.getOperadorCusto() : 0,
+            linha.getPorcentagem()
         );
     }
 

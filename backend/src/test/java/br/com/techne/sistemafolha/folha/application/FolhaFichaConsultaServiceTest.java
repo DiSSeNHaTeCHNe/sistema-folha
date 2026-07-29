@@ -109,6 +109,74 @@ class FolhaFichaConsultaServiceTest {
     }
 
     @Test
+    void listarLinhasPorTotalizador_companyCost_aplicaPorcentagemNoCusto() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linhaComPorcentagem("0010", "Salário Base", (short) 1, (short) 1, (short) 1,
+                    new BigDecimal("7258.43"), new BigDecimal("138.63"), OrigemLinha.FOLHA_ADP)
+            ));
+        when(beneficioConsultaPort.findLinhasPorFuncionarioECompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+
+        List<FichaLinhaDetalheDTO> result = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.COMPANY_COST);
+
+        assertEquals(1, result.size());
+        assertEquals(new BigDecimal("7258.43"), result.get(0).valor());
+        assertEquals(new BigDecimal("10062.36"), result.get(0).contribuicao());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_grossNet_naoAplicamPorcentagem() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linhaComPorcentagem("0010", "Salário Base", (short) 1, (short) 1, (short) 1,
+                    new BigDecimal("7258.43"), new BigDecimal("138.63"), OrigemLinha.FOLHA_ADP)
+            ));
+
+        List<FichaLinhaDetalheDTO> gross = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.GROSS);
+        List<FichaLinhaDetalheDTO> net = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.NET);
+
+        assertEquals(1, gross.size());
+        assertEquals(new BigDecimal("7258.43"), gross.get(0).valor());
+        assertEquals(new BigDecimal("7258.43"), gross.get(0).contribuicao());
+        assertEquals(1, net.size());
+        assertEquals(new BigDecimal("7258.43"), net.get(0).valor());
+        assertEquals(new BigDecimal("7258.43"), net.get(0).contribuicao());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_companyCost_semLinhaEncargosRateados() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linha("001", "Salário", (short) 1, (short) 1, (short) 1, new BigDecimal("10000.00"), OrigemLinha.FOLHA_ADP)
+            ));
+        when(beneficioConsultaPort.findLinhasPorFuncionarioECompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+
+        List<FichaLinhaDetalheDTO> result = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.COMPANY_COST);
+
+        assertTrue(result.stream().noneMatch(l ->
+            l.rubricaCodigo() != null && l.rubricaCodigo().toUpperCase().contains("ENCARGO")));
+        assertTrue(result.stream().noneMatch(l ->
+            l.rubricaDescricao() != null && l.rubricaDescricao().toUpperCase().contains("ENCARGO")));
+    }
+
+    @Test
     void listarLinhasPorTotalizador_companyCost_incluiFichaLinhasEBeneficios() {
         stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
         FichaMensal ficha = ficha(CENTRO_A);
@@ -188,6 +256,13 @@ class FolhaFichaConsultaServiceTest {
             String codigo, String descricao,
             short ob, short ol, short oc,
             BigDecimal valor, OrigemLinha origem) {
+        return linhaComPorcentagem(codigo, descricao, ob, ol, oc, valor, null, origem);
+    }
+
+    private FichaLinha linhaComPorcentagem(
+            String codigo, String descricao,
+            short ob, short ol, short oc,
+            BigDecimal valor, BigDecimal porcentagem, OrigemLinha origem) {
         TipoRubrica tipo = new TipoRubrica();
         tipo.setDescricao("PROVENTO");
         Rubrica rubrica = new Rubrica();
@@ -200,6 +275,7 @@ class FolhaFichaConsultaServiceTest {
         linha.setOperadorBruto(ob);
         linha.setOperadorLiquido(ol);
         linha.setOperadorCusto(oc);
+        linha.setPorcentagem(porcentagem);
         linha.setOrigemLinha(origem);
         linha.setAtivo(true);
         return linha;
