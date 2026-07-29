@@ -100,6 +100,32 @@ class BeneficioConsultaAdapterTest {
     }
 
     @Test
+    void contarLancamentosAtivosNaCompetenciaPorCentros_linhaCcDiferenteDoFuncionarioAtual_fcc16() {
+        CentroCusto ccSnapshot = new CentroCusto();
+        ccSnapshot.setId(100L);
+        CentroCusto ccAtual = new CentroCusto();
+        ccAtual.setId(200L);
+
+        Funcionario funcionario = funcionarioComCentro(1L, 200L);
+        funcionario.setCentroCusto(ccAtual);
+
+        BeneficioMensal beneficio = lancamento(funcionario, new BigDecimal("100.00"));
+        beneficio.setCentroCusto(ccSnapshot);
+
+        when(beneficioMensalRepository.findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(beneficio));
+
+        long gestorA = adapter.contarLancamentosAtivosNaCompetenciaPorCentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+        assertEquals(1L, gestorA);
+
+        long gestorB = adapter.contarLancamentosAtivosNaCompetenciaPorCentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(200L));
+        assertEquals(0L, gestorB);
+    }
+
+    @Test
     void contarLancamentosAtivosNaCompetenciaPorCentros_retornaSubset() {
         Funcionario fCc1 = funcionarioComCentro(1L, 100L);
         Funcionario fCc2 = funcionarioComCentro(2L, 200L);
