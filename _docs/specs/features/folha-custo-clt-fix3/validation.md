@@ -3,8 +3,8 @@
 ## Status atual
 - **Veredito**: PASS ✅
 - **Spec vigente**: folha-custo-clt-fix3/spec.md
-- **HEAD**: d816f7a
-- **Gaps abertos**: nenhum
+- **HEAD**: 50937b3
+- **Gaps abertos**: nenhum bloqueante (FIX3-06 WARN não assertado — observabilidade minor, pré-existente)
 
 ---
 
@@ -138,3 +138,41 @@ Scratch: `git worktree` (detached HEAD d816f7a); mutações descartadas com remo
 **Issues found**: nenhum bloqueante.
 
 **Next steps**: nenhuma ação requerida — feature pronta para merge/UAT opcional.
+
+---
+
+## folha-custo-clt-fix3 — fix cycle-1 — 2026-07-29 — 19c647c..50937b3
+
+**Verifier**: independent re-verifier (author ≠ verifier)  
+**Diff range**: 2 commits on `feat/folha-custo-clt` — PUT unit tests + validation doc refresh
+
+### Veredito: PASS ✅
+
+Fix cycle-1 fecha lacuna de cobertura PUT para FIX3-02/03/07 e reforça contrato FIX3-16 (mensagem 409 individual) no service layer.
+
+### Gate Check (cycle-1 scope)
+
+- **Gate command**: `cd backend && mvn test -Dtest=FuncionarioRubricaFixaServiceTest`
+- **Result**: **14** passed, **0** failed, **0** errors, **0** skipped — BUILD SUCCESS
+- **Delta vs prior validation** (d816f7a): +3 tests (`atualizar_global_*`, `atualizar_individual_*`)
+
+### Fix cycle-1 AC evidence
+
+| Criterion | Prior gap | New evidence (`file:line`) | Result |
+| --------- | --------- | --------------------------- | ------ |
+| FIX3-02 PUT sem `funcionarioId` → null | POST only | `FuncionarioRubricaFixaServiceTest.java:219-242` — `atualizar_global_semFuncionario_persisteFuncionarioNull`; `assertNull(result.funcionarioId())`, `assertNull(captor.getValue().getFuncionario())` | ✅ PASS |
+| FIX3-03 PUT com `funcionarioId` → individual inalterado | POST only | `FuncionarioRubricaFixaServiceTest.java:267-294` — `atualizar_individual_comportamentoInalterado`; `assertEquals(FUNCIONARIO_ID, result.funcionarioId())`, vínculo persistido | ✅ PASS |
+| FIX3-07 PUT overlap global → HTTP 409 | POST only | `FuncionarioRubricaFixaServiceTest.java:246-264` — `atualizar_global_vigenciaSobreposta_lanca409Global`; mensagem global distinta | ✅ PASS |
+| FIX3-16 409 distingue global vs individual | FE + POST global only | `FuncionarioRubricaFixaServiceTest.java:199-216` — `criar_vigenciaSobreposta_lanca409` asserta mensagem individual; `:120-125` POST global inalterado; FE `RubricasFixas/index.tsx:40-52` inalterado | ✅ PASS |
+
+### Discrimination sensor (cycle-1)
+
+Não re-executado — mutações M1–M3 da validação inicial permanecem válidas; alterações restritas a testes PUT + assert mensagem POST individual.
+
+### Summary (cycle-1)
+
+**Overall**: ✅ Ready — lacuna PUT fechada; gate cycle-1 verde.
+
+**Issues found**: nenhum bloqueante.
+
+**Next steps**: nenhuma ação requerida para fix cycle-1.

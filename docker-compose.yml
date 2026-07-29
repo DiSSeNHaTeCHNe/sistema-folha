@@ -52,5 +52,21 @@ services:
       timeout: 5s
       retries: 5
 
+  backend-test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-test
+    volumes:
+      - ./backend/target:/app/target
+
+  frontend-test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-test
+
 volumes:
-  postgres_data: 
+  postgres_data:

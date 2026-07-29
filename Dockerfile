@@ -33,7 +33,25 @@ COPY --from=backend-build /app/target/*.jar ./app.jar
 EXPOSE 8083
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
+# --- Stage 5: Backend tests (JaCoCo via mvn test) ---
+FROM maven:3.9-eclipse-temurin-21-alpine AS backend-test
+WORKDIR /app
+COPY backend/pom.xml .
+RUN mvn -B -q dependency:go-offline test-compile || true
+COPY backend/src ./src
+CMD ["mvn", "-B", "test"]
+
+# --- Stage 6: Frontend tests (lint + build) ---
+FROM node:22-alpine AS frontend-test
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+CMD ["sh", "-c", "npm run lint && npm run build"]
+
 # Instruções:
 # - Para rodar o frontend: use a imagem 'frontend-prod' (Nginx na porta 80)
 # - Para rodar o backend: use a imagem 'backend-prod' (Java na porta 8083)
-# - Recomenda-se usar docker-compose para orquestrar ambos
+# - Testes: docker compose --profile test run --rm backend-test
+#           docker compose --profile test run --rm frontend-test
+# - JaCoCo (backend-test): backend/target/site/jacoco/jacoco.xml (volume no compose)

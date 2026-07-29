@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `_docs/specs/features/folha-custo-clt-fix2/design.md`  
-**Status**: Execute complete (pre-Verifier) — Batch 3 done (T10–T15 @ 2b96196)  
+**Status**: Execute complete — Verifier PASS @ a31bc15 (fix cycle 1)  
 **Approach**: A — Motor único + snapshot `%` + remover rateio ADP (AD-012)  
 **User preference (project):** sem commits automáticos salvo pedido explícito — Execute pode pular `git commit` se o usuário disser “sem commit”.
 

@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `_docs/specs/features/folha-custo-clt/design.md`  
-**Status**: Draft — aguardando aprovação antes de Execute  
+**Status**: Execute complete — T1–T27 done; Verifier PASS (cycle 2)  
 **Approach**: A — Motor único + port estendida (ARCH-1 Opção B, ACL dual-path, INT-1/INT-2)  
 **User preference (project):** sem commits automáticos salvo pedido explícito — Execute pode pular `git commit` se o usuário disser “sem commit”.
 
@@ -802,7 +802,7 @@ T27
 - [x] `cd frontend && npm run lint && npm run build` — success
 - [x] `ModularArchitectureTest` passa
 - [x] Atualizar traceability em `spec.md` (Execute → Done por task)
-- [ ] Verifier automático pós-T27 (skill Execute)
+- [x] Verifier automático pós-T27 (skill Execute) — PASS cycle 2 (`4b803c4`)
 
 **Tests**: unit (full suite)  
 **Gate**: full  

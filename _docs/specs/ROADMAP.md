@@ -58,9 +58,10 @@
 
 **Totalização bruto / líquido / custo (CLT)** — IN PROGRESS
 
-- Spec TLC: `_docs/specs/features/folha-custo-clt/` (ACL dual-path explícito)
-- Baseline: `FolhaTotalizacaoService`, `/totais-funcionarios`, `FolhaTotaisFuncionarioDTO`
-- Pendente: ficha mensal, operadores rubrica, rateio encargos (acesso total), FE resumo/cards/abas
+- Spec TLC: `_docs/specs/features/folha-custo-clt/` (Execute Done; Verifier PASS)
+- Fix1 Done: `_docs/specs/features/folha-custo-clt-fix1/` (processamento pós-import ADP)
+- **Fix2 (Execute Done):** `_docs/specs/features/folha-custo-clt-fix2/` — Custo Techne por `porcentagem`; remove rateio ADP; paridade card↔aba/resumo
+- **Fix3 (Specify draft):** `_docs/specs/features/folha-custo-clt-fix3/` — Fixa global (funcionário opcional); UX Rubricas Fixas + detalhe Bruto/Líquido/Custo padronizado
 
 **Benefícios mensais** — PLANNED
 
