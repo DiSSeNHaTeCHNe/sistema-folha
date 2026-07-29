@@ -59,6 +59,8 @@ bruto / liquido = Σ ficha_linha × operador_bruto / operador_liquido (sem BENEF
 
 Decisões: INT-1 (benefícios), INT-2 (custos fixos) em `context.md`.
 
+> **Superseded by `folha-custo-clt-fix2` (AD-012, 2026-07-29):** A composição acima incluía `encargosRateados` (D4-CLT / FCLT-06). Em fix2, `custoEmpresa = custoFolha × porcentagem rubrica + custoBenefícios`; encargos ADP rateados **não** compõem custo (`encargosRateados` DTO = 0). Ver `_docs/specs/features/folha-custo-clt-fix2/spec.md`.
+
 ## ACL Contract (cross-cutting — mandatory)
 
 Todo endpoint e tela que exiba bruto, líquido ou custo empresa SHALL implementar **dois caminhos**:
