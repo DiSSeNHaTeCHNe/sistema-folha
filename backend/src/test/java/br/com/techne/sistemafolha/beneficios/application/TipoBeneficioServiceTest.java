@@ -11,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -80,6 +82,38 @@ class TipoBeneficioServiceTest {
 
         assertThrows(TipoBeneficioNotFoundException.class, () -> tipoBeneficioService.remover(99L));
         verify(tipoBeneficioRepository, never()).save(any());
+    }
+
+    @Test
+    void listarAtivos_retornaLista() {
+        TipoBeneficio tipo = tipoAtivo(1L, "VR", "Vale Refeição");
+        when(tipoBeneficioRepository.findAllByAtivoTrue()).thenReturn(List.of(tipo));
+
+        List<TipoBeneficioDTO> result = tipoBeneficioService.listarAtivos();
+
+        assertEquals(1, result.size());
+        assertEquals("VR", result.get(0).codigo());
+    }
+
+    @Test
+    void atualizar_alteraDescricao() {
+        TipoBeneficio tipo = tipoAtivo(1L, "VR", "Vale Refeição");
+        when(tipoBeneficioRepository.findById(1L)).thenReturn(Optional.of(tipo));
+        when(tipoBeneficioRepository.save(tipo)).thenReturn(tipo);
+
+        TipoBeneficioDTO dto = dtoBase(1L, "VR", "Vale Refeição Atualizado");
+        TipoBeneficioDTO result = tipoBeneficioService.atualizar(1L, dto);
+
+        assertEquals("Vale Refeição Atualizado", result.descricao());
+        verify(tipoBeneficioRepository).save(tipo);
+    }
+
+    @Test
+    void atualizar_naoEncontrado_lancaExcecao() {
+        when(tipoBeneficioRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(TipoBeneficioNotFoundException.class,
+            () -> tipoBeneficioService.atualizar(99L, dtoBase(99L, "X", "X")));
     }
 
     private TipoBeneficioDTO dtoBase(Long id, String codigo, String descricao) {
