@@ -74,7 +74,8 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
       {/* Handle de entrada (conexão vindo do pai) */}
       <Handle
         type="target"
-        position={Position.Left}
+        position={Position.Top}
+        id="target"
         style={{
           background: '#1976d2',
           width: 12,
@@ -276,7 +277,8 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
     {/* Handle de saída (conexão para os filhos) */}
     <Handle
       type="source"
-      position={Position.Right}
+      position={Position.Bottom}
+      id="source"
       style={{
         background: '#1976d2',
         width: 12,
@@ -358,7 +360,7 @@ export default function OrganogramaGrafico({
           id: `edge-${no.id}-${child.id}`,
           source: `no-${no.id}`,
           target: `no-${child.id}`,
-          type: 'smoothstep',
+          type: 'step',
           animated: false,
           style: {
             stroke: '#1976d2',
@@ -430,7 +432,7 @@ export default function OrganogramaGrafico({
         minZoom={0.1}
         maxZoom={2}
         defaultEdgeOptions={{
-          type: 'smoothstep',
+          type: 'step',
           animated: false,
           style: { strokeWidth: 3, stroke: '#1976d2' },
         }}
