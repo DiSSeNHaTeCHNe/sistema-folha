@@ -92,7 +92,7 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
           minWidth: showDetails ? 280 : 200,
           maxWidth: showDetails ? 320 : 250,
           border: '2px solid',
-          borderColor: isExpanded ? 'primary.main' : 'primary.main',
+          borderColor: isExpanded ? 'primary.dark' : 'primary.main',
           boxShadow: 3,
           bgcolor: 'background.paper',
           cursor: 'pointer',
