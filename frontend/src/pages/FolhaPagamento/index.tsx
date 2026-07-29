@@ -72,6 +72,8 @@ interface FuncionarioResumo {
   totalRubricas: number;
   salBruto: string | number;
   salLiquido: string | number;
+  salCustoFolha?: string | number;
+  salCustoBeneficios?: string | number;
   custoEmpresa: string | number;
   cargoDescricao?: string;
   centroCustoDescricao?: string;
@@ -213,6 +215,8 @@ export function FolhaPagamento() {
         totalRubricas: item.totalRubricas,
         salBruto: item.salBruto,
         salLiquido: item.salLiquido,
+        salCustoFolha: item.salCustoFolha,
+        salCustoBeneficios: item.salCustoBeneficios,
         custoEmpresa: item.custoEmpresa,
         cargoDescricao: item.cargoDescricao,
         centroCustoDescricao: item.centroCustoDescricao,
@@ -569,6 +573,13 @@ export function FolhaPagamento() {
                   <Typography color="textSecondary" gutterBottom>
                     Custo Empresa: {formatMoneyDisplay(funcionario.custoEmpresa)}
                   </Typography>
+                  {(funcionario.salCustoFolha != null || funcionario.salCustoBeneficios != null) && (
+                    <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: -1, mb: 1 }}>
+                      Folha: {formatMoneyDisplay(funcionario.salCustoFolha ?? 0)}
+                      {' · '}
+                      Benefícios: {formatMoneyDisplay(funcionario.salCustoBeneficios ?? 0)}
+                    </Typography>
+                  )}
                   <Box sx={{ mt: 2 }}>
                     <Button
                       variant="outlined"
