@@ -8,6 +8,7 @@ final class FolhaMotorCalculo {
 
     private static final int SCALE = 2;
     private static final RoundingMode ROUNDING = RoundingMode.HALF_UP;
+    private static final BigDecimal CEM = new BigDecimal("100");
 
     private FolhaMotorCalculo() {
     }
@@ -16,8 +17,13 @@ final class FolhaMotorCalculo {
         BigDecimal valor,
         short operadorBruto,
         short operadorLiquido,
-        short operadorCusto
-    ) {}
+        short operadorCusto,
+        BigDecimal porcentagem
+    ) {
+        LinhaCalculoInput(BigDecimal valor, short operadorBruto, short operadorLiquido, short operadorCusto) {
+            this(valor, operadorBruto, operadorLiquido, operadorCusto, null);
+        }
+    }
 
     record TotaisFuncionario(
         BigDecimal bruto,
@@ -48,7 +54,7 @@ final class FolhaMotorCalculo {
             BigDecimal valor = linha.valor() != null ? linha.valor() : BigDecimal.ZERO;
             bruto = bruto.add(valor.multiply(BigDecimal.valueOf(linha.operadorBruto())));
             liquido = liquido.add(valor.multiply(BigDecimal.valueOf(linha.operadorLiquido())));
-            custoFolha = custoFolha.add(valor.multiply(BigDecimal.valueOf(linha.operadorCusto())));
+            custoFolha = custoFolha.add(contribuicaoCusto(valor, linha.operadorCusto(), linha.porcentagem()));
         }
 
         return new TotaisFuncionario(arredondar(bruto), arredondar(liquido), arredondar(custoFolha));
@@ -56,15 +62,26 @@ final class FolhaMotorCalculo {
 
     static BigDecimal contribuicao(LinhaCalculoInput linha, Totalizador totalizador) {
         BigDecimal valor = linha.valor() != null ? linha.valor() : BigDecimal.ZERO;
-        short operador = switch (totalizador) {
-            case GROSS -> linha.operadorBruto();
-            case NET -> linha.operadorLiquido();
-            case COMPANY_COST -> linha.operadorCusto();
+        return switch (totalizador) {
+            case GROSS -> arredondar(valor.multiply(BigDecimal.valueOf(linha.operadorBruto())));
+            case NET -> arredondar(valor.multiply(BigDecimal.valueOf(linha.operadorLiquido())));
+            case COMPANY_COST -> arredondar(contribuicaoCusto(valor, linha.operadorCusto(), linha.porcentagem()));
         };
-        return arredondar(valor.multiply(BigDecimal.valueOf(operador)));
+    }
+
+    static BigDecimal porcentagemEfetiva(BigDecimal porcentagem) {
+        return porcentagem != null ? porcentagem : CEM;
     }
 
     static BigDecimal arredondar(BigDecimal valor) {
         return valor.setScale(SCALE, ROUNDING);
+    }
+
+    private static BigDecimal contribuicaoCusto(BigDecimal valor, short operadorCusto, BigDecimal porcentagem) {
+        BigDecimal pct = porcentagemEfetiva(porcentagem);
+        return valor
+            .multiply(BigDecimal.valueOf(operadorCusto))
+            .multiply(pct)
+            .divide(CEM, SCALE + 4, ROUNDING);
     }
 }
