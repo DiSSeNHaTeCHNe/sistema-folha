@@ -7,7 +7,6 @@ import br.com.techne.sistemafolha.folha.api.FolhaTotaisFuncionarioDTO;
 import br.com.techne.sistemafolha.folha.api.ResumoFolhaPagamentoDTO;
 import br.com.techne.sistemafolha.folha.domain.OrigemLinha;
 import br.com.techne.sistemafolha.folha.domain.ResumoFolhaPagamento;
-import br.com.techne.sistemafolha.folha.infrastructure.FichaMensalRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.FolhaPagamentoRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.ResumoFolhaPagamentoRepository;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
@@ -62,12 +61,6 @@ class FolhaAclParidadeResumoCardsTest {
     private BeneficioConsultaPort beneficioConsultaPort;
 
     @Mock
-    private EncargosRateioService encargosRateioService;
-
-    @Mock
-    private FichaMensalRepository fichaMensalRepository;
-
-    @Mock
     private FolhaPagamentoRepository folhaPagamentoRepository;
 
     @Mock
@@ -85,9 +78,7 @@ class FolhaAclParidadeResumoCardsTest {
             folhaConsultaPort,
             organogramaAcessoPort,
             usuarioLookupPort,
-            beneficioConsultaPort,
-            encargosRateioService,
-            fichaMensalRepository);
+            beneficioConsultaPort);
         folhaPagamentoService = new FolhaPagamentoService(
             folhaPagamentoRepository,
             cadastrosLookupPort,
