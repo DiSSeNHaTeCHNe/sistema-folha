@@ -101,7 +101,6 @@ const OrganogramaTreeBranch: React.FC<OrganogramaTreeBranchProps> = ({
 
   return (
     <Box
-      aria-hidden={hasParent ? true : undefined}
       sx={(theme) => ({
         position: 'relative',
         ...(hasParent && {
