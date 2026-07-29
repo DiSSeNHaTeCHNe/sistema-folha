@@ -399,9 +399,9 @@ T20
 - Skill: `jpa-performance`
 
 **Done when**:
-- [ ] Port interface inalterada; ACL behavior preserved
-- [ ] `OrganogramaAcessoServiceTest` verde
-- [ ] Gate: `cd backend && mvn test -Dtest=OrganogramaAcessoServiceTest,ModularArchitectureTest`
+- [x] Port interface inalterada; ACL behavior preserved
+- [x] `OrganogramaAcessoServiceTest` verde
+- [x] Gate: `cd backend && mvn test -Dtest=OrganogramaAcessoServiceTest,ModularArchitectureTest`
 
 **Tests**: unit  
 **Gate**: Quick BE + Arch

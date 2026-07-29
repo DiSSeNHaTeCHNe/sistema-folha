@@ -52,13 +52,13 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
     @Override
     @Transactional(readOnly = true)
     public Set<Long> obterCentrosCustoAcessiveis(Long usuarioId) {
-        return obterContextoAcesso(usuarioId).centrosCustoIds();
+        return resolverContextoAcesso(usuarioId).centrosCustoIds();
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean usuarioPodeAcessarCentroCusto(Long usuarioId, Long centroCustoId) {
-        AccessContextDTO contexto = obterContextoAcesso(usuarioId);
+        AccessContextDTO contexto = resolverContextoAcesso(usuarioId);
         if (contexto.acessoTotal()) {
             return true;
         }
@@ -71,6 +71,10 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
     @Override
     @Transactional(readOnly = true)
     public AccessContextDTO obterContextoAcesso(Long usuarioId) {
+        return resolverContextoAcesso(usuarioId);
+    }
+
+    private AccessContextDTO resolverContextoAcesso(Long usuarioId) {
         logger.debug("{}Calculando contexto de acesso para usuário ID: {}", DomainLogging.prefix(DOMAIN), usuarioId);
 
         Usuario usuario = usuarioLookupPort.findById(usuarioId).orElse(null);
