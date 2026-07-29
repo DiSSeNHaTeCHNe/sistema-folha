@@ -38,6 +38,7 @@ public class FolhaPagamentoService {
 
     private static final Logger logger = LoggerFactory.getLogger(FolhaPagamentoService.class);
     private static final String DOMAIN = "folha";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
 
     private final FolhaPagamentoRepository folhaPagamentoRepository;
     private final CadastrosLookupPort cadastrosLookupPort;
@@ -122,7 +123,7 @@ public class FolhaPagamentoService {
             .map(this::toDTO)
             .collect(Collectors.toList());
 
-        logger.info("{}Usuário {} consultou folha com {} registros (após filtro de acesso)", DomainLogging.prefix(DOMAIN), login, folha.size());
+        logger.info("{}Usuário {} consultou folha com {} registros (após filtro de acesso)", DOMAIN_PREFIX, login, folha.size());
         return folha;
     }
 
@@ -158,7 +159,7 @@ public class FolhaPagamentoService {
             linhas, contexto, totalEncargos, dataInicio, dataFim);
 
         logger.info("{}Usuário {} consultou totais de folha: {} funcionários no período {} a {} (decimoTerceiro={})",
-            DomainLogging.prefix(DOMAIN), login, totais.size(), dataInicio, dataFim, decimo);
+            DOMAIN_PREFIX, login, totais.size(), dataInicio, dataFim, decimo);
 
         return totais;
     }

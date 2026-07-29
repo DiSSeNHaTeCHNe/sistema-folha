@@ -57,6 +57,7 @@ class FolhaLinhaAgregacao {
         return new Totais(empregados, pagamentos, descontos, pagamentos.subtract(descontos));
     }
 
+    @SuppressWarnings("java:S1172") // encargos reserved for future totalEncargos aggregation
     TotaisResumo agregar(
             List<FolhaLinhaSnapshot> linhas,
             Map<Long, BigDecimal> custoBeneficiosPorFuncionario,

@@ -44,6 +44,7 @@ public class BeneficioMensalService {
     private final OrganogramaAcessoPort organogramaAcessoPort;
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("java:S6809") // delegates to non-transactional helpers; extract bean deferred
     public List<BeneficioMensalDTO> listarPorCompetenciaParaUsuario(
             String login, LocalDate dataInicio, LocalDate dataFim) {
         AccessContextDTO contexto = obterContextoAcesso(login);
@@ -79,7 +80,7 @@ public class BeneficioMensalService {
         return listarPorFuncionario(funcionarioId, dataInicio, dataFim)
             .stream()
             .filter(dto -> aplicarFiltroAcesso(dto, contexto))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -97,6 +98,7 @@ public class BeneficioMensalService {
     }
 
     @Transactional
+    @SuppressWarnings("java:S6809") // delegates to non-transactional helpers; extract bean deferred
     public Optional<BeneficioMensalDTO> criarParaUsuario(String login, BeneficioMensalDTO dto) {
         AccessContextDTO contexto = obterContextoAcesso(login);
         Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
@@ -124,21 +126,21 @@ public class BeneficioMensalService {
             LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
         return buscarPorCompetencia(dataInicio, dataFim, centros).stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<BeneficioMensalResumoDTO> resumoPorCompetencia(
             LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
         return buscarResumoPorCompetencia(dataInicio, dataFim, centros).stream()
                 .map(this::toResumoDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<BeneficioMensalCompetenciaResumoDTO> listarCompetencias(
             LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
         return buscarCompetenciasResumo(dataInicio, dataFim, centros).stream()
                 .map(this::toCompetenciaResumoDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<BeneficioMensalDTO> listarPorFuncionario(
@@ -148,7 +150,7 @@ public class BeneficioMensalService {
                         funcionarioId, dataInicio, dataFim)
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -308,9 +310,10 @@ public class BeneficioMensalService {
         String centroCustoDescricao = null;
         Long linhaNegocioId = null;
         String linhaNegocioDescricao = null;
-        CentroCusto centroCusto = beneficio.getCentroCusto() != null
-            ? beneficio.getCentroCusto()
-            : (funcionario != null ? funcionario.getCentroCusto() : null);
+        CentroCusto centroCusto = beneficio.getCentroCusto();
+        if (centroCusto == null && funcionario != null) {
+            centroCusto = funcionario.getCentroCusto();
+        }
         if (centroCusto != null) {
             centroCustoId = centroCusto.getId();
             centroCustoDescricao = centroCusto.getDescricao();

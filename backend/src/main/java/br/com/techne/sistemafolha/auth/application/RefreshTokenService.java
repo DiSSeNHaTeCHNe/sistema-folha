@@ -22,6 +22,7 @@ public class RefreshTokenService {
     
     private static final Logger logger = LoggerFactory.getLogger(RefreshTokenService.class);
     private static final String DOMAIN = "auth";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
     
     private final RefreshTokenRepository refreshTokenRepository;
     private final UsuarioRepository usuarioRepository;
@@ -29,7 +30,7 @@ public class RefreshTokenService {
 
     @Transactional
     public RefreshToken criarRefreshToken(String login) {
-        logger.info("{}Criando refresh token para o usuário: {}", DomainLogging.prefix(DOMAIN), login);
+        logger.info("{}Criando refresh token para o usuário: {}", DOMAIN_PREFIX, login);
         
         Usuario usuario = usuarioRepository.findByLoginAndAtivoTrue(login)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + login));

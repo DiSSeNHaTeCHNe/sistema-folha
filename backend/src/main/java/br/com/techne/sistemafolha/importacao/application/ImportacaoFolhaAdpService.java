@@ -41,6 +41,7 @@ public class ImportacaoFolhaAdpService {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportacaoFolhaAdpService.class);
     private static final String DOMAIN = "importacao";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
 
     private final CadastrosImportLookupPort cadastrosImportLookupPort;
     private final FolhaConsultaPort folhaConsultaPort;
@@ -78,10 +79,11 @@ public class ImportacaoFolhaAdpService {
     }
 
     @Transactional
+    @SuppressWarnings("java:S3776") // CC refactor tracked in CONCERNS; touch-only scope for R2
     public ImportacaoFolhaAdpResult importarFolhaAdp(
             MultipartFile arquivo, Boolean decimoTerceiro, Boolean confirmarSubstituicao) throws IOException {
         logger.info("{}Iniciando importação de folha ADP - Arquivo: {}, Tamanho: {} bytes",
-                   DomainLogging.prefix(DOMAIN), arquivo.getOriginalFilename(), arquivo.getSize());
+                   DOMAIN_PREFIX, arquivo.getOriginalFilename(), arquivo.getSize());
 
         LocalDate[] periodo = extrairPeriodoCompetencia(arquivo);
         LocalDate dataInicio = periodo[0];
@@ -274,6 +276,7 @@ public class ImportacaoFolhaAdpService {
         return new ImportacaoFolhaAdpResult(persistidas, processamento);
     }
 
+    @SuppressWarnings("java:S107") // ADP line parser requires positional params; refactor tracked in CONCERNS
     private void processarRubrica(
             String linha, int inicioRubrica, int fimRubrica, int inicioValores, int fimValores,
             FuncionarioImportRef funcionario, LocalDate dataInicio, LocalDate dataFim,

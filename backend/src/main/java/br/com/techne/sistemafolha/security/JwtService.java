@@ -49,7 +49,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList()));
+                .toList());
         return generateToken(claims, userDetails);
     }
 

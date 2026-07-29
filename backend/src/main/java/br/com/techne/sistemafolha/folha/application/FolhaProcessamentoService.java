@@ -38,6 +38,7 @@ public class FolhaProcessamentoService {
 
     private static final Logger logger = LoggerFactory.getLogger(FolhaProcessamentoService.class);
     private static final String DOMAIN = "folha";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
     private static final String CODIGO_RUBRICA_FERIAS = "5000";
     private static final BigDecimal FATOR_FERIAS = new BigDecimal("2.5");
     private static final BigDecimal MESES_ANO = new BigDecimal("12");
@@ -48,6 +49,7 @@ public class FolhaProcessamentoService {
     private final CadastrosLookupPort cadastrosLookupPort;
 
     @Transactional
+    @SuppressWarnings("java:S3776") // CC refactor tracked in CONCERNS; touch-only scope for R2
     public ProcessamentoResultadoDTO processar(
             LocalDate competenciaInicio,
             LocalDate competenciaFim,
@@ -102,7 +104,7 @@ public class FolhaProcessamentoService {
             for (FuncionarioRubricaFixa fixo : fixosIndividuais) {
                 if (rubricasAdp.contains(fixo.getRubrica().getId())) {
                     logger.warn("{}Rubrica fixa ignorada (duplicata ADP): funcionario={}, rubrica={}",
-                        DomainLogging.prefix(DOMAIN), funcionario.getId(), fixo.getRubrica().getCodigo());
+                        DOMAIN_PREFIX, funcionario.getId(), fixo.getRubrica().getCodigo());
                     continue;
                 }
                 FichaLinha linhaFixa = montarLinhaCustoFixo(ficha, fixo);
@@ -115,7 +117,7 @@ public class FolhaProcessamentoService {
             for (FuncionarioRubricaFixa global : globais) {
                 if (rubricasAdp.contains(global.getRubrica().getId())) {
                     logger.warn("{}Rubrica fixa global ignorada (duplicata ADP): funcionario={}, rubrica={}",
-                        DomainLogging.prefix(DOMAIN), funcionario.getId(), global.getRubrica().getCodigo());
+                        DOMAIN_PREFIX, funcionario.getId(), global.getRubrica().getCodigo());
                     continue;
                 }
                 if (rubricasFixasIndividuais.contains(global.getRubrica().getId())) {

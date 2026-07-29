@@ -40,6 +40,7 @@ public class DashboardService {
 
     private static final Logger logger = LoggerFactory.getLogger(DashboardService.class);
     private static final String DOMAIN = "dashboard";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
 
     private final FolhaConsultaPort folhaConsultaPort;
     private final FolhaTotalizacaoPort folhaTotalizacaoPort;
@@ -49,7 +50,7 @@ public class DashboardService {
     private final UsuarioLookupPort usuarioLookupPort;
 
     public DashboardStatsDTO getStats(String login) {
-        logger.debug("{}Calculando estatísticas do dashboard", DomainLogging.prefix(DOMAIN));
+        logger.debug("{}Calculando estatísticas do dashboard", DOMAIN_PREFIX);
 
         if (login == null || login.isBlank()) {
             return emptyStats();
@@ -199,7 +200,7 @@ public class DashboardService {
                     valorTotal
                 );
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<CentroCustoStatsDTO> calcularStatsPorCentroCusto(List<FolhaLinhaSnapshot> folhaCompetencia) {
@@ -225,7 +226,7 @@ public class DashboardService {
                     valorTotal
                 );
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<CargoStatsDTO> calcularStatsPorCargo(List<FolhaLinhaSnapshot> folhaCompetencia) {
@@ -255,7 +256,7 @@ public class DashboardService {
                     valorTotal
                 );
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private BigDecimal calcularTotalProventos(List<FolhaLinhaSnapshot> folhaCompetencia) {
@@ -297,7 +298,7 @@ public class DashboardService {
             })
             .sorted((a, b) -> b.valorTotal().compareTo(a.valorTotal()))
             .limit(5)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<RubricaStatsDTO> calcularTopDescontos(List<FolhaLinhaSnapshot> folhaCompetencia) {
@@ -323,7 +324,7 @@ public class DashboardService {
             })
             .sorted((a, b) -> b.valorTotal().compareTo(a.valorTotal()))
             .limit(5)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<EvolucaoMensalDTO> calcularEvolucaoMensal() {
@@ -336,7 +337,7 @@ public class DashboardService {
                 item.totalLiquido(),
                 item.totalEmpregados()
             ))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<EvolucaoMensalDTO> calcularEvolucaoMensalScoped(Set<Long> centros) {
@@ -360,6 +361,6 @@ public class DashboardService {
                     empregados
                 );
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 }

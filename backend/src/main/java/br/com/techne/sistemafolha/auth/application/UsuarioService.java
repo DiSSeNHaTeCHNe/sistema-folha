@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class UsuarioService {
     private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
     private static final String DOMAIN = "auth";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
 
     private final UsuarioRepository usuarioRepository;
     private final FuncionarioConsultaPort funcionarioConsultaPort;
@@ -33,7 +34,7 @@ public class UsuarioService {
     }
 
     public List<UsuarioDTO> listar(String nome, String login, Long funcionarioId) {
-        logger.info("{}Listando usuários com filtros", DomainLogging.prefix(DOMAIN));
+        logger.info("{}Listando usuários com filtros", DOMAIN_PREFIX);
 
         String nomePattern = null;
         if (nome != null && !nome.trim().isEmpty()) {
@@ -48,7 +49,7 @@ public class UsuarioService {
         return usuarioRepository.findByFiltros(nomePattern, loginPattern, funcionarioId)
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public UsuarioDTO buscarPorId(Long id) {
@@ -156,7 +157,9 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         logger.debug("Hash da senha atual armazenada: {}", usuario.getSenha());
-        logger.debug("Hash da senha atual fornecida: {}", passwordEncoder.encode(senhaAtual));
+        if (logger.isDebugEnabled()) {
+            logger.debug("Hash da senha atual fornecida: {}", passwordEncoder.encode(senhaAtual));
+        }
 
         if (!verificarSenha(senhaAtual, usuario.getSenha())) {
             logger.error("Senha atual incorreta para o usuário: {}", usuario.getLogin());
@@ -172,12 +175,16 @@ public class UsuarioService {
     }
 
     public boolean verificarSenha(String senhaTexto, String senhaHash) {
-        logger.debug("Verificando senha");
-        logger.debug("Senha em texto: {}", senhaTexto);
-        logger.debug("Hash armazenado: {}", senhaHash);
-        logger.debug("Hash gerado para comparação: {}", passwordEncoder.encode(senhaTexto));
+        if (logger.isDebugEnabled()) {
+            logger.debug("Verificando senha");
+            logger.debug("Senha em texto: {}", senhaTexto);
+            logger.debug("Hash armazenado: {}", senhaHash);
+            logger.debug("Hash gerado para comparação: {}", passwordEncoder.encode(senhaTexto));
+        }
         boolean resultado = passwordEncoder.matches(senhaTexto, senhaHash);
-        logger.debug("Resultado da verificação: {}", resultado);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Resultado da verificação: {}", resultado);
+        }
         return resultado;
     }
 } 

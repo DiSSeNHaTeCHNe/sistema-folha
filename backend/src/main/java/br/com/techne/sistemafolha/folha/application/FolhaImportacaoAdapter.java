@@ -52,7 +52,7 @@ public class FolhaImportacaoAdapter implements FolhaImportacaoPort {
             resumoFolhaPagamentoRepository.save(montarResumo(command));
         }
 
-        return persistidas.stream().map(this::toDTO).collect(Collectors.toList());
+        return persistidas.stream().map(this::toDTO).toList();
     }
 
     private void substituirCompetenciaExistente(LocalDate dataInicio, LocalDate dataFim, boolean decimoTerceiro) {

@@ -39,6 +39,7 @@ public class FuncionarioService {
                 .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("java:S2447") // null means no ativo filter (all statuses)
     private Boolean resolverAtivo(FuncionarioStatusFiltro status) {
         if (status == null || status == FuncionarioStatusFiltro.ATIVO) {
             return true;

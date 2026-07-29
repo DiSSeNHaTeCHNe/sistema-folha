@@ -157,6 +157,7 @@ public class ResumoFolhaPagamentoService {
             totais.totalCustoEmpresa());
     }
 
+    @SuppressWarnings("java:S107") // DTO mapping requires all total fields; extract record deferred
     private ResumoFolhaPagamentoDTO montarDto(
             ResumoFolhaPagamento resumo,
             int totalEmpregados,

@@ -27,7 +27,7 @@ public class RubricaService {
     public List<RubricaDTO> listarTodas() {
         return rubricaRepository.findByAtivoTrue().stream()
             .map(this::toDTO)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public List<RubricaDTO> listar(String codigo, String descricao, RubricaStatusFiltro status) {
@@ -45,9 +45,10 @@ public class RubricaService {
                 .findByFiltros(codigoPattern, descricaoPattern, resolverAtivo(status))
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
+    @SuppressWarnings("java:S2447") // null means no ativo filter (all statuses)
     private Boolean resolverAtivo(RubricaStatusFiltro status) {
         if (status == null || status == RubricaStatusFiltro.ATIVO) {
             return true;

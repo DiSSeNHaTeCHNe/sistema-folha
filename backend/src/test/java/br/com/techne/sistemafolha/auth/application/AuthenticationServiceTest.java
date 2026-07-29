@@ -153,7 +153,7 @@ class AuthenticationServiceTest {
     void refreshToken_inexistente_lancaMensagemInvalida() {
         when(refreshTokenService.buscarPorToken("invalido")).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        RuntimeException ex = assertThrows(IllegalStateException.class,
             () -> authenticationService.refreshToken("invalido"));
 
         assertEquals("Refresh token inválido ou expirado", ex.getMessage());

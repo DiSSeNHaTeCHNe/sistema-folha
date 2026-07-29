@@ -65,7 +65,7 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
         }
         return linhas.stream()
             .map(this::toLinhaSnapshotFromFicha)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<FolhaLinhaSnapshot> linhasDeFolhaPagamento(
@@ -77,14 +77,14 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
         return linhas.stream()
             .filter(l -> centrosCustoIds == null || pertenceAosCentros(l, centrosCustoIds))
             .map(this::toLinhaSnapshotFromFolhaPagamento)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @Override
     public List<FolhaEvolucaoSnapshot> findEvolucaoUltimos12Meses(LocalDate dataInicio) {
         return resumoFolhaPagamentoRepository.findUltimos12MesesRegulares(dataInicio).stream()
             .map(this::toEvolucaoSnapshot)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @Override
@@ -140,8 +140,10 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
     private FolhaLinhaSnapshot toLinhaSnapshotFromFolhaPagamento(FolhaPagamento folha) {
         var funcionario = folha.getFuncionario();
         var centroCusto = folha.getCentroCusto() != null ? folha.getCentroCusto() : funcionario.getCentroCusto();
-        var linhaNegocio = folha.getLinhaNegocio() != null ? folha.getLinhaNegocio()
-            : (centroCusto != null ? centroCusto.getLinhaNegocio() : null);
+        var linhaNegocio = folha.getLinhaNegocio();
+        if (linhaNegocio == null && centroCusto != null) {
+            linhaNegocio = centroCusto.getLinhaNegocio();
+        }
         var cargo = folha.getCargo() != null ? folha.getCargo() : funcionario.getCargo();
         var rubrica = folha.getRubrica();
 

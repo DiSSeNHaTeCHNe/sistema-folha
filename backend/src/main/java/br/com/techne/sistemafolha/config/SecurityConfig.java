@@ -29,7 +29,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @SuppressWarnings("java:S4502") // API JWT stateless — CSRF desabilitado por design; ver INTEGRATIONS.md (AAP-07)
+    @SuppressWarnings({"java:S4502", "java:S1192"}) // JWT stateless API; ROLE_ADMIN via hasRole(ROLE_ADMIN)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(csrf -> csrf.disable()) // NOSONAR java:S4502
