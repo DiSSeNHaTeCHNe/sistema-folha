@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -131,6 +132,7 @@ class FolhaFichaConsultaServiceTest {
         assertEquals(1, result.size());
         assertEquals(new BigDecimal("7258.43"), result.get(0).valor());
         assertEquals(new BigDecimal("10062.36"), result.get(0).contribuicao());
+        assertEquals(new BigDecimal("138.63"), result.get(0).porcentagem());
     }
 
     @Test
@@ -152,9 +154,11 @@ class FolhaFichaConsultaServiceTest {
         assertEquals(1, gross.size());
         assertEquals(new BigDecimal("7258.43"), gross.get(0).valor());
         assertEquals(new BigDecimal("7258.43"), gross.get(0).contribuicao());
+        assertEquals(new BigDecimal("138.63"), gross.get(0).porcentagem());
         assertEquals(1, net.size());
         assertEquals(new BigDecimal("7258.43"), net.get(0).valor());
         assertEquals(new BigDecimal("7258.43"), net.get(0).contribuicao());
+        assertEquals(new BigDecimal("138.63"), net.get(0).porcentagem());
     }
 
     @Test
@@ -200,6 +204,33 @@ class FolhaFichaConsultaServiceTest {
         assertTrue(result.stream().anyMatch(l -> "FOLHA_ADP".equals(l.origemLinha())));
         assertTrue(result.stream().anyMatch(l -> "CUSTO_FIXO".equals(l.origemLinha())));
         assertTrue(result.stream().anyMatch(l -> "BENEFICIO".equals(l.origemLinha()) && "VR".equals(l.rubricaCodigo())));
+        FichaLinhaDetalheDTO beneficio = result.stream()
+            .filter(l -> "BENEFICIO".equals(l.origemLinha()))
+            .findFirst()
+            .orElseThrow();
+        assertNull(beneficio.porcentagem());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_expoePorcentagemSnapshotNasTresAbas() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linhaComPorcentagem("0010", "Salário Base", (short) 1, (short) 1, (short) 1,
+                    new BigDecimal("7258.43"), new BigDecimal("138.63"), OrigemLinha.FOLHA_ADP)
+            ));
+        when(beneficioConsultaPort.findLinhasPorFuncionarioECompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+
+        for (Totalizador totalizador : List.of(Totalizador.GROSS, Totalizador.NET, Totalizador.COMPANY_COST)) {
+            List<FichaLinhaDetalheDTO> result = folhaFichaConsultaService.listarLinhasPorTotalizador(
+                LOGIN, FICHA_ID, totalizador);
+            assertEquals(1, result.size());
+            assertEquals(new BigDecimal("138.63"), result.get(0).porcentagem());
+        }
     }
 
     /** FIX2-12: Σ contribuições aba Custo+benefícios = card custoEmpresa (±0,01). */

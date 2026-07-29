@@ -65,7 +65,8 @@ public class FolhaFichaConsultaService {
                 contribuicao,
                 origemLinha(linha.getOrigemLinha()),
                 linha.getRubrica().getCodigo(),
-                linha.getRubrica().getDescricao()
+                linha.getRubrica().getDescricao(),
+                linha.getPorcentagem()
             ));
         }
 
@@ -83,7 +84,8 @@ public class FolhaFichaConsultaService {
                     FolhaMotorCalculo.arredondar(valor),
                     ORIGEM_BENEFICIO,
                     beneficio.tipoCodigo(),
-                    beneficio.tipoDescricao()
+                    beneficio.tipoDescricao(),
+                    null
                 ));
             }
         }
