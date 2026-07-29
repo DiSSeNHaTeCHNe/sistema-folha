@@ -95,7 +95,7 @@ class BeneficioMensalServiceTest {
         verify(beneficioMensalRepository, never())
             .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(any(), any());
         verify(beneficioMensalRepository, never())
-            .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+            .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                 any(), any(), any());
     }
 
@@ -133,7 +133,7 @@ class BeneficioMensalServiceTest {
         verify(beneficioMensalRepository).findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM);
         verify(beneficioMensalRepository, never())
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         any(), any(), any());
     }
 
@@ -146,7 +146,7 @@ class BeneficioMensalServiceTest {
             .thenReturn(contextoRestrito(centros));
         BeneficioMensal beneficio = beneficioAtivo(2L);
         when(beneficioMensalRepository
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         COMPETENCIA_INICIO, COMPETENCIA_FIM, centros))
                 .thenReturn(List.of(beneficio));
 
@@ -155,7 +155,7 @@ class BeneficioMensalServiceTest {
 
         assertEquals(1, result.size());
         verify(beneficioMensalRepository)
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         COMPETENCIA_INICIO, COMPETENCIA_FIM, centros);
         verify(beneficioMensalRepository, never())
                 .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(any(), any());
@@ -308,7 +308,7 @@ class BeneficioMensalServiceTest {
         verify(beneficioMensalRepository).findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM);
         verify(beneficioMensalRepository, never())
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         any(), any(), any());
     }
 
@@ -334,7 +334,7 @@ class BeneficioMensalServiceTest {
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
             .thenReturn(contextoRestrito(Set.of(100L)));
         when(beneficioMensalRepository
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)))
                 .thenReturn(List.of(beneficio));
 
@@ -347,7 +347,7 @@ class BeneficioMensalServiceTest {
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
             .thenReturn(contextoRestrito(Set.of(200L)));
         when(beneficioMensalRepository
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(200L)))
                 .thenReturn(List.of());
 
@@ -361,7 +361,7 @@ class BeneficioMensalServiceTest {
         Set<Long> centros = Set.of(10L, 20L);
         BeneficioMensal beneficio = beneficioAtivo(2L);
         when(beneficioMensalRepository
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         COMPETENCIA_INICIO, COMPETENCIA_FIM, centros))
                 .thenReturn(List.of(beneficio));
 
@@ -371,7 +371,7 @@ class BeneficioMensalServiceTest {
         assertEquals(1, result.size());
         assertEquals(2L, result.get(0).id());
         verify(beneficioMensalRepository)
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         COMPETENCIA_INICIO, COMPETENCIA_FIM, centros);
         verify(beneficioMensalRepository, never())
                 .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(any(), any());

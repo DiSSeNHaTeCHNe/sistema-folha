@@ -37,7 +37,7 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
           AND bm.competenciaFim = :competenciaFim
           AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
         """)
-    List<BeneficioMensal> findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+    List<BeneficioMensal> findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
         @Param("competenciaInicio") LocalDate competenciaInicio,
         @Param("competenciaFim") LocalDate competenciaFim,
         @Param("centroCustoIds") Collection<Long> centroCustoIds);

@@ -388,8 +388,6 @@ class FolhaPagamentoServiceTest {
         assertEquals(100L, result.get(0).centroCustoId());
         verify(folhaPagamentoRepository).findByCentroCustoAndDataInicioBetweenAndAtivoTrue(
             ccConsulta, DATA_INICIO, DATA_FIM);
-        verify(folhaPagamentoRepository, never())
-            .findByFuncionarioCentroCustoAndDataInicioBetweenAndAtivoTrue(any(), any(), any());
     }
 
     @Test

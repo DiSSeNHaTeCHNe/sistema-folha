@@ -268,7 +268,7 @@ public class BeneficioMensalService {
                     .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(dataInicio, dataFim);
         }
         return beneficioMensalRepository
-                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                .findByCompetenciaInicioAndCompetenciaFimAndCentroCustoEfetivoIdInAndAtivoTrue(
                         dataInicio, dataFim, centros);
     }
 
