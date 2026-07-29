@@ -309,17 +309,16 @@ export default function OrganogramaGrafico({
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
-    const levelWidth = 350; // Espaçamento horizontal entre níveis
-    const nodeHeight = 200; // Espaçamento vertical entre nós irmãos
+    const LEVEL_HEIGHT = 200;
+    const SIBLING_GAP = 300;
+    const ROOT_GAP = 80;
 
-    // Função recursiva para processar a árvore
     const processNode = (
       no: NoOrganogramaWithChildren,
       x: number,
       y: number,
       level: number
-    ): { minY: number; maxY: number } => {
-      // Adicionar nó
+    ): { minX: number; maxX: number; minY: number; maxY: number } => {
       nodes.push({
         id: `no-${no.id}`,
         type: 'noOrganograma',
@@ -338,62 +337,65 @@ export default function OrganogramaGrafico({
         },
       });
 
-      // Se tem filhos, processar recursivamente
-      if (no.children && no.children.length > 0) {
-        let currentY = y;
-        let childrenMinY = Infinity;
-        let childrenMaxY = -Infinity;
-
-        no.children.forEach((child) => {
-          const childResult = processNode(
-            child,
-            x + levelWidth,
-            currentY,
-            level + 1
-          );
-
-          // Adicionar aresta do pai para o filho
-          edges.push({
-            id: `edge-${no.id}-${child.id}`,
-            source: `no-${no.id}`,
-            target: `no-${child.id}`,
-            type: 'smoothstep',
-            animated: false,
-            style: { 
-              stroke: '#1976d2', 
-              strokeWidth: 3
-            },
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: '#1976d2',
-              width: 20,
-              height: 20,
-            },
-          });
-
-          childrenMinY = Math.min(childrenMinY, childResult.minY);
-          childrenMaxY = Math.max(childrenMaxY, childResult.maxY);
-          currentY = childResult.maxY + nodeHeight;
-        });
-
-        // Centralizar o nó pai em relação aos filhos
-        const middleY = (childrenMinY + childrenMaxY) / 2;
-        const currentNode = nodes.find((n) => n.id === `no-${no.id}`);
-        if (currentNode) {
-          currentNode.position.y = middleY;
-        }
-
-        return { minY: Math.min(y, childrenMinY), maxY: Math.max(y, childrenMaxY) };
+      if (!no.children || no.children.length === 0) {
+        return { minX: x, maxX: x, minY: y, maxY: y };
       }
 
-      return { minY: y, maxY: y };
+      let currentX = x;
+      let childrenMinX = Infinity;
+      let childrenMaxX = -Infinity;
+      let childrenMaxY = y;
+
+      no.children.forEach((child) => {
+        const childResult = processNode(
+          child,
+          currentX,
+          y + LEVEL_HEIGHT,
+          level + 1
+        );
+
+        edges.push({
+          id: `edge-${no.id}-${child.id}`,
+          source: `no-${no.id}`,
+          target: `no-${child.id}`,
+          type: 'smoothstep',
+          animated: false,
+          style: {
+            stroke: '#1976d2',
+            strokeWidth: 3,
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: '#1976d2',
+            width: 20,
+            height: 20,
+          },
+        });
+
+        childrenMinX = Math.min(childrenMinX, childResult.minX);
+        childrenMaxX = Math.max(childrenMaxX, childResult.maxX);
+        childrenMaxY = Math.max(childrenMaxY, childResult.maxY);
+        currentX = childResult.maxX + SIBLING_GAP;
+      });
+
+      const middleX = (childrenMinX + childrenMaxX) / 2;
+      const currentNode = nodes.find((n) => n.id === `no-${no.id}`);
+      if (currentNode) {
+        currentNode.position.x = middleX;
+      }
+
+      return {
+        minX: Math.min(x, childrenMinX),
+        maxX: Math.max(x, childrenMaxX),
+        minY: y,
+        maxY: childrenMaxY,
+      };
     };
 
-    // Processar todas as raízes
-    let currentY = 0;
+    let currentRootY = 0;
     nos.forEach((noRaiz) => {
-      const result = processNode(noRaiz, 0, currentY, 0);
-      currentY = result.maxY + nodeHeight;
+      const result = processNode(noRaiz, 0, currentRootY, 0);
+      currentRootY = result.maxY + LEVEL_HEIGHT + ROOT_GAP;
     });
 
     console.log('🔗 ReactFlow - Nodes:', nodes.length, 'Edges:', edges.length);
