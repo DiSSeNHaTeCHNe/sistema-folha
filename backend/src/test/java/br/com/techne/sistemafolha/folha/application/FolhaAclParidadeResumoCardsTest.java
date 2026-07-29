@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -143,6 +144,111 @@ class FolhaAclParidadeResumoCardsTest {
         assertEquals(0, resumo.totalCustoEmpresa().compareTo(sumCustoEmpresa));
     }
 
+    /** FIX2-14/FIX2-16/FIX2-22/FIX2-23: global acessoTotal — Σ cards = resumo bruto/líquido/custo. */
+    @Test
+    void globalAcessoTotal_somaBrutoLiquidoCustoEmpresa_igualResumoGlobal_mesmaCompetencia() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoAcessoTotal());
+
+        List<FolhaLinhaSnapshot> linhasGlobais = List.of(
+            linha(101L, CENTRO_A, "PROVENTO", "5000.00"),
+            linha(101L, CENTRO_A, "DESCONTO", "500.00"),
+            linha(102L, 20L, "PROVENTO", "3000.00"),
+            linha(102L, 20L, "DESCONTO", "200.00"),
+            linha(103L, 30L, "PROVENTO", "4000.00"),
+            linha(103L, 30L, "DESCONTO", "300.00")
+        );
+
+        ResumoFolhaPagamento snapshot = resumoAtivo(2L);
+        when(resumoFolhaPagamentoRepository.findByCompetenciaInicioBetweenAndAtivoTrue(
+                ANO_2024_INICIO, ANO_2024_FIM))
+            .thenReturn(List.of(snapshot));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null))
+            .thenReturn(linhasGlobais);
+        when(resumoFolhaPagamentoRepository.findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(snapshot));
+
+        stubBeneficiosVaziosGlobal(linhasGlobais);
+
+        List<ResumoFolhaPagamentoDTO> resumos =
+            resumoFolhaPagamentoService.listarTodos(LOGIN, 2024, null);
+        List<FolhaTotaisFuncionarioDTO> cards = folhaPagamentoService.consultarTotaisPorFuncionario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
+
+        assertEquals(1, resumos.size());
+        assertEquals(3, cards.size());
+        assertParidadeResumoCards(resumos.get(0), cards);
+        assertNotEquals(0, snapshot.getTotalPagamentos().compareTo(resumos.get(0).totalBruto()));
+    }
+
+    /** FIX2-15: bruto/líquido cards ignoram porcentagem (sem regressão RSF-01). */
+    @Test
+    void scopedCards_brutoLiquidoIgnoramPorcentagem() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(CENTRO_A)));
+
+        List<FolhaLinhaSnapshot> linhasComPorcentagem = List.of(
+            linhaComPorcentagem(101L, CENTRO_A, "PROVENTO", "7258.43", new BigDecimal("138.63"))
+        );
+
+        ResumoFolhaPagamento snapshot = resumoAtivo(3L);
+        when(resumoFolhaPagamentoRepository.findByCompetenciaInicioBetweenAndAtivoTrue(
+                ANO_2024_INICIO, ANO_2024_FIM))
+            .thenReturn(List.of(snapshot));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(CENTRO_A)))
+            .thenReturn(linhasComPorcentagem);
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of());
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+                eq(101L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM)))
+            .thenReturn(0);
+
+        List<ResumoFolhaPagamentoDTO> resumos =
+            resumoFolhaPagamentoService.listarTodos(LOGIN, 2024, null);
+        List<FolhaTotaisFuncionarioDTO> cards = folhaPagamentoService.consultarTotaisPorFuncionario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
+
+        assertEquals(1, resumos.size());
+        assertEquals(1, cards.size());
+        assertEquals(new BigDecimal("7258.43"), cards.get(0).salBruto());
+        assertEquals(new BigDecimal("7258.43"), cards.get(0).salLiquido());
+        assertEquals(new BigDecimal("10062.36"), cards.get(0).custoEmpresa());
+        assertParidadeResumoCards(resumos.get(0), cards);
+    }
+
+    private void assertParidadeResumoCards(ResumoFolhaPagamentoDTO resumo, List<FolhaTotaisFuncionarioDTO> cards) {
+        BigDecimal sumBruto = cards.stream()
+            .map(FolhaTotaisFuncionarioDTO::salBruto)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal sumLiquido = cards.stream()
+            .map(FolhaTotaisFuncionarioDTO::salLiquido)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal sumCustoEmpresa = cards.stream()
+            .map(FolhaTotaisFuncionarioDTO::custoEmpresa)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        assertEquals(0, resumo.totalBruto().compareTo(sumBruto));
+        assertEquals(0, resumo.totalLiquido().compareTo(sumLiquido));
+        assertEquals(0, resumo.totalCustoEmpresa().compareTo(sumCustoEmpresa));
+    }
+
+    private void stubBeneficiosVaziosGlobal(List<FolhaLinhaSnapshot> linhas) {
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of());
+        linhas.stream()
+            .map(FolhaLinhaSnapshot::funcionarioId)
+            .distinct()
+            .forEach(funcionarioId ->
+                when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+                    eq(funcionarioId), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM)))
+                    .thenReturn(0));
+    }
+
     private void stubUsuario() {
         Usuario usuario = new Usuario();
         usuario.setId(USUARIO_ID);
@@ -153,6 +259,10 @@ class FolhaAclParidadeResumoCardsTest {
 
     private AccessContextDTO contextoRestrito(Set<Long> centros) {
         return new AccessContextDTO(true, true, false, centros, null, 2L, "TI", 1);
+    }
+
+    private AccessContextDTO contextoAcessoTotal() {
+        return new AccessContextDTO(true, true, true, Set.of(), null, null, null, null);
     }
 
     private ResumoFolhaPagamento resumoAtivo(Long id) {
@@ -172,11 +282,16 @@ class FolhaAclParidadeResumoCardsTest {
     }
 
     private static FolhaLinhaSnapshot linha(Long funcionarioId, Long centroId, String tipo, String valor) {
+        return linhaComPorcentagem(funcionarioId, centroId, tipo, valor, null);
+    }
+
+    private static FolhaLinhaSnapshot linhaComPorcentagem(
+            Long funcionarioId, Long centroId, String tipo, String valor, BigDecimal porcentagem) {
         short ob = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         short ol = "DESCONTO".equals(tipo) ? (short) -1 : ("PROVENTO".equals(tipo) ? (short) 1 : (short) 0);
         short oc = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         return new FolhaLinhaSnapshot(
             funcionarioId, "Func " + funcionarioId, centroId, "CC", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", tipo, new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, null);
+            1L, "001", "Rubrica", tipo, new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, porcentagem);
     }
 }
