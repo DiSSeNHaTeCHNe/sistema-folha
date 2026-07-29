@@ -2,7 +2,6 @@ package br.com.techne.sistemafolha.cadastros.api;
 
 import br.com.techne.sistemafolha.cadastros.application.FuncionarioRubricaFixaService;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixaNotFoundException;
-import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixaVigenciaConflictException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -53,8 +52,6 @@ public class FuncionarioRubricaFixaController {
             return ResponseEntity.ok(funcionarioRubricaFixaService.criar(dto));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
-        } catch (FuncionarioRubricaFixaVigenciaConflictException e) {
-            return ResponseEntity.status(409).build();
         }
     }
 
@@ -68,8 +65,6 @@ public class FuncionarioRubricaFixaController {
             return ResponseEntity.notFound().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
-        } catch (FuncionarioRubricaFixaVigenciaConflictException e) {
-            return ResponseEntity.status(409).build();
         }
     }
 
