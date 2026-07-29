@@ -79,7 +79,7 @@ public class ImportacaoFolhaAdpService {
     }
 
     @Transactional
-    @SuppressWarnings("java:S3776") // CC refactor tracked in CONCERNS; touch-only scope for R2
+    @SuppressWarnings({"java:S3776", "java:S6541"}) // CC/brain refactor tracked in CONCERNS; touch-only scope for R2
     public ImportacaoFolhaAdpResult importarFolhaAdp(
             MultipartFile arquivo, Boolean decimoTerceiro, Boolean confirmarSubstituicao) throws IOException {
         logger.info("{}Iniciando importação de folha ADP - Arquivo: {}, Tamanho: {} bytes",

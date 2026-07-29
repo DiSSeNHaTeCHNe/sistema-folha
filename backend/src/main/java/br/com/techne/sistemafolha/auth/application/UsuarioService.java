@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +54,7 @@ public class UsuarioService {
     public UsuarioDTO buscarPorId(Long id) {
         logger.info("Buscando usuário por ID: {}", id);
         return usuarioRepository.findById(id)
-                .filter(u -> u.isAtivo())
+                .filter(Usuario::isAtivo)
                 .map(this::toDTO)
                 .orElseThrow(() -> new UsuarioNotFoundException(id));
     }
@@ -63,7 +62,7 @@ public class UsuarioService {
     public UsuarioDTO buscarPorLogin(String login) {
         logger.info("Buscando usuário por login: {}", login);
         return usuarioRepository.findByLoginAndAtivoTrue(login)
-                .filter(u -> u.isAtivo())
+                .filter(Usuario::isAtivo)
                 .map(this::toDTO)
                 .orElseThrow(() -> new UsuarioNotFoundException(login));
     }
@@ -91,7 +90,7 @@ public class UsuarioService {
     public UsuarioDTO atualizar(Long id, UsuarioDTO dto) {
         logger.info("Atualizando usuário ID: {}", id);
         Usuario usuario = usuarioRepository.findById(id)
-                .filter(u -> u.isAtivo())
+                .filter(Usuario::isAtivo)
                 .orElseThrow(() -> new UsuarioNotFoundException(id));
 
         if (!usuario.getLogin().equals(dto.login()) && 
@@ -123,7 +122,7 @@ public class UsuarioService {
     public void remover(Long id) {
         logger.info("Removendo usuário ID: {}", id);
         Usuario usuario = usuarioRepository.findById(id)
-                .filter(u -> u.isAtivo())
+                .filter(Usuario::isAtivo)
                 .orElseThrow(() -> new UsuarioNotFoundException(id));
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);

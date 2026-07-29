@@ -1,7 +1,5 @@
 package br.com.techne.sistemafolha.folha.api;
 
-import br.com.techne.sistemafolha.folha.api.FolhaPagamentoDTO;
-import br.com.techne.sistemafolha.folha.api.FolhaTotaisFuncionarioDTO;
 import br.com.techne.sistemafolha.folha.application.FolhaPagamentoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

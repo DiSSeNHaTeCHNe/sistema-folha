@@ -1,6 +1,5 @@
 package br.com.techne.sistemafolha.cadastros.api;
 
-import br.com.techne.sistemafolha.cadastros.api.RubricaDTO;
 import br.com.techne.sistemafolha.cadastros.application.RubricaService;
 import br.com.techne.sistemafolha.cadastros.domain.RubricaNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;

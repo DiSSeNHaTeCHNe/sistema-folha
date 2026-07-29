@@ -78,9 +78,6 @@ public class AuthenticationService {
                 refreshExpiration,
                 acessoUsuario
             );
-        } catch (UsernameNotFoundException e) {
-            log.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
-            throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
         } catch (Exception e) {
             log.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
             throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);

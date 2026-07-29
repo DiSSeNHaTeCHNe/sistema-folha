@@ -42,6 +42,7 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
 
     private static final Logger logger = LoggerFactory.getLogger(OrganogramaAcessoService.class);
     private static final String DOMAIN = "organograma";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
     public static final String PERMISSAO_ACESSO_TOTAL = "ACESSO_TOTAL";
 
     private final UsuarioLookupPort usuarioLookupPort;
@@ -75,7 +76,7 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
     }
 
     private AccessContextDTO resolverContextoAcesso(Long usuarioId) {
-        logger.debug("{}Calculando contexto de acesso para usuário ID: {}", DomainLogging.prefix(DOMAIN), usuarioId);
+        logger.debug("{}Calculando contexto de acesso para usuário ID: {}", DOMAIN_PREFIX, usuarioId);
 
         Usuario usuario = usuarioLookupPort.findById(usuarioId).orElse(null);
         if (usuario == null) {
@@ -85,7 +86,7 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
 
         if (temPermissao(usuario, PERMISSAO_ACESSO_TOTAL)) {
             logger.info("{}Usuário ID {} com permissão {} — concedendo acesso total",
-                DomainLogging.prefix(DOMAIN), usuarioId, PERMISSAO_ACESSO_TOTAL);
+                DOMAIN_PREFIX, usuarioId, PERMISSAO_ACESSO_TOTAL);
             return contextoAcessoTotal(usuario);
         }
 
@@ -105,7 +106,7 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
 
         if (vinculos.size() > 1) {
             logger.warn("{}Funcionário do usuário ID {} está vinculado a múltiplos nós. Usando o primeiro.",
-                DomainLogging.prefix(DOMAIN), usuarioId);
+                DOMAIN_PREFIX, usuarioId);
         }
 
         NoOrganograma no = vinculos.get(0).getNoOrganograma();
@@ -113,7 +114,7 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
         coletarCentrosCustoRecursivo(no, centrosAcessiveis);
 
         logger.info("{}Usuário ID {} tem acesso a {} centros de custo no nó '{}' (ID: {})",
-            DomainLogging.prefix(DOMAIN), usuarioId, centrosAcessiveis.size(), no.getNome(), no.getId());
+            DOMAIN_PREFIX, usuarioId, centrosAcessiveis.size(), no.getNome(), no.getId());
 
         return new AccessContextDTO(
             true,
@@ -129,7 +130,7 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
 
     private void logAcessoNegado(Long usuarioId, MotivoNegacaoAcesso motivoNegacao) {
         logger.warn("{}ACL negado usuarioId={} motivoNegacao={}",
-            DomainLogging.prefix(DOMAIN), usuarioId, motivoNegacao);
+            DOMAIN_PREFIX, usuarioId, motivoNegacao);
     }
 
     private boolean temPermissao(Usuario usuario, String permissao) {

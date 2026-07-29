@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +25,7 @@ public class CargoService {
     public List<CargoDTO> listarTodos() {
         logger.info("{}Listando todos os cargos", DOMAIN_PREFIX);
         return cargoRepository.findAll().stream()
-                .filter(c -> c.isAtivo())
+                .filter(Cargo::isAtivo)
                 .map(this::toDTO)
                 .toList();
     }
@@ -34,7 +33,7 @@ public class CargoService {
     public CargoDTO buscarPorId(Long id) {
         logger.info("{}Buscando cargo por ID: {}", DOMAIN_PREFIX, id);
         return cargoRepository.findById(id)
-                .filter(c -> c.isAtivo())
+                .filter(Cargo::isAtivo)
                 .map(this::toDTO)
                 .orElseThrow(() -> new CargoNotFoundException(id));
     }
@@ -50,7 +49,7 @@ public class CargoService {
     public CargoDTO atualizar(Long id, CargoDTO dto) {
         logger.info("{}Atualizando cargo ID: {}", DOMAIN_PREFIX, id);
         Cargo cargo = cargoRepository.findById(id)
-                .filter(c -> c.isAtivo())
+                .filter(Cargo::isAtivo)
                 .orElseThrow(() -> new CargoNotFoundException(id));
 
         cargo.setDescricao(dto.descricao());
@@ -61,7 +60,7 @@ public class CargoService {
     public void remover(Long id) {
         logger.info("{}Removendo cargo ID: {}", DOMAIN_PREFIX, id);
         Cargo cargo = cargoRepository.findById(id)
-                .filter(c -> c.isAtivo())
+                .filter(Cargo::isAtivo)
                 .orElseThrow(() -> new CargoNotFoundException(id));
         cargo.setAtivo(false);
         cargoRepository.save(cargo);

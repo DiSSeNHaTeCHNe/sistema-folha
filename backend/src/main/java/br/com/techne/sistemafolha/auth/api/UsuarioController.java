@@ -1,6 +1,5 @@
 package br.com.techne.sistemafolha.auth.api;
 
-import br.com.techne.sistemafolha.auth.api.UsuarioDTO;
 import br.com.techne.sistemafolha.auth.application.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

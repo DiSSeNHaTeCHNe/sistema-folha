@@ -16,8 +16,6 @@ import br.com.techne.sistemafolha.organograma.domain.NoOrganogramaNotFoundExcept
 import br.com.techne.sistemafolha.organograma.domain.OrganogramaAtivoConflictException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

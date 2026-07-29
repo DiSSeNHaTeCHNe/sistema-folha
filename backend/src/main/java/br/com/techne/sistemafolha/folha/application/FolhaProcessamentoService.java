@@ -115,18 +115,16 @@ public class FolhaProcessamentoService {
             }
 
             for (FuncionarioRubricaFixa global : globais) {
-                if (rubricasAdp.contains(global.getRubrica().getId())) {
+                Long rubricaId = global.getRubrica().getId();
+                if (rubricasAdp.contains(rubricaId)) {
                     logger.warn("{}Rubrica fixa global ignorada (duplicata ADP): funcionario={}, rubrica={}",
                         DOMAIN_PREFIX, funcionario.getId(), global.getRubrica().getCodigo());
-                    continue;
+                } else if (!rubricasFixasIndividuais.contains(rubricaId)) {
+                    FichaLinha linhaFixa = montarLinhaCustoFixo(ficha, global);
+                    fichaLinhaRepository.save(linhaFixa);
+                    totalLinhas++;
+                    inputsMotor.add(toInput(linhaFixa));
                 }
-                if (rubricasFixasIndividuais.contains(global.getRubrica().getId())) {
-                    continue;
-                }
-                FichaLinha linhaFixa = montarLinhaCustoFixo(ficha, global);
-                fichaLinhaRepository.save(linhaFixa);
-                totalLinhas++;
-                inputsMotor.add(toInput(linhaFixa));
             }
 
             if (opcoesEfetivas.recalcularFerias()) {

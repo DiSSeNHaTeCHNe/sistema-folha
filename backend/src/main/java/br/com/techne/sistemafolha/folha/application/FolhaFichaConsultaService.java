@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -52,47 +53,58 @@ public class FolhaFichaConsultaService {
         List<FichaLinhaDetalheDTO> detalhes = new ArrayList<>();
 
         for (FichaLinha linha : fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(fichaMensalId)) {
-            short operador = operadorDe(linha, motorTotalizador);
-            if (operador == 0) {
-                continue;
-            }
-            FolhaMotorCalculo.LinhaCalculoInput input = toInput(linha);
-            BigDecimal contribuicao = FolhaMotorCalculo.contribuicao(input, motorTotalizador);
-            if (contribuicao.compareTo(BigDecimal.ZERO) == 0) {
-                continue;
-            }
-            detalhes.add(new FichaLinhaDetalheDTO(
-                linha.getValor(),
-                contribuicao,
-                origemLinha(linha.getOrigemLinha()),
-                linha.getRubrica().getCodigo(),
-                linha.getRubrica().getDescricao(),
-                linha.getPorcentagem()
-            ));
+            mapearLinhaFicha(linha, motorTotalizador).ifPresent(detalhes::add);
         }
 
-        if (totalizador == Totalizador.COMPANY_COST) {
-            Long funcionarioId = ficha.getFuncionario().getId();
-            List<BeneficioLinhaSnapshot> beneficios = beneficioConsultaPort.findLinhasPorFuncionarioECompetencia(
-                funcionarioId, ficha.getCompetenciaInicio(), ficha.getCompetenciaFim());
-            for (BeneficioLinhaSnapshot beneficio : beneficios) {
-                BigDecimal valor = beneficio.valor() != null ? beneficio.valor() : BigDecimal.ZERO;
-                if (valor.compareTo(BigDecimal.ZERO) == 0) {
-                    continue;
-                }
-                detalhes.add(new FichaLinhaDetalheDTO(
-                    valor,
-                    FolhaMotorCalculo.arredondar(valor),
-                    ORIGEM_BENEFICIO,
-                    beneficio.tipoCodigo(),
-                    beneficio.tipoDescricao(),
-                    null
-                ));
-            }
-        }
+        adicionarBeneficiosCustoEmpresa(ficha, totalizador, detalhes);
 
         detalhes.sort(Comparator.comparing(FichaLinhaDetalheDTO::rubricaCodigo, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
         return detalhes;
+    }
+
+    private Optional<FichaLinhaDetalheDTO> mapearLinhaFicha(
+            FichaLinha linha, FolhaMotorCalculo.Totalizador motorTotalizador) {
+        short operador = operadorDe(linha, motorTotalizador);
+        if (operador == 0) {
+            return Optional.empty();
+        }
+        FolhaMotorCalculo.LinhaCalculoInput input = toInput(linha);
+        BigDecimal contribuicao = FolhaMotorCalculo.contribuicao(input, motorTotalizador);
+        if (contribuicao.compareTo(BigDecimal.ZERO) == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(new FichaLinhaDetalheDTO(
+            linha.getValor(),
+            contribuicao,
+            origemLinha(linha.getOrigemLinha()),
+            linha.getRubrica().getCodigo(),
+            linha.getRubrica().getDescricao(),
+            linha.getPorcentagem()
+        ));
+    }
+
+    private void adicionarBeneficiosCustoEmpresa(
+            FichaMensal ficha, Totalizador totalizador, List<FichaLinhaDetalheDTO> detalhes) {
+        if (totalizador != Totalizador.COMPANY_COST) {
+            return;
+        }
+        Long funcionarioId = ficha.getFuncionario().getId();
+        List<BeneficioLinhaSnapshot> beneficios = beneficioConsultaPort.findLinhasPorFuncionarioECompetencia(
+            funcionarioId, ficha.getCompetenciaInicio(), ficha.getCompetenciaFim());
+        for (BeneficioLinhaSnapshot beneficio : beneficios) {
+            BigDecimal valor = beneficio.valor() != null ? beneficio.valor() : BigDecimal.ZERO;
+            if (valor.compareTo(BigDecimal.ZERO) == 0) {
+                continue;
+            }
+            detalhes.add(new FichaLinhaDetalheDTO(
+                valor,
+                FolhaMotorCalculo.arredondar(valor),
+                ORIGEM_BENEFICIO,
+                beneficio.tipoCodigo(),
+                beneficio.tipoDescricao(),
+                null
+            ));
+        }
     }
 
     @Transactional(readOnly = true)

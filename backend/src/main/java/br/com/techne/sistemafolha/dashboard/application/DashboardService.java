@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -75,7 +76,7 @@ public class DashboardService {
                 ? cadastrosImportLookupPort.countFuncionariosAtivos()
                 : cadastrosImportLookupPort.countFuncionariosAtivosPorCentros(centrosScoped);
 
-            LocalDate competenciaInicioFallback = LocalDate.now().withDayOfMonth(1);
+            LocalDate competenciaInicioFallback = LocalDate.now(Clock.systemDefaultZone()).withDayOfMonth(1);
             LocalDate competenciaFimFallback = competenciaInicioFallback
                 .withDayOfMonth(competenciaInicioFallback.lengthOfMonth());
             long totalBeneficiosAtivos = centrosScoped == null
@@ -328,7 +329,7 @@ public class DashboardService {
     }
 
     private List<EvolucaoMensalDTO> calcularEvolucaoMensal() {
-        LocalDate dataInicio = LocalDate.now().minusMonths(11).withDayOfMonth(1);
+        LocalDate dataInicio = LocalDate.now(Clock.systemDefaultZone()).minusMonths(11).withDayOfMonth(1);
         List<FolhaEvolucaoSnapshot> evolucao = folhaConsultaPort.findEvolucaoUltimos12Meses(dataInicio);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM/yyyy");
         return evolucao.stream()
@@ -341,7 +342,7 @@ public class DashboardService {
     }
 
     private List<EvolucaoMensalDTO> calcularEvolucaoMensalScoped(Set<Long> centros) {
-        LocalDate dataInicio = LocalDate.now().minusMonths(11).withDayOfMonth(1);
+        LocalDate dataInicio = LocalDate.now(Clock.systemDefaultZone()).minusMonths(11).withDayOfMonth(1);
         List<FolhaEvolucaoSnapshot> competencias = folhaConsultaPort.findEvolucaoUltimos12Meses(dataInicio);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM/yyyy");
         return competencias.stream()

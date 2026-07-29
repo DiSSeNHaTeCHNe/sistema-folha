@@ -1,9 +1,5 @@
 package br.com.techne.sistemafolha.auth.api;
 
-import br.com.techne.sistemafolha.auth.api.AcessoUsuarioDTO;
-import br.com.techne.sistemafolha.auth.api.LoginDTO;
-import br.com.techne.sistemafolha.auth.api.RefreshTokenRequest;
-import br.com.techne.sistemafolha.auth.api.TokenDTO;
 import br.com.techne.sistemafolha.auth.application.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

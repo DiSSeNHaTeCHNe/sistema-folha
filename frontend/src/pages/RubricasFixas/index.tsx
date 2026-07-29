@@ -52,9 +52,8 @@ const getApiErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-const formatPercentualFixa = (porcentagem: number | null | undefined): string => {
-  const value = porcentagem ?? 100;
-  return `${value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`;
+const formatPercentualFixa = (porcentagem: number | null | undefined = 100): string => {
+  return `${porcentagem.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`;
 };
 
 const formatFuncionarioFixa = (item: FuncionarioRubricaFixa): string => {
@@ -264,7 +263,7 @@ export default function RubricasFixas() {
                         {item.rubricaCodigo} - {item.rubricaDescricao}
                       </TableCell>
                       <TableCell>{formatMoneyDisplay(item.valor)}</TableCell>
-                      <TableCell>{formatPercentualFixa(item.porcentagem)}</TableCell>
+                      <TableCell>{formatPercentualFixa(item.porcentagem ?? undefined)}</TableCell>
                       <TableCell>
                         {item.vigenciaInicio}
                         {item.vigenciaFim ? ` a ${item.vigenciaFim}` : ' (aberta)'}
@@ -336,7 +335,7 @@ export default function RubricasFixas() {
               fullWidth
               margin="normal"
               required
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
             <TextField
               {...register('vigenciaFim')}
@@ -345,7 +344,7 @@ export default function RubricasFixas() {
               type="date"
               fullWidth
               margin="normal"
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               helperText="Deixe em branco para vigência aberta"
             />
             <FormControl fullWidth margin="normal">

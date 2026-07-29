@@ -369,12 +369,14 @@ export function BeneficiosMensais() {
                   label="Buscar funcionário"
                   variant="outlined"
                   sx={{ minWidth: 300 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
               )}
@@ -446,7 +448,7 @@ export function BeneficiosMensais() {
                   label="Mês"
                   type="number"
                   sx={{ minWidth: 120 }}
-                  inputProps={{ min: 1, max: 12 }}
+                  slotProps={{ htmlInput: { min: 1, max: 12 } }}
                 />
               )}
             />

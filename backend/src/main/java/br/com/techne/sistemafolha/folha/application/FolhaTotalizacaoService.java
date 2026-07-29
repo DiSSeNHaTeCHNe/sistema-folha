@@ -29,8 +29,7 @@ public class FolhaTotalizacaoService {
             BigDecimal totalEncargosSnapshot,
             LocalDate competenciaInicio,
             LocalDate competenciaFim) {
-        return calcularTotaisPorFuncionarioInterno(
-            linhas, contexto, totalEncargosSnapshot, competenciaInicio, competenciaFim);
+        return calcularTotaisPorFuncionarioInterno(linhas, competenciaInicio, competenciaFim);
     }
 
     @Transactional(readOnly = true)
@@ -43,15 +42,13 @@ public class FolhaTotalizacaoService {
             return FolhaMotorCalculo.arredondar(BigDecimal.ZERO);
         }
         return FolhaMotorCalculo.arredondar(calcularTotaisPorFuncionarioInterno(
-                linhas, contexto, BigDecimal.ZERO, competenciaInicio, competenciaFim).stream()
+                linhas, competenciaInicio, competenciaFim).stream()
             .map(FolhaTotaisFuncionarioDTO::custoEmpresa)
             .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     private List<FolhaTotaisFuncionarioDTO> calcularTotaisPorFuncionarioInterno(
             List<FolhaLinhaSnapshot> linhas,
-            AccessContextDTO contexto,
-            BigDecimal totalEncargosSnapshot,
             LocalDate competenciaInicio,
             LocalDate competenciaFim) {
         if (linhas == null || linhas.isEmpty()) {
