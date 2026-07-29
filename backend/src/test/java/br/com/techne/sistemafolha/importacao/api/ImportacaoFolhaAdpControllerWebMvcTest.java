@@ -1,7 +1,9 @@
 package br.com.techne.sistemafolha.importacao.api;
 
 import br.com.techne.sistemafolha.config.SecurityConfig;
+import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FolhaProcessamentoFalhaException;
+import br.com.techne.sistemafolha.importacao.application.ImportacaoFolhaAdpResult;
 import br.com.techne.sistemafolha.importacao.application.ImportacaoFolhaAdpService;
 import br.com.techne.sistemafolha.security.JwtService;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -69,6 +73,25 @@ class ImportacaoFolhaAdpControllerWebMvcTest {
             .andExpect(jsonPath("$.success").value(false))
             .andExpect(jsonPath("$.message")
                 .value("Falha no processamento da ficha: Falha interna do motor"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void importarFolhaAdp_sucesso_retorna200() throws Exception {
+        MockMultipartFile arquivo = new MockMultipartFile(
+            "arquivo", "folha.txt", "text/plain", "conteudo".getBytes());
+        ImportacaoFolhaAdpResult result = new ImportacaoFolhaAdpResult(
+            List.of(), new ProcessamentoResultadoDTO(1, 1, 1));
+
+        when(importacaoFolhaAdpService.importarFolhaAdp(any(), eq(false), eq(false)))
+            .thenReturn(result);
+
+        mockMvc.perform(multipart("/importacao/folha-adp")
+                .file(arquivo)
+                .param("decimoTerceiro", "false")
+                .param("confirmarSubstituicao", "false"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test

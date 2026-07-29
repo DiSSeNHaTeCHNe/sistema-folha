@@ -1,5 +1,8 @@
 package br.com.techne.sistemafolha.organograma.application;
 
+import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
+import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
+import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.port.CadastrosLookupPort;
 import br.com.techne.sistemafolha.cadastros.port.FuncionarioConsultaPort;
 import br.com.techne.sistemafolha.organograma.api.NoOrganogramaCreateDTO;
@@ -198,6 +201,195 @@ class OrganogramaServiceTest {
         when(noOrganogramaRepository.findByIdAndAtivoTrue(99L)).thenReturn(java.util.Optional.empty());
 
         assertThrows(NoOrganogramaNotFoundException.class, () -> organogramaService.cadastrar(dto));
+    }
+
+    @Test
+    void listarTodos_retornaListaConvertida() {
+        NoOrganograma no = noAtivo(1L, null, 0);
+        when(noOrganogramaRepository.findByAtivoTrue()).thenReturn(List.of(no));
+        when(funcionarioOrganogramaRepository.findByNoOrganogramaWithFuncionarioAtivo(no))
+            .thenReturn(Collections.emptyList());
+        when(centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(no))
+            .thenReturn(Collections.emptyList());
+
+        List<NoOrganogramaDTO> result = organogramaService.listarTodos();
+
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).id());
+    }
+
+    @Test
+    void buscarPorId_existente_retornaDto() {
+        NoOrganograma no = noAtivo(7L, null, 0);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(7L)).thenReturn(java.util.Optional.of(no));
+        when(funcionarioOrganogramaRepository.findByNoOrganogramaWithFuncionarioAtivo(no))
+            .thenReturn(Collections.emptyList());
+        when(centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(no))
+            .thenReturn(Collections.emptyList());
+
+        NoOrganogramaDTO result = organogramaService.buscarPorId(7L);
+
+        assertEquals(7L, result.id());
+    }
+
+    @Test
+    void buscarPorId_inexistente_lancaNoOrganogramaNotFound() {
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(404L)).thenReturn(java.util.Optional.empty());
+
+        assertThrows(NoOrganogramaNotFoundException.class, () -> organogramaService.buscarPorId(404L));
+    }
+
+    @Test
+    void remover_semFilhos_executaSoftDelete() {
+        NoOrganograma no = noAtivo(1L, null, 0);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(1L)).thenReturn(java.util.Optional.of(no));
+        when(noOrganogramaRepository.existsByParentAndAtivoTrue(no)).thenReturn(false);
+
+        organogramaService.remover(1L);
+
+        verify(funcionarioOrganogramaRepository).deleteByNoOrganograma(no);
+        verify(centroCustoOrganogramaRepository).deleteByNoOrganograma(no);
+        verify(noOrganogramaRepository).softDelete(1L);
+    }
+
+    @Test
+    void remover_comFilhosAtivos_lancaIllegalState() {
+        NoOrganograma no = noAtivo(1L, null, 0);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(1L)).thenReturn(java.util.Optional.of(no));
+        when(noOrganogramaRepository.existsByParentAndAtivoTrue(no)).thenReturn(true);
+
+        assertThrows(IllegalStateException.class, () -> organogramaService.remover(1L));
+    }
+
+    @Test
+    void obterFilhos_parentNull_retornaRaizes() {
+        NoOrganograma raiz = noAtivo(1L, null, 0);
+        when(noOrganogramaRepository.findByParentIsNullAndAtivoTrueOrderByPosicao())
+            .thenReturn(List.of(raiz));
+
+        List<NoOrganogramaDTO> result = organogramaService.obterFilhos(null);
+
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).id());
+    }
+
+    @Test
+    void obterFilhos_comParent_retornaFilhos() {
+        NoOrganograma filho = noAtivo(2L, noAtivo(1L, null, 0), 1);
+        when(noOrganogramaRepository.findByParentIdAndAtivoTrueOrderByPosicao(1L))
+            .thenReturn(List.of(filho));
+
+        List<NoOrganogramaDTO> result = organogramaService.obterFilhos(1L);
+
+        assertEquals(1, result.size());
+        assertEquals(2L, result.get(0).id());
+    }
+
+    @Test
+    void moverNo_paraNovaRaiz_atualizaNivel() {
+        NoOrganograma no = noAtivo(2L, noAtivo(1L, null, 0), 1);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(2L)).thenReturn(java.util.Optional.of(no));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(no))
+            .thenReturn(Collections.emptyList());
+        when(noOrganogramaRepository.save(no)).thenReturn(no);
+        when(funcionarioOrganogramaRepository.findByNoOrganogramaWithFuncionarioAtivo(no))
+            .thenReturn(Collections.emptyList());
+        when(centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(no))
+            .thenReturn(Collections.emptyList());
+
+        NoOrganogramaDTO result = organogramaService.moverNo(2L, null, 0);
+
+        assertEquals(0, result.nivel());
+    }
+
+    @Test
+    void ativarOrganograma_noRaiz_ativaArvore() {
+        NoOrganograma raiz = noAtivo(1L, null, 0);
+        NoOrganograma filho = noAtivo(2L, raiz, 1);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(1L)).thenReturn(java.util.Optional.of(raiz));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(raiz))
+            .thenReturn(List.of(filho));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(filho))
+            .thenReturn(Collections.emptyList());
+        when(noOrganogramaRepository.save(any(NoOrganograma.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        organogramaService.ativarOrganograma(1L);
+
+        verify(noOrganogramaRepository).desativarTodosOrganogramas();
+        verify(noOrganogramaRepository).save(raiz);
+        verify(noOrganogramaRepository).save(filho);
+    }
+
+    @Test
+    void ativarOrganograma_noComPai_lancaIllegalArgument() {
+        NoOrganograma filho = noAtivo(2L, noAtivo(1L, null, 0), 1);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(2L)).thenReturn(java.util.Optional.of(filho));
+
+        assertThrows(IllegalArgumentException.class, () -> organogramaService.ativarOrganograma(2L));
+    }
+
+    @Test
+    void desativarOrganograma_chamaRepositorio() {
+        organogramaService.desativarOrganograma();
+        verify(noOrganogramaRepository).desativarTodosOrganogramas();
+    }
+
+    @Test
+    void associarFuncionario_sucesso_retornaDto() {
+        NoOrganograma no = noAtivo(1L, null, 0);
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(10L);
+        funcionario.setNome("João");
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(1L)).thenReturn(java.util.Optional.of(no));
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(10L)).thenReturn(java.util.Optional.of(funcionario));
+        when(funcionarioOrganogramaRepository.existsByFuncionarioAndNoOrganograma(funcionario, no))
+            .thenReturn(false);
+        when(funcionarioOrganogramaRepository.findByFuncionario(funcionario))
+            .thenReturn(Collections.emptyList());
+        when(funcionarioOrganogramaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        assertEquals(10L, organogramaService.associarFuncionario(1L, 10L).funcionarioId());
+    }
+
+    @Test
+    void associarFuncionario_inexistente_lancaFuncionarioNotFound() {
+        NoOrganograma no = noAtivo(1L, null, 0);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(1L)).thenReturn(java.util.Optional.of(no));
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(10L)).thenReturn(java.util.Optional.empty());
+
+        assertThrows(FuncionarioNotFoundException.class,
+            () -> organogramaService.associarFuncionario(1L, 10L));
+    }
+
+    @Test
+    void associarCentroCusto_sucesso_retornaDto() {
+        NoOrganograma no = noAtivo(1L, null, 0);
+        CentroCusto centro = new CentroCusto();
+        centro.setId(20L);
+        centro.setAtivo(true);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(1L)).thenReturn(java.util.Optional.of(no));
+        when(cadastrosLookupPort.findCentroCustoById(20L)).thenReturn(java.util.Optional.of(centro));
+        when(centroCustoOrganogramaRepository.existsByCentroCustoAndNoOrganograma(centro, no))
+            .thenReturn(false);
+        when(centroCustoOrganogramaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        assertEquals(20L, organogramaService.associarCentroCusto(1L, 20L).centroCustoId());
+    }
+
+    @Test
+    void removerComFilhos_removeRecursivamente() {
+        NoOrganograma raiz = noAtivo(1L, null, 0);
+        NoOrganograma filho = noAtivo(2L, raiz, 1);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(1L)).thenReturn(java.util.Optional.of(raiz));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(raiz))
+            .thenReturn(List.of(filho));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(filho))
+            .thenReturn(Collections.emptyList());
+
+        organogramaService.removerComFilhos(1L);
+
+        verify(noOrganogramaRepository).softDelete(2L);
+        verify(noOrganogramaRepository).softDelete(1L);
     }
 
     private NoOrganograma noAtivo(Long id, NoOrganograma parent, int nivel) {
