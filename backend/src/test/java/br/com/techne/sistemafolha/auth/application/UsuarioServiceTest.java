@@ -2,6 +2,7 @@ package br.com.techne.sistemafolha.auth.application;
 
 import br.com.techne.sistemafolha.auth.api.UsuarioDTO;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
+import br.com.techne.sistemafolha.auth.domain.UsuarioNotFoundException;
 import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
@@ -18,7 +19,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -132,6 +136,180 @@ class UsuarioServiceTest {
         assertThrows(FuncionarioNotFoundException.class,
             () -> usuarioService.atualizar(USUARIO_ID, dto));
         verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void listarTodos_delegatesToListarSemFiltros() {
+        when(usuarioRepository.findByFiltros(isNull(), isNull(), isNull()))
+                .thenReturn(List.of(usuarioExistente()));
+
+        List<UsuarioDTO> result = usuarioService.listarTodos();
+
+        assertEquals(1, result.size());
+        assertEquals("gestor", result.get(0).login());
+    }
+
+    @Test
+    void buscarPorId_quandoAtivo_retornaDto() {
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuarioExistente()));
+
+        UsuarioDTO result = usuarioService.buscarPorId(USUARIO_ID);
+
+        assertEquals(USUARIO_ID, result.id());
+        assertEquals("gestor", result.login());
+    }
+
+    @Test
+    void buscarPorId_inexistente_lancaUsuarioNotFoundException() {
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.empty());
+
+        assertThrows(UsuarioNotFoundException.class, () -> usuarioService.buscarPorId(USUARIO_ID));
+    }
+
+    @Test
+    void buscarPorLogin_quandoAtivo_retornaDto() {
+        when(usuarioRepository.findByLoginAndAtivoTrue("gestor")).thenReturn(Optional.of(usuarioExistente()));
+
+        UsuarioDTO result = usuarioService.buscarPorLogin("gestor");
+
+        assertEquals("gestor", result.login());
+    }
+
+    @Test
+    void buscarPorLogin_inexistente_lancaUsuarioNotFoundException() {
+        when(usuarioRepository.findByLoginAndAtivoTrue("inexistente")).thenReturn(Optional.empty());
+
+        assertThrows(UsuarioNotFoundException.class, () -> usuarioService.buscarPorLogin("inexistente"));
+    }
+
+    @Test
+    void buscarPorFuncionario_quandoExiste_retornaDto() {
+        Usuario usuario = usuarioExistente();
+        usuario.setFuncionario(funcionarioAtivo(FUNCIONARIO_ID));
+        when(usuarioRepository.findByFuncionarioIdAndAtivoTrue(FUNCIONARIO_ID)).thenReturn(Optional.of(usuario));
+
+        UsuarioDTO result = usuarioService.buscarPorFuncionario(FUNCIONARIO_ID);
+
+        assertEquals(FUNCIONARIO_ID, result.funcionarioId());
+    }
+
+    @Test
+    void buscarPorFuncionario_quandoNaoExiste_retornaNull() {
+        when(usuarioRepository.findByFuncionarioIdAndAtivoTrue(FUNCIONARIO_ID)).thenReturn(Optional.empty());
+
+        assertNull(usuarioService.buscarPorFuncionario(FUNCIONARIO_ID));
+    }
+
+    @Test
+    void cadastrar_persisteUsuarioComSenhaCriptografada() {
+        UsuarioDTO dto = new UsuarioDTO(null, "novo", "senha123", "Novo Usuário", List.of("USER"), null, null, null);
+        when(usuarioRepository.existsByLoginAndAtivoTrue("novo")).thenReturn(false);
+        when(passwordEncoder.encode("senha123")).thenReturn("hash-novo");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> {
+            Usuario saved = inv.getArgument(0);
+            saved.setId(99L);
+            return saved;
+        });
+
+        UsuarioDTO result = usuarioService.cadastrar(dto);
+
+        assertEquals(99L, result.id());
+        assertEquals("novo", result.login());
+        verify(passwordEncoder).encode("senha123");
+    }
+
+    @Test
+    void cadastrar_loginDuplicado_lancaIllegalArgumentException() {
+        UsuarioDTO dto = new UsuarioDTO(null, "novo", "senha123", "Novo Usuário", List.of("USER"), null, null, null);
+        when(usuarioRepository.existsByLoginAndAtivoTrue("novo")).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> usuarioService.cadastrar(dto));
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void atualizar_alteraSenhaQuandoInformada() {
+        Usuario usuario = usuarioExistente();
+        UsuarioDTO dto = new UsuarioDTO(USUARIO_ID, "gestor", "novaSenha", "Gestor", List.of("USER"), null, null, null);
+
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.encode("novaSenha")).thenReturn("hash-nova");
+        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+
+        usuarioService.atualizar(USUARIO_ID, dto);
+
+        assertEquals("hash-nova", usuario.getSenha());
+    }
+
+    @Test
+    void atualizar_loginDuplicado_lancaIllegalArgumentException() {
+        Usuario usuario = usuarioExistente();
+        UsuarioDTO dto = new UsuarioDTO(USUARIO_ID, "outro", null, "Gestor", List.of("USER"), null, null, null);
+
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.existsByLoginAndAtivoTrue("outro")).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> usuarioService.atualizar(USUARIO_ID, dto));
+    }
+
+    @Test
+    void atualizar_removeFuncionarioQuandoIdNull() {
+        Usuario usuario = usuarioExistente();
+        usuario.setFuncionario(funcionarioAtivo(FUNCIONARIO_ID));
+        UsuarioDTO dto = new UsuarioDTO(USUARIO_ID, "gestor", null, "Gestor", List.of("USER"), null, null, null);
+
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+
+        usuarioService.atualizar(USUARIO_ID, dto);
+
+        assertNull(usuario.getFuncionario());
+    }
+
+    @Test
+    void remover_desativaUsuario() {
+        Usuario usuario = usuarioExistente();
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+
+        usuarioService.remover(USUARIO_ID);
+
+        assertFalse(usuario.isAtivo());
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    void alterarSenha_senhaAtualCorreta_atualizaSenha() {
+        Usuario usuario = usuarioExistente();
+        usuario.setSenha("hash-atual");
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("atual", "hash-atual")).thenReturn(true);
+        when(passwordEncoder.encode("atual")).thenReturn("debug-hash");
+        when(passwordEncoder.encode("nova")).thenReturn("hash-nova");
+        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+
+        usuarioService.alterarSenha(USUARIO_ID, "atual", "nova");
+
+        verify(passwordEncoder).encode("nova");
+        assertEquals("hash-nova", usuario.getSenha());
+    }
+
+    @Test
+    void alterarSenha_senhaAtualIncorreta_lancaRuntimeException() {
+        Usuario usuario = usuarioExistente();
+        usuario.setSenha("hash-atual");
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("errada", "hash-atual")).thenReturn(false);
+
+        assertThrows(RuntimeException.class, () -> usuarioService.alterarSenha(USUARIO_ID, "errada", "nova"));
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void verificarSenha_delegatesToPasswordEncoder() {
+        when(passwordEncoder.matches("texto", "hash")).thenReturn(true);
+
+        assertTrue(usuarioService.verificarSenha("texto", "hash"));
     }
 
     private Usuario usuarioExistente() {
