@@ -87,6 +87,21 @@ public class FolhaTotalizacaoService {
         return resultado;
     }
 
+    @Transactional(readOnly = true)
+    public BigDecimal calcularTotalCustoEmpresa(
+            List<FolhaLinhaSnapshot> linhas,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            AccessContextDTO contexto) {
+        if (linhas == null || linhas.isEmpty()) {
+            return FolhaMotorCalculo.arredondar(BigDecimal.ZERO);
+        }
+        return FolhaMotorCalculo.arredondar(calcularTotaisPorFuncionario(
+                linhas, contexto, BigDecimal.ZERO, competenciaInicio, competenciaFim).stream()
+            .map(FolhaTotaisFuncionarioDTO::custoEmpresa)
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
+    }
+
     private FolhaMotorCalculo.LinhaCalculoInput toInput(FolhaLinhaSnapshot linha) {
         BigDecimal valor = linha.valor() != null ? linha.valor() : BigDecimal.ZERO;
         return new FolhaMotorCalculo.LinhaCalculoInput(
