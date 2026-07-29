@@ -195,7 +195,7 @@ export function BeneficiosMensais() {
       }, {} as Record<string, FuncionarioResumo>);
 
       const funcionariosArray = Object.values(resumoMap) as FuncionarioResumo[];
-      const funcionariosOrdenados = funcionariosArray.sort((a, b) =>
+      const funcionariosOrdenados = [...funcionariosArray].sort((a, b) =>
         a.funcionarioNome.localeCompare(b.funcionarioNome),
       );
       setFuncionariosResumo(funcionariosOrdenados);
@@ -285,11 +285,15 @@ export function BeneficiosMensais() {
         <Typography variant="h4">Benefícios Mensais</Typography>
       </Box>
 
-      {loading ? (
-        <Typography>Carregando...</Typography>
-      ) : error ? (
-        <Typography color="error">{error}</Typography>
-      ) : mostrarFuncionarios ? (
+      {(() => {
+        if (loading) {
+          return <Typography>Carregando...</Typography>;
+        }
+        if (error) {
+          return <Typography color="error">{error}</Typography>;
+        }
+        if (mostrarFuncionarios) {
+          return (
         <>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Button
@@ -424,7 +428,9 @@ export function BeneficiosMensais() {
             </Typography>
           )}
         </>
-      ) : (
+          );
+        }
+        return (
         <>
           <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
             Resumos de Benefícios Mensais
@@ -526,7 +532,8 @@ export function BeneficiosMensais() {
             </Typography>
           )}
         </>
-      )}
+        );
+      })()}
 
       <Dialog
         open={openDetalhesDialog}

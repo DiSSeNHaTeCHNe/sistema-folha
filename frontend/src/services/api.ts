@@ -38,6 +38,65 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+const isUnauthorizedStatus = (status?: number): boolean =>
+  status === 401 || status === 403;
+
+const logoutOnAuthFailure = (): void => {
+  TokenService.clearTokens();
+  window.dispatchEvent(new CustomEvent('auth:logout'));
+};
+
+const shouldRefreshToken = (
+  axiosError: AxiosLikeError,
+  originalRequest: RetryableRequestConfig | undefined,
+  isRefreshRequest: boolean,
+): originalRequest is RetryableRequestConfig =>
+  isUnauthorizedStatus(axiosError.response?.status)
+  && originalRequest != null
+  && !originalRequest._retry
+  && !isRefreshRequest;
+
+async function refreshAccessToken(originalRequest: RetryableRequestConfig): Promise<unknown> {
+  const refreshToken = TokenService.getRefreshToken();
+
+  if (!refreshToken) {
+    throw new Error('Refresh token não disponível');
+  }
+
+  if (TokenService.isRefreshTokenExpired()) {
+    throw new Error('Refresh token expirado');
+  }
+
+  const refreshResponse = await fetch(`${api.defaults.baseURL}/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!refreshResponse.ok) {
+    throw new Error('Falha ao renovar token');
+  }
+
+  const refreshData = await refreshResponse.json() as LoginResponse;
+  const newTokenData = {
+    token: refreshData.token,
+    refreshToken: refreshData.refreshToken,
+    tokenExpiration: refreshData.tokenExpiration,
+    refreshExpiration: refreshData.refreshExpiration,
+  };
+
+  TokenService.setTokens(newTokenData);
+  processQueue(null, newTokenData.token);
+
+  if (originalRequest.headers) {
+    originalRequest.headers.Authorization = `Bearer ${newTokenData.token}`;
+  }
+
+  return api(originalRequest);
+}
+
 // Interceptor de requisição para adicionar token de autorização
 api.interceptors.request.use(
   (config: unknown) => {
@@ -49,7 +108,7 @@ api.interceptors.request.use(
     return config;
   },
   (error: unknown) => {
-    return Promise.reject(error);
+    throw error;
   }
 );
 
@@ -62,97 +121,35 @@ api.interceptors.response.use(
     const axiosError = error as AxiosLikeError;
     const originalRequest = axiosError.config;
     const isRefreshRequest = originalRequest?.url?.includes('/auth/refresh') || false;
-    
-    // Se o erro é 401 ou 403 (token expirado/inválido) e não é uma tentativa de refresh
-    if ((axiosError.response?.status === 401 || axiosError.response?.status === 403) && originalRequest && !originalRequest._retry && !isRefreshRequest) {
-      // Marcar a requisição como tentativa de retry
+
+    if (shouldRefreshToken(axiosError, originalRequest, isRefreshRequest)) {
       originalRequest._retry = true;
-      
-      // Se já estamos fazendo refresh, colocar na fila
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then(() => {
-          // Retry da requisição original com o novo token
-          return api(originalRequest);
-        }).catch(err => {
-          return Promise.reject(err);
-        });
+        }).then(() => api(originalRequest)).catch((err: unknown) => { throw err; });
       }
-      
+
       isRefreshing = true;
-      
+
       try {
-        const refreshToken = TokenService.getRefreshToken();
-        
-        if (!refreshToken) {
-          throw new Error('Refresh token não disponível');
-        }
-        
-        // Verificar se o refresh token não está expirado
-        if (TokenService.isRefreshTokenExpired()) {
-          throw new Error('Refresh token expirado');
-        }
-        
-        // Fazer o refresh do token usando fetch nativo
-        const refreshResponse = await fetch(`${api.defaults.baseURL}/auth/refresh`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-        
-        if (!refreshResponse.ok) {
-          throw new Error('Falha ao renovar token');
-        }
-        
-        const refreshData = await refreshResponse.json() as LoginResponse;
-        
-        const newTokenData = {
-          token: refreshData.token,
-          refreshToken: refreshData.refreshToken,
-          tokenExpiration: refreshData.tokenExpiration,
-          refreshExpiration: refreshData.refreshExpiration,
-        };
-        
-        // Salvar os novos tokens
-        TokenService.setTokens(newTokenData);
-        
-        // Processar a fila de requisições pendentes
-        processQueue(null, newTokenData.token);
-        
-        // Retry da requisição original
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newTokenData.token}`;
-        }
-        
-        return api(originalRequest);
-        
+        return await refreshAccessToken(originalRequest);
       } catch (refreshError) {
-        // Se o refresh falhou, processar a fila com erro
         processQueue(refreshError, null);
-        
-        // Limpar tokens e redirecionar para login
-        TokenService.clearTokens();
-        
-        // Disparar evento personalizado para o contexto de auth
-        window.dispatchEvent(new CustomEvent('auth:logout'));
-        
-        return Promise.reject(refreshError);
+        logoutOnAuthFailure();
+        throw refreshError;
       } finally {
         isRefreshing = false;
       }
     }
-    
-    // Se o erro é 401/403 e é do próprio endpoint de refresh, fazer logout
-    if ((axiosError.response?.status === 401 || axiosError.response?.status === 403) && isRefreshRequest) {
+
+    if (isUnauthorizedStatus(axiosError.response?.status) && isRefreshRequest) {
       console.log('Refresh token inválido ou expirado, fazendo logout...');
-      TokenService.clearTokens();
-      window.dispatchEvent(new CustomEvent('auth:logout'));
+      logoutOnAuthFailure();
     }
-    
-    return Promise.reject(error);
+
+    throw error;
   }
 );
 
