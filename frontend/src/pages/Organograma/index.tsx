@@ -76,6 +76,64 @@ const getApiErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
+const TREE_BRANCH_Y = 28;
+const TREE_LINE_WIDTH = '2px';
+
+interface OrganogramaTreeContext {
+  /** true quando o nó tem pai (não é raiz dentro de um grupo de filhos) */
+  hasParent: boolean;
+  /** true quando é o último filho entre irmãos */
+  isLastSibling: boolean;
+}
+
+interface OrganogramaTreeBranchProps {
+  treeContext?: OrganogramaTreeContext;
+  children: React.ReactNode;
+}
+
+/** Decorative tree connectors — no interactive role; pointer events disabled on lines. */
+const OrganogramaTreeBranch: React.FC<OrganogramaTreeBranchProps> = ({
+  treeContext,
+  children,
+}) => {
+  const hasParent = treeContext?.hasParent ?? false;
+  const isLastSibling = treeContext?.isLastSibling ?? false;
+
+  return (
+    <Box
+      aria-hidden={hasParent ? true : undefined}
+      sx={(theme) => ({
+        position: 'relative',
+        ...(hasParent && {
+          pl: 2,
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            height: isLastSibling ? `${TREE_BRANCH_Y}px` : '100%',
+            borderLeft: `${TREE_LINE_WIDTH} solid`,
+            borderColor: theme.palette.divider,
+            pointerEvents: 'none',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            top: TREE_BRANCH_Y,
+            width: 16,
+            borderTop: `${TREE_LINE_WIDTH} solid`,
+            borderColor: theme.palette.divider,
+            pointerEvents: 'none',
+          },
+        }),
+      })}
+    >
+      {children}
+    </Box>
+  );
+};
+
 // Componente para um nó do organograma com drag & drop
 const NoOrganogramaCard: React.FC<{
   no: NoOrganogramaWithChildren;
@@ -116,25 +174,26 @@ const NoOrganogramaCard: React.FC<{
   const centrosCustoCount = no.centrosCusto?.length || 0;
 
   return (
-    <Box mb={2}>
-      <Card
-        ref={setNodeRef}
-        onMouseEnter={() => onHover(no.id)}
-        onMouseLeave={() => onHover(null)}
-        onClick={() => onToggleExpand(no.id)}
-        sx={{
-          border: '2px solid',
-          borderColor: isOver ? 'primary.main' : isExpanded ? 'primary.main' : 'grey.300',
-          bgcolor: isOver ? 'primary.light' : 'background.paper',
-          minHeight: showDetails ? 200 : 56,
-          transition: 'all 0.3s ease-in-out',
-          position: 'relative',
-          cursor: 'pointer',
-          '&:hover': {
-            boxShadow: 3,
-          },
-        }}
-      >
+    <OrganogramaTreeBranch>
+      <Box mb={2}>
+        <Card
+          ref={setNodeRef}
+          onMouseEnter={() => onHover(no.id)}
+          onMouseLeave={() => onHover(null)}
+          onClick={() => onToggleExpand(no.id)}
+          sx={{
+            border: '2px solid',
+            borderColor: isOver ? 'primary.main' : isExpanded ? 'primary.main' : 'grey.300',
+            bgcolor: isOver ? 'primary.light' : 'background.paper',
+            minHeight: showDetails ? 200 : 56,
+            transition: 'all 0.3s ease-in-out',
+            position: 'relative',
+            cursor: 'pointer',
+            '&:hover': {
+              boxShadow: 3,
+            },
+          }}
+        >
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
           {!showDetails ? (
             // MODO COMPACTO - Só título e badges
@@ -266,30 +325,29 @@ const NoOrganogramaCard: React.FC<{
             </>
           )}
         </CardContent>
-      </Card>
+        </Card>
 
-      
-      {/* Nós filhos - renderizar mesmo quando compacto */}
-      {no.children && no.children.length > 0 && (
-        <Box ml={4} mt={2}>
-          {no.children.map((child) => (
-            <NoOrganogramaCard
-              key={child.id}
-              no={child}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onAddChild={onAddChild}
-              onRemoveFuncionario={onRemoveFuncionario}
-              onRemoveCentroCusto={onRemoveCentroCusto}
-              expandedNodeId={expandedNodeId}
-              hoveredNodeId={hoveredNodeId}
-              onToggleExpand={onToggleExpand}
-              onHover={onHover}
-            />
-          ))}
-        </Box>
-      )}
-    </Box>
+        {no.children && no.children.length > 0 && (
+          <Box ml={4} mt={2}>
+            {no.children.map((child) => (
+              <NoOrganogramaCard
+                key={child.id}
+                no={child}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onAddChild={onAddChild}
+                onRemoveFuncionario={onRemoveFuncionario}
+                onRemoveCentroCusto={onRemoveCentroCusto}
+                expandedNodeId={expandedNodeId}
+                hoveredNodeId={hoveredNodeId}
+                onToggleExpand={onToggleExpand}
+                onHover={onHover}
+              />
+            ))}
+          </Box>
+        )}
+      </Box>
+    </OrganogramaTreeBranch>
   );
 };
 
