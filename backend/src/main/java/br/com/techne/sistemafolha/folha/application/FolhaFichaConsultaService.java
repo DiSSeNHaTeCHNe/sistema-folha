@@ -14,6 +14,7 @@ import br.com.techne.sistemafolha.folha.infrastructure.FichaLinhaRepository;
 import br.com.techne.sistemafolha.folha.infrastructure.FichaMensalRepository;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
+import br.com.techne.sistemafolha.shared.access.CentroCustoEfetivo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -120,10 +121,11 @@ public class FolhaFichaConsultaService {
         if (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma()) {
             return false;
         }
-        if (ficha.getFuncionario() == null || ficha.getFuncionario().getCentroCusto() == null) {
-            return false;
-        }
-        return contexto.centrosCustoIds().contains(ficha.getFuncionario().getCentroCusto().getId());
+        Long linhaCcId = ficha.getCentroCusto() != null ? ficha.getCentroCusto().getId() : null;
+        Long funcCcId = ficha.getFuncionario() != null && ficha.getFuncionario().getCentroCusto() != null
+            ? ficha.getFuncionario().getCentroCusto().getId() : null;
+        return CentroCustoEfetivo.pertenceAoEscopo(
+            CentroCustoEfetivo.idOf(linhaCcId, funcCcId), contexto.centrosCustoIds());
     }
 
     private AccessContextDTO obterContextoAcesso(String login) {
