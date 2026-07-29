@@ -248,6 +248,68 @@ class FolhaPagamentoServiceTest {
     }
 
     @Test
+    void consultarPorPeriodo_duasCompetenciasCcDistintos_gestorVeSoCompetenciaDoEscopo_fcc02_fcc03() {
+        // FCC-02 / FCC-03: jan CC-A (100L), fev CC-B (200L), funcionário atual CC-B
+        stubUsuario();
+
+        LocalDate janInicio = LocalDate.of(2026, 1, 1);
+        LocalDate janFim = LocalDate.of(2026, 1, 31);
+        LocalDate fevInicio = LocalDate.of(2026, 2, 1);
+        LocalDate fevFim = LocalDate.of(2026, 2, 28);
+
+        CentroCusto ccA = new CentroCusto();
+        ccA.setId(100L);
+        ccA.setDescricao("CC Alpha");
+        CentroCusto ccB = new CentroCusto();
+        ccB.setId(200L);
+        ccB.setDescricao("CC Beta");
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(50L);
+        funcionario.setNome("Transferido");
+        funcionario.setCentroCusto(ccB);
+
+        FolhaPagamento folhaJan = folhaAtiva(1L, 50L);
+        folhaJan.setFuncionario(funcionario);
+        folhaJan.setCentroCusto(ccA);
+        folhaJan.setDataInicio(janInicio);
+        folhaJan.setDataFim(janFim);
+
+        FolhaPagamento folhaFev = folhaAtiva(2L, 50L);
+        folhaFev.setFuncionario(funcionario);
+        folhaFev.setCentroCusto(ccB);
+        folhaFev.setDataInicio(fevInicio);
+        folhaFev.setDataFim(fevFim);
+
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(janInicio, janFim))
+            .thenReturn(List.of(folhaJan));
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(fevInicio, fevFim))
+            .thenReturn(List.of(folhaFev));
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(100L)));
+        List<FolhaPagamentoDTO> gestorAJan = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, janInicio, janFim, null);
+        assertEquals(1, gestorAJan.size());
+        assertEquals(1L, gestorAJan.get(0).id());
+
+        List<FolhaPagamentoDTO> gestorAFev = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, fevInicio, fevFim, null);
+        assertTrue(gestorAFev.isEmpty());
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(200L)));
+        List<FolhaPagamentoDTO> gestorBFev = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, fevInicio, fevFim, null);
+        assertEquals(1, gestorBFev.size());
+        assertEquals(2L, gestorBFev.get(0).id());
+
+        List<FolhaPagamentoDTO> gestorBJan = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, janInicio, janFim, null);
+        assertTrue(gestorBJan.isEmpty());
+    }
+
+    @Test
     void consultarPorPeriodo_linhaCcDiferenteDoFuncionarioAtual_filtraPorCcDaLinha_fcc06() {
         // FCC-06: linha CC-A, funcionário CC-B atual — gestor A vê, gestor B não
         stubUsuario();

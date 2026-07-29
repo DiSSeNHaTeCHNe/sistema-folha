@@ -313,6 +313,50 @@ class BeneficioMensalServiceTest {
     }
 
     @Test
+    void listarPorCompetenciaParaUsuario_snapshotCcDiferenteDoFuncionarioAtual_filtraPorCcDaLinha_fcc14() {
+        // FCC-14: snapshot CC-A (100L), funcionário atual CC-B (200L)
+        stubUsuario();
+
+        CentroCusto ccSnapshot = new CentroCusto();
+        ccSnapshot.setId(100L);
+        ccSnapshot.setDescricao("CC Alpha");
+        CentroCusto ccAtual = new CentroCusto();
+        ccAtual.setId(200L);
+        ccAtual.setDescricao("CC Beta");
+
+        Funcionario funcionario = funcionarioAtivo(99L);
+        funcionario.setCentroCusto(ccAtual);
+
+        BeneficioMensal beneficio = beneficioAtivo(3L);
+        beneficio.setFuncionario(funcionario);
+        beneficio.setCentroCusto(ccSnapshot);
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(100L)));
+        when(beneficioMensalRepository
+                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                        COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)))
+                .thenReturn(List.of(beneficio));
+
+        List<BeneficioMensalDTO> gestorA = beneficioMensalService.listarPorCompetenciaParaUsuario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM);
+        assertEquals(1, gestorA.size());
+        assertEquals(3L, gestorA.get(0).id());
+        assertEquals(100L, gestorA.get(0).centroCustoId());
+
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(200L)));
+        when(beneficioMensalRepository
+                .findByCompetenciaInicioAndCompetenciaFimAndFuncionarioCentroCustoIdInAndAtivoTrue(
+                        COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(200L)))
+                .thenReturn(List.of());
+
+        List<BeneficioMensalDTO> gestorB = beneficioMensalService.listarPorCompetenciaParaUsuario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM);
+        assertTrue(gestorB.isEmpty());
+    }
+
+    @Test
     void listarPorCompetencia_acesso_restrito_usa_query_com_centros() {
         Set<Long> centros = Set.of(10L, 20L);
         BeneficioMensal beneficio = beneficioAtivo(2L);
