@@ -11,10 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,7 +21,6 @@ import java.util.stream.Collectors;
 public class FolhaTotalizacaoService {
 
     private final BeneficioConsultaPort beneficioConsultaPort;
-    private final EncargosRateioService encargosRateioService;
 
     @Transactional(readOnly = true)
     public List<FolhaTotaisFuncionarioDTO> calcularTotaisPorFuncionario(
@@ -44,11 +41,6 @@ public class FolhaTotalizacaoService {
         Map<Long, BigDecimal> beneficiosPorFuncionario = beneficioConsultaPort
             .somarValorPorFuncionariosECompetencia(funcionarioIds, competenciaInicio, competenciaFim);
 
-        Map<Long, BigDecimal> brutoPorFuncionario = brutoPorFuncionario(porFuncionario);
-        Map<Long, BigDecimal> encargosPorFuncionario = contexto.acessoTotal()
-            ? encargosRateioService.ratearPorFuncionario(brutoPorFuncionario, totalEncargosSnapshot)
-            : encargosZerados(funcionarioIds);
-
         List<FolhaTotaisFuncionarioDTO> resultado = new ArrayList<>();
 
         for (Map.Entry<Long, List<FolhaLinhaSnapshot>> entry : porFuncionario.entrySet()) {
@@ -65,8 +57,7 @@ public class FolhaTotalizacaoService {
                 funcionarioId, competenciaInicio, competenciaFim);
             BigDecimal custoBeneficios = FolhaMotorCalculo.arredondar(
                 beneficiosPorFuncionario.getOrDefault(funcionarioId, BigDecimal.ZERO));
-            BigDecimal encargosRateados = FolhaMotorCalculo.arredondar(
-                encargosPorFuncionario.getOrDefault(funcionarioId, BigDecimal.ZERO));
+            BigDecimal encargosRateados = BigDecimal.ZERO.setScale(2);
             BigDecimal custoEmpresa = FolhaCustoEmpresaComposer.compor(
                 totais.custoFolha(), encargosRateados, custoBeneficios);
 
@@ -96,28 +87,9 @@ public class FolhaTotalizacaoService {
         return resultado;
     }
 
-    private Map<Long, BigDecimal> brutoPorFuncionario(Map<Long, List<FolhaLinhaSnapshot>> porFuncionario) {
-        Map<Long, BigDecimal> bruto = new HashMap<>();
-        for (Map.Entry<Long, List<FolhaLinhaSnapshot>> entry : porFuncionario.entrySet()) {
-            List<FolhaMotorCalculo.LinhaCalculoInput> inputs = entry.getValue().stream()
-                .map(this::toInput)
-                .toList();
-            bruto.put(entry.getKey(), FolhaMotorCalculo.calcularPorLinhas(inputs).bruto());
-        }
-        return bruto;
-    }
-
-    private Map<Long, BigDecimal> encargosZerados(Set<Long> funcionarioIds) {
-        Map<Long, BigDecimal> zeros = new HashMap<>();
-        for (Long id : funcionarioIds) {
-            zeros.put(id, BigDecimal.ZERO.setScale(2));
-        }
-        return zeros;
-    }
-
     private FolhaMotorCalculo.LinhaCalculoInput toInput(FolhaLinhaSnapshot linha) {
         BigDecimal valor = linha.valor() != null ? linha.valor() : BigDecimal.ZERO;
         return new FolhaMotorCalculo.LinhaCalculoInput(
-            valor, linha.operadorBruto(), linha.operadorLiquido(), linha.operadorCusto());
+            valor, linha.operadorBruto(), linha.operadorLiquido(), linha.operadorCusto(), linha.porcentagem());
     }
 }

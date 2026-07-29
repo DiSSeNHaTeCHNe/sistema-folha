@@ -32,9 +32,6 @@ class FolhaTotalizacaoServiceTest {
     @Mock
     private BeneficioConsultaPort beneficioConsultaPort;
 
-    @Mock
-    private EncargosRateioService encargosRateioService;
-
     @InjectMocks
     private FolhaTotalizacaoService folhaTotalizacaoService;
 
@@ -118,13 +115,11 @@ class FolhaTotalizacaoServiceTest {
     }
 
     @Test
-    void calcularTotaisPorFuncionario_global_rateiaEncargosPorFuncionario() {
+    void calcularTotaisPorFuncionario_global_totalEncargosSnapshot_naoCompoeCustoEmpresa() {
         when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
             .thenReturn(Map.of());
         when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(any(), any(), any()))
             .thenReturn(0);
-        when(encargosRateioService.ratearPorFuncionario(any(), eq(new BigDecimal("1000.00"))))
-            .thenReturn(Map.of(1L, new BigDecimal("800.00"), 2L, new BigDecimal("200.00")));
 
         List<FolhaTotaisFuncionarioDTO> resultado = folhaTotalizacaoService.calcularTotaisPorFuncionario(
             List.of(
@@ -137,10 +132,32 @@ class FolhaTotalizacaoServiceTest {
 
         FolhaTotaisFuncionarioDTO func1 = resultado.stream().filter(t -> t.funcionarioId().equals(1L)).findFirst().orElseThrow();
         FolhaTotaisFuncionarioDTO func2 = resultado.stream().filter(t -> t.funcionarioId().equals(2L)).findFirst().orElseThrow();
-        assertEquals(new BigDecimal("800.00"), func1.encargosRateados());
-        assertEquals(new BigDecimal("200.00"), func2.encargosRateados());
-        assertEquals(new BigDecimal("8800.00"), func1.custoEmpresa());
-        assertEquals(new BigDecimal("2200.00"), func2.custoEmpresa());
+        assertEquals(BigDecimal.ZERO.setScale(2), func1.encargosRateados());
+        assertEquals(BigDecimal.ZERO.setScale(2), func2.encargosRateados());
+        assertEquals(new BigDecimal("8000.00"), func1.custoEmpresa());
+        assertEquals(new BigDecimal("2000.00"), func2.custoEmpresa());
+    }
+
+    @Test
+    void calcularTotaisPorFuncionario_porcentagemSnapshot_aplicaSomenteNoCusto() {
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of());
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+                1L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(0);
+
+        List<FolhaTotaisFuncionarioDTO> resultado = folhaTotalizacaoService.calcularTotaisPorFuncionario(
+            List.of(linhaSnapshot(1L, "Ana", (short) 1, (short) 1, (short) 1, "7258.43", new BigDecimal("138.63"))),
+            contextoScoped(),
+            BigDecimal.ZERO,
+            COMPETENCIA_INICIO,
+            COMPETENCIA_FIM);
+
+        FolhaTotaisFuncionarioDTO total = resultado.get(0);
+        assertEquals(new BigDecimal("7258.43"), total.salBruto());
+        assertEquals(new BigDecimal("7258.43"), total.salLiquido());
+        assertEquals(new BigDecimal("10062.36"), total.salCustoFolha());
+        assertEquals(new BigDecimal("10062.36"), total.custoEmpresa());
     }
 
     @Test
@@ -174,8 +191,13 @@ class FolhaTotalizacaoServiceTest {
 
     private FolhaLinhaSnapshot linhaSnapshot(
             Long funcionarioId, String nome, short ob, short ol, short oc, String valor) {
+        return linhaSnapshot(funcionarioId, nome, ob, ol, oc, valor, null);
+    }
+
+    private FolhaLinhaSnapshot linhaSnapshot(
+            Long funcionarioId, String nome, short ob, short ol, short oc, String valor, BigDecimal porcentagem) {
         return new FolhaLinhaSnapshot(
             funcionarioId, nome, 10L, "TI", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", "PROVENTO", new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, null);
+            1L, "001", "Rubrica", "PROVENTO", new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, porcentagem);
     }
 }

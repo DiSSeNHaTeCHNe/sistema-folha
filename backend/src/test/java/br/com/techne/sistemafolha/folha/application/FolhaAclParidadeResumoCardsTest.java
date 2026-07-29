@@ -79,7 +79,7 @@ class FolhaAclParidadeResumoCardsTest {
     @BeforeEach
     void setUp() {
         FolhaTotalizacaoService folhaTotalizacaoService =
-            new FolhaTotalizacaoService(beneficioConsultaPort, encargosRateioService);
+            new FolhaTotalizacaoService(beneficioConsultaPort);
         resumoFolhaPagamentoService = new ResumoFolhaPagamentoService(
             resumoFolhaPagamentoRepository,
             folhaConsultaPort,

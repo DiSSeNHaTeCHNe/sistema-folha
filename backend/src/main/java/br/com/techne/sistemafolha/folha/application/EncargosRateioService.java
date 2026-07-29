@@ -12,8 +12,12 @@ import java.util.Map;
 /**
  * Rateio D4-CLT: encargos proporcionais ao bruto CLT por funcionário.
  * Callers scoped SHALL pass {@code totalEncargos = 0} (B1) — encargos permanecem zero.
+ *
+ * @deprecated Composição de {@code custoEmpresa} — use porcentagem de rubrica (AD-012 / fix2).
+ *             Mantido para testes utilitários do algoritmo de rateio.
  */
 @Service
+@Deprecated(since = "fix2", forRemoval = false)
 public class EncargosRateioService {
 
     private static final int SCALE = 2;
