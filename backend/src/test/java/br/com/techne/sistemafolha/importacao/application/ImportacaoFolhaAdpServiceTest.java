@@ -17,8 +17,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
@@ -58,6 +61,41 @@ class ImportacaoFolhaAdpServiceTest {
 
     @InjectMocks
     private ImportacaoFolhaAdpService importacaoFolhaAdpService;
+
+    @Test
+    void importar_fixtureMinimal_happyPathPersisteZeroLinhas() throws Exception {
+        MockMultipartFile arquivo = fixture("importacao/folha-adp-minimal.txt");
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(folhaProcessamentoPort.processar(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
+            .thenReturn(new ProcessamentoResultadoDTO(0, 0, 0));
+
+        ImportacaoFolhaAdpResult result = importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false);
+
+        assertTrue(result.folhasPagamento().isEmpty());
+        verify(folhaImportacaoPort).persistirImportacao(any());
+        verify(folhaProcessamentoPort).processar(COMPETENCIA_INICIO, COMPETENCIA_FIM, false, false);
+    }
+
+    @Test
+    void importar_fixtureLayoutInvalido_funcionarioInexistente_lancaRuntimeException() throws Exception {
+        MockMultipartFile arquivo = fixture("importacao/folha-adp-invalid.txt");
+        when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        when(cadastrosImportLookupPort.findFuncionarioByIdExterno("99999"))
+            .thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(
+            RuntimeException.class,
+            () -> importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false)
+        );
+
+        assertTrue(ex.getMessage().contains("Funcionários não encontrados"));
+        verify(folhaImportacaoPort, never()).persistirImportacao(any());
+        verify(folhaProcessamentoPort, never()).processar(any(), any(), anyBoolean(), anyBoolean());
+    }
 
     @Test
     void importar_duplicidadeSemConfirmar_lancaFolhaDuplicadaENaoPersiste() throws Exception {
@@ -218,6 +256,20 @@ class ImportacaoFolhaAdpServiceTest {
         assertTrue(ex.getMessage().contains("Funcionários não encontrados"));
         verify(folhaImportacaoPort, never()).persistirImportacao(any());
         verify(folhaProcessamentoPort, never()).processar(any(), any(), anyBoolean(), anyBoolean());
+    }
+
+    private MockMultipartFile fixture(String classpathLocation) throws IOException {
+        ClassPathResource resource = new ClassPathResource(classpathLocation);
+        byte[] bytes;
+        try (InputStream in = resource.getInputStream()) {
+            bytes = in.readAllBytes();
+        }
+        return new MockMultipartFile(
+            "arquivo",
+            resource.getFilename(),
+            "text/plain",
+            bytes
+        );
     }
 
     private MockMultipartFile arquivoComCompetencia() {
