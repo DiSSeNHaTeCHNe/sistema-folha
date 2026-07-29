@@ -22,7 +22,7 @@ import java.util.List;
 @Tag(name = "Organograma", description = "API para gerenciamento do organograma")
 public class OrganogramaController {
     
-    private static final Logger logger = LoggerFactory.getLogger(OrganogramaController.class);
+    private static final Logger log = LoggerFactory.getLogger(OrganogramaController.class);
 
     private final OrganogramaService organogramaService;
 
@@ -50,15 +50,15 @@ public class OrganogramaController {
     public ResponseEntity<NoOrganogramaDTO> cadastrar(
             @Parameter(description = "Dados do nó") @Valid @RequestBody NoOrganogramaCreateDTO dto) {
         try {
-            logger.debug("Recebendo requisição para criar nó: {}", dto);
+            log.debug("Recebendo requisição para criar nó: {}", dto);
             NoOrganogramaDTO resultado = organogramaService.cadastrar(dto);
-            logger.debug("Nó criado com sucesso: {}", resultado.id());
+            log.debug("Nó criado com sucesso: {}", resultado.id());
             return ResponseEntity.ok(resultado);
         } catch (NoOrganogramaNotFoundException | IllegalArgumentException e) {
-            logger.warn("Erro ao criar nó: {}", e.getMessage());
+            log.warn("Erro ao criar nó: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            logger.error("Erro inesperado ao criar nó", e);
+            log.error("Erro inesperado ao criar nó", e);
             return ResponseEntity.internalServerError().build();
         }
     }

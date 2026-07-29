@@ -15,7 +15,7 @@ public class JwtSecretStartupValidator {
     static final String DEFAULT_JWT_SECRET =
         "techne_engenharia_sistemas_ltda_50_737_766_0001_21_2024_2025_2026_2027_2028_2029_2030";
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtSecretStartupValidator.class);
+    private static final Logger log = LoggerFactory.getLogger(JwtSecretStartupValidator.class);
 
     private final String jwtSecret;
     private final Environment environment;
@@ -36,7 +36,7 @@ public class JwtSecretStartupValidator {
             throw new IllegalStateException(
                 "JWT_SECRET não configurado: defina a variável de ambiente JWT_SECRET em produção");
         }
-        logger.warn(
+        log.warn(
             "JWT_SECRET usando valor default do application.yml — permitido apenas em desenvolvimento");
     }
 

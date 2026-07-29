@@ -156,14 +156,15 @@
 
 ## Sonar follow-ups (post P2 gate)
 
-| Item | Severity | Location | Target |
-| ---- | -------- | -------- | ------ |
-| S5804 user enumeration | MAJOR | `AuthenticationService` | Batch 3 hygiene or Sonar accept |
-| S4502 CSRF disabled | CRITICAL | `SecurityConfig` | Documented; accept for JWT API |
-| S2245 pseudorandom | MAJOR | `FolhaPagamento/index.tsx` | Batch 3 FE |
-| `@Transactional` via `this` | CRITICAL | `FolhaTotalizacaoService`, `OrganogramaAcessoService` | AAP-22 Batch 3 if not touched |
+| Item | Severity | Location | Target | Status (P3 T15) |
+| ---- | -------- | -------- | ------ | --------------- |
+| S5804 user enumeration | MAJOR | `AuthenticationService` | Unified login/refresh failure paths | **Mitigated** (T15) |
+| S4502 CSRF disabled | CRITICAL | `SecurityConfig` | `@SuppressWarnings` + INTEGRATIONS.md | **Suppressed** (T15) |
+| S2245 pseudorandom | MAJOR | `FolhaPagamento/index.tsx` | Replace `Math.random` key | **Open** — fora escopo P1/P2; fix in follow-up |
+| `@Transactional` via `this` | CRITICAL | `FolhaTotalizacaoService`, `OrganogramaAcessoService` | Self-invocation bypasses proxy | **Open** — services não alterados em P1/P2 (AAP-22) |
 
 ---
 
 _Concerns audit: 2026-07-25_  
-_Sync adequação P2: 2026-07-29 (JaCoCo gate pass; Sonar bugs=0; vulns CRITICAL+MAJOR=4 documented in validation.md)_
+_Sync adequação P2: 2026-07-29 (JaCoCo gate pass; Sonar bugs=0; vulns CRITICAL+MAJOR=4 documented in validation.md)_  
+_Sync adequação P3 T15: 2026-07-29 (S1149 logger→log in touched files; S5804/S4502 addressed)_
