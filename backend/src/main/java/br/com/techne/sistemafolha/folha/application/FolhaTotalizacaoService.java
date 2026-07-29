@@ -29,6 +29,31 @@ public class FolhaTotalizacaoService {
             BigDecimal totalEncargosSnapshot,
             LocalDate competenciaInicio,
             LocalDate competenciaFim) {
+        return calcularTotaisPorFuncionarioInterno(
+            linhas, contexto, totalEncargosSnapshot, competenciaInicio, competenciaFim);
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal calcularTotalCustoEmpresa(
+            List<FolhaLinhaSnapshot> linhas,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            AccessContextDTO contexto) {
+        if (linhas == null || linhas.isEmpty()) {
+            return FolhaMotorCalculo.arredondar(BigDecimal.ZERO);
+        }
+        return FolhaMotorCalculo.arredondar(calcularTotaisPorFuncionarioInterno(
+                linhas, contexto, BigDecimal.ZERO, competenciaInicio, competenciaFim).stream()
+            .map(FolhaTotaisFuncionarioDTO::custoEmpresa)
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
+    }
+
+    private List<FolhaTotaisFuncionarioDTO> calcularTotaisPorFuncionarioInterno(
+            List<FolhaLinhaSnapshot> linhas,
+            AccessContextDTO contexto,
+            BigDecimal totalEncargosSnapshot,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim) {
         if (linhas == null || linhas.isEmpty()) {
             return List.of();
         }
@@ -85,21 +110,6 @@ public class FolhaTotalizacaoService {
 
         resultado.sort((a, b) -> a.funcionarioNome().compareToIgnoreCase(b.funcionarioNome()));
         return resultado;
-    }
-
-    @Transactional(readOnly = true)
-    public BigDecimal calcularTotalCustoEmpresa(
-            List<FolhaLinhaSnapshot> linhas,
-            LocalDate competenciaInicio,
-            LocalDate competenciaFim,
-            AccessContextDTO contexto) {
-        if (linhas == null || linhas.isEmpty()) {
-            return FolhaMotorCalculo.arredondar(BigDecimal.ZERO);
-        }
-        return FolhaMotorCalculo.arredondar(calcularTotaisPorFuncionario(
-                linhas, contexto, BigDecimal.ZERO, competenciaInicio, competenciaFim).stream()
-            .map(FolhaTotaisFuncionarioDTO::custoEmpresa)
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     private FolhaMotorCalculo.LinhaCalculoInput toInput(FolhaLinhaSnapshot linha) {

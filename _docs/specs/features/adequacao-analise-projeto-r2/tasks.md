@@ -372,9 +372,9 @@ T20
 - Skill: `jpa-performance`
 
 **Done when**:
-- [ ] Sem chamada `@Transactional` via `this` entre métodos públicos
-- [ ] `FolhaTotalizacaoServiceTest` verde — sem deleção de testes
-- [ ] Gate: `cd backend && mvn test -Dtest=FolhaTotalizacaoServiceTest,ModularArchitectureTest`
+- [x] Sem chamada `@Transactional` via `this` entre métodos públicos
+- [x] `FolhaTotalizacaoServiceTest` verde — sem deleção de testes
+- [x] Gate: `cd backend && mvn test -Dtest=FolhaTotalizacaoServiceTest,ModularArchitectureTest`
 
 **Tests**: unit  
 **Gate**: Quick BE + Arch
