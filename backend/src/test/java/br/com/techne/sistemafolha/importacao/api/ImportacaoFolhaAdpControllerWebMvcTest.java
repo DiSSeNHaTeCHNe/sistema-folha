@@ -39,6 +39,21 @@ class ImportacaoFolhaAdpControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")
+    void importarFolhaAdp_filenameNull_retorna400() throws Exception {
+        MockMultipartFile arquivo = new MockMultipartFile(
+            "arquivo", null, "text/plain", "conteudo".getBytes());
+
+        mockMvc.perform(multipart("/importacao/folha-adp")
+                .file(arquivo)
+                .param("decimoTerceiro", "false")
+                .param("confirmarSubstituicao", "false"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.message").value("Nome do arquivo não informado"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void importarFolhaAdp_processamentoFalha_retorna500ComPrefixo() throws Exception {
         MockMultipartFile arquivo = new MockMultipartFile(
             "arquivo", "folha.txt", "text/plain", "conteudo".getBytes());
