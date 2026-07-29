@@ -14,7 +14,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@SuppressWarnings("java:S4502") // API JWT stateless — CSRF desabilitado por design; ver INTEGRATIONS.md (AAP-07)
 public class SecurityConfig {
 
     private final JwtService jwtService;
@@ -26,9 +25,10 @@ public class SecurityConfig {
     }
 
     @Bean
+    @SuppressWarnings("java:S4502") // API JWT stateless — CSRF desabilitado por design; ver INTEGRATIONS.md (AAP-07)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf.disable()) // NOSONAR java:S4502
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()

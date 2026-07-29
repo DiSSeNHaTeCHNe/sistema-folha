@@ -40,6 +40,7 @@ public class AuthenticationService {
     private final OrganogramaAcessoPort organogramaAcessoPort;
 
     @Transactional
+    @SuppressWarnings("java:S5804") // Mensagem unificada login/senha (AAP-08); UsernameNotFoundException exigido pelo contrato de auth
     public TokenDTO authenticate(LoginDTO loginDTO) {
         log.info("{}Iniciando autenticação para o usuário: {}", DomainLogging.prefix(DOMAIN), loginDTO.login());
 
@@ -74,6 +75,7 @@ public class AuthenticationService {
     }
 
     @Transactional
+    @SuppressWarnings("java:S5804") // Mensagem unificada para refresh inválido/expirado (AAP-08)
     public TokenDTO refreshToken(String refreshTokenString) {
         log.info("Processando refresh token");
 
