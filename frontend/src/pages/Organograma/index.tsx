@@ -146,6 +146,7 @@ const NoOrganogramaCard: React.FC<{
   hoveredNodeId: number | null;
   onToggleExpand: (id: number) => void;
   onHover: (id: number | null) => void;
+  treeContext?: OrganogramaTreeContext;
 }> = ({ 
   no, 
   onEdit, 
@@ -157,6 +158,7 @@ const NoOrganogramaCard: React.FC<{
   hoveredNodeId,
   onToggleExpand,
   onHover,
+  treeContext,
 }) => {
   // Usar useDroppable para aceitar itens arrastados
   const { setNodeRef, isOver } = useDroppable({
@@ -174,7 +176,7 @@ const NoOrganogramaCard: React.FC<{
   const centrosCustoCount = no.centrosCusto?.length || 0;
 
   return (
-    <OrganogramaTreeBranch>
+    <OrganogramaTreeBranch treeContext={treeContext}>
       <Box mb={2}>
         <Card
           ref={setNodeRef}
@@ -328,8 +330,8 @@ const NoOrganogramaCard: React.FC<{
         </Card>
 
         {no.children && no.children.length > 0 && (
-          <Box ml={4} mt={2}>
-            {no.children.map((child) => (
+          <Box ml={4} mt={2} sx={{ position: 'relative', pl: 0 }}>
+            {no.children.map((child, index) => (
               <NoOrganogramaCard
                 key={child.id}
                 no={child}
@@ -342,6 +344,10 @@ const NoOrganogramaCard: React.FC<{
                 hoveredNodeId={hoveredNodeId}
                 onToggleExpand={onToggleExpand}
                 onHover={onHover}
+                treeContext={{
+                  hasParent: true,
+                  isLastSibling: index === no.children.length - 1,
+                }}
               />
             ))}
           </Box>
