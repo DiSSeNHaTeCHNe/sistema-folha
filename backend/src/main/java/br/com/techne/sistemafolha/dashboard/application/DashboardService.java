@@ -14,6 +14,7 @@ import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaEvolucaoSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaResumoSnapshot;
+import br.com.techne.sistemafolha.folha.port.FolhaTotalizacaoPort;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import br.com.techne.sistemafolha.shared.logging.DomainLogging;
@@ -26,8 +27,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,10 +40,9 @@ public class DashboardService {
 
     private static final Logger logger = LoggerFactory.getLogger(DashboardService.class);
     private static final String DOMAIN = "dashboard";
-    private static final int SCALE = 2;
-    private static final RoundingMode ROUNDING = RoundingMode.HALF_UP;
 
     private final FolhaConsultaPort folhaConsultaPort;
+    private final FolhaTotalizacaoPort folhaTotalizacaoPort;
     private final CadastrosImportLookupPort cadastrosImportLookupPort;
     private final BeneficioConsultaPort beneficioConsultaPort;
     private final OrganogramaAcessoPort organogramaAcessoPort;
@@ -113,11 +111,8 @@ public class DashboardService {
             .collect(Collectors.toSet())
             .size();
 
-        BigDecimal totalEncargos = contexto.acessoTotal()
-            ? nullSafe(resumo.totalEncargos())
-            : BigDecimal.ZERO;
-        BigDecimal custoMensalFolha = calcularCustoEmpresa(
-            folhaCompetencia, competenciaInicio, competenciaFim, totalEncargos);
+        BigDecimal custoMensalFolha = folhaTotalizacaoPort.calcularTotalCustoEmpresa(
+            folhaCompetencia, competenciaInicio, competenciaFim, contexto);
 
         long totalBeneficiosAtivos = centrosScoped == null
             ? beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(competenciaInicio, competenciaFim)
@@ -150,91 +145,6 @@ public class DashboardService {
             topDescontos,
             evolucaoMensal
         );
-    }
-
-    private BigDecimal calcularCustoEmpresa(
-            List<FolhaLinhaSnapshot> linhas,
-            LocalDate competenciaInicio,
-            LocalDate competenciaFim,
-            BigDecimal totalEncargosSnapshot) {
-        if (linhas == null || linhas.isEmpty()) {
-            return arredondar(BigDecimal.ZERO);
-        }
-
-        Map<Long, List<FolhaLinhaSnapshot>> porFuncionario = linhas.stream()
-            .filter(l -> l.funcionarioId() != null)
-            .collect(Collectors.groupingBy(FolhaLinhaSnapshot::funcionarioId));
-
-        Set<Long> funcionarioIds = porFuncionario.keySet();
-        Map<Long, BigDecimal> beneficios = beneficioConsultaPort.somarValorPorFuncionariosECompetencia(
-            funcionarioIds, competenciaInicio, competenciaFim);
-
-        Map<Long, BigDecimal> brutoPorFuncionario = new HashMap<>();
-        Map<Long, BigDecimal> custoFolhaPorFuncionario = new HashMap<>();
-        for (Map.Entry<Long, List<FolhaLinhaSnapshot>> entry : porFuncionario.entrySet()) {
-            BigDecimal bruto = BigDecimal.ZERO;
-            BigDecimal custoFolha = BigDecimal.ZERO;
-            for (FolhaLinhaSnapshot linha : entry.getValue()) {
-                BigDecimal valor = nullSafe(linha.valor());
-                bruto = bruto.add(valor.multiply(BigDecimal.valueOf(linha.operadorBruto())));
-                custoFolha = custoFolha.add(valor.multiply(BigDecimal.valueOf(linha.operadorCusto())));
-            }
-            brutoPorFuncionario.put(entry.getKey(), arredondar(bruto));
-            custoFolhaPorFuncionario.put(entry.getKey(), arredondar(custoFolha));
-        }
-
-        Map<Long, BigDecimal> encargosPorFuncionario = ratearEncargos(brutoPorFuncionario, totalEncargosSnapshot);
-
-        BigDecimal totalCustoEmpresa = BigDecimal.ZERO;
-        for (Long funcionarioId : funcionarioIds) {
-            BigDecimal custoFolha = custoFolhaPorFuncionario.getOrDefault(funcionarioId, BigDecimal.ZERO);
-            BigDecimal encargos = encargosPorFuncionario.getOrDefault(funcionarioId, BigDecimal.ZERO);
-            BigDecimal custoBeneficios = arredondar(beneficios.getOrDefault(funcionarioId, BigDecimal.ZERO));
-            totalCustoEmpresa = totalCustoEmpresa.add(custoFolha.add(encargos).add(custoBeneficios));
-        }
-
-        return arredondar(totalCustoEmpresa);
-    }
-
-    private Map<Long, BigDecimal> ratearEncargos(
-            Map<Long, BigDecimal> brutoPorFuncionario, BigDecimal totalEncargos) {
-        if (brutoPorFuncionario.isEmpty()
-            || totalEncargos == null
-            || totalEncargos.compareTo(BigDecimal.ZERO) == 0) {
-            Map<Long, BigDecimal> zeros = new HashMap<>();
-            brutoPorFuncionario.keySet().forEach(id -> zeros.put(id, BigDecimal.ZERO.setScale(SCALE, ROUNDING)));
-            return zeros;
-        }
-
-        BigDecimal totalBruto = brutoPorFuncionario.values().stream()
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (totalBruto.compareTo(BigDecimal.ZERO) == 0) {
-            Map<Long, BigDecimal> zeros = new HashMap<>();
-            brutoPorFuncionario.keySet().forEach(id -> zeros.put(id, BigDecimal.ZERO.setScale(SCALE, ROUNDING)));
-            return zeros;
-        }
-
-        Map<Long, BigDecimal> rateio = new LinkedHashMap<>();
-        BigDecimal acumulado = BigDecimal.ZERO;
-        Long ultimoId = null;
-
-        for (Map.Entry<Long, BigDecimal> entry : brutoPorFuncionario.entrySet()) {
-            ultimoId = entry.getKey();
-            BigDecimal parcela = totalEncargos
-                .multiply(entry.getValue())
-                .divide(totalBruto, SCALE, ROUNDING);
-            rateio.put(entry.getKey(), parcela);
-            acumulado = acumulado.add(parcela);
-        }
-
-        if (ultimoId != null) {
-            BigDecimal diferenca = totalEncargos.subtract(acumulado);
-            if (diferenca.compareTo(BigDecimal.ZERO) != 0) {
-                rateio.put(ultimoId, rateio.get(ultimoId).add(diferenca).setScale(SCALE, ROUNDING));
-            }
-        }
-
-        return rateio;
     }
 
     private boolean deveNegarAcesso(AccessContextDTO contexto) {
@@ -437,8 +347,8 @@ public class DashboardService {
             .map(item -> {
                 List<FolhaLinhaSnapshot> linhas = folhaConsultaPort.findLinhasAtivasPorCompetencia(
                     item.competenciaInicio(), item.competenciaFim(), item.decimoTerceiro(), centros);
-                BigDecimal custoEmpresa = calcularCustoEmpresa(
-                    linhas, item.competenciaInicio(), item.competenciaFim(), BigDecimal.ZERO);
+                BigDecimal custoEmpresa = folhaTotalizacaoPort.calcularTotalCustoEmpresa(
+                    linhas, item.competenciaInicio(), item.competenciaFim(), null);
                 int empregados = (int) linhas.stream()
                     .map(FolhaLinhaSnapshot::funcionarioId)
                     .filter(Objects::nonNull)
@@ -451,13 +361,5 @@ public class DashboardService {
                 );
             })
             .collect(Collectors.toList());
-    }
-
-    private BigDecimal nullSafe(BigDecimal valor) {
-        return valor != null ? valor : BigDecimal.ZERO;
-    }
-
-    private BigDecimal arredondar(BigDecimal valor) {
-        return valor.setScale(SCALE, ROUNDING);
     }
 }
