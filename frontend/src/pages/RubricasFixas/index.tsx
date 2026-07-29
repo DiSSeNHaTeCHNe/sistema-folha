@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormHelperText,
   IconButton,
   InputLabel,
   MenuItem,
@@ -99,7 +100,7 @@ export default function RubricasFixas() {
   const handleOpen = (item?: FuncionarioRubricaFixa) => {
     if (item) {
       setSelected(item);
-      setValue('funcionarioId', item.funcionarioId);
+      setValue('funcionarioId', item.funcionarioId ?? '');
       setValue('rubricaId', item.rubricaId);
       setValue('valor', item.valor != null ? String(item.valor) : '');
       setValue('vigenciaInicio', item.vigenciaInicio);
@@ -108,6 +109,7 @@ export default function RubricasFixas() {
     } else {
       setSelected(null);
       reset({
+        funcionarioId: '',
         valor: '',
         vigenciaInicio: '',
         vigenciaFim: '',
@@ -283,29 +285,6 @@ export default function RubricasFixas() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
             <FormControl fullWidth margin="normal" required>
-              <InputLabel id="form-funcionario-label">Funcionário</InputLabel>
-              <Controller
-                name="funcionarioId"
-                control={control}
-                rules={{ required: 'Funcionário é obrigatório' }}
-                render={({ field }) => (
-                  <Select
-                    labelId="form-funcionario-label"
-                    id="form-funcionario"
-                    label="Funcionário"
-                    value={field.value ?? ''}
-                    onChange={(event) => field.onChange(Number(event.target.value))}
-                  >
-                    {funcionarios.map((funcionario) => (
-                      <MenuItem key={funcionario.id} value={funcionario.id}>
-                        {funcionario.nome}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-            </FormControl>
-            <FormControl fullWidth margin="normal" required>
               <InputLabel id="form-rubrica-label">Rubrica</InputLabel>
               <Controller
                 name="rubricaId"
@@ -358,6 +337,33 @@ export default function RubricasFixas() {
               InputLabelProps={{ shrink: true }}
               helperText="Deixe em branco para vigência aberta"
             />
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="form-funcionario-label">Funcionário</InputLabel>
+              <Controller
+                name="funcionarioId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    labelId="form-funcionario-label"
+                    id="form-funcionario"
+                    label="Funcionário"
+                    value={field.value === '' || field.value == null ? '' : String(field.value)}
+                    onChange={(event) => {
+                      const raw = event.target.value;
+                      field.onChange(raw === '' ? '' : Number(raw));
+                    }}
+                  >
+                    <MenuItem value="">Todos os funcionários (mesmo valor)</MenuItem>
+                    {funcionarios.map((funcionario) => (
+                      <MenuItem key={funcionario.id} value={String(funcionario.id)}>
+                        {funcionario.nome}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+              <FormHelperText>Todos os funcionários (mesmo valor)</FormHelperText>
+            </FormControl>
             <TextField
               {...register('comentario')}
               id="comentario-rubrica-fixa"
