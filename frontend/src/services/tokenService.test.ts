@@ -57,4 +57,77 @@ describe('TokenService', () => {
     expect(TokenService.getRefreshToken()).toBe(tokens.refreshToken);
     expect(TokenService.getTokenData()).toEqual(tokens);
   });
+
+  it('getTokenExpiration returns null when not stored', () => {
+    expect(TokenService.getTokenExpiration()).toBeNull();
+  });
+
+  it('getTokenExpiration parses stored ISO date', () => {
+    const expiration = '2026-12-31T23:59:59.000Z';
+    TokenService.setTokens({ ...sampleTokenData(), tokenExpiration: expiration });
+
+    expect(TokenService.getTokenExpiration()?.toISOString()).toBe(expiration);
+  });
+
+  it('isRefreshTokenExpired returns true when refresh expiration is missing', () => {
+    expect(TokenService.isRefreshTokenExpired()).toBe(true);
+  });
+
+  it('isRefreshTokenExpired returns true when refresh expiration is in the past', () => {
+    TokenService.setTokens({
+      ...sampleTokenData(),
+      refreshExpiration: new Date(Date.now() - 60_000).toISOString(),
+    });
+
+    expect(TokenService.isRefreshTokenExpired()).toBe(true);
+  });
+
+  it('isRefreshTokenExpired returns false when refresh expiration is in the future', () => {
+    TokenService.setTokens({
+      ...sampleTokenData(),
+      refreshExpiration: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    });
+
+    expect(TokenService.isRefreshTokenExpired()).toBe(false);
+  });
+
+  it('hasValidTokens returns false when either token is missing', () => {
+    localStorage.setItem('token', 'access-only');
+
+    expect(TokenService.hasValidTokens()).toBe(false);
+  });
+
+  it('hasValidTokens returns false when refresh token is expired', () => {
+    TokenService.setTokens({
+      ...sampleTokenData(),
+      refreshExpiration: new Date(Date.now() - 60_000).toISOString(),
+    });
+
+    expect(TokenService.hasValidTokens()).toBe(false);
+  });
+
+  it('hasValidTokens returns true when both tokens exist and refresh is valid', () => {
+    TokenService.setTokens(sampleTokenData());
+
+    expect(TokenService.hasValidTokens()).toBe(true);
+  });
+
+  it('needsRefresh returns true when access token is near expiry but refresh is valid', () => {
+    TokenService.setTokens({
+      ...sampleTokenData(),
+      tokenExpiration: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+      refreshExpiration: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    expect(TokenService.needsRefresh()).toBe(true);
+  });
+
+  it('needsRefresh returns false when access token is still valid', () => {
+    TokenService.setTokens({
+      ...sampleTokenData(),
+      tokenExpiration: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    });
+
+    expect(TokenService.needsRefresh()).toBe(false);
+  });
 });
