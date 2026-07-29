@@ -48,14 +48,21 @@ public class FuncionarioRubricaFixaService {
 
     @Transactional
     public FuncionarioRubricaFixaDTO criar(FuncionarioRubricaFixaDTO dto) {
-        Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
-            .orElseThrow(() -> new FuncionarioNotFoundException(dto.funcionarioId()));
         Rubrica rubrica = rubricaRepository.findByIdAndAtivoTrue(dto.rubricaId())
             .orElseThrow(() -> new RubricaNotFoundException("Rubrica não encontrada: " + dto.rubricaId()));
 
         validarValor(dto.valor(), rubrica);
         validarVigencia(dto.vigenciaInicio(), dto.vigenciaFim());
-        validarSobreposicao(funcionario.getId(), rubrica.getId(), dto.vigenciaInicio(), dto.vigenciaFim(), null);
+
+        Funcionario funcionario = null;
+        if (dto.funcionarioId() != null) {
+            funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
+                .orElseThrow(() -> new FuncionarioNotFoundException(dto.funcionarioId()));
+            validarSobreposicaoIndividual(
+                funcionario.getId(), rubrica.getId(), dto.vigenciaInicio(), dto.vigenciaFim(), null);
+        } else {
+            validarSobreposicaoGlobal(rubrica.getId(), dto.vigenciaInicio(), dto.vigenciaFim(), null);
+        }
 
         FuncionarioRubricaFixa entity = new FuncionarioRubricaFixa();
         entity.setFuncionario(funcionario);
@@ -75,14 +82,21 @@ public class FuncionarioRubricaFixaService {
             .filter(e -> Boolean.TRUE.equals(e.getAtivo()))
             .orElseThrow(() -> new FuncionarioRubricaFixaNotFoundException(id));
 
-        Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
-            .orElseThrow(() -> new FuncionarioNotFoundException(dto.funcionarioId()));
         Rubrica rubrica = rubricaRepository.findByIdAndAtivoTrue(dto.rubricaId())
             .orElseThrow(() -> new RubricaNotFoundException("Rubrica não encontrada: " + dto.rubricaId()));
 
         validarValor(dto.valor(), rubrica);
         validarVigencia(dto.vigenciaInicio(), dto.vigenciaFim());
-        validarSobreposicao(funcionario.getId(), rubrica.getId(), dto.vigenciaInicio(), dto.vigenciaFim(), id);
+
+        Funcionario funcionario = null;
+        if (dto.funcionarioId() != null) {
+            funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
+                .orElseThrow(() -> new FuncionarioNotFoundException(dto.funcionarioId()));
+            validarSobreposicaoIndividual(
+                funcionario.getId(), rubrica.getId(), dto.vigenciaInicio(), dto.vigenciaFim(), id);
+        } else {
+            validarSobreposicaoGlobal(rubrica.getId(), dto.vigenciaInicio(), dto.vigenciaFim(), id);
+        }
 
         entity.setFuncionario(funcionario);
         entity.setRubrica(rubrica);
@@ -115,12 +129,20 @@ public class FuncionarioRubricaFixaService {
         }
     }
 
-    private void validarSobreposicao(
+    private void validarSobreposicaoIndividual(
             Long funcionarioId, Long rubricaId,
             LocalDate vigenciaInicio, LocalDate vigenciaFim, Long excludeId) {
         if (funcionarioRubricaFixaRepository.existsVigenciaSobreposta(
                 funcionarioId, rubricaId, vigenciaInicio, vigenciaFim, excludeId)) {
-            throw new FuncionarioRubricaFixaVigenciaConflictException();
+            throw FuncionarioRubricaFixaVigenciaConflictException.forIndividual();
+        }
+    }
+
+    private void validarSobreposicaoGlobal(
+            Long rubricaId, LocalDate vigenciaInicio, LocalDate vigenciaFim, Long excludeId) {
+        if (funcionarioRubricaFixaRepository.existsVigenciaSobrepostaGlobal(
+                rubricaId, vigenciaInicio, vigenciaFim, excludeId)) {
+            throw FuncionarioRubricaFixaVigenciaConflictException.forGlobal();
         }
     }
 
@@ -129,18 +151,20 @@ public class FuncionarioRubricaFixaService {
     }
 
     private FuncionarioRubricaFixaDTO toDTO(FuncionarioRubricaFixa entity) {
+        Funcionario funcionario = entity.getFuncionario();
         return new FuncionarioRubricaFixaDTO(
             entity.getId(),
-            entity.getFuncionario().getId(),
+            funcionario != null ? funcionario.getId() : null,
             entity.getRubrica().getId(),
             entity.getValor(),
             entity.getVigenciaInicio(),
             entity.getVigenciaFim(),
             entity.getComentario(),
             entity.getAtivo(),
-            entity.getFuncionario().getNome(),
+            funcionario != null ? funcionario.getNome() : null,
             entity.getRubrica().getCodigo(),
-            entity.getRubrica().getDescricao()
+            entity.getRubrica().getDescricao(),
+            entity.getRubrica().getPorcentagem()
         );
     }
 }
