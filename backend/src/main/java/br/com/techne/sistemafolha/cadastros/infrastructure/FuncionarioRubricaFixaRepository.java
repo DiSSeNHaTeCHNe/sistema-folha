@@ -14,7 +14,7 @@ public interface FuncionarioRubricaFixaRepository extends JpaRepository<Funciona
 
     @Query("""
         SELECT f FROM FuncionarioRubricaFixa f
-        JOIN FETCH f.funcionario
+        LEFT JOIN FETCH f.funcionario
         JOIN FETCH f.rubrica r
         JOIN FETCH r.tipoRubrica
         WHERE f.ativo = true
@@ -44,8 +44,24 @@ public interface FuncionarioRubricaFixaRepository extends JpaRepository<Funciona
         @Param("excludeId") Long excludeId);
 
     @Query("""
+        SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END
+        FROM FuncionarioRubricaFixa f
+        WHERE f.ativo = true
+        AND f.funcionario IS NULL
+        AND f.rubrica.id = :rubricaId
+        AND (:excludeId IS NULL OR f.id <> :excludeId)
+        AND f.vigenciaInicio <= COALESCE(:vigenciaFim, :vigenciaInicio)
+        AND COALESCE(f.vigenciaFim, :vigenciaInicio) >= :vigenciaInicio
+        """)
+    boolean existsVigenciaSobrepostaGlobal(
+        @Param("rubricaId") Long rubricaId,
+        @Param("vigenciaInicio") LocalDate vigenciaInicio,
+        @Param("vigenciaFim") LocalDate vigenciaFim,
+        @Param("excludeId") Long excludeId);
+
+    @Query("""
         SELECT f FROM FuncionarioRubricaFixa f
-        JOIN FETCH f.funcionario
+        LEFT JOIN FETCH f.funcionario
         JOIN FETCH f.rubrica r
         JOIN FETCH r.tipoRubrica
         WHERE f.ativo = true
