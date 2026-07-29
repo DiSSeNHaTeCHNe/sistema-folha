@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,12 +68,14 @@ class AuthenticationServiceTest {
     @Test
     void authenticate_loginInexistente_lancaMensagemGenerica() {
         when(usuarioRepository.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.empty());
+        when(passwordEncoder.matches(SENHA, AuthenticationService.DUMMY_BCRYPT_HASH)).thenReturn(false);
 
         UsernameNotFoundException ex = assertThrows(
             UsernameNotFoundException.class,
             () -> authenticationService.authenticate(new LoginDTO(LOGIN, SENHA)));
 
         assertEquals(MENSAGEM_GENERICA, ex.getMessage());
+        verify(passwordEncoder).matches(SENHA, AuthenticationService.DUMMY_BCRYPT_HASH);
     }
 
     @Test

@@ -31,6 +31,8 @@ public class AuthenticationService {
     private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
     private static final String MENSAGEM_LOGIN_INVALIDO = "Usuário ou senha inválidos";
     private static final String MENSAGEM_REFRESH_INVALIDO = "Refresh token inválido ou expirado";
+    static final String DUMMY_BCRYPT_HASH =
+        "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -46,7 +48,9 @@ public class AuthenticationService {
         log.info("{}Iniciando autenticação para o usuário: {}", DOMAIN_PREFIX, loginDTO.login());
 
         Usuario usuario = usuarioRepository.findByLoginAndAtivoTrue(loginDTO.login()).orElse(null);
-        if (usuario == null || !passwordEncoder.matches(loginDTO.senha(), usuario.getSenha())) {
+        String hash = usuario != null ? usuario.getSenha() : DUMMY_BCRYPT_HASH;
+        boolean senhaValida = passwordEncoder.matches(loginDTO.senha(), hash);
+        if (usuario == null || !senhaValida) {
             log.debug("Falha na autenticação para o usuário: {}", loginDTO.login());
             throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
         }

@@ -481,10 +481,10 @@ T20
 - Skill: `spring-security`
 
 **Done when**:
-- [ ] Login inexistente chama `matches(senha, DUMMY_BCRYPT_HASH)`
-- [ ] Teste verifica `verify(passwordEncoder).matches(any(), eq(DUMMY_BCRYPT_HASH))`
-- [ ] Mensagem genérica mantida
-- [ ] Gate: `cd backend && mvn test -Dtest=AuthenticationServiceTest,ModularArchitectureTest`
+- [x] Login inexistente chama `matches(senha, DUMMY_BCRYPT_HASH)`
+- [x] Teste verifica `verify(passwordEncoder).matches(any(), eq(DUMMY_BCRYPT_HASH))`
+- [x] Mensagem genérica mantida
+- [x] Gate: `cd backend && mvn test -Dtest=AuthenticationServiceTest,ModularArchitectureTest`
 
 **Tests**: unit  
 **Gate**: Quick BE + Arch
@@ -509,9 +509,9 @@ T20
 - Skill: `spring-security`
 
 **Done when**:
-- [ ] Log debug não inclui `authHeader` value
-- [ ] Teste confirma filter chain continua; sem token literal no log (appender ou assert message)
-- [ ] Gate: `cd backend && mvn test -Dtest=JwtAuthenticationFilterTest,ModularArchitectureTest`
+- [x] Log debug não inclui `authHeader` value
+- [x] Teste confirma filter chain continua; sem token literal no log (appender ou assert message)
+- [x] Gate: `cd backend && mvn test -Dtest=JwtAuthenticationFilterTest,ModularArchitectureTest`
 
 **Tests**: unit  
 **Gate**: Quick BE + Arch
@@ -533,10 +533,10 @@ T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Tech Debt `ddl-auto` → Mitigated/Resolved
-- [ ] Security JWT → hardening complete note
-- [ ] Sonar follow-ups table: S2229 tx → Resolved
-- [ ] Timing login noted resolved
+- [x] Tech Debt `ddl-auto` → Mitigated/Resolved
+- [x] Security JWT → hardening complete note
+- [x] Sonar follow-ups table: S2229 tx → Resolved
+- [x] Timing login noted resolved
 
 **Tests**: none  
 **Gate**: manual review
