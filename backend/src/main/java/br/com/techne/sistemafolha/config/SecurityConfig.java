@@ -16,6 +16,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String TIPO_BENEFICIO = "/tipo-beneficio";
+    private static final String TIPO_BENEFICIO_ALL = "/tipo-beneficio/**";
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
@@ -37,15 +41,15 @@ public class SecurityConfig {
                 .requestMatchers("/usuarios/**").authenticated()
                 .requestMatchers("/funcionarios/**").authenticated()
                 .requestMatchers("/rubricas/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/folha-pagamento/processar").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/folha-pagamento/processar").hasRole(ROLE_ADMIN)
                 .requestMatchers("/folha-pagamento/**").authenticated()
                 .requestMatchers("/beneficio-mensal/**").authenticated()
                 .requestMatchers("/importacao/**").authenticated()
-                .requestMatchers("/funcionario-rubrica-fixa/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/tipo-beneficio", "/tipo-beneficio/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/tipo-beneficio").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/tipo-beneficio/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/tipo-beneficio/**").hasRole("ADMIN")
+                .requestMatchers("/funcionario-rubrica-fixa/**").hasRole(ROLE_ADMIN)
+                .requestMatchers(HttpMethod.GET, TIPO_BENEFICIO, TIPO_BENEFICIO_ALL).authenticated()
+                .requestMatchers(HttpMethod.POST, TIPO_BENEFICIO).hasRole(ROLE_ADMIN)
+                .requestMatchers(HttpMethod.PUT, TIPO_BENEFICIO_ALL).hasRole(ROLE_ADMIN)
+                .requestMatchers(HttpMethod.DELETE, TIPO_BENEFICIO_ALL).hasRole(ROLE_ADMIN)
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
