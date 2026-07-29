@@ -52,13 +52,13 @@ public class RefreshTokenService {
     }
 
     public Optional<RefreshToken> buscarPorToken(String token) {
-        logger.debug("Buscando refresh token: {}", token);
+        logger.debug("Buscando refresh token");
         return refreshTokenRepository.findByToken(token);
     }
 
     @Transactional
     public void revogarToken(String token) {
-        logger.info("Revogando refresh token: {}", token);
+        logger.info("Revogando refresh token");
         refreshTokenRepository.revogarPorToken(token);
     }
 
@@ -81,11 +81,11 @@ public class RefreshTokenService {
         }
         
         if (!refreshToken.isValido()) {
-            logger.warn("Refresh token inválido: {}", refreshToken.getToken());
+            logger.warn("Refresh token inválido");
             return false;
         }
         
-        logger.debug("Refresh token válido: {}", refreshToken.getToken());
+        logger.debug("Refresh token válido");
         return true;
     }
 } 

@@ -5,12 +5,16 @@ import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.auth.infrastructure.RefreshTokenRepository;
 import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
 import br.com.techne.sistemafolha.security.JwtService;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDateTime;
@@ -125,6 +129,36 @@ class RefreshTokenServiceTest {
     @Test
     void validarRefreshToken_valido_retornaTrue() {
         assertTrue(refreshTokenService.validarRefreshToken(refreshTokenValido()));
+    }
+
+    @Test
+    void buscarPorToken_naoLogaValorDoToken() {
+        when(refreshTokenRepository.findByToken(TOKEN)).thenReturn(Optional.empty());
+        ListAppender<ILoggingEvent> appender = capturarLogsRefreshTokenService();
+
+        refreshTokenService.buscarPorToken(TOKEN);
+
+        assertTrue(appender.list.stream().noneMatch(e -> e.getFormattedMessage().contains(TOKEN)));
+    }
+
+    @Test
+    void validarRefreshToken_invalido_naoLogaValorDoToken() {
+        RefreshToken revogado = refreshTokenValido();
+        revogado.setRevogado(true);
+        ListAppender<ILoggingEvent> appender = capturarLogsRefreshTokenService();
+
+        refreshTokenService.validarRefreshToken(revogado);
+
+        assertTrue(appender.list.stream().noneMatch(e -> e.getFormattedMessage().contains(TOKEN)));
+    }
+
+    private ListAppender<ILoggingEvent> capturarLogsRefreshTokenService() {
+        Logger logger = (Logger) LoggerFactory.getLogger(RefreshTokenService.class);
+        logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        return appender;
     }
 
     private Usuario usuarioAtivo() {

@@ -7,11 +7,15 @@ import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.port.FuncionarioConsultaPort;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collections;
@@ -284,7 +288,6 @@ class UsuarioServiceTest {
         usuario.setSenha("hash-atual");
         when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("atual", "hash-atual")).thenReturn(true);
-        when(passwordEncoder.encode("atual")).thenReturn("debug-hash");
         when(passwordEncoder.encode("nova")).thenReturn("hash-nova");
         when(usuarioRepository.save(usuario)).thenReturn(usuario);
 
@@ -310,6 +313,26 @@ class UsuarioServiceTest {
         when(passwordEncoder.matches("texto", "hash")).thenReturn(true);
 
         assertTrue(usuarioService.verificarSenha("texto", "hash"));
+    }
+
+    @Test
+    void verificarSenha_naoLogaSenhaEmTexto() {
+        when(passwordEncoder.matches("segredo", "hash")).thenReturn(true);
+        ListAppender<ILoggingEvent> appender = capturarLogsUsuarioService();
+
+        usuarioService.verificarSenha("segredo", "hash");
+
+        assertTrue(appender.list.stream().noneMatch(e -> e.getFormattedMessage().contains("segredo")));
+        assertTrue(appender.list.stream().noneMatch(e -> e.getFormattedMessage().contains("hash")));
+    }
+
+    private ListAppender<ILoggingEvent> capturarLogsUsuarioService() {
+        Logger logger = (Logger) LoggerFactory.getLogger(UsuarioService.class);
+        logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        return appender;
     }
 
     private Usuario usuarioExistente() {

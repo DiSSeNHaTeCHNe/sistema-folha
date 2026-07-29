@@ -156,35 +156,18 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        logger.debug("Hash da senha atual armazenada: {}", usuario.getSenha());
-        if (logger.isDebugEnabled()) {
-            logger.debug("Hash da senha atual fornecida: {}", passwordEncoder.encode(senhaAtual));
-        }
-
         if (!verificarSenha(senhaAtual, usuario.getSenha())) {
             logger.error("Senha atual incorreta para o usuário: {}", usuario.getLogin());
             throw new RuntimeException("Senha atual incorreta");
         }
 
         logger.info("Senha atual verificada com sucesso para o usuário: {}", usuario.getLogin());
-        String novaSenhaCriptografada = passwordEncoder.encode(novaSenha);
-        usuario.setSenha(novaSenhaCriptografada);
-        logger.debug("Nova senha criptografada: {}", novaSenhaCriptografada);
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
         usuarioRepository.save(usuario);
         logger.info("Senha alterada com sucesso para o usuário: {}", usuario.getLogin());
     }
 
     public boolean verificarSenha(String senhaTexto, String senhaHash) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Verificando senha");
-            logger.debug("Senha em texto: {}", senhaTexto);
-            logger.debug("Hash armazenado: {}", senhaHash);
-            logger.debug("Hash gerado para comparação: {}", passwordEncoder.encode(senhaTexto));
-        }
-        boolean resultado = passwordEncoder.matches(senhaTexto, senhaHash);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Resultado da verificação: {}", resultado);
-        }
-        return resultado;
+        return passwordEncoder.matches(senhaTexto, senhaHash);
     }
 } 
