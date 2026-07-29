@@ -19,6 +19,18 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         LocalDate competenciaInicio, LocalDate competenciaFim);
 
     @Query("""
+        SELECT COUNT(bm) FROM BeneficioMensal bm
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
+        """)
+    long countByCompetenciaECentros(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
+
+    @Query("""
         SELECT bm FROM BeneficioMensal bm
         WHERE bm.ativo = true
           AND bm.competenciaInicio = :competenciaInicio

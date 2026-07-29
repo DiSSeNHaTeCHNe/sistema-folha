@@ -4,7 +4,6 @@ import br.com.techne.sistemafolha.beneficios.port.BeneficioConsultaPort;
 import br.com.techne.sistemafolha.beneficios.port.BeneficioLinhaSnapshot;
 import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensal;
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalRepository;
-import br.com.techne.sistemafolha.shared.access.CentroCustoEfetivo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -67,17 +66,8 @@ public class BeneficioConsultaAdapter implements BeneficioConsultaPort {
         if (centrosCustoIds == null || centrosCustoIds.isEmpty()) {
             return 0L;
         }
-        return beneficioMensalRepository
-            .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(competenciaInicio, competenciaFim)
-            .stream()
-            .filter(b -> {
-                Long linhaCcId = b.getCentroCusto() != null ? b.getCentroCusto().getId() : null;
-                Long funcCcId = b.getFuncionario() != null && b.getFuncionario().getCentroCusto() != null
-                    ? b.getFuncionario().getCentroCusto().getId() : null;
-                return CentroCustoEfetivo.pertenceAoEscopo(
-                    CentroCustoEfetivo.idOf(linhaCcId, funcCcId), centrosCustoIds);
-            })
-            .count();
+        return beneficioMensalRepository.countByCompetenciaECentros(
+            competenciaInicio, competenciaFim, centrosCustoIds);
     }
 
     @Override
