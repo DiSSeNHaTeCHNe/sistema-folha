@@ -31,6 +31,7 @@ public interface FichaLinhaRepository extends JpaRepository<FichaLinha, Long> {
 
     @EntityGraph(attributePaths = {
         "fichaMensal",
+        "fichaMensal.centroCusto",
         "fichaMensal.funcionario",
         "fichaMensal.funcionario.centroCusto",
         "fichaMensal.funcionario.centroCusto.linhaNegocio",
@@ -46,7 +47,7 @@ public interface FichaLinhaRepository extends JpaRepository<FichaLinha, Long> {
         AND fm.competenciaInicio = :competenciaInicio
         AND fm.competenciaFim = :competenciaFim
         AND fm.decimoTerceiro = :decimoTerceiro
-        AND fm.funcionario.centroCusto.id IN :centrosCustoIds
+        AND COALESCE(fm.centroCusto.id, fm.funcionario.centroCusto.id) IN :centrosCustoIds
         """)
     List<FichaLinha> findByCompetenciaAndCentrosCustoIds(
         @Param("competenciaInicio") LocalDate competenciaInicio,
@@ -56,6 +57,7 @@ public interface FichaLinhaRepository extends JpaRepository<FichaLinha, Long> {
 
     @EntityGraph(attributePaths = {
         "fichaMensal",
+        "fichaMensal.centroCusto",
         "fichaMensal.funcionario",
         "fichaMensal.funcionario.centroCusto",
         "fichaMensal.funcionario.centroCusto.linhaNegocio",

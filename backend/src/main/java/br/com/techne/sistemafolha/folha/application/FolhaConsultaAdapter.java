@@ -170,7 +170,9 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
     private FolhaLinhaSnapshot toLinhaSnapshotFromFicha(FichaLinha linha) {
         var fichaMensal = linha.getFichaMensal();
         var funcionario = fichaMensal.getFuncionario();
-        var centroCusto = funcionario.getCentroCusto();
+        var centroCusto = fichaMensal.getCentroCusto() != null
+            ? fichaMensal.getCentroCusto()
+            : funcionario.getCentroCusto();
         var linhaNegocio = centroCusto != null ? centroCusto.getLinhaNegocio() : null;
         var cargo = funcionario.getCargo();
         var rubrica = linha.getRubrica();
