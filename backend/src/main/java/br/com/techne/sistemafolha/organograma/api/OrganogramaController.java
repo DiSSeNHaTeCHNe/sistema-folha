@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,8 @@ import java.util.List;
 @Tag(name = "Organograma", description = "API para gerenciamento do organograma")
 public class OrganogramaController {
     
+    private static final Logger logger = LoggerFactory.getLogger(OrganogramaController.class);
+
     private final OrganogramaService organogramaService;
 
     // ========================= OPERAÇÕES BÁSICAS =========================
@@ -46,17 +50,15 @@ public class OrganogramaController {
     public ResponseEntity<NoOrganogramaDTO> cadastrar(
             @Parameter(description = "Dados do nó") @Valid @RequestBody NoOrganogramaCreateDTO dto) {
         try {
-            System.out.println("Recebendo requisição para criar nó: " + dto);
+            logger.debug("Recebendo requisição para criar nó: {}", dto);
             NoOrganogramaDTO resultado = organogramaService.cadastrar(dto);
-            System.out.println("Nó criado com sucesso: " + resultado.id());
+            logger.debug("Nó criado com sucesso: {}", resultado.id());
             return ResponseEntity.ok(resultado);
         } catch (NoOrganogramaNotFoundException | IllegalArgumentException e) {
-            System.err.println("Erro ao criar nó: " + e.getMessage());
-            e.printStackTrace();
+            logger.warn("Erro ao criar nó: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            System.err.println("Erro inesperado ao criar nó: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Erro inesperado ao criar nó", e);
             return ResponseEntity.internalServerError().build();
         }
     }
