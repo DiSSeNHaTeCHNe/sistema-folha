@@ -159,7 +159,8 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
             operadorOuZero(rubrica.getOperadorBruto()),
             operadorOuZero(rubrica.getOperadorLiquido()),
             operadorOuZero(rubrica.getOperadorCusto()),
-            OrigemLinha.FOLHA_ADP
+            OrigemLinha.FOLHA_ADP,
+            rubrica.getPorcentagem() != null ? BigDecimal.valueOf(rubrica.getPorcentagem()) : null
         );
     }
 
@@ -188,7 +189,8 @@ public class FolhaConsultaAdapter implements FolhaConsultaPort {
             operadorOuZero(linha.getOperadorBruto()),
             operadorOuZero(linha.getOperadorLiquido()),
             operadorOuZero(linha.getOperadorCusto()),
-            linha.getOrigemLinha() != null ? linha.getOrigemLinha() : OrigemLinha.FOLHA_ADP
+            linha.getOrigemLinha() != null ? linha.getOrigemLinha() : OrigemLinha.FOLHA_ADP,
+            linha.getPorcentagem()
         );
     }
 

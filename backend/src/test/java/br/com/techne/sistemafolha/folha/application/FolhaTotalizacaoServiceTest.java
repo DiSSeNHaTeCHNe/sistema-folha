@@ -176,6 +176,6 @@ class FolhaTotalizacaoServiceTest {
             Long funcionarioId, String nome, short ob, short ol, short oc, String valor) {
         return new FolhaLinhaSnapshot(
             funcionarioId, nome, 10L, "TI", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", "PROVENTO", new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP);
+            1L, "001", "Rubrica", "PROVENTO", new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, null);
     }
 }

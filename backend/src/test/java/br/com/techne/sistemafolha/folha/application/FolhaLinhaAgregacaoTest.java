@@ -108,13 +108,13 @@ class FolhaLinhaAgregacaoTest {
         short oc = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         return new FolhaLinhaSnapshot(
             funcionarioId, "Func " + funcionarioId, 1L, "CC", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", tipo, new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP);
+            1L, "001", "Rubrica", tipo, new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, null);
     }
 
     private static FolhaLinhaSnapshot linhaOperadores(
             Long funcionarioId, String valor, short ob, short ol, short oc) {
         return new FolhaLinhaSnapshot(
             funcionarioId, "Func " + funcionarioId, 1L, "CC", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", "PROVENTO", new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP);
+            1L, "001", "Rubrica", "PROVENTO", new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, null);
     }
 }

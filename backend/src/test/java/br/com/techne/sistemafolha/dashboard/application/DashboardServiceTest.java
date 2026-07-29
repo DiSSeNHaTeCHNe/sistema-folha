@@ -371,6 +371,6 @@ class DashboardServiceTest {
         return new FolhaLinhaSnapshot(
             funcionarioId, "Func " + funcionarioId, centroId, centroDesc, linhaId, linhaDesc,
             cargoId, cargoDesc, rubricaId, rubricaCodigo, rubricaDesc, tipo, valor,
-            ob, ol, oc, OrigemLinha.FOLHA_ADP);
+            ob, ol, oc, OrigemLinha.FOLHA_ADP, null);
     }
 }

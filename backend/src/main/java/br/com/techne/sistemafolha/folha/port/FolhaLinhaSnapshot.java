@@ -21,5 +21,6 @@ public record FolhaLinhaSnapshot(
     short operadorBruto,
     short operadorLiquido,
     short operadorCusto,
-    OrigemLinha origemLinha
+    OrigemLinha origemLinha,
+    BigDecimal porcentagem
 ) {}

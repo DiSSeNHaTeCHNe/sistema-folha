@@ -268,7 +268,7 @@ class FolhaPagamentoServiceTest {
         FolhaLinhaSnapshot linha = new FolhaLinhaSnapshot(
             99L, "João", 10L, "TI", null, null, 5L, "Analista",
             1L, "001", "Salário", "PROVENTO", new BigDecimal("5000"),
-            (short) 1, (short) 1, (short) 1, br.com.techne.sistemafolha.folha.domain.OrigemLinha.FOLHA_ADP);
+            (short) 1, (short) 1, (short) 1, br.com.techne.sistemafolha.folha.domain.OrigemLinha.FOLHA_ADP, null);
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(DATA_INICIO, DATA_FIM, false, null))
             .thenReturn(List.of(linha));
         when(resumoFolhaPagamentoRepository.findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(

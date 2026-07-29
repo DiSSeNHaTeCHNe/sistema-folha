@@ -108,7 +108,7 @@ class FolhaConsultaAdapterTest {
         when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(true);
         FichaLinha linhaFicha = fichaLinha(1L, 100L, new BigDecimal("1500.00"), (short) 1, (short) 1, (short) 1,
-            OrigemLinha.CUSTO_FIXO);
+            OrigemLinha.CUSTO_FIXO, null);
 
         when(fichaLinhaRepository.findByCompetenciaAndCentrosCustoIds(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L)))
@@ -175,9 +175,9 @@ class FolhaConsultaAdapterTest {
         when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(true);
         FichaLinha linha1 = fichaLinha(1L, 100L, new BigDecimal("1000.00"), (short) 1, (short) 1, (short) 1,
-            OrigemLinha.FOLHA_ADP);
+            OrigemLinha.FOLHA_ADP, null);
         FichaLinha linha2 = fichaLinha(2L, 200L, new BigDecimal("2000.00"), (short) 1, (short) 1, (short) 1,
-            OrigemLinha.FOLHA_ADP);
+            OrigemLinha.FOLHA_ADP, null);
 
         when(fichaLinhaRepository.findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(List.of(linha1, linha2));
@@ -193,7 +193,7 @@ class FolhaConsultaAdapterTest {
         when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(true);
         FichaLinha linhaCc1 = fichaLinha(1L, 100L, new BigDecimal("500.00"), (short) 1, (short) 1, (short) 1,
-            OrigemLinha.CUSTO_FIXO);
+            OrigemLinha.CUSTO_FIXO, null);
 
         when(fichaLinhaRepository.findByCompetenciaAndCentrosCustoIds(
                 COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L)))
@@ -208,6 +208,41 @@ class FolhaConsultaAdapterTest {
         assertEquals(OrigemLinha.CUSTO_FIXO, result.get(0).origemLinha());
         verify(fichaLinhaRepository).findByCompetenciaAndCentrosCustoIds(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L));
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_comFicha_expoePorcentagemSnapshot() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+        FichaLinha linhaFicha = fichaLinha(1L, 100L, new BigDecimal("7258.43"), (short) 1, (short) 1, (short) 1,
+            OrigemLinha.FOLHA_ADP, new BigDecimal("138.63"));
+
+        when(fichaLinhaRepository.findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaFicha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals(1, result.size());
+        assertEquals(new BigDecimal("138.63"), result.get(0).porcentagem());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_fallbackAdp_expoePorcentagemLiveDaRubrica() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+        FolhaPagamento linhaAdp = folhaPagamento(1L, 100L, "CC Alpha", new BigDecimal("7258.43"), false);
+        linhaAdp.getRubrica().setPorcentagem(138.63);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaAdp));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals(1, result.size());
+        assertEquals(new BigDecimal("138.63"), result.get(0).porcentagem());
     }
 
     private ResumoFolhaPagamento resumo(
@@ -271,7 +306,8 @@ class FolhaConsultaAdapterTest {
 
     private FichaLinha fichaLinha(
             Long funcionarioId, Long centroCustoId, BigDecimal valor,
-            short operadorBruto, short operadorLiquido, short operadorCusto, OrigemLinha origemLinha) {
+            short operadorBruto, short operadorLiquido, short operadorCusto, OrigemLinha origemLinha,
+            BigDecimal porcentagem) {
         LinhaNegocio linhaNegocio = new LinhaNegocio();
         linhaNegocio.setId(10L);
         linhaNegocio.setDescricao("LN Teste");
@@ -315,6 +351,7 @@ class FolhaConsultaAdapterTest {
         linha.setOperadorLiquido(operadorLiquido);
         linha.setOperadorCusto(operadorCusto);
         linha.setOrigemLinha(origemLinha);
+        linha.setPorcentagem(porcentagem);
         linha.setAtivo(true);
         return linha;
     }

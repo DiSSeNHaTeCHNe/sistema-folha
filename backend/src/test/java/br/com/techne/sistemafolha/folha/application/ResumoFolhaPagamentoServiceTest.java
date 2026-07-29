@@ -454,6 +454,6 @@ class ResumoFolhaPagamentoServiceTest {
         short oc = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         return new FolhaLinhaSnapshot(
             funcionarioId, "Func " + funcionarioId, centroId, "CC", 1L, "LN", 1L, "Cargo",
-            1L, "001", "Rubrica", tipo, new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP);
+            1L, "001", "Rubrica", tipo, new BigDecimal(valor), ob, ol, oc, OrigemLinha.FOLHA_ADP, null);
     }
 }
