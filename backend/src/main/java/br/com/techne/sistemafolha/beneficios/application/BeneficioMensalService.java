@@ -96,6 +96,7 @@ public class BeneficioMensalService {
         return listarCompetencias(periodo.inicio(), periodo.fim(), centrosParaFiltro(contexto));
     }
 
+    @Transactional
     public Optional<BeneficioMensalDTO> criarParaUsuario(String login, BeneficioMensalDTO dto) {
         AccessContextDTO contexto = obterContextoAcesso(login);
         Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
@@ -106,6 +107,7 @@ public class BeneficioMensalService {
         return Optional.of(criar(dto));
     }
 
+    @Transactional
     public boolean removerSeAutorizado(String login, Long id) {
         AccessContextDTO contexto = obterContextoAcesso(login);
         return beneficioMensalRepository.findById(id)
