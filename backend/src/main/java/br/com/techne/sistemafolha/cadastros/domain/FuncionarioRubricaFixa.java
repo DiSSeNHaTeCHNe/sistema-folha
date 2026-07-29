@@ -21,7 +21,7 @@ public class FuncionarioRubricaFixa {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "funcionario_id", nullable = false)
+    @JoinColumn(name = "funcionario_id", nullable = true)
     private Funcionario funcionario;
 
     @ManyToOne(fetch = FetchType.LAZY)
