@@ -2,16 +2,17 @@ import api from './api';
 
 export interface FuncionarioRubricaFixa {
   id?: number;
-  funcionarioId: number;
+  funcionarioId?: number | null;
   rubricaId: number;
   valor?: string | number | null;
   vigenciaInicio: string;
   vigenciaFim?: string | null;
   comentario?: string | null;
   ativo?: boolean;
-  funcionarioNome?: string;
+  funcionarioNome?: string | null;
   rubricaCodigo?: string;
   rubricaDescricao?: string;
+  porcentagem?: number | null;
 }
 
 export interface FuncionarioRubricaFixaFiltros {
@@ -20,13 +21,27 @@ export interface FuncionarioRubricaFixaFiltros {
 }
 
 export interface FuncionarioRubricaFixaFormData {
-  funcionarioId: number;
+  funcionarioId?: number | '' | null;
   rubricaId: number;
   valor?: string;
   vigenciaInicio: string;
   vigenciaFim?: string;
   comentario?: string;
 }
+
+const buildPayload = (data: FuncionarioRubricaFixaFormData) => {
+  const payload: Record<string, unknown> = {
+    rubricaId: data.rubricaId,
+    valor: data.valor ? data.valor.replace(',', '.') : null,
+    vigenciaInicio: data.vigenciaInicio,
+    vigenciaFim: data.vigenciaFim || null,
+    comentario: data.comentario || null,
+  };
+  if (data.funcionarioId !== '' && data.funcionarioId != null) {
+    payload.funcionarioId = data.funcionarioId;
+  }
+  return payload;
+};
 
 const funcionarioRubricaFixaService = {
   listar: async (filtros?: FuncionarioRubricaFixaFiltros): Promise<FuncionarioRubricaFixa[]> => {
@@ -44,28 +59,12 @@ const funcionarioRubricaFixaService = {
   },
 
   criar: async (data: FuncionarioRubricaFixaFormData): Promise<FuncionarioRubricaFixa> => {
-    const payload = {
-      funcionarioId: data.funcionarioId,
-      rubricaId: data.rubricaId,
-      valor: data.valor ? data.valor.replace(',', '.') : null,
-      vigenciaInicio: data.vigenciaInicio,
-      vigenciaFim: data.vigenciaFim || null,
-      comentario: data.comentario || null,
-    };
-    const response = await api.post<FuncionarioRubricaFixa>('/funcionario-rubrica-fixa', payload);
+    const response = await api.post<FuncionarioRubricaFixa>('/funcionario-rubrica-fixa', buildPayload(data));
     return response.data;
   },
 
   atualizar: async (id: number, data: FuncionarioRubricaFixaFormData): Promise<FuncionarioRubricaFixa> => {
-    const payload = {
-      funcionarioId: data.funcionarioId,
-      rubricaId: data.rubricaId,
-      valor: data.valor ? data.valor.replace(',', '.') : null,
-      vigenciaInicio: data.vigenciaInicio,
-      vigenciaFim: data.vigenciaFim || null,
-      comentario: data.comentario || null,
-    };
-    const response = await api.put<FuncionarioRubricaFixa>(`/funcionario-rubrica-fixa/${id}`, payload);
+    const response = await api.put<FuncionarioRubricaFixa>(`/funcionario-rubrica-fixa/${id}`, buildPayload(data));
     return response.data;
   },
 
