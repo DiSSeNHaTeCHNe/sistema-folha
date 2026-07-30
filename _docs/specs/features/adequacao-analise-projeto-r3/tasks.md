@@ -323,9 +323,9 @@ T15
 
 **Done when**:
 
-- [ ] `POST /auth/refresh` com token inválido → status **401** + body com mensagem genérica
-- [ ] Assert explícito: status **not** 500
-- [ ] Gate: `cd backend && mvn test -Dtest=SecurityConfigAuthRefreshTest` exit 0
+- [x] `POST /auth/refresh` com token inválido → status **401** + body com mensagem genérica
+- [x] Assert explícito: status **not** 500
+- [x] Gate: `cd backend && mvn test -Dtest=SecurityConfigAuthRefreshTest` exit 0
 
 **Tests**: unit (`@WebMvcTest`)  
 **Gate**: Quick BE
