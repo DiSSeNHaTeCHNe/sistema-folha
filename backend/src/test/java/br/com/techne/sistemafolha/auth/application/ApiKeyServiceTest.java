@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -276,6 +275,20 @@ class ApiKeyServiceTest {
         String chave = "sf_live_abc12345wrongsecret";
         when(apiKeyRepository.findByPrefixoAndRevogadoFalse("sf_live_abc12345")).thenReturn(Optional.of(apiKey));
         when(passwordEncoder.matches(chave, "hash")).thenReturn(false);
+
+        Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void autenticarPorChave_usuarioInativo_retornaEmpty() {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        usuario.setAtivo(false);
+        ApiKey apiKey = apiKeyDoUsuario(usuario, 405L);
+        String chave = "sf_live_abc12345secretpart";
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse("sf_live_abc12345")).thenReturn(Optional.of(apiKey));
+        when(passwordEncoder.matches(chave, "hash")).thenReturn(true);
 
         Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
 
