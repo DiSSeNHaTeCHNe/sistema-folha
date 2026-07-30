@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { Login } from './index';
 import { defaultMockAuth, renderWithProviders } from '../../test/renderWithProviders';
@@ -22,6 +22,11 @@ vi.mock('../../contexts/AuthContext', () => ({
 }));
 
 describe('Login page', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+    mockLogin.mockReset();
+  });
+
   it('renders the main heading', () => {
     renderWithProviders(<Login />);
 
@@ -48,5 +53,18 @@ describe('Login page', () => {
       expect(mockLogin).toHaveBeenCalledWith({ login: 'admin', senha: 'secret' });
     });
     expect(mockNavigate).toHaveBeenCalledWith('/');
+  });
+
+  it('shows an error alert and does not navigate when credentials are invalid', async () => {
+    mockLogin.mockRejectedValue(new Error('Unauthorized'));
+
+    renderWithProviders(<Login />);
+
+    fireEvent.change(screen.getByRole('textbox', { name: /login/i }), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText(/^Senha/), { target: { value: 'wrong' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Usuário ou senha inválidos');
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
