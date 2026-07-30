@@ -163,9 +163,9 @@ T14 → T15
 
 **Done when**:
 
-- [ ] Nota brownfield explícita (MSW isolado + Playwright R4)
-- [ ] TARGET AD-004 permanece; sem mudança estrutural de pastas
-- [ ] Script `test:e2e` referido como alvo R4 (implementação em T7)
+- [x] Nota brownfield explícita (MSW isolado + Playwright R4)
+- [x] TARGET AD-004 permanece; sem mudança estrutural de pastas
+- [x] Script `test:e2e` referido como alvo R4 (implementação em T7)
 
 **Tests**: none  
 **Gate**: manual review
