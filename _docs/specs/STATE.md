@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-07-29  
-**Current Work:** `acl-cc-competencia` — complete @ `7e0421d` (28/28 ACs); squash merge pendente
+**Current Work:** `adequacao-analise-projeto-r4` — Execute Batch 1 (T1–T6) em `feat/adequacao-analise-projeto`
 
 ---
 
@@ -117,12 +117,14 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Feature (in design)**: `auth-api-keys` → Approach A + `design.md` draft; aguarda aprovação → Tasks
+- **Feature (Execute)**: `adequacao-analise-projeto-r4` → Batch 1 T1–T6 in progress on `feat/adequacao-analise-projeto` (synced from `main` @ `088a438`)
+- **Feature (tasks draft)**: `auth-api-keys` → Design A approved; `tasks.md` T1–T15 (3 batches); aguarda aprovação → Execute
+- **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `bcff5f9` (2026-07-29); Verifier PASS 21/21 ACs; Sonar QG OK @ `new_coverage` 80.0%
 - **Feature (done)**: `adequacao-analise-projeto` (R1) → squash merged to `main` @ `047e64d` (2026-07-29); Verifier PASS 24/24 ACs
-- **Feature (draft)**: `adequacao-analise-projeto-r2` → Tasks complete (`tasks.md` T1–T20); aguarda Execute em `feat/adequacao-analise-projeto-r2`
+- **Feature (done)**: `adequacao-analise-projeto-r2` → squash merged to `main` @ `cb6e04a` (2026-07-29)
 - **Feature (done)**: `acl-cc-competencia` → rounds 1–3 complete @ `7e0421d`; squash merge pendente
 - **Feature (done)**: `organograma-linhas-hierarquia` → merged `main` (2026-07-29)
-- **Decisions**: AD-001…AD-013 active
+- **Decisions**: AD-001…AD-014 active (see main)
 ---
 
 ## Blockers
