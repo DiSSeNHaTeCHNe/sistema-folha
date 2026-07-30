@@ -1,16 +1,16 @@
 # Adequação da Análise de Projeto — R4 Validation
 
 ## Status atual
-- Veredito: **FAIL ❌** (Verifier independente @ 2026-07-30)
+- Veredito: **FAIL ❌** (Verifier re-verify-1 @ 2026-07-30)
 - Spec: adequacao-analise-projeto-r4
-- Branch/HEAD: `feat/adequacao-analise-projeto` @ `5cbaba5`
+- Branch/HEAD: `feat/adequacao-analise-projeto` @ `c3baabe`
 - Baseline `main`: @ `088a438`
 - Sonar QG: **OK** — `new_coverage` **80.0%** (meta interna 85% **FAIL**), `new_branch_coverage` **62.6%** (meta 70% **FAIL**), `new_violations` **0**, aggregate **59.8%**
-- Gates (Verifier re-run): `mvn test` **475** (0 fail, 1 skip) · JaCoCo **81.9%** · Vitest **186** · ArchUnit **0** · Playwright **1/1** · `gate-r4-local.sh` exit **0**
+- Gates (Verifier re-verify-1): `mvn test` **475** (0 fail, 1 skip) · JaCoCo **81.9%** · Vitest **189** · ArchUnit **0** · Playwright **1/1** · `gate-r4-local.sh` exit **0**
 - ADP integration: **N/A** (Docker UP; Testcontainers unavailable — skip 1)
-- R4 test budget: **5/10** novos (`@Test` +1, `it(` +3, Playwright `test(` +1)
-- Sensor: **4** injected, **2** killed, **2** survived
-- Gaps abertos: AAP4-02, AAP4-18, AAP4-09 (stale Playwright em TESTING.md), testes MSW/apiBaseUrl não discriminatórios
+- R4 test budget: **7/10** novos (`@Test` +1, `it(` +5, Playwright `test(` +1)
+- Sensor: **4** injected, **3** killed, **1** survived (M2 401 weakening)
+- Gaps abertos: AAP4-02, AAP4-18 (informacional), sensor M2
 
 ---
 
@@ -185,3 +185,84 @@ Mutations applied in scratch/temp copies only; production tree restored (`git di
 **Overall:** ❌ Not Ready — QG OK and gates green, but P1 meta `new_coverage` ≥85% **not met**; discrimination sensor found weak MSW/apiBaseUrl tests.
 
 **Next steps:** (1) Close AAP4-02 via targeted branch/line tests within remaining budget or user-approved B9 reset; (2) Fix sensor survivors M2/M3; (3) Sync TESTING.md Playwright section.
+
+---
+
+## Execução: adequacao-analise-projeto-r4 — Verifier re-verify-1 — 2026-07-30 — beccc74..c3baabe
+
+**Branch:** `feat/adequacao-analise-projeto` @ `c3baabe`  
+**Verifier:** independent sub-agent (author ≠ verifier)  
+**Verdict:** **FAIL ❌**
+
+### Gate Check (Verifier re-verify-1)
+
+| Gate | Command | Exit | Evidence |
+| ---- | ------- | ---- | -------- |
+| Full BE | `cd backend && mvn test` | 0 | 475 run, 0 fail, 1 skip (ADP `@EnabledIf`) |
+| JaCoCo | `bash diversos/scripts/check-jacoco-thresholds.sh` | 0 | global **81.9%** ≥ 75% |
+| FE unit | `cd frontend && npm test` | 0 | **189** tests, 28 files |
+| ArchUnit | `cd backend && mvn test -Dtest=ModularArchitectureTest` | 0 | AD-010 zero violations |
+| Playwright | `cd frontend && npm run test:e2e` | 0 | 1 passed (`e2e/login.spec.ts`) |
+| Gate local | `./diversos/scripts/gate-r4-local.sh` | 0 | mvn + jacoco + npm |
+| Gate `--docker` | `./diversos/scripts/gate-r4-local.sh --docker` | 0 | ADP skipped (Testcontainers 400); script continued |
+| Sonar QG | MCP `get_project_quality_gate_status` (main) | OK | `new_coverage` 80.0, `new_violations` 0 |
+
+**Note:** fix-cycle-1 added tests (+3 Vitest) but Sonar rescan not re-baselined — metrics unchanged from T9 checkpoint (`sonar-checkpoint.md`).
+
+### Spec-Anchored Acceptance Criteria
+
+| ID | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
+| -- | --------- | -------------------- | ----------------------- | ------ |
+| AAP4-01 | Sonar QG OK | status **OK**, zero ERROR | Sonar API @ re-verify-1 — QG **OK**, `new_coverage` threshold 80 OK | ✅ PASS |
+| AAP4-02 | `new_coverage` ≥85% | **≥ 85.0%** | Sonar API — actual **80.0%** (`sonar-checkpoint.md:12`) | ❌ **GAP** |
+| AAP4-03 | `new_violations` 0 | **0** | Sonar API — **0** | ✅ PASS |
+| AAP4-04 | aggregate ≥59% | **≥ 59%** | Sonar API — **59.8%** | ✅ PASS |
+| AAP4-05 | validation baseline | commit + metrics + repro cmd | `validation.md:1-14`; `./diversos/scripts/sonar-analyze.sh` | ✅ PASS |
+| AAP4-06 | Playwright deps + script | `@playwright/test` + `test:e2e` | `frontend/package.json:13,38` | ✅ PASS |
+| AAP4-07 | E2E login smoke | heading + submit + `page.route` mock | `frontend/e2e/login.spec.ts:42,19-25,46` | ✅ PASS |
+| AAP4-08 | Playwright N/A path | document if setup fails | Playwright **PASS** (not N/A) | ✅ PASS (N/A not triggered) |
+| AAP4-09 | TESTING.md sync | Vitest 184+, MSW, JaCoCo/Sonar, Testcontainers, gate cmds | `_docs/specs/TESTING.md:12-15,65-68,87` — Playwright **live**, no stale "Not yet installed" | ✅ PASS |
+| AAP4-10 | backend AGENTS §4 | Testcontainers, ADP IT, ≥474 | `backend/AGENTS.md:116-125` | ✅ PASS |
+| AAP4-11 | frontend AGENTS brownfield | MSW isolated, Playwright R4, AD-004 unchanged | `frontend/AGENTS.md:56-62` | ✅ PASS |
+| AAP4-12 | ADP live Docker UP | exit 0 + ≥1 line pre-rollback | Verifier: **Skipped 1** (Testcontainers 400); `adp-evidence.md:20-24` | ⏭️ **N/A** |
+| AAP4-13 | ADP Docker DOWN path | suite green + N/A documented | `mvn test` 475/0/1 skip; `adp-evidence.md` | ✅ PASS |
+| AAP4-14 | refresh false branch | `validarRefreshToken` false → `RefreshTokenInvalidoException` | `AuthenticationServiceTest.java:170-175` | ✅ PASS |
+| AAP4-15 | ≥3 auth failure assertions | `response.status === 401` or spec message | `api.test.ts:76,130,182,342,378,412` — 2× status **401** + 4× `toThrow` spec messages | ✅ PASS |
+| AAP4-16 | API_BASE_URL single source | shared const/env | `apiBaseUrl.ts:1-8`; `api.ts:3,19`; `authHandlers.ts:3,5` | ✅ PASS |
+| AAP4-17 | ≤10 new tests R4 | total added **≤ 10** | diff 088a438..HEAD: `@Test` +1, `it(` +5, `test(` +1 = **7/10** | ✅ PASS |
+| AAP4-18 | `new_branch_coverage` ≥70% | **≥ 70%** | Sonar — actual **62.6%** (`sonar-checkpoint.md:13`) | ❌ **GAP** (informacional) |
+| AAP4-19 | branch scope limit | leak-period files only | diff: `api.test.ts`, `apiBaseUrl.test.ts`, `AuthenticationServiceTest.java`, `Login.test.tsx` | ✅ PASS |
+| AAP4-20 | mvn test ≥474 | 0 failures | Verifier: **475** run, 0 fail, 1 skip | ✅ PASS |
+| AAP4-21 | JaCoCo script exit 0 | exit **0** | `check-jacoco-thresholds.sh` exit 0, global 81.9% | ✅ PASS |
+| AAP4-22 | Vitest ≥184 | ≥184 pass | Verifier: **189** passed | ✅ PASS |
+| AAP4-23 | CONCERNS sync | E2E, ADP, TESTING pointer | `_docs/specs/CONCERNS.md:148-154,179` | ✅ PASS |
+| AAP4-24 | ArchUnit AD-010 | zero violations | `ModularArchitectureTest` — 18 tests, 0 violations | ✅ PASS |
+| AAP4-25 | gate-r4-local.sh | mvn + npm + jacoco, exit 0 | `diversos/scripts/gate-r4-local.sh` exit 0 | ✅ PASS |
+| AAP4-26 | `--docker` flag | UP runs ADP; DOWN warn+continue | `gate-r4-local.sh:42-56`; Verifier `--docker`: exit 0, ADP skipped | ✅ PASS |
+
+**Spec-anchored summary:** 23/26 matched · 2 GAP (AAP4-02, AAP4-18) · 1 N/A (AAP4-12)
+
+### Discrimination Sensor (re-verify-1)
+
+| # | Mutation | File | Killed? |
+| - | -------- | ---- | ------- |
+| 1 | Flip `validarRefreshToken` false→true in expired refresh test | `AuthenticationServiceTest.java:170` | ✅ Killed (mvn exit 1) |
+| 2 | Replace `response?.status` 401 checks → `toBeDefined()` | `api.test.ts:130,412` | ❌ **Survived** (20/20 pass) |
+| 3 | Change default API base URL `8083` → `9999` | `apiBaseUrl.ts:1` | ✅ Killed (`apiBaseUrl.test.ts` exit 1) |
+| 4 | Change E2E heading expectation to wrong text | `e2e/login.spec.ts:42` | ✅ Killed (e2e exit 1) |
+
+**Sensor depth:** lightweight (4 mutations)  
+**Result:** 3/4 killed — **partial fix** (M3 closed via `apiBaseUrl.test.ts`; M2 still survives)
+
+Mutations applied in scratch (`.scratch/verifier-sensor/`); production tree restored after each run.
+
+### Ranked Gaps
+
+1. **AAP4-02** — `new_coverage` **80.0%** vs meta **≥85%** — fix-cycle tests did not move Sonar metric (rescan not re-baselined)
+2. **Sensor M2** — Weakening explicit 401 status assertions to `toBeDefined()` still survives full `api.test.ts`
+3. **AAP4-18** — `new_branch_coverage` **62.6%** vs **≥70%** (informacional; QG OK)
+4. **AAP4-12** — ADP live N/A (Testcontainers socket 400 despite `docker info` UP) — environment blocker, documented
+
+### Summary
+
+**Overall:** ❌ Not Ready — QG OK and all build gates green; fix-cycle-1 closed AAP4-09 and sensor M3, but P1 meta `new_coverage` ≥85% **not met** and sensor M2 still survives.
