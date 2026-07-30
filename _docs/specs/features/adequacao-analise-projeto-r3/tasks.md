@@ -454,12 +454,12 @@ T15
 
 **Done when**:
 
-- [ ] `cd backend && mvn test` — 0 falhas, ≥464 testes
-- [ ] `bash diversos/scripts/check-jacoco-thresholds.sh` exit 0
-- [ ] `./diversos/scripts/sonar-analyze.sh` exit 0 — QG **OK**, `new_coverage` ≥80%, `new_violations` = 0, agregado ≥48%
-- [ ] Bugs OPEN = 0; vulns CR+MAJOR = 0
-- [ ] `CONCERNS.md` atualizado: S2245 Resolved, BeneficioMensal tx Resolved, FE coverage MSW/api.ts, ADP Mitigated/Resolved ou N/A
-- [ ] `validation.md` R3 criado com evidências por AC
+- [x] `cd backend && mvn test` — 0 falhas, ≥464 testes
+- [x] `bash diversos/scripts/check-jacoco-thresholds.sh` exit 0
+- [x] `./diversos/scripts/sonar-analyze.sh` exit 0 — QG **OK**, `new_coverage` ≥80%, `new_violations` = 0, agregado ≥48%
+- [x] Bugs OPEN = 0; vulns CR+MAJOR = 0
+- [x] `CONCERNS.md` atualizado: S2245 Resolved, BeneficioMensal tx Resolved, FE coverage MSW/api.ts, ADP Mitigated/Resolved ou N/A
+- [x] `validation.md` R3 criado com evidências por AC
 
 **Tests**: none  
 **Gate**: Sonar + JaCoCo + Full BE
@@ -483,9 +483,8 @@ T15
 
 **Done when**:
 
-- [ ] `npm run test:e2e` exit 0 com ≥1 spec passando **ou**
-- [ ] `validation.md` documenta N/A com motivo (budget/flake/setup)
-- [ ] P3 não bloqueia PASS de T14
+- [x] `validation.md` documenta N/A com motivo (budget/flake/setup)
+- [x] P3 não bloqueia PASS de T14
 
 **Tests**: e2e  
 **Gate**: E2E (ou N/A documentado)
