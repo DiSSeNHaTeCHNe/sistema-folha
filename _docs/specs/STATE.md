@@ -118,7 +118,7 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 ## Handoff
 
 - **Feature (tasks draft)**: `auth-api-keys` → Design A approved; `tasks.md` T1–T15 (3 batches); aguarda aprovação → Execute
-- **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `d1df8fe` (2026-07-29); Verifier PASS 21/21 ACs; Sonar QG OK @ `new_coverage` 80.0%
+- **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `bcff5f9` (2026-07-29); Verifier PASS 21/21 ACs; Sonar QG OK @ `new_coverage` 80.0%
 - **Feature (done)**: `adequacao-analise-projeto` (R1) → squash merged to `main` @ `047e64d` (2026-07-29); Verifier PASS 24/24 ACs
 - **Feature (done)**: `adequacao-analise-projeto-r2` → squash merged to `main` @ `cb6e04a` (2026-07-29)
 - **Feature (done)**: `acl-cc-competencia` → rounds 1–3 complete @ `7e0421d`; squash merge pendente
