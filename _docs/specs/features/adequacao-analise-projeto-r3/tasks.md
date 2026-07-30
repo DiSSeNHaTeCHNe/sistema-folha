@@ -401,9 +401,9 @@ T15
 
 **Done when**:
 
-- [ ] `grep -r 'Math.random' frontend/src/pages/FolhaPagamento/` retorna vazio
-- [ ] Teste regressão ou comentário de evidência no test file
-- [ ] Gate: `cd frontend && npm test -- FolhaPagamento.test` exit 0
+- [x] `grep -r 'Math.random' frontend/src/pages/FolhaPagamento/` retorna vazio
+- [x] Teste regressão ou comentário de evidência no test file
+- [x] Gate: `cd frontend && npm test -- FolhaPagamento.test` exit 0
 
 **Tests**: unit  
 **Gate**: Quick FE
@@ -427,10 +427,10 @@ T15
 
 **Done when**:
 
-- [ ] Zero `@SuppressWarnings("java:S6809")` no arquivo
-- [ ] Gate: `cd backend && mvn test -Dtest=BeneficioMensalServiceTest` exit 0
-- [ ] Gate: `cd backend && mvn test -Dtest=ModularArchitectureTest` exit 0
-- [ ] Diff ≤50 LOC por smell (senão SPEC_DEVIATION + CONCERNS follow-up)
+- [x] Zero `@SuppressWarnings("java:S6809")` no arquivo
+- [x] Gate: `cd backend && mvn test -Dtest=BeneficioMensalServiceTest` exit 0
+- [x] Gate: `cd backend && mvn test -Dtest=ModularArchitectureTest` exit 0
+- [x] Diff ≤50 LOC por smell (senão SPEC_DEVIATION + CONCERNS follow-up)
 
 **Tests**: unit  
 **Gate**: Quick BE + Arch

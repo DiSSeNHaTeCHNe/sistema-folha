@@ -54,4 +54,10 @@ describe('FolhaPagamento page', () => {
       expect(screen.getByRole('button', { name: 'Filtrar' })).toBeInTheDocument();
     });
   });
+
+  it('uses stable list keys without Math.random (S2245 regression)', async () => {
+    const source = await import('./index?raw');
+    expect(source.default).not.toMatch(/Math\.random\s*\(/);
+    expect(source.default).toMatch(/key=\{[^}]+\.id\}/);
+  });
 });
