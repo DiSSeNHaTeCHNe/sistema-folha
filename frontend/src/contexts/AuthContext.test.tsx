@@ -178,4 +178,32 @@ describe('AuthContext', () => {
     });
     expect(TokenService.getToken()).toBeNull();
   });
+
+  it('handles auth:logout window event by clearing session', async () => {
+    setValidTokens();
+    localStorage.setItem('user', JSON.stringify(sampleUser));
+
+    renderAuthProbe();
+
+    await waitFor(() => {
+      expect(screen.getByText('user:stored')).toBeInTheDocument();
+    });
+
+    window.dispatchEvent(new CustomEvent('auth:logout'));
+
+    await waitFor(() => {
+      expect(screen.getByText('user:none')).toBeInTheDocument();
+    });
+  });
+
+  it('clears auth when stored user JSON is invalid', async () => {
+    setValidTokens();
+    localStorage.setItem('user', '{invalid-json');
+
+    renderAuthProbe();
+
+    await waitFor(() => {
+      expect(screen.getByText('user:none')).toBeInTheDocument();
+    });
+  });
 });

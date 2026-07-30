@@ -317,4 +317,61 @@ describe('api.ts auth interceptors', () => {
 
     expect(authHeader).toBeNull();
   });
+
+  it('rejects queued requests when refresh fails during concurrent 401 handling', async () => {
+    setValidTokens();
+    const logoutListener = vi.fn();
+    window.addEventListener('auth:logout', logoutListener);
+
+    server.use(
+      http.get(`${API_BASE_URL}/protected`, () => HttpResponse.json({}, { status: 401 })),
+      http.get(`${API_BASE_URL}/protected-other`, () => HttpResponse.json({}, { status: 401 })),
+      http.post(`${API_BASE_URL}/auth/refresh`, () =>
+        HttpResponse.json({ message: 'invalid refresh' }, { status: 401 }),
+      ),
+    );
+
+    await expect(
+      Promise.all([api.get('/protected'), api.get('/protected-other')]),
+    ).rejects.toBeDefined();
+
+    expect(TokenService.getToken()).toBeNull();
+    expect(logoutListener).toHaveBeenCalledTimes(1);
+    window.removeEventListener('auth:logout', logoutListener);
+  });
+
+  it('logout keeps clearing tokens when the server logout call fails', async () => {
+    setValidTokens();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    server.use(
+      http.post(`${API_BASE_URL}/auth/logout`, () =>
+        HttpResponse.json({ message: 'server down' }, { status: 500 }),
+      ),
+    );
+
+    await logout();
+
+    expect(TokenService.getToken()).toBeNull();
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('logs out when refresh endpoint returns 401 on a direct refreshToken call', async () => {
+    setValidTokens();
+    const logoutListener = vi.fn();
+    window.addEventListener('auth:logout', logoutListener);
+
+    server.use(
+      http.post(`${API_BASE_URL}/auth/refresh`, () =>
+        HttpResponse.json({ message: 'invalid' }, { status: 401 }),
+      ),
+    );
+
+    await expect(refreshToken('stored-refresh')).rejects.toBeDefined();
+    expect(TokenService.getToken()).toBeNull();
+    expect(logoutListener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener('auth:logout', logoutListener);
+  });
 });
