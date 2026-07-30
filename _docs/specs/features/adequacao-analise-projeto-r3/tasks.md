@@ -349,9 +349,9 @@ T15
 
 **Done when**:
 
-- [ ] Dependências Testcontainers declaradas sem conflito de versão
-- [ ] Gate: `cd backend && mvn test` — suite completa verde (≥464 testes)
-- [ ] Gate: `cd backend && mvn test -Dtest=ModularArchitectureTest` exit 0
+- [x] Dependências Testcontainers declaradas sem conflito de versão
+- [x] Gate: `cd backend && mvn test` — suite completa verde (≥464 testes)
+- [x] Gate: `cd backend && mvn test -Dtest=ModularArchitectureTest` exit 0
 
 **Tests**: none  
 **Gate**: Full BE + Arch
