@@ -111,9 +111,9 @@ T14 → T15
 
 **Done when**:
 
-- [ ] Documento lista Vitest **184+**, MSW harness, JaCoCo + `check-jacoco-thresholds.sh` + `sonar-analyze.sh`, Testcontainers ADP `@EnabledIf`
-- [ ] Removidas afirmações stale (“5 tests”, “sem Vitest”, “sem cobertura”)
-- [ ] Comandos de execução batem com `frontend/package.json` e `backend/pom.xml`
+- [x] Documento lista Vitest **184+**, MSW harness, JaCoCo + `check-jacoco-thresholds.sh` + `sonar-analyze.sh`, Testcontainers ADP `@EnabledIf`
+- [x] Removidas afirmações stale (“5 tests”, “sem Vitest”, “sem cobertura”)
+- [x] Comandos de execução batem com `frontend/package.json` e `backend/pom.xml`
 
 **Tests**: none  
 **Gate**: manual review
