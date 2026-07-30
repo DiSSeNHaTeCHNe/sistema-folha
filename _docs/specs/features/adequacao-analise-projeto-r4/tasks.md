@@ -137,9 +137,9 @@ T14 → T15
 
 **Done when**:
 
-- [ ] §4 não afirma mais “Testcontainers: Não configurado”
-- [ ] Menciona classe de integração ADP + skip Docker-gated
-- [ ] Contagem de testes backend **≥ 474**
+- [x] §4 não afirma mais “Testcontainers: Não configurado”
+- [x] Menciona classe de integração ADP + skip Docker-gated
+- [x] Contagem de testes backend **≥ 474**
 
 **Tests**: none  
 **Gate**: manual review
