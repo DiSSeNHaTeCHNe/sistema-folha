@@ -10,6 +10,10 @@ import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio;
 import br.com.techne.sistemafolha.cadastros.infrastructure.CargoRepository;
 import br.com.techne.sistemafolha.cadastros.infrastructure.CentroCustoRepository;
 import br.com.techne.sistemafolha.cadastros.infrastructure.FuncionarioRepository;
+import br.com.techne.sistemafolha.auth.domain.Usuario;
+import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
+import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
+import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +24,7 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,9 +45,89 @@ class FuncionarioServiceTest {
     private CargoRepository cargoRepository;
     @Mock
     private CentroCustoRepository centroCustoRepository;
+    @Mock
+    private UsuarioLookupPort usuarioLookupPort;
+    @Mock
+    private OrganogramaAcessoPort organogramaAcessoPort;
 
     @InjectMocks
     private FuncionarioService funcionarioService;
+
+    private static final String LOGIN = "gestor";
+    private static final Long USUARIO_ID = 5L;
+
+    @Test
+    void listarParaUsuario_scoped_filtraPorCentrosCusto() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+                .thenReturn(contextoRestrito(Set.of(793L, 825L)));
+        Funcionario inScope = funcionarioComCentroCusto(793L);
+        Funcionario outScope = funcionarioComCentroCusto(999L);
+        when(funcionarioRepository.findByFiltros(isNull(), isNull(), isNull(), isNull(), eq(true)))
+                .thenReturn(List.of(inScope, outScope));
+
+        List<FuncionarioDTO> result = funcionarioService.listarParaUsuario(
+                LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO);
+
+        assertEquals(1, result.size());
+        assertEquals(793L, result.get(0).centroCustoId());
+    }
+
+    @Test
+    void listarParaUsuario_centroCustoQueryForaEscopo_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+                .thenReturn(contextoRestrito(Set.of(793L, 825L)));
+
+        List<FuncionarioDTO> result = funcionarioService.listarParaUsuario(
+                LOGIN, null, null, 999L, null, FuncionarioStatusFiltro.ATIVO);
+
+        assertEquals(0, result.size());
+        verify(funcionarioRepository, never()).findByFiltros(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void buscarPorIdParaUsuario_outOfScope_lancaFuncionarioNotFoundException() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+                .thenReturn(contextoRestrito(Set.of(793L)));
+        Funcionario outScope = funcionarioComCentroCusto(999L);
+        outScope.setId(42L);
+        when(funcionarioRepository.findById(42L)).thenReturn(Optional.of(outScope));
+
+        assertThrows(FuncionarioNotFoundException.class,
+                () -> funcionarioService.buscarPorIdParaUsuario(LOGIN, 42L));
+    }
+
+    @Test
+    void listarParaUsuario_acessoTotal_delegaListarGlobal() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+                .thenReturn(contextoAcessoTotal());
+        when(funcionarioRepository.findByFiltros(isNull(), isNull(), isNull(), isNull(), eq(true)))
+                .thenReturn(List.of(funcionarioAtivo()));
+
+        List<FuncionarioDTO> result = funcionarioService.listarParaUsuario(
+                LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void listarParaUsuario_semCentroCusto_excluiFuncionario() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+                .thenReturn(contextoRestrito(Set.of(793L)));
+        Funcionario semCc = funcionarioAtivo();
+        semCc.setCentroCusto(null);
+        when(funcionarioRepository.findByFiltros(isNull(), isNull(), isNull(), isNull(), eq(true)))
+                .thenReturn(List.of(semCc));
+
+        List<FuncionarioDTO> result = funcionarioService.listarParaUsuario(
+                LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO);
+
+        assertEquals(0, result.size());
+    }
 
     @Test
     void cadastrar_rejeita_cpf_ativo_duplicado() {
@@ -253,5 +338,35 @@ class FuncionarioServiceTest {
         cc.setAtivo(true);
         cc.setLinhaNegocio(ln);
         return cc;
+    }
+
+    private void stubUsuario() {
+        Usuario usuario = new Usuario();
+        usuario.setId(USUARIO_ID);
+        usuario.setLogin(LOGIN);
+        usuario.setAtivo(true);
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+    }
+
+    private AccessContextDTO contextoRestrito(Set<Long> centros) {
+        return new AccessContextDTO(true, true, false, centros, null, 2L, "TI", 1);
+    }
+
+    private AccessContextDTO contextoAcessoTotal() {
+        return new AccessContextDTO(true, true, true, Collections.emptySet(), null, null, null, null);
+    }
+
+    private Funcionario funcionarioComCentroCusto(Long ccId) {
+        Funcionario funcionario = funcionarioAtivo();
+        LinhaNegocio ln = new LinhaNegocio();
+        ln.setId(1L);
+        ln.setDescricao("Software");
+        CentroCusto cc = new CentroCusto();
+        cc.setId(ccId);
+        cc.setDescricao("CC " + ccId);
+        cc.setAtivo(true);
+        cc.setLinhaNegocio(ln);
+        funcionario.setCentroCusto(cc);
+        return funcionario;
     }
 }

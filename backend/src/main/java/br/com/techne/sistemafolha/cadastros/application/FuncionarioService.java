@@ -8,14 +8,20 @@ import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.Cargo;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
+import br.com.techne.sistemafolha.auth.domain.Usuario;
+import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
 import br.com.techne.sistemafolha.cadastros.infrastructure.CargoRepository;
 import br.com.techne.sistemafolha.cadastros.infrastructure.CentroCustoRepository;
 import br.com.techne.sistemafolha.cadastros.infrastructure.FuncionarioRepository;
+import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
+import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
+import br.com.techne.sistemafolha.shared.access.CentroCustoEfetivo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +30,8 @@ public class FuncionarioService {
     private final FuncionarioRepository funcionarioRepository;
     private final CargoRepository cargoRepository;
     private final CentroCustoRepository centroCustoRepository;
+    private final UsuarioLookupPort usuarioLookupPort;
+    private final OrganogramaAcessoPort organogramaAcessoPort;
 
     public List<FuncionarioDTO> listar(String nome, Long cargoId, Long centroCustoId, Long linhaNegocioId,
                                        FuncionarioStatusFiltro status) {
@@ -55,6 +63,53 @@ public class FuncionarioService {
                 .filter(Funcionario::getAtivo)
                 .map(this::toDTO)
                 .orElseThrow(() -> new FuncionarioNotFoundException(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<FuncionarioDTO> listarParaUsuario(
+            String login, String nome, Long cargoId, Long centroCustoId, Long linhaNegocioId,
+            FuncionarioStatusFiltro status) {
+        AccessContextDTO contexto = obterContextoAcesso(login);
+        if (acessoNegado(contexto)) {
+            return List.of();
+        }
+        if (contexto.acessoTotal()) {
+            return listar(nome, cargoId, centroCustoId, linhaNegocioId, status);
+        }
+        if (centrosVazios(contexto)) {
+            return List.of();
+        }
+        if (centroCustoId != null && !contexto.centrosCustoIds().contains(centroCustoId)) {
+            return List.of();
+        }
+        String nomePattern = null;
+        if (nome != null && !nome.trim().isEmpty()) {
+            nomePattern = "%" + nome + "%";
+        }
+        return funcionarioRepository
+                .findByFiltros(nomePattern, cargoId, centroCustoId, linhaNegocioId, resolverAtivo(status))
+                .stream()
+                .filter(f -> aplicarFiltroAcesso(f, contexto))
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public FuncionarioDTO buscarPorIdParaUsuario(String login, Long id) {
+        AccessContextDTO contexto = obterContextoAcesso(login);
+        if (acessoNegado(contexto)) {
+            throw new FuncionarioNotFoundException(id);
+        }
+        if (contexto.acessoTotal()) {
+            return buscarPorId(id);
+        }
+        Funcionario funcionario = funcionarioRepository.findById(id)
+                .filter(Funcionario::getAtivo)
+                .orElseThrow(() -> new FuncionarioNotFoundException(id));
+        if (!aplicarFiltroAcesso(funcionario, contexto)) {
+            throw new FuncionarioNotFoundException(id);
+        }
+        return toDTO(funcionario);
     }
 
     @Transactional
@@ -170,5 +225,35 @@ public class FuncionarioService {
         funcionario.setIdExterno(normalizarIdExterno(dto.idExterno()));
         funcionario.setAtivo(true);
         return funcionario;
+    }
+
+    private AccessContextDTO obterContextoAcesso(String login) {
+        Usuario usuario = usuarioLookupPort.findByLoginAndAtivoTrue(login)
+            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        return organogramaAcessoPort.obterContextoAcesso(usuario.getId());
+    }
+
+    private boolean acessoNegado(AccessContextDTO contexto) {
+        return !contexto.acessoTotal()
+            && (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma());
+    }
+
+    private boolean centrosVazios(AccessContextDTO contexto) {
+        Set<Long> centros = contexto.centrosCustoIds();
+        return centros == null || centros.isEmpty();
+    }
+
+    private boolean aplicarFiltroAcesso(Funcionario funcionario, AccessContextDTO contexto) {
+        if (contexto.acessoTotal()) {
+            return true;
+        }
+        if (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma()) {
+            return false;
+        }
+        if (funcionario == null || funcionario.getCentroCusto() == null) {
+            return false;
+        }
+        return CentroCustoEfetivo.pertenceAoEscopo(
+            funcionario.getCentroCusto().getId(), contexto.centrosCustoIds());
     }
 }
