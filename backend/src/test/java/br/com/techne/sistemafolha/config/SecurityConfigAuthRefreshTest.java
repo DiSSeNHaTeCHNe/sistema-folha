@@ -4,6 +4,8 @@ import br.com.techne.sistemafolha.auth.api.AuthController;
 import br.com.techne.sistemafolha.auth.api.RefreshTokenRequest;
 import br.com.techne.sistemafolha.auth.api.TokenDTO;
 import br.com.techne.sistemafolha.auth.application.AuthenticationService;
+import br.com.techne.sistemafolha.auth.domain.RefreshTokenInvalidoException;
+import br.com.techne.sistemafolha.exception.GlobalExceptionHandler;
 import br.com.techne.sistemafolha.security.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -23,10 +25,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = AuthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, GlobalExceptionHandler.class})
 class SecurityConfigAuthRefreshTest {
 
     @Autowired
@@ -64,6 +67,24 @@ class SecurityConfigAuthRefreshTest {
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isNotEqualTo(401);
+    }
+
+    @Test
+    void postAuthRefresh_tokenInvalido_retorna401Nao500() throws Exception {
+        when(authenticationService.refreshToken(anyString()))
+            .thenThrow(new RefreshTokenInvalidoException("Refresh token inválido ou expirado"));
+
+        RefreshTokenRequest body = new RefreshTokenRequest("invalid-refresh-token");
+
+        MvcResult result = mockMvc.perform(post("/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.status").value(401))
+            .andExpect(jsonPath("$.message").value("Refresh token inválido ou expirado"))
+            .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isNotEqualTo(500);
     }
 
     @Test

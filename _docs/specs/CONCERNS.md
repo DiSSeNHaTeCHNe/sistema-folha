@@ -85,7 +85,7 @@
 - Files: `ImportacaoFolhaAdpService.java`
 - Impact: Nova filial/rubrica exige redeploy.
 - Fix approach: Tabelas de config ou YAML administrável.
-- **Status:** Open; **test coverage added** (P2 T10, fixture `folha-adp-minimal.txt`)
+- **Status:** Mitigated — unit tests + `ImportacaoFolhaAdpIntegrationTest` (Testcontainers, Docker-gated)
 
 **Docker Java 21 vs pom Java 17:**
 
@@ -111,8 +111,8 @@
 - Files: `ImportacaoFolhaAdpService.java`
 - Why fragile: Arquivo grande + `@Transactional` amplo — timeout/rollback total.
 - Safe modification: Mudar parse/mapeamento com fixtures.
-- Test coverage: **`ImportacaoFolhaAdpServiceTest` + fixtures** (adequação P2 T10 / AAP-13).
-- **Status:** Mitigated (unit tests); integração com DB real pendente
+- Test coverage: **`ImportacaoFolhaAdpServiceTest` + `ImportacaoFolhaAdpIntegrationTest`** (adequação R3 T11).
+- **Status:** Mitigated (unit + integration Docker-gated)
 
 **FolhaTotalizacaoService dual source:**
 
@@ -145,8 +145,9 @@
 
 **Frontend:**
 
-- What's not tested: Páginas, interceptors, organograma.
-- **Status:** Open — AAP-23 Vitest baseline (Batch 3)
+- What's not tested: E2E Playwright; some page branches still below 100%.
+- Progress (adequação R3): MSW harness + `api.test.ts` interceptors; 184 Vitest cases; page behavior tests (FolhaPagamento, BeneficiosMensais, RubricasFixas, Importacao, Organograma, Layout).
+- **Status:** Mitigated — Sonar `new_coverage` **80.0%** @ R3 gate (fix-cycle-1)
 
 **Exception handler:**
 
@@ -160,8 +161,9 @@
 | ---- | -------- | -------- | ------ | --------------- |
 | S5804 user enumeration | MAJOR | `AuthenticationService` | Unified login/refresh failure paths | **Mitigated** (T15) |
 | S4502 CSRF disabled | CRITICAL | `SecurityConfig` | `@SuppressWarnings` + INTEGRATIONS.md | **Suppressed** (T15) |
-| S2245 pseudorandom | MAJOR | `FolhaPagamento/index.tsx` | Replace `Math.random` key | **Open** — fora escopo P1/P2; fix in follow-up |
-| `@Transactional` via `this` | CRITICAL | `FolhaTotalizacaoService`, `OrganogramaAcessoService` | Self-invocation bypasses proxy | **Resolved** (R2 T12–T13 / AAP2-12, AAP2-13) |
+| S2245 pseudorandom | MAJOR | `FolhaPagamento/index.tsx` | Replace `Math.random` key | **Resolved** (R3 T12 — stable `id` keys + regression test) |
+| `@Transactional` via `this` (Folha/Organograma) | CRITICAL | `FolhaTotalizacaoService`, `OrganogramaAcessoService` | Self-invocation bypasses proxy | **Resolved** (R2 T12–T13 / AAP2-12, AAP2-13) |
+| `@Transactional` via `this` (BeneficioMensal) | CRITICAL | `BeneficioMensalService` | Extract tx helpers; remove S6809 suppress | **Resolved** (R3 T13) |
 | Login timing side-channel | MAJOR | `AuthenticationService` | Dummy BCrypt on missing user | **Resolved** (R2 T16 / AAP2-16) |
 | JWT filter logs Authorization | MAJOR | `JwtAuthenticationFilter` | Redact header value from debug logs | **Resolved** (R2 T17 / AAP2-17) |
 
@@ -169,4 +171,4 @@
 
 _Concerns audit: 2026-07-25_  
 _Sync adequação P2: 2026-07-29 (JaCoCo gate pass; Sonar bugs=0; vulns CRITICAL+MAJOR=4 documented in validation.md)_  
-_Sync adequação R2 Phase 2: 2026-07-29 (tx self-invocation, ddl-auto validate, JWT hardening, timing login, filter log redaction)_
+_Sync adequação R3: 2026-07-29 (Sonar QG OK; new_coverage 80.0%; MSW/api.ts FE coverage; S2245 + BeneficioMensal tx resolved; ADP integration mitigated)_

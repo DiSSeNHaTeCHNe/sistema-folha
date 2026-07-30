@@ -5,6 +5,7 @@ import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensalNotFoundExcep
 import br.com.techne.sistemafolha.beneficios.domain.ImportacaoBeneficioMensalInvalidaException;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioCodigoDuplicadoException;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundException;
+import br.com.techne.sistemafolha.auth.domain.RefreshTokenInvalidoException;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioJaExisteException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
@@ -192,6 +193,17 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody().message());
+    }
+
+    @Test
+    void handleRefreshTokenInvalidoException_retorna401() {
+        ResponseEntity<ErrorResponse> response = handler.handleRefreshTokenInvalidoException(
+            new RefreshTokenInvalidoException("Refresh token inválido ou expirado"));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(401, response.getBody().status());
+        assertEquals("Refresh token inválido ou expirado", response.getBody().message());
     }
 
     @Test

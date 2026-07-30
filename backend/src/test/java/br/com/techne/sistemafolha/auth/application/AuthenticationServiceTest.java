@@ -3,6 +3,7 @@ package br.com.techne.sistemafolha.auth.application;
 import br.com.techne.sistemafolha.auth.api.LoginDTO;
 import br.com.techne.sistemafolha.auth.api.TokenDTO;
 import br.com.techne.sistemafolha.auth.domain.RefreshToken;
+import br.com.techne.sistemafolha.auth.domain.RefreshTokenInvalidoException;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
@@ -156,7 +157,7 @@ class AuthenticationServiceTest {
     void refreshToken_inexistente_lancaMensagemInvalida() {
         when(refreshTokenService.buscarPorToken("invalido")).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(IllegalStateException.class,
+        RefreshTokenInvalidoException ex = assertThrows(RefreshTokenInvalidoException.class,
             () -> authenticationService.refreshToken("invalido"));
 
         assertEquals("Refresh token inválido ou expirado", ex.getMessage());

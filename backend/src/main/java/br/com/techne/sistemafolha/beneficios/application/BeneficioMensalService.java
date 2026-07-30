@@ -45,7 +45,6 @@ public class BeneficioMensalService {
     private final OrganogramaAcessoPort organogramaAcessoPort;
 
     @Transactional(readOnly = true)
-    @SuppressWarnings("java:S6809") // delegates to non-transactional helpers; extract bean deferred
     public List<BeneficioMensalDTO> listarPorCompetenciaParaUsuario(
             String login, LocalDate dataInicio, LocalDate dataFim) {
         AccessContextDTO contexto = obterContextoAcesso(login);
@@ -55,7 +54,7 @@ public class BeneficioMensalService {
         if (!contexto.acessoTotal() && centrosVazios(contexto)) {
             return List.of();
         }
-        return listarPorCompetencia(dataInicio, dataFim, centrosParaFiltro(contexto));
+        return listarPorCompetenciaInterno(dataInicio, dataFim, centrosParaFiltro(contexto));
     }
 
     @Transactional(readOnly = true)
@@ -99,7 +98,6 @@ public class BeneficioMensalService {
     }
 
     @Transactional
-    @SuppressWarnings("java:S6809") // delegates to non-transactional helpers; extract bean deferred
     public Optional<BeneficioMensalDTO> criarParaUsuario(String login, BeneficioMensalDTO dto) {
         AccessContextDTO contexto = obterContextoAcesso(login);
         Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
@@ -107,7 +105,7 @@ public class BeneficioMensalService {
         if (!aplicarFiltroAcesso(funcionario, contexto)) {
             return Optional.empty();
         }
-        return Optional.of(persistirNovoBeneficio(dto));
+        return Optional.of(criarBeneficioInterno(dto));
     }
 
     @Transactional
@@ -124,6 +122,11 @@ public class BeneficioMensalService {
     }
 
     public List<BeneficioMensalDTO> listarPorCompetencia(
+            LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
+        return listarPorCompetenciaInterno(dataInicio, dataFim, centros);
+    }
+
+    private List<BeneficioMensalDTO> listarPorCompetenciaInterno(
             LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
         return buscarPorCompetencia(dataInicio, dataFim, centros).stream()
                 .map(this::toDTO)
@@ -156,7 +159,7 @@ public class BeneficioMensalService {
 
     @Transactional
     public BeneficioMensalDTO criar(BeneficioMensalDTO dto) {
-        return persistirNovoBeneficio(dto);
+        return criarBeneficioInterno(dto);
     }
 
     @Transactional
@@ -164,7 +167,7 @@ public class BeneficioMensalService {
         desativarBeneficio(id);
     }
 
-    private BeneficioMensalDTO persistirNovoBeneficio(BeneficioMensalDTO dto) {
+    private BeneficioMensalDTO criarBeneficioInterno(BeneficioMensalDTO dto) {
         Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
                 .orElseThrow(() -> new FuncionarioNotFoundException(dto.funcionarioId()));
 
