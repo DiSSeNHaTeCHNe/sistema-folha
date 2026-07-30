@@ -63,18 +63,36 @@ class ImportacaoFolhaAdpServiceTest {
     private ImportacaoFolhaAdpService importacaoFolhaAdpService;
 
     @Test
-    void importar_fixtureMinimal_happyPathPersisteZeroLinhas() throws Exception {
+    void importar_fixtureMinimal_happyPathPersisteLinha() throws Exception {
         MockMultipartFile arquivo = fixture("importacao/folha-adp-minimal.txt");
+        FuncionarioImportRef funcionario = new FuncionarioImportRef(
+            1L, "12345", "João", "12345678901", 3L, 4L, 5L);
         when(folhaConsultaPort.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
             .thenReturn(false);
-        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of());
+        when(cadastrosImportLookupPort.findFuncionarioByIdExterno("12345"))
+            .thenReturn(Optional.of(funcionario));
+        when(cadastrosImportLookupPort.findOrCreateRubrica(eq("0010"), anyString(), anyString()))
+            .thenReturn(new RubricaImportRef(2L, "0010", "PROVENTO"));
+        when(folhaConsultaPort.existsAtivaByCpfAndCompetenciaExcludingFuncionario(
+            eq("12345678901"), eq(1L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false)))
+            .thenReturn(false);
+        when(folhaConsultaPort.existsByFuncionarioIdAndRubricaIdAndPeriodo(
+            eq(1L), eq(2L), eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false)))
+            .thenReturn(false);
+        FolhaPagamentoDTO dto = new FolhaPagamentoDTO(
+            1L, 10L, "João", 2L, "0010", "Salário", "PROVENTO",
+            3L, "Analista", 4L, "CC", 5L, "LN",
+            COMPETENCIA_INICIO, COMPETENCIA_FIM,
+            new BigDecimal("1000"), BigDecimal.ONE, new BigDecimal("1000"), false
+        );
+        when(folhaImportacaoPort.persistirImportacao(any())).thenReturn(List.of(dto));
         when(folhaProcessamentoPort.processar(
             eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), eq(false)))
-            .thenReturn(new ProcessamentoResultadoDTO(0, 0, 0));
+            .thenReturn(new ProcessamentoResultadoDTO(1, 1, 1));
 
         ImportacaoFolhaAdpResult result = importacaoFolhaAdpService.importarFolhaAdp(arquivo, false, false);
 
-        assertTrue(result.folhasPagamento().isEmpty());
+        assertEquals(1, result.folhasPagamento().size());
         verify(folhaImportacaoPort).persistirImportacao(any());
         verify(folhaProcessamentoPort).processar(COMPETENCIA_INICIO, COMPETENCIA_FIM, false, false);
     }

@@ -375,9 +375,9 @@ T15
 
 **Done when**:
 
-- [ ] Com Docker: gate `cd backend && mvn test -Dtest=ImportacaoFolhaAdpIntegrationTest` exit 0
-- [ ] Sem Docker: teste skipped (`@EnabledIf` ou equivalente); `mvn test` full suite verde
-- [ ] ≥1 registro persistido assertado antes de rollback
+- [x] Com Docker: gate `cd backend && mvn test -Dtest=ImportacaoFolhaAdpIntegrationTest` exit 0
+- [x] Sem Docker: teste skipped (`@EnabledIf` ou equivalente); `mvn test` full suite verde
+- [x] ≥1 registro persistido assertado antes de rollback
 
 **Tests**: integration  
 **Gate**: ADP Integration (+ Full BE se Docker ausente)
