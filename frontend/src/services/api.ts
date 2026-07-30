@@ -181,4 +181,10 @@ export const getUserByLogin = async (login: string) => {
   return response.data;
 };
 
+/** Resets interceptor module state — for Vitest only. */
+export function resetApiAuthState(): void {
+  isRefreshing = false;
+  failedQueue = [];
+}
+
 export default api;
