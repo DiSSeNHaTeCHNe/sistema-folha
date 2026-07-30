@@ -10,8 +10,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design**: `_docs/specs/features/adequacao-analise-projeto-r2/design.md`  
 **Spec**: `_docs/specs/features/adequacao-analise-projeto-r2/spec.md`  
-**Status**: Draft — Tasks 2026-07-29  
-**Git:** branch `feat/adequacao-analise-projeto-r2` a partir de `main` @ `047e64d`; commits atômicos por task; sem push unless user asks.
+**Status**: Complete — Execute 2026-07-29 (T1–T19 ✅; T20 N/A Docker)  
+**Git:** branch `feat/adequacao-analise-projeto`; R2 range `0e767e3..658be8a`; fix cycles 1–3; validation PASS @ `658be8a`
 
 ---
 

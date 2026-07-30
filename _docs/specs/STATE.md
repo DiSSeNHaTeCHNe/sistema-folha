@@ -105,18 +105,24 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 **Scope:** Motor folha, totais, resumo, dashboard, detalhe; bruto/líquido inalterados (sem %).  
 **Status:** active (spec draft fix2, refinado 2026-07-29)
 
+### AD-013: API Key PAT — Bearer dual-path + permissão `API_KEY` (2026-07-29)
+
+**Decision:** Credenciais de longa duração para integrações/agentes usam API Key (PAT) por `Usuario`: header `Authorization: Bearer` com prefixo `sf_live_`, convivendo com JWT no mesmo filtro; secret só hash (BCrypt); permissão explícita `API_KEY` para criar/usar; expiry obrigatória ≤365 dias; `ADMIN` pode revogar keys alheias; UI `/api-keys`. Domínio `auth.*` (AD-008). Servidor MCP fora desta feature.  
+**Reason:** Feature `auth-api-keys` — Approach A; evita JWT de sessão em `mcp.json` e token compartilhado sem ACL.  
+**Trade-off:** Filtro de auth sensível (mitigado com testes de regressão JWT); sem escopos granulares / rate limit no MVP.  
+**Scope:** Backend auth/security + FE página ApiKeys + chip Usuários.  
+**Status:** active
+
 ---
 
 ## Handoff
 
-- **Feature (done)**: `acl-cc-competencia` → rounds 1–3 complete @ `7e0421d` on `feat/acl-cc-competencia`; Verifier PASS 28/28 ACs
-- **Feature (done)**: `organograma-linhas-hierarquia` → Execute + Verifier PASS @ `260aeeb` (fix cycle 1) — merged to `main` (2026-07-29)
-- **Feature (idle)**: `folha-custo-clt-fix3` → **Execute complete** (2026-07-29) — T1–T12 @ `69f4258` on `feat/folha-custo-clt`; pronto para Verifier
-- **Feature (done)**: `folha-custo-clt-fix2` → Execute + Verifier PASS @ `a31bc15` on `feat/folha-custo-clt`
-- **Feature (branch)**: `folha-custo-clt` → fix2 layered on same branch; squash merge pendente pelo usuário
-- **Feature (idle)**: `ajustes-listagens` → Verifier PASS (uncommitted)
-- **Feature (idle)**: `acl-scoped-folha-resumo` → Verifier PASS (uncommitted)
-- **Decisions**: AD-001…AD-012 active
+- **Feature (in design)**: `auth-api-keys` → Approach A + `design.md` draft; aguarda aprovação → Tasks
+- **Feature (done)**: `adequacao-analise-projeto` (R1) → squash merged to `main` @ `047e64d` (2026-07-29); Verifier PASS 24/24 ACs
+- **Feature (draft)**: `adequacao-analise-projeto-r2` → Tasks complete (`tasks.md` T1–T20); aguarda Execute em `feat/adequacao-analise-projeto-r2`
+- **Feature (done)**: `acl-cc-competencia` → rounds 1–3 complete @ `7e0421d`; squash merge pendente
+- **Feature (done)**: `organograma-linhas-hierarquia` → merged `main` (2026-07-29)
+- **Decisions**: AD-001…AD-013 active
 ---
 
 ## Blockers

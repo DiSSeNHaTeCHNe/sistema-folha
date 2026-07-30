@@ -1,12 +1,13 @@
 # Adequação da Análise de Projeto — R2 Validation
 
 ## Status atual
-- Veredito: **PARTIAL PASS** (AAP2-02 ✅ closed; AAP2-01 QG **ERROR** — `new_coverage` 62.2% < 80% exception documented)
+- Veredito: **PASS ✅** (closing verifier @ 2026-07-29)
 - Spec: adequacao-analise-projeto-r2
-- Branch/HEAD: `feat/adequacao-analise-projeto` @ fix-cycle-3 (post-scan)
-- Iteração: fix-cycle-3 verify @ 2026-07-29 (range `f45f63b..HEAD`)
-- Gaps abertos: **AAP2-01**/**AAP2-03** (QG **ERROR** — `new_coverage` **62.2%** < 80%); AAP2-22 N/A
-- fix-cycle-3 delta: Sonar `new_violations` **67→0** ✅; `code_smells` **190→121**; aggregate **48.0%**; `mvn test` **464**; Vitest **39**; JaCoCo global **81.7%**
+- Branch/HEAD: `feat/adequacao-analise-projeto` @ `658be8a`
+- Diff range: `0e767e3..658be8a` (R2 full; fix-cycles through fix-cycle-3)
+- ACs: **20/21** executable PASS · **1** N/A (AAP2-22) · **1** QG exception (`new_coverage` **62.2%** < 80%, slot 1/2 per AAP2-01/AAP2-03)
+- Gates: `mvn test` **464** 0 fail · JaCoCo global **81.7%** · Vitest **39** · ArchUnit **18** · `sonar-analyze.sh` exit **0** · QG **ERROR** (`new_coverage` only; `new_violations` **0**)
+- Sensor: **3/3** auth/JWT mutations killed (worktree scratch @ final verify)
 
 ---
 
@@ -387,3 +388,110 @@ Sonar API `inNewCodePeriod=true&issueStatuses=OPEN` @ PREVIOUS_VERSION baseline 
 **Questões abertas:** None for AAP2-02. `new_coverage` gap remains for AAP2-01/AAP2-03 (exception documented, not a blocker for smell burn-down).
 
 **Next steps:** Merge R2; optional R3 FE coverage or post-merge Sonar baseline reset for `new_coverage` gate.
+
+---
+
+## Execução: final verify (closing) — 2026-07-29 — 0e767e3..658be8a
+
+**Verifier:** independent sub-agent (author ≠ verifier)  
+**Branch:** `feat/adequacao-analise-projeto` @ `658be8a`  
+**Diff range:** `0e767e3..658be8a` (R2 full; 21 commits incl. fix-cycle-3 + docs)
+
+### Task Completion
+
+| Task | Status | Notes |
+| ---- | ------ | ----- |
+| T1–T19 | ✅ Done | All marked done in `tasks.md` |
+| T20 | ⏭️ N/A | Testcontainers unavailable — documented per edge case |
+
+---
+
+### Spec-Anchored Acceptance Criteria (AAP2-01 … AAP2-22)
+
+| ID | Criterion (WHEN → THEN) | Spec-defined outcome | `file:line` + assertion | Result |
+| -- | ----------------------- | -------------------- | ----------------------- | ------ |
+| AAP2-01 | `./diversos/scripts/sonar-analyze.sh` completes | QG **OK** OR ≤2 exceptions in validation | Verifier run: script exit **0**; Sonar API post-scan: QG **ERROR** (`new_coverage` 62.2 only; `new_violations` 0) | ✅ PASS — 1 exception documented (slot 1/2; spec edge case: QG fails only on `new_coverage`, aggregate ≥48%) |
+| AAP2-02 | Sonar `new_violations` | **0** | Sonar API QG condition `new_violations` = **0** | ✅ PASS |
+| AAP2-03 | Sonar `new_coverage` | **≥ 80%** OR single documented exception | Sonar API `new_coverage` = **62.2%** | ✅ PASS — documented exception; plan R3 FE coverage or post-merge baseline reset |
+| AAP2-04 | Sonar `code_smells` | **≤ 230** (≥15% vs 270) | Sonar API `code_smells` = **121** (55% reduction) | ✅ PASS |
+| AAP2-05 | CR+MAJOR top-20 export `sinceLeakPeriod=true` | **0** issues in top files | Sonar API `inNewCodePeriod=true&severities=CRITICAL,MAJOR&issueStatuses=OPEN`: **total 0** | ✅ PASS |
+| AAP2-06 | `sonar-analyze.sh` runs | **`npm run test:coverage`** before Docker scanner | `diversos/scripts/sonar-analyze.sh:35-36` — `(cd frontend && npm run test:coverage)` | ✅ PASS |
+| AAP2-07 | `check-jacoco-thresholds.sh` | global **≥ 75%**; floors R1 | Verifier run: global **81.7%**, organograma 66.7%, security 74.7%, importacao 76.5% — exit 0 | ✅ PASS |
+| AAP2-08 | `npm run test:coverage` | **≥ 15** Vitest cases passing | Verifier run: **39 passed** (14 files) | ✅ PASS |
+| AAP2-09 | FE pages Folha/Organograma/Login | **≥ 1 test each** | `Login.test.tsx:28` — `getByRole('heading', { name: 'Sistema de Folha' })`; `FolhaPagamento.test.tsx:34` — `getByRole('heading', { name: 'Folha de Pagamento' })`; `Organograma.test.tsx:31` — `getByRole('heading', { name: /Organograma/i })` | ✅ PASS |
+| AAP2-10 | Sonar aggregate coverage | **≥ 48%** | Sonar API `coverage` = **48.0%** (post fresh scan @ final verify) | ✅ PASS |
+| AAP2-11 | GlobalExceptionHandler validation | test for `MethodArgumentNotValidException` | `GlobalExceptionHandlerTest.java:79-84` — `assertEquals(HttpStatus.BAD_REQUEST, …)` + message `"login: must not be blank; senha: size must be between 8 and 64"` | ✅ PASS |
+| AAP2-12 | FolhaTotalizacaoService tx self-invocation | refactor; `FolhaTotalizacaoServiceTest` green | `FolhaTotalizacaoService.java:50-56` — private `calcularTotaisPorFuncionarioInterno` (no `@Transactional`); gate 7 tests 0 failures | ✅ PASS |
+| AAP2-13 | OrganogramaAcessoService tx self-invocation | same pattern; test green | `OrganogramaAcessoService.java:78` — private `resolverContextoAcesso`; gate 8 tests 0 failures | ✅ PASS |
+| AAP2-14 | `application.yml` ddl-auto | **`validate`** default; **`update`** only `dev` | `application.yml:10` — `ddl-auto: validate`; `application-dev.yml:4` — `ddl-auto: update` | ✅ PASS |
+| AAP2-15 | JWT blank/default secret | fail startup non-dev/test | `JwtSecretStartupValidatorTest.java:26-27,46-47,72-73` — `assertThrows(IllegalStateException.class, …)` prod/staging/blank | ✅ PASS |
+| AAP2-16 | Login missing user timing-safe | `passwordEncoder.matches` vs dummy hash | `AuthenticationService.java:51` — `DUMMY_BCRYPT_HASH`; `AuthenticationServiceTest.java:78` — `verify(passwordEncoder).matches(SENHA, AuthenticationService.DUMMY_BCRYPT_HASH)` | ✅ PASS |
+| AAP2-17 | JWT filter log redaction | no full Authorization value in log | `JwtAuthenticationFilterTest.java:73-76` — `noneMatch(…contains("eyJhbGciOiJIUzI1NiJ9"))` + `contains("Bearer esperado")` | ✅ PASS |
+| AAP2-18 | `mvn test` | **0** failures; count **≥ 359** | Verifier run: **464** tests, 0 failures/errors/skipped; BUILD SUCCESS | ✅ PASS |
+| AAP2-19 | Sonar bugs/vulns regression | bugs OPEN **0**; vulns CR+MAJOR **0** | Sonar API: `bugs`=0, `vulnerabilities`=0; `inNewCodePeriod` CR+MAJOR OPEN **0** | ✅ PASS |
+| AAP2-20 | CONCERNS sync | mark tx/ddl/JWT/timing resolved | `_docs/specs/CONCERNS.md:25,64,164-166,172` — Resolved entries for R2 items | ✅ PASS |
+| AAP2-21 | ArchUnit AD-010 | zero violations | `ModularArchitectureTest` — 18 tests, 0 failures (gate) | ✅ PASS |
+| AAP2-22 | ADP integration (P3 optional) | persist ≥1 row with rollback OR N/A documented | T20 not implemented; Testcontainers unavailable per `tasks.md` | ⏭️ N/A |
+
+**Spec-anchored summary:** 20/21 executable ACs PASS · 0 GAP · 1 documented QG exception (AAP2-03) · 1 N/A (AAP2-22)
+
+#### QG exception (AAP2-01 / AAP2-03 — 1 of ≤2 allowed)
+
+1. **`new_coverage` = 62.2% (< 80%)** — Incremental leak-period coverage below Sonar gate; aggregate **48.0%** (AAP2-10 met). Plan: R3 FE coverage (AD-004) or Sonar baseline reset on `main` post-merge.
+
+---
+
+### Gate Check
+
+| Gate | Command | Exit | Evidence |
+| ---- | ------- | ---- | -------- |
+| Full BE | `cd backend && mvn test` | 0 | **464** tests, 0 failures/errors/skipped |
+| JaCoCo | `bash diversos/scripts/check-jacoco-thresholds.sh` | 0 | global **81.7%** ≥ 75%; domain floors PASS |
+| FE Coverage | `cd frontend && npm run test:coverage` | 0 | **39** tests passed; lcov generated (statements 37%) |
+| Sonar | `./diversos/scripts/sonar-analyze.sh` | 0 | Analysis uploaded @ 2026-07-29 final verify; QG **ERROR** (`new_coverage` only); `new_violations` **0** |
+| ArchUnit | `cd backend && mvn test -Dtest=ModularArchitectureTest` | 0 | 18 tests, 0 failures |
+
+**Test delta vs R1 baseline:** backend **359 → 464** (+105); Vitest **2 → 39** (+37). No silent deletions.
+
+---
+
+### Discrimination Sensor (P0 auth/JWT — 3 mutations, scratch worktree)
+
+| # | Mutation | File:line | Killed? |
+| - | -------- | --------- | ------- |
+| 1 | Disable blank-secret check `if (jwtSecret.isBlank())` → `if (false && jwtSecret.isBlank())` | `JwtSecretStartupValidator.java:32` | ✅ Killed — `JwtSecretStartupValidatorTest#validateJwtSecret_blankSecret_falhaStartup` FAIL |
+| 2 | Missing-user login skips dummy hash (`""` instead of `DUMMY_BCRYPT_HASH`) | `AuthenticationService.java:51` | ✅ Killed — `AuthenticationServiceTest#authenticate_loginInexistente_lancaMensagemGenerica` FAIL (`verify(matches…DUMMY_BCRYPT_HASH)`) |
+| 3 | Validation handler returns 500 instead of 400 | `GlobalExceptionHandler.java:126-127` | ✅ Killed — `GlobalExceptionHandlerTest#handleMethodArgumentNotValidException_retorna400` FAIL (`expected 400 BAD_REQUEST but was 500`) |
+
+**Sensor depth:** P0 manual (3/3 killed) — **PASS ✅**
+
+---
+
+### Code Quality (spot-check)
+
+| Principle | Status |
+| --------- | ------ |
+| Minimum scope / no product features | ✅ |
+| Matches repo patterns | ✅ |
+| Tests map to ACs (non-shallow auth/JWT) | ✅ |
+| Documented guidelines (`TESTING.md`, skills) | ✅ |
+
+---
+
+### Edge Cases
+
+- [x] QG fails on `new_coverage` only → exception path used (AAP2-01/AAP2-03); aggregate ≥48% (AAP2-10 PASS)
+- [x] Testcontainers unavailable → AAP2-22 N/A documented
+- [x] Tx refactor → existing service tests green (no SPEC_DEVIATION)
+
+---
+
+### Summary
+
+**Overall:** ✅ **Ready — PASS**
+
+**What works:** Sonar `new_violations`=0; smells 121 ≤230; aggregate coverage 48.0%; JaCoCo 81.7%; Vitest 39; CONCERNS P1 closed; auth/JWT hardening with discriminating tests; bugs/vulns 0; ArchUnit green; full gate suite green.
+
+**Open items (non-blocking):** `new_coverage` 62.2% — documented QG exception; optional R3 FE coverage or post-merge baseline reset. AAP2-22 N/A until Docker/Testcontainers available.
+
+**Commit:** validation.md updated by closing verifier (user did not request git commit).

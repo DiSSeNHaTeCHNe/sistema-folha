@@ -53,7 +53,8 @@ const getApiErrorMessage = (error: unknown, fallback: string): string => {
 };
 
 const formatPercentualFixa = (porcentagem: number | null | undefined = 100): string => {
-  return `${porcentagem.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`;
+  const valor = porcentagem ?? 100;
+  return `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}%`;
 };
 
 const formatFuncionarioFixa = (item: FuncionarioRubricaFixa): string => {

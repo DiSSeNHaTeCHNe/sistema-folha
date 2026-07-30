@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 9,
+  "next_id": 11,
   "lessons": [
     {
       "id": "L-001",
@@ -148,6 +148,42 @@
       ],
       "created": "2026-07-27T04:20:00Z",
       "last_seen": "2026-07-27T04:20:00Z"
+    },
+    {
+      "id": "L-009",
+      "key": "ac_gap::reconcile sonar new violations against previous version baseline before declaring qg pass incremental smell fixes alone may not zero leak period violations",
+      "text": "Reconcile Sonar new_violations against PREVIOUS_VERSION baseline before declaring QG pass; incremental smell fixes alone may not zero leak-period violations.",
+      "signal": "ac_gap",
+      "scope": "sonar",
+      "status": "candidate",
+      "features": [
+        "adequacao-analise-projeto-r2"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "AAP2-02 (sonar)"
+      ],
+      "created": "2026-07-29T20:52:14Z",
+      "last_seen": "2026-07-29T20:52:14Z"
+    },
+    {
+      "id": "L-010",
+      "key": "ac_gap::verify sonar aggregate coverage not just new coverage meets the spec floor after fe lcov import vitest page smoke may lift new coverage but miss aggregate threshold",
+      "text": "Verify Sonar aggregate coverage (not just new_coverage) meets the spec floor after FE lcov import; Vitest page smoke may lift new_coverage but miss aggregate threshold.",
+      "signal": "ac_gap",
+      "scope": "coverage",
+      "status": "candidate",
+      "features": [
+        "adequacao-analise-projeto-r2"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "AAP2-10 (coverage)"
+      ],
+      "created": "2026-07-29T20:52:14Z",
+      "last_seen": "2026-07-29T20:52:14Z"
     }
   ]
 }
