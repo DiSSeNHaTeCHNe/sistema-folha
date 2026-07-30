@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-07-30  
-**Current Work:** `adequacao-analise-projeto-r4` — squash merge to `main` (QG OK; meta interna 85% documentada como ressalva)
+**Current Work:** `auth-api-keys` — Execute T1–T16 complete on `feat/auth-api-keys` (2026-07-30); full gate PASS (32 BE tests + FE build)
 
 ---
 
@@ -117,8 +117,8 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
+- **Feature (execute done)**: `auth-api-keys` → branch `feat/auth-api-keys`; T1–T16 executed (2026-07-30); full gate PASS (`ApiKeyServiceTest` + `JwtAuthenticationFilterTest` + `ApiKeyWriteGuardFilterTest` = 32 tests; `npm run build` OK); pending merge to `main` + Verifier
 - **Feature (done)**: `adequacao-analise-projeto-r4` → squash merged to `main` @ `64acb93` (2026-07-30); QG OK @ `new_coverage` 80.0%; meta interna 85%/branch 70% = ressalva (leak period R3); Playwright PASS; ADP N/A Testcontainers
-- **Feature (tasks draft)**: `auth-api-keys` → Design A approved; `tasks.md` T1–T15; aguarda Execute
 - **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `bcff5f9`; Verifier PASS; Sonar QG OK @ 80.0%
 - **Feature (done)**: `adequacao-analise-projeto` (R1) → `main` @ `047e64d`
 - **Feature (done)**: `adequacao-analise-projeto-r2` → `main` @ `cb6e04a`
