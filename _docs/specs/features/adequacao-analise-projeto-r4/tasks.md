@@ -485,9 +485,9 @@ T14 → T15
 
 **Done when**:
 
-- [ ] Skip se `new_coverage` ≥85% **ou** usuário não aprovou reset
-- [ ] Se executado: evidência ops + métricas pós-reset em `validation.md`; QG OK
-- [ ] Nunca reset sem evidência de scan pós-hardening
+- [x] Skip se `new_coverage` ≥85% **ou** usuário não aprovou reset
+- [x] Se executado: evidência ops + métricas pós-reset em `validation.md`; QG OK
+- [x] Nunca reset sem evidência de scan pós-hardening
 
 **Tests**: none  
 **Gate**: Sonar
