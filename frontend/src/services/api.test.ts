@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import api, { logout, resetApiAuthState } from './api';
+import api, { getUserByLogin, login, logout, refreshToken, resetApiAuthState } from './api';
 import { TokenService } from './tokenService';
 import { createAuthMswServer } from '../test/mswServer';
 import { API_BASE_URL, sampleLoginResponse } from '../test/handlers/authHandlers';
@@ -249,5 +249,72 @@ describe('api.ts auth interceptors', () => {
     expect(logoutListener).toHaveBeenCalledTimes(1);
 
     window.removeEventListener('auth:logout', logoutListener);
+  });
+
+  it('login posts credentials and returns the LoginResponse payload', async () => {
+    const loginResponse = sampleLoginResponse({ login: 'admin', token: 'login-token' });
+
+    server.use(
+      http.post(`${API_BASE_URL}/auth/login`, async ({ request }) => {
+        const body = await request.json() as { login: string; senha: string };
+        expect(body).toEqual({ login: 'admin', senha: 'secret' });
+        return HttpResponse.json(loginResponse);
+      }),
+    );
+
+    const result = await login({ login: 'admin', senha: 'secret' });
+
+    expect(result).toEqual(loginResponse);
+  });
+
+  it('refreshToken posts the refresh token and returns a LoginResponse payload', async () => {
+    const refreshed = sampleLoginResponse({ token: 'refreshed-via-export' });
+
+    server.use(
+      http.post(`${API_BASE_URL}/auth/refresh`, async ({ request }) => {
+        const body = await request.json() as { refreshToken: string };
+        expect(body.refreshToken).toBe('refresh-me');
+        return HttpResponse.json(refreshed);
+      }),
+    );
+
+    const result = await refreshToken('refresh-me');
+
+    expect(result).toEqual(refreshed);
+  });
+
+  it('getUserByLogin fetches the user resource by login', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/usuarios/login/admin`, () =>
+        HttpResponse.json({ id: 1, login: 'admin', nome: 'Admin', permissoes: ['ADMIN'] }),
+      ),
+    );
+
+    const user = await getUserByLogin('admin');
+
+    expect(user).toEqual({ id: 1, login: 'admin', nome: 'Admin', permissoes: ['ADMIN'] });
+  });
+
+  it('logout clears tokens locally when no refresh token is stored', async () => {
+    localStorage.setItem('token', 'orphan-access');
+
+    await logout();
+
+    expect(TokenService.getToken()).toBeNull();
+  });
+
+  it('does not attach Authorization when no access token is stored', async () => {
+    let authHeader: string | null = 'unset';
+
+    server.use(
+      http.get(`${API_BASE_URL}/protected`, ({ request }) => {
+        authHeader = request.headers.get('Authorization');
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+
+    await api.get('/protected');
+
+    expect(authHeader).toBeNull();
   });
 });
