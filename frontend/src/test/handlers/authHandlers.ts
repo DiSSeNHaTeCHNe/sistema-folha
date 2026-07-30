@@ -1,7 +1,8 @@
 import { http, HttpResponse, type HttpHandler } from 'msw';
 import type { LoginResponse } from '../../types';
+import { API_BASE_URL } from '../../lib/apiBaseUrl';
 
-export const API_BASE_URL = 'http://localhost:8083/api';
+export { API_BASE_URL } from '../../lib/apiBaseUrl';
 
 export function sampleLoginResponse(overrides: Partial<LoginResponse> = {}): LoginResponse {
   const now = Date.now();

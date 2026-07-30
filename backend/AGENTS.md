@@ -111,17 +111,25 @@ backend/src/main/resources/
 | Ferramenta | Uso |
 |------------|-----|
 | JUnit 5 | Framework de testes |
-| Mockito (`@ExtendWith(MockitoExtension.class)`) | Mock de repositories |
-| spring-boot-starter-test | Disponível, mas **não usado** em testes atuais |
-| Testcontainers | **Não configurado** |
+| Mockito (`@ExtendWith(MockitoExtension.class)`) | Mock de repositories e ports |
+| spring-boot-starter-test | `@SpringBootTest` em integração (ADP) |
+| Testcontainers | PostgreSQL 15 para `ImportacaoFolhaAdpIntegrationTest` |
+| JaCoCo | Cobertura na fase `test`; gate via `check-jacoco-thresholds.sh` |
+| ArchUnit | `ModularArchitectureTest` — limites modulares AD-010 |
 
-**Estratégia atual:** testes **unitários isolados** de services com mocks — padrão em `FuncionarioServiceTest`.  
-**Não** use `@SpringBootTest` para lógica de negócio simples. Reserve integração para fluxos críticos (auth, importação) quando forem adicionados.
+**Contagem atual:** **≥ 474** testes (`mvn test` — 0 falhas; 1 skip quando Docker ausente).
 
-**Dados de teste:** sem `application-test.yml` nem fixtures SQL. Testes existentes constroem DTOs/entities inline.  
+**Estratégia:** testes **unitários isolados** de services com mocks — padrão em `FuncionarioServiceTest` e `AuthenticationServiceTest`.  
+Integração com Testcontainers reservada para fluxos críticos (importação ADP).
+
+**Integração ADP:** `ImportacaoFolhaAdpIntegrationTest` usa `@Testcontainers`, `@Transactional` (rollback) e `@EnabledIf("isDockerAvailable")` — **skip automático** quando o daemon Docker não está disponível; a suíte completa permanece verde.
+
+**Não** use `@SpringBootTest` para lógica de negócio simples isolável com mocks.
+
+**Dados de teste:** sem `application-test.yml` para unit tests. Integração ADP usa perfil `test` + container dinâmico.  
 **Testes de API manuais:** Postman em `../diversos/postman/` + script `../diversos/scripts/test-api.sh`.
 
-Ao adicionar teste unitário: espelhe o pacote do código (`src/test/java/.../service/`).
+Ao adicionar teste unitário: espelhe o pacote do código (`src/test/java/.../`).
 
 ---
 

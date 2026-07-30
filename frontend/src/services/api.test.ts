@@ -73,7 +73,7 @@ describe('api.ts auth interceptors', () => {
       http.post(`${API_BASE_URL}/auth/refresh`, () => HttpResponse.json({}, { status: 401 })),
     );
 
-    await expect(api.get('/protected')).rejects.toBeDefined();
+    await expect(api.get('/protected')).rejects.toThrow('Falha ao renovar token');
 
     expect(TokenService.getToken()).toBeNull();
     expect(TokenService.getRefreshToken()).toBeNull();
@@ -116,21 +116,27 @@ describe('api.ts auth interceptors', () => {
   it('logs out and clears tokens when POST /auth/refresh returns 401', async () => {
     setValidTokens();
     const logoutListener = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     window.addEventListener('auth:logout', logoutListener);
 
     server.use(
       http.post(`${API_BASE_URL}/auth/refresh`, () => HttpResponse.json({}, { status: 401 })),
     );
 
-    await expect(
-      api.post('/auth/refresh', { refreshToken: 'old-refresh-token' }),
-    ).rejects.toBeDefined();
+    try {
+      await api.post('/auth/refresh', { refreshToken: 'old-refresh-token' });
+      expect.fail('expected rejection');
+    } catch (error) {
+      expect((error as { response?: { status?: number } }).response?.status).toBe(401);
+    }
 
     expect(TokenService.getToken()).toBeNull();
     expect(TokenService.getRefreshToken()).toBeNull();
     expect(logoutListener).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledWith('Refresh token inválido ou expirado, fazendo logout...');
 
     window.removeEventListener('auth:logout', logoutListener);
+    consoleSpy.mockRestore();
   });
 
   it('treats 403 as unauthorized and refreshes before retrying', async () => {
@@ -173,7 +179,7 @@ describe('api.ts auth interceptors', () => {
       }),
     );
 
-    await expect(api.get('/protected')).rejects.toBeDefined();
+    await expect(api.get('/protected')).rejects.toThrow('Refresh token expirado');
 
     expect(refreshCallCount).toBe(0);
     expect(TokenService.getToken()).toBeNull();
@@ -242,7 +248,7 @@ describe('api.ts auth interceptors', () => {
       }),
     );
 
-    await expect(api.get('/protected')).rejects.toBeDefined();
+    await expect(api.get('/protected')).rejects.toThrow('Refresh token não disponível');
 
     expect(refreshCallCount).toBe(0);
     expect(TokenService.getToken()).toBeNull();
@@ -333,7 +339,7 @@ describe('api.ts auth interceptors', () => {
 
     await expect(
       Promise.all([api.get('/protected'), api.get('/protected-other')]),
-    ).rejects.toBeDefined();
+    ).rejects.toThrow('Falha ao renovar token');
 
     expect(TokenService.getToken()).toBeNull();
     expect(logoutListener).toHaveBeenCalledTimes(1);
@@ -357,9 +363,40 @@ describe('api.ts auth interceptors', () => {
     consoleSpy.mockRestore();
   });
 
+  it('logs out when refresh returns 500 during a 401 retry', async () => {
+    setValidTokens();
+    const logoutListener = vi.fn();
+    window.addEventListener('auth:logout', logoutListener);
+
+    server.use(
+      http.get(`${API_BASE_URL}/protected`, () => HttpResponse.json({}, { status: 401 })),
+      http.post(`${API_BASE_URL}/auth/refresh`, () =>
+        HttpResponse.json({ message: 'server error' }, { status: 500 }),
+      ),
+    );
+
+    await expect(api.get('/protected')).rejects.toThrow('Falha ao renovar token');
+
+    expect(TokenService.getToken()).toBeNull();
+    expect(logoutListener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener('auth:logout', logoutListener);
+  });
+
+  it('rethrows errors thrown while attaching Authorization in the request interceptor', async () => {
+    const tokenSpy = vi.spyOn(TokenService, 'getToken').mockImplementation(() => {
+      throw new Error('token read failure');
+    });
+
+    await expect(api.get('/protected')).rejects.toThrow('token read failure');
+
+    tokenSpy.mockRestore();
+  });
+
   it('logs out when refresh endpoint returns 401 on a direct refreshToken call', async () => {
     setValidTokens();
     const logoutListener = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     window.addEventListener('auth:logout', logoutListener);
 
     server.use(
@@ -368,10 +405,18 @@ describe('api.ts auth interceptors', () => {
       ),
     );
 
-    await expect(refreshToken('stored-refresh')).rejects.toBeDefined();
+    try {
+      await refreshToken('stored-refresh');
+      expect.fail('expected rejection');
+    } catch (error) {
+      expect((error as { response?: { status?: number } }).response?.status).toBe(401);
+    }
+
     expect(TokenService.getToken()).toBeNull();
     expect(logoutListener).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledWith('Refresh token inválido ou expirado, fazendo logout...');
 
     window.removeEventListener('auth:logout', logoutListener);
+    consoleSpy.mockRestore();
   });
 });

@@ -67,4 +67,26 @@ describe('Login page', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Usuário ou senha inválidos');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
+
+  it('disables submit and shows loading label while login is pending', async () => {
+    let resolveLogin!: () => void;
+    mockLogin.mockImplementation(
+      () => new Promise<void>((resolve) => {
+        resolveLogin = resolve;
+      }),
+    );
+
+    renderWithProviders(<Login />);
+
+    fireEvent.change(screen.getByRole('textbox', { name: /login/i }), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText(/^Senha/), { target: { value: 'secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+
+    expect(screen.getByRole('button', { name: 'Entrando...' })).toBeDisabled();
+
+    resolveLogin();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
+    });
+  });
 });

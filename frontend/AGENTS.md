@@ -53,6 +53,14 @@ Library + Playwright + MSW.
 - `testing-a11y` — Vitest/Testing Library/Playwright por papel, MSW.
 - `routing-perf` — React Router v7, code splitting, orçamento de bundle.
 
+## Brownfield R3/R4 (AD-004 — TARGET inalterado)
+
+Este frontend é **brownfield**: código em `src/pages/` + `src/services/` com `vi.mock` nos testes de página. A migração para `src/features/` (AD-004 TARGET) **não** faz parte de R4 — não mover pastas nem refatorar estrutura.
+
+- **MSW:** isolado em testes HTTP (`api.test.ts` via `createAuthMswServer()`); **não** há MSW global em `setup.ts`.
+- **Playwright:** smoke de login ativo — `npm run test:e2e` (`e2e/login.spec.ts`) com mock `page.route()`; prereq `npx playwright install chromium`; sem backend real.
+- **Vitest:** **184+** casos; page tests continuam mockando services, não MSW.
+
 ## Zona cinzenta — pare e pergunte antes de agir
 - Adicionar dependência nova.
 - Alterar chamada de API ou tipo compartilhado com o backend.
