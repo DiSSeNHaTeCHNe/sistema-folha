@@ -298,9 +298,9 @@ T14 → T15
 
 **Done when**:
 
-- [ ] ≥1 spec passando com asserts (a) heading e (b) submit + mock login
-- [ ] Gate: `cd frontend && npm run test:e2e` exit 0 **ou** N/A documentado (browser não instalado) com comando `npx playwright install chromium` — P1 restante não bloqueado
-- [ ] Budget: +1 `test(`; acumulado R4 ≤10
+- [x] ≥1 spec passando com asserts (a) heading e (b) submit + mock login
+- [x] Gate: `cd frontend && npm run test:e2e` exit 0 **ou** N/A documentado (browser não instalado) com comando `npx playwright install chromium` — P1 restante não bloqueado
+- [x] Budget: +1 `test(`; acumulado R4 ≤10
 
 **Tests**: e2e  
 **Gate**: E2E
