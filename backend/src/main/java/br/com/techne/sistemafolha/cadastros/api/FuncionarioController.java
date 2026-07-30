@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,15 +29,17 @@ public class FuncionarioController {
             @RequestParam(required = false) Long centroCustoId,
             @RequestParam(required = false) Long linhaNegocioId,
             @Parameter(description = "Filtro de status: ATIVO (padrão), INATIVO ou TODOS")
-            @RequestParam(defaultValue = "ATIVO") FuncionarioStatusFiltro status) {
-        return ResponseEntity.ok(funcionarioService.listar(nome, cargoId, centroCustoId, linhaNegocioId, status));
+            @RequestParam(defaultValue = "ATIVO") FuncionarioStatusFiltro status,
+            Authentication authentication) {
+        return ResponseEntity.ok(funcionarioService.listarParaUsuario(
+            authentication.getName(), nome, cargoId, centroCustoId, linhaNegocioId, status));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Busca um funcionário ativo pelo ID")
-    public ResponseEntity<FuncionarioDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<FuncionarioDTO> buscarPorId(@PathVariable Long id, Authentication authentication) {
         try {
-            return ResponseEntity.ok(funcionarioService.buscarPorId(id));
+            return ResponseEntity.ok(funcionarioService.buscarPorIdParaUsuario(authentication.getName(), id));
         } catch (FuncionarioNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
