@@ -38,7 +38,7 @@ import apiKeyService, {
   type ApiKeyListItem,
 } from '../../services/apiKeyService';
 import usuarioService from '../../services/usuarioService';
-import { isAdmin } from '../../utils/permissions';
+import { isAdmin, canCreateApiKey } from '../../utils/permissions';
 import type { Usuario } from '../../types';
 
 const getApiErrorMessage = (error: unknown, fallback: string): string => {
@@ -61,6 +61,7 @@ const formatDateTime = (value: string | null): string => {
 export default function ApiKeys() {
   const { user } = useAuth();
   const userIsAdmin = isAdmin(user);
+  const canCreate = canCreateApiKey(user);
   const [keys, setKeys] = useState<ApiKeyListItem[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [selectedUsuarioId, setSelectedUsuarioId] = useState<number | ''>('');
@@ -176,6 +177,12 @@ export default function ApiKeys() {
         O secret completo é exibido apenas uma vez, na criação.
       </Alert>
 
+      {userIsAdmin && !canCreate && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Conceda a permissão API_KEY ao seu usuário para criar chaves.
+        </Alert>
+      )}
+
       {userIsAdmin && (
         <FormControl sx={{ minWidth: 280, mb: 2 }} size="small">
           <InputLabel id="usuario-api-keys-label">Usuário</InputLabel>
@@ -195,7 +202,12 @@ export default function ApiKeys() {
       )}
 
       <Box mb={2}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenCreate}
+          disabled={!canCreate}
+        >
           Nova API Key
         </Button>
       </Box>

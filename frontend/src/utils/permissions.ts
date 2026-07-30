@@ -22,3 +22,7 @@ export function canAccessApiKeysPage(user: Usuario | null | undefined): boolean 
   }
   return user.permissoes.includes('API_KEY') || user.permissoes.includes('ADMIN');
 }
+
+export function canCreateApiKey(user: Usuario | null | undefined): boolean {
+  return user?.permissoes?.includes('API_KEY') ?? false;
+}
