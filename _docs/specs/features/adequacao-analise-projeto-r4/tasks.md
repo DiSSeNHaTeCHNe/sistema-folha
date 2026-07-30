@@ -458,10 +458,10 @@ T14 → T15
 
 **Done when**:
 
-- [ ] Script exit 0 quando todos os passos invocados passam
-- [ ] `--docker`: UP inclui ADP test; DOWN warning + continua
-- [ ] Referência em `TESTING.md`
-- [ ] Gate: dry-run sem `--sonar` exit 0 (ou documentar pré-req)
+- [x] Script exit 0 quando todos os passos invocados passam
+- [x] `--docker`: UP inclui ADP test; DOWN warning + continua
+- [x] Referência em `TESTING.md`
+- [x] Gate: dry-run sem `--sonar` exit 0 (ou documentar pré-req)
 
 **Tests**: none  
 **Gate**: Gate local P3
