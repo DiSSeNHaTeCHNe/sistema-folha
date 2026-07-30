@@ -244,10 +244,10 @@ T14 → T15
 
 **Done when**:
 
-- [ ] ≥3 casos falha com assertion de status **401** (ou mensagem spec-defined)
-- [ ] Nenhum dos ≥3 permanece só com `rejects.toBeDefined()`
-- [ ] Gate: `cd frontend && npm test -- api.test` exit 0
-- [ ] Gate: `cd frontend && npm test` — ≥184; novos R4 acumulados ≤10
+- [x] ≥3 casos falha com assertion de status **401** (ou mensagem spec-defined)
+- [x] Nenhum dos ≥3 permanece só com `rejects.toBeDefined()`
+- [x] Gate: `cd frontend && npm test -- api.test` exit 0
+- [x] Gate: `cd frontend && npm test` — ≥184; novos R4 acumulados ≤10
 
 **Tests**: unit  
 **Gate**: Quick FE

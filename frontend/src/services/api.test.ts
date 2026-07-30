@@ -73,7 +73,7 @@ describe('api.ts auth interceptors', () => {
       http.post(`${API_BASE_URL}/auth/refresh`, () => HttpResponse.json({}, { status: 401 })),
     );
 
-    await expect(api.get('/protected')).rejects.toBeDefined();
+    await expect(api.get('/protected')).rejects.toThrow('Falha ao renovar token');
 
     expect(TokenService.getToken()).toBeNull();
     expect(TokenService.getRefreshToken()).toBeNull();
@@ -124,7 +124,7 @@ describe('api.ts auth interceptors', () => {
 
     await expect(
       api.post('/auth/refresh', { refreshToken: 'old-refresh-token' }),
-    ).rejects.toBeDefined();
+    ).rejects.toMatchObject({ response: { status: 401 } });
 
     expect(TokenService.getToken()).toBeNull();
     expect(TokenService.getRefreshToken()).toBeNull();
@@ -173,7 +173,7 @@ describe('api.ts auth interceptors', () => {
       }),
     );
 
-    await expect(api.get('/protected')).rejects.toBeDefined();
+    await expect(api.get('/protected')).rejects.toThrow('Refresh token expirado');
 
     expect(refreshCallCount).toBe(0);
     expect(TokenService.getToken()).toBeNull();
@@ -242,7 +242,7 @@ describe('api.ts auth interceptors', () => {
       }),
     );
 
-    await expect(api.get('/protected')).rejects.toBeDefined();
+    await expect(api.get('/protected')).rejects.toThrow('Refresh token não disponível');
 
     expect(refreshCallCount).toBe(0);
     expect(TokenService.getToken()).toBeNull();
@@ -333,7 +333,7 @@ describe('api.ts auth interceptors', () => {
 
     await expect(
       Promise.all([api.get('/protected'), api.get('/protected-other')]),
-    ).rejects.toBeDefined();
+    ).rejects.toThrow('Falha ao renovar token');
 
     expect(TokenService.getToken()).toBeNull();
     expect(logoutListener).toHaveBeenCalledTimes(1);
@@ -368,7 +368,7 @@ describe('api.ts auth interceptors', () => {
       ),
     );
 
-    await expect(refreshToken('stored-refresh')).rejects.toBeDefined();
+    await expect(refreshToken('stored-refresh')).rejects.toMatchObject({ response: { status: 401 } });
     expect(TokenService.getToken()).toBeNull();
     expect(logoutListener).toHaveBeenCalledTimes(1);
 
