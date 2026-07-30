@@ -56,7 +56,8 @@ const permissoesDisponiveis = [
   'BENEFICIOS',
   'RELATORIOS',
   'IMPORTACAO',
-  'CADASTROS'
+  'CADASTROS',
+  'API_KEY',
 ];
 
 const getApiErrorMessage = (error: unknown, fallback: string): string => {
