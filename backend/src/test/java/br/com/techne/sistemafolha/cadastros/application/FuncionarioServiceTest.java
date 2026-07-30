@@ -74,6 +74,19 @@ class FuncionarioServiceTest {
     }
 
     @Test
+    void listarParaUsuario_scoped_centrosCustoIdsVazio_retornaListaVazia() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+                .thenReturn(contextoRestrito(Collections.emptySet()));
+
+        List<FuncionarioDTO> result = funcionarioService.listarParaUsuario(
+                LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO);
+
+        assertEquals(0, result.size());
+        verify(funcionarioRepository, never()).findByFiltros(any(), any(), any(), any(), any());
+    }
+
+    @Test
     void listarParaUsuario_centroCustoQueryForaEscopo_retornaVazio() {
         stubUsuario();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))

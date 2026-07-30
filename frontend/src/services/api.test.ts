@@ -187,6 +187,7 @@ describe('api.ts auth interceptors', () => {
 
     expect(refreshCallCount).toBe(0);
     expect(TokenService.getToken()).toBe('old-access-token');
+    expect(TokenService.getRefreshToken()).toBe('old-refresh-token');
     expect(logoutListener).not.toHaveBeenCalled();
 
     window.removeEventListener('auth:logout', logoutListener);

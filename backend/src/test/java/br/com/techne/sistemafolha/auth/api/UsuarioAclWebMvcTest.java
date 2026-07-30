@@ -117,6 +117,48 @@ class UsuarioAclWebMvcTest {
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    @WithMockUser(username = "gestor", roles = "USER")
+    void buscarPorLogin_foraEscopo_retorna404() throws Exception {
+        when(usuarioService.buscarPorLoginParaUsuario(eq("gestor"), eq("operador")))
+                .thenThrow(new UsuarioNotFoundException("operador"));
+
+        mockMvc.perform(get("/usuarios/login/operador"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void buscarPorLogin_bearerApiKey_foraEscopo_retorna404() throws Exception {
+        Usuario gestor = usuarioGestor();
+        when(apiKeyService.autenticarPorChave(startsWith("sf_live_"))).thenReturn(Optional.of(gestor));
+        when(usuarioService.buscarPorLoginParaUsuario(eq("gestor"), eq("operador")))
+                .thenThrow(new UsuarioNotFoundException("operador"));
+
+        mockMvc.perform(get("/usuarios/login/operador").header("Authorization", API_KEY_BEARER))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "gestor", roles = "USER")
+    void buscarPorLogin_jwtEBearerApiKey_retornamMesmosDados() throws Exception {
+        UsuarioDTO usuario = usuarioExemplo();
+        when(usuarioService.buscarPorLoginParaUsuario(eq("gestor"), eq("operador")))
+                .thenReturn(usuario);
+
+        mockMvc.perform(get("/usuarios/login/operador"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(1))
+            .andExpect(jsonPath("$.login").value("operador"));
+
+        Usuario gestor = usuarioGestor();
+        when(apiKeyService.autenticarPorChave(startsWith("sf_live_"))).thenReturn(Optional.of(gestor));
+
+        mockMvc.perform(get("/usuarios/login/operador").header("Authorization", API_KEY_BEARER))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(1))
+            .andExpect(jsonPath("$.login").value("operador"));
+    }
+
     private Usuario usuarioGestor() {
         Usuario usuario = new Usuario();
         usuario.setId(5L);

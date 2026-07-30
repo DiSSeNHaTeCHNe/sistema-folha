@@ -83,6 +83,18 @@ class UsuarioServiceTest {
     }
 
     @Test
+    void listarParaUsuario_scoped_centrosCustoIdsVazio_retornaListaVazia() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+                .thenReturn(contextoRestrito(Collections.emptySet()));
+
+        List<UsuarioDTO> result = usuarioService.listarParaUsuario(LOGIN, null, null, null);
+
+        assertEquals(0, result.size());
+        verify(usuarioRepository, never()).findByFiltros(any(), any(), any());
+    }
+
+    @Test
     void listarParaUsuario_scoped_excluiFuncionarioForaEscopo() {
         stubUsuarioLookup();
         when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
