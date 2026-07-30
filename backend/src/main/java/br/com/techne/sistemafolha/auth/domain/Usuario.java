@@ -39,6 +39,7 @@ public class Usuario implements UserDetails {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "funcionario_id")
+    @SuppressWarnings("java:S1948") // JPA association; serialization via DTO only
     private Funcionario funcionario;
 
     @ElementCollection(fetch = FetchType.EAGER)

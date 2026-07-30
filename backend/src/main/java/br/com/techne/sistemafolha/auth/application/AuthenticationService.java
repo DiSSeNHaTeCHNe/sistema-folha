@@ -28,8 +28,11 @@ import java.time.LocalDateTime;
 public class AuthenticationService {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
     private static final String DOMAIN = "auth";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
     private static final String MENSAGEM_LOGIN_INVALIDO = "Usuário ou senha inválidos";
     private static final String MENSAGEM_REFRESH_INVALIDO = "Refresh token inválido ou expirado";
+    static final String DUMMY_BCRYPT_HASH =
+        "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -42,10 +45,12 @@ public class AuthenticationService {
     @Transactional
     @SuppressWarnings("java:S5804") // Mensagem unificada login/senha (AAP-08); UsernameNotFoundException exigido pelo contrato de auth
     public TokenDTO authenticate(LoginDTO loginDTO) {
-        log.info("{}Iniciando autenticação para o usuário: {}", DomainLogging.prefix(DOMAIN), loginDTO.login());
+        log.info("{}Iniciando autenticação para o usuário: {}", DOMAIN_PREFIX, loginDTO.login());
 
         Usuario usuario = usuarioRepository.findByLoginAndAtivoTrue(loginDTO.login()).orElse(null);
-        if (usuario == null || !passwordEncoder.matches(loginDTO.senha(), usuario.getSenha())) {
+        String hash = usuario != null ? usuario.getSenha() : DUMMY_BCRYPT_HASH;
+        boolean senhaValida = passwordEncoder.matches(loginDTO.senha(), hash);
+        if (usuario == null || !senhaValida) {
             log.debug("Falha na autenticação para o usuário: {}", loginDTO.login());
             throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
         }
@@ -73,9 +78,6 @@ public class AuthenticationService {
                 refreshExpiration,
                 acessoUsuario
             );
-        } catch (UsernameNotFoundException e) {
-            log.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
-            throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
         } catch (Exception e) {
             log.error("Falha na autenticação para o usuário {}: {}", loginDTO.login(), e.getMessage());
             throw new UsernameNotFoundException(MENSAGEM_LOGIN_INVALIDO);
@@ -88,10 +90,10 @@ public class AuthenticationService {
         log.info("Processando refresh token");
 
         RefreshToken refreshToken = refreshTokenService.buscarPorToken(refreshTokenString)
-                .orElseThrow(() -> new RuntimeException(MENSAGEM_REFRESH_INVALIDO));
+                .orElseThrow(() -> new IllegalStateException(MENSAGEM_REFRESH_INVALIDO));
 
         if (!refreshTokenService.validarRefreshToken(refreshToken)) {
-            throw new RuntimeException(MENSAGEM_REFRESH_INVALIDO);
+            throw new IllegalStateException(MENSAGEM_REFRESH_INVALIDO);
         }
 
         Usuario usuario = refreshToken.getUsuario();

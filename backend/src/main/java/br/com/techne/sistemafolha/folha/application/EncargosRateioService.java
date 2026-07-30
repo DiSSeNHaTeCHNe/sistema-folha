@@ -18,6 +18,7 @@ import java.util.Map;
  */
 @Service
 @Deprecated(since = "fix2", forRemoval = false)
+@SuppressWarnings("java:S1133")
 public class EncargosRateioService {
 
     private static final int SCALE = 2;

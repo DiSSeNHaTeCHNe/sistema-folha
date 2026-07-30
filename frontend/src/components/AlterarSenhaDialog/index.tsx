@@ -23,9 +23,9 @@ interface AlterarSenhaForm {
 }
 
 interface AlterarSenhaDialogProps {
-  open: boolean;
-  onClose: () => void;
-  userId: number;
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly userId: number;
 }
 
 export function AlterarSenhaDialog({ open, onClose, userId }: AlterarSenhaDialogProps) {
@@ -142,17 +142,19 @@ export function AlterarSenhaDialog({ open, onClose, userId }: AlterarSenhaDialog
                   error={!!errors.novaSenha}
                   helperText={errors.novaSenha?.message}
                   autoComplete="new-password"
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowNovaSenha(!showNovaSenha)}
-                          edge="end"
-                        >
-                          {showNovaSenha ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowNovaSenha(!showNovaSenha)}
+                            edge="end"
+                          >
+                            {showNovaSenha ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
               )}
@@ -174,17 +176,19 @@ export function AlterarSenhaDialog({ open, onClose, userId }: AlterarSenhaDialog
                   error={!!errors.confirmarSenha}
                   helperText={errors.confirmarSenha?.message}
                   autoComplete="new-password"
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowConfirmarSenha(!showConfirmarSenha)}
-                          edge="end"
-                        >
-                          {showConfirmarSenha ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowConfirmarSenha(!showConfirmarSenha)}
+                            edge="end"
+                          >
+                            {showConfirmarSenha ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
               )}

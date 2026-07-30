@@ -62,6 +62,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: MODBH-26 (importacao)
 - last seen: 2026-07-27T04:20:00Z
 
+### L-009 — Reconcile Sonar new_violations against PREVIOUS_VERSION baseline before declaring QG pass; incremental smell fixes alone may not zero leak-period violations.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `sonar` · harmful: 0
+- features: adequacao-analise-projeto-r2
+- evidence: AAP2-02 (sonar)
+- last seen: 2026-07-29T20:52:14Z
+
+### L-010 — Verify Sonar aggregate coverage (not just new_coverage) meets the spec floor after FE lcov import; Vitest page smoke may lift new_coverage but miss aggregate threshold.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `coverage` · harmful: 0
+- features: adequacao-analise-projeto-r2
+- evidence: AAP2-10 (coverage)
+- last seen: 2026-07-29T20:52:14Z
+
 ## Quarantined (failed when applied — ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

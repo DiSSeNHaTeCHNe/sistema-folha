@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ public class FolhaImportacaoAdapter implements FolhaImportacaoPort {
             resumoFolhaPagamentoRepository.save(montarResumo(command));
         }
 
-        return persistidas.stream().map(this::toDTO).collect(Collectors.toList());
+        return persistidas.stream().map(this::toDTO).toList();
     }
 
     private void substituirCompetenciaExistente(LocalDate dataInicio, LocalDate dataFim, boolean decimoTerceiro) {
@@ -104,7 +105,7 @@ public class FolhaImportacaoAdapter implements FolhaImportacaoPort {
         entity.setTotalLiquido(resumo.totalLiquido());
         entity.setCompetenciaInicio(command.competenciaInicio());
         entity.setCompetenciaFim(command.competenciaFim());
-        entity.setDataImportacao(LocalDateTime.now());
+        entity.setDataImportacao(LocalDateTime.now(Clock.systemDefaultZone()));
         entity.setDecimoTerceiro(command.decimoTerceiro());
         entity.setAtivo(true);
         return entity;

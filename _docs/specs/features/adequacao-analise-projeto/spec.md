@@ -2,7 +2,7 @@
 
 **Parent / related:** `_docs/specs/CONCERNS.md`, `_docs/specs/TESTING.md`, análise SonarQube @ 2026-07-29 (`sistema-folha`)  
 **Complexity:** Large  
-**Spec status:** Draft — Design 2026-07-29
+**Spec status:** Done — merged to `main` @ `047e64d` (2026-07-29); Verifier PASS
 
 ## Problem Statement
 

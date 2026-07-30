@@ -1,8 +1,5 @@
 package br.com.techne.sistemafolha.beneficios.api;
 
-import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalCompetenciaResumoDTO;
-import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalDTO;
-import br.com.techne.sistemafolha.beneficios.api.BeneficioMensalResumoDTO;
 import br.com.techne.sistemafolha.beneficios.application.BeneficioMensalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -28,12 +28,49 @@ class JwtSecretStartupValidatorTest {
     }
 
     @Test
-    void validateJwtSecret_devComDefaultSecret_permiteComWarn() {
+    void validateJwtSecret_stagingComDefaultSecret_falhaStartup() {
+        when(environment.getActiveProfiles()).thenReturn(new String[] {"staging"});
+        JwtSecretStartupValidator validator = new JwtSecretStartupValidator(
+            JwtSecretStartupValidator.DEFAULT_JWT_SECRET, environment);
+
+        assertThrows(IllegalStateException.class,
+            () -> ReflectionTestUtils.invokeMethod(validator, "validateJwtSecret"));
+    }
+
+    @Test
+    void validateJwtSecret_semProfileComDefaultSecret_falhaStartup() {
         when(environment.getActiveProfiles()).thenReturn(new String[] {});
         JwtSecretStartupValidator validator = new JwtSecretStartupValidator(
             JwtSecretStartupValidator.DEFAULT_JWT_SECRET, environment);
 
+        assertThrows(IllegalStateException.class,
+            () -> ReflectionTestUtils.invokeMethod(validator, "validateJwtSecret"));
+    }
+
+    @Test
+    void validateJwtSecret_devComDefaultSecret_permiteComWarn() {
+        when(environment.getActiveProfiles()).thenReturn(new String[] {"dev"});
+        JwtSecretStartupValidator validator = new JwtSecretStartupValidator(
+            JwtSecretStartupValidator.DEFAULT_JWT_SECRET, environment);
+
         assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(validator, "validateJwtSecret"));
+    }
+
+    @Test
+    void validateJwtSecret_testComDefaultSecret_permiteComWarn() {
+        when(environment.getActiveProfiles()).thenReturn(new String[] {"test"});
+        JwtSecretStartupValidator validator = new JwtSecretStartupValidator(
+            JwtSecretStartupValidator.DEFAULT_JWT_SECRET, environment);
+
+        assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(validator, "validateJwtSecret"));
+    }
+
+    @Test
+    void validateJwtSecret_blankSecret_falhaStartup() {
+        JwtSecretStartupValidator validator = new JwtSecretStartupValidator("   ", environment);
+
+        assertThrows(IllegalStateException.class,
+            () -> ReflectionTestUtils.invokeMethod(validator, "validateJwtSecret"));
     }
 
     @Test

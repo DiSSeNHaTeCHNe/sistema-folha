@@ -12,6 +12,7 @@ public class RubricaDTO {
     private Short operadorCusto;
     private Boolean ativo;
 
+    @SuppressWarnings("java:S107") // OpenAPI/DTO field parity; builder refactor deferred
     public RubricaDTO(Long id, String codigo, String descricao, String tipoRubricaDescricao, String tipo,
                       Double porcentagem, Short operadorBruto, Short operadorLiquido, Short operadorCusto,
                       Boolean ativo) {

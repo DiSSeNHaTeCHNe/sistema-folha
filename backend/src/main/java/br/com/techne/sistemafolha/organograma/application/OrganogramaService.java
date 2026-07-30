@@ -25,13 +25,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class OrganogramaService {
     private static final Logger log = LoggerFactory.getLogger(OrganogramaService.class);
     private static final String DOMAIN = "organograma";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
 
     private final NoOrganogramaRepository noOrganogramaRepository;
     private final FuncionarioOrganogramaRepository funcionarioOrganogramaRepository;
@@ -42,14 +42,14 @@ public class OrganogramaService {
     // ========================= OPERAÇÕES BÁSICAS =========================
 
     public List<NoOrganogramaDTO> listarTodos() {
-        log.info("{}Listando todos os nós do organograma", DomainLogging.prefix(DOMAIN));
+        log.info("{}Listando todos os nós do organograma", DOMAIN_PREFIX);
         return noOrganogramaRepository.findByAtivoTrue().stream()
                 .map(this::toDTOCompleto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public NoOrganogramaDTO buscarPorId(Long id) {
-        log.info("{}Buscando nó do organograma por ID: {}", DomainLogging.prefix(DOMAIN), id);
+        log.info("{}Buscando nó do organograma por ID: {}", DOMAIN_PREFIX, id);
         return noOrganogramaRepository.findByIdAndAtivoTrue(id)
                 .map(this::toDTOCompleto)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(id));
@@ -57,7 +57,7 @@ public class OrganogramaService {
 
     @Transactional
     public NoOrganogramaDTO cadastrar(NoOrganogramaCreateDTO dto) {
-        log.info("{}Cadastrando novo nó do organograma: {}", DomainLogging.prefix(DOMAIN), dto.nome());
+        log.info("{}Cadastrando novo nó do organograma: {}", DOMAIN_PREFIX, dto.nome());
         
         NoOrganograma no = new NoOrganograma();
         no.setNome(dto.nome());
@@ -96,7 +96,7 @@ public class OrganogramaService {
 
     @Transactional
     public NoOrganogramaDTO atualizar(Long id, NoOrganogramaDTO dto) {
-        log.info("{}Atualizando nó do organograma ID: {}", DomainLogging.prefix(DOMAIN), id);
+        log.info("{}Atualizando nó do organograma ID: {}", DOMAIN_PREFIX, id);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(id)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(id));
@@ -127,7 +127,7 @@ public class OrganogramaService {
 
     @Transactional
     public void remover(Long id) {
-        log.info("{}Removendo nó do organograma ID: {}", DomainLogging.prefix(DOMAIN), id);
+        log.info("{}Removendo nó do organograma ID: {}", DOMAIN_PREFIX, id);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(id)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(id));
@@ -147,7 +147,7 @@ public class OrganogramaService {
 
     @Transactional
     public void removerComFilhos(Long id) {
-        log.info("{}Removendo nó do organograma ID: {} e todos os filhos", DomainLogging.prefix(DOMAIN), id);
+        log.info("{}Removendo nó do organograma ID: {} e todos os filhos", DOMAIN_PREFIX, id);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(id)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(id));
@@ -179,30 +179,30 @@ public class OrganogramaService {
     // ========================= OPERAÇÕES HIERÁRQUICAS =========================
 
     public List<NoOrganogramaDTO> obterArvoreCompleta() {
-        log.info("{}Obtendo árvore completa do organograma ativo", DomainLogging.prefix(DOMAIN));
+        log.info("{}Obtendo árvore completa do organograma ativo", DOMAIN_PREFIX);
         
         List<NoOrganograma> nos = noOrganogramaRepository.findByOrganogramaAtivoTrueAndAtivoTrue();
         return construirArvore(nos);
     }
 
     public List<NoOrganogramaDTO> obterFilhos(Long parentId) {
-        log.info("{}Obtendo filhos do nó ID: {}", DomainLogging.prefix(DOMAIN), parentId);
+        log.info("{}Obtendo filhos do nó ID: {}", DOMAIN_PREFIX, parentId);
         
         if (parentId == null) {
             // Retornar nós raiz
             return noOrganogramaRepository.findByParentIsNullAndAtivoTrueOrderByPosicao().stream()
                     .map(this::toDTO)
-                    .collect(Collectors.toList());
+                    .toList();
         }
         
         return noOrganogramaRepository.findByParentIdAndAtivoTrueOrderByPosicao(parentId).stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
     public NoOrganogramaDTO moverNo(Long noId, Long novoParentId, Integer novaPosicao) {
-        log.info("{}Movendo nó ID: {} para parent ID: {} na posição: {}", DomainLogging.prefix(DOMAIN), noId, novoParentId, novaPosicao);
+        log.info("{}Movendo nó ID: {} para parent ID: {} na posição: {}", DOMAIN_PREFIX, noId, novoParentId, novaPosicao);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(noId)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(noId));
@@ -238,7 +238,7 @@ public class OrganogramaService {
     // ========================= GESTÃO DO ORGANOGRAMA ATIVO =========================
 
     public NoOrganogramaDTO obterOrganogramaAtivo() {
-        log.info("{}Obtendo organograma ativo", DomainLogging.prefix(DOMAIN));
+        log.info("{}Obtendo organograma ativo", DOMAIN_PREFIX);
         
         return noOrganogramaRepository.findByOrganogramaAtivoTrue()
                 .map(this::toDTOCompleto)
@@ -247,7 +247,7 @@ public class OrganogramaService {
 
     @Transactional
     public void ativarOrganograma(Long noRaizId) {
-        log.info("{}Ativando organograma com nó raiz ID: {}", DomainLogging.prefix(DOMAIN), noRaizId);
+        log.info("{}Ativando organograma com nó raiz ID: {}", DOMAIN_PREFIX, noRaizId);
         
         NoOrganograma noRaiz = noOrganogramaRepository.findByIdAndAtivoTrue(noRaizId)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(noRaizId));
@@ -266,7 +266,7 @@ public class OrganogramaService {
 
     @Transactional
     public void desativarOrganograma() {
-        log.info("{}Desativando organograma atual", DomainLogging.prefix(DOMAIN));
+        log.info("{}Desativando organograma atual", DOMAIN_PREFIX);
         noOrganogramaRepository.desativarTodosOrganogramas();
     }
 
@@ -274,7 +274,7 @@ public class OrganogramaService {
 
     @Transactional
     public FuncionarioOrganogramaDTO associarFuncionario(Long noId, Long funcionarioId) {
-        log.info("{}Associando funcionário ID: {} ao nó ID: {}", DomainLogging.prefix(DOMAIN), funcionarioId, noId);
+        log.info("{}Associando funcionário ID: {} ao nó ID: {}", DOMAIN_PREFIX, funcionarioId, noId);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(noId)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(noId));
@@ -304,7 +304,7 @@ public class OrganogramaService {
 
     @Transactional
     public void desassociarFuncionario(Long noId, Long funcionarioId) {
-        log.info("{}Desassociando funcionário ID: {} do nó ID: {}", DomainLogging.prefix(DOMAIN), funcionarioId, noId);
+        log.info("{}Desassociando funcionário ID: {} do nó ID: {}", DOMAIN_PREFIX, funcionarioId, noId);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(noId)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(noId));
@@ -316,21 +316,21 @@ public class OrganogramaService {
     }
 
     public List<FuncionarioOrganogramaDTO> listarFuncionariosPorNo(Long noId) {
-        log.info("{}Listando funcionários do nó ID: {}", DomainLogging.prefix(DOMAIN), noId);
+        log.info("{}Listando funcionários do nó ID: {}", DOMAIN_PREFIX, noId);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(noId)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(noId));
 
         return funcionarioOrganogramaRepository.findByNoOrganogramaWithFuncionarioAtivo(no).stream()
                 .map(this::toFuncionarioOrganogramaDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ========================= ASSOCIAÇÕES COM CENTROS DE CUSTO =========================
 
     @Transactional
     public CentroCustoOrganogramaDTO associarCentroCusto(Long noId, Long centroCustoId) {
-        log.info("{}Associando centro de custo ID: {} ao nó ID: {}", DomainLogging.prefix(DOMAIN), centroCustoId, noId);
+        log.info("{}Associando centro de custo ID: {} ao nó ID: {}", DOMAIN_PREFIX, centroCustoId, noId);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(noId)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(noId));
@@ -354,7 +354,7 @@ public class OrganogramaService {
 
     @Transactional
     public void desassociarCentroCusto(Long noId, Long centroCustoId) {
-        log.info("{}Desassociando centro de custo ID: {} do nó ID: {}", DomainLogging.prefix(DOMAIN), centroCustoId, noId);
+        log.info("{}Desassociando centro de custo ID: {} do nó ID: {}", DOMAIN_PREFIX, centroCustoId, noId);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(noId)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(noId));
@@ -367,14 +367,14 @@ public class OrganogramaService {
     }
 
     public List<CentroCustoOrganogramaDTO> listarCentrosCustoPorNo(Long noId) {
-        log.info("{}Listando centros de custo do nó ID: {}", DomainLogging.prefix(DOMAIN), noId);
+        log.info("{}Listando centros de custo do nó ID: {}", DOMAIN_PREFIX, noId);
         
         NoOrganograma no = noOrganogramaRepository.findByIdAndAtivoTrue(noId)
                 .orElseThrow(() -> new NoOrganogramaNotFoundException(noId));
 
         return centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(no).stream()
                 .map(this::toCentroCustoOrganogramaDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ========================= MÉTODOS AUXILIARES =========================
@@ -473,13 +473,13 @@ public class OrganogramaService {
         List<FuncionarioOrganograma> funcionarios = funcionarioOrganogramaRepository.findByNoOrganogramaWithFuncionarioAtivo(entity);
         List<Long> funcionarioIds = funcionarios.stream()
                 .map(fo -> fo.getFuncionario().getId())
-                .collect(Collectors.toList());
+                .toList();
 
         // Carregar centros de custo
         List<CentroCustoOrganograma> centrosCusto = centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(entity);
         List<Long> centroCustoIds = centrosCusto.stream()
                 .map(cco -> cco.getCentroCusto().getId())
-                .collect(Collectors.toList());
+                .toList();
 
         return new NoOrganogramaDTO(
                 entity.getId(),

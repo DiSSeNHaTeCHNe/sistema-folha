@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +44,7 @@ public class ResumoFolhaPagamentoService {
     private record PeriodoCompetencia(LocalDate inicio, LocalDate fim) {}
 
     private PeriodoCompetencia periodoDe(Integer ano, Integer mes) {
-        int anoEfetivo = ano != null ? ano : LocalDate.now().getYear();
+        int anoEfetivo = ano != null ? ano : LocalDate.now(Clock.systemDefaultZone()).getYear();
         if (anoEfetivo < 2000 || anoEfetivo > 2100) {
             throw new IllegalArgumentException("Ano deve estar entre 2000 e 2100");
         }
@@ -52,8 +54,8 @@ public class ResumoFolhaPagamentoService {
             return new PeriodoCompetencia(inicio, fim);
         }
         return new PeriodoCompetencia(
-            LocalDate.of(anoEfetivo, 1, 1),
-            LocalDate.of(anoEfetivo, 12, 31)
+            LocalDate.of(anoEfetivo, Month.JANUARY, 1),
+            LocalDate.of(anoEfetivo, Month.DECEMBER, 31)
         );
     }
 
@@ -157,6 +159,7 @@ public class ResumoFolhaPagamentoService {
             totais.totalCustoEmpresa());
     }
 
+    @SuppressWarnings("java:S107") // DTO mapping requires all total fields; extract record deferred
     private ResumoFolhaPagamentoDTO montarDto(
             ResumoFolhaPagamento resumo,
             int totalEmpregados,

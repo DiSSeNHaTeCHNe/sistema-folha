@@ -149,6 +149,63 @@ class FuncionarioServiceTest {
         verify(funcionarioRepository, never()).save(any());
     }
 
+    @Test
+    void buscarPorId_retornaDtoQuandoAtivo() {
+        Funcionario funcionario = funcionarioAtivo();
+        when(funcionarioRepository.findById(1L)).thenReturn(Optional.of(funcionario));
+
+        FuncionarioDTO result = funcionarioService.buscarPorId(1L);
+
+        assertEquals(1L, result.id());
+        assertEquals("Maria Teste", result.nome());
+        assertEquals("Analista", result.cargoDescricao());
+    }
+
+    @Test
+    void buscarPorId_lancaExcecaoQuandoInativo() {
+        Funcionario funcionario = funcionarioAtivo();
+        funcionario.setAtivo(false);
+        when(funcionarioRepository.findById(1L)).thenReturn(Optional.of(funcionario));
+
+        assertThrows(FuncionarioNotFoundException.class, () -> funcionarioService.buscarPorId(1L));
+    }
+
+    @Test
+    void atualizar_alteraDadosComMesmoCpf() {
+        Funcionario funcionario = funcionarioAtivo();
+        when(funcionarioRepository.findById(1L)).thenReturn(Optional.of(funcionario));
+        when(funcionarioRepository.existsByIdExternoAndIdNot("MAT001", 1L)).thenReturn(false);
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(cargoAtivo()));
+        when(centroCustoRepository.findById(1L)).thenReturn(Optional.of(centroCustoAtivo()));
+        when(funcionarioRepository.save(funcionario)).thenReturn(funcionario);
+
+        FuncionarioDTO dto = new FuncionarioDTO(
+            1L, "Maria Atualizada", "12345678901", LocalDate.of(2024, 1, 15),
+            1L, "Analista", 1L, "TI", 1L, "Software", "MAT001", true);
+        FuncionarioDTO result = funcionarioService.atualizar(1L, dto);
+
+        assertEquals("Maria Atualizada", result.nome());
+        verify(funcionarioRepository, never()).findByCpfAndAtivoTrue(any());
+    }
+
+    @Test
+    void cadastrar_idExternoEmBranco_normalizaParaNull() {
+        FuncionarioDTO dto = dtoBase("98765432100", "   ");
+        when(funcionarioRepository.existsByCpfAndAtivoTrue("98765432100")).thenReturn(false);
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(cargoAtivo()));
+        when(centroCustoRepository.findById(1L)).thenReturn(Optional.of(centroCustoAtivo()));
+        when(funcionarioRepository.save(any(Funcionario.class))).thenAnswer(inv -> {
+            Funcionario f = inv.getArgument(0);
+            f.setId(3L);
+            return f;
+        });
+
+        FuncionarioDTO result = funcionarioService.cadastrar(dto);
+
+        assertEquals(3L, result.id());
+        verify(funcionarioRepository, never()).existsByIdExterno(any());
+    }
+
     private Funcionario funcionarioAtivo() {
         Funcionario funcionario = new Funcionario();
         funcionario.setId(1L);

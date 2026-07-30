@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -40,6 +41,7 @@ public class DashboardService {
 
     private static final Logger logger = LoggerFactory.getLogger(DashboardService.class);
     private static final String DOMAIN = "dashboard";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
 
     private final FolhaConsultaPort folhaConsultaPort;
     private final FolhaTotalizacaoPort folhaTotalizacaoPort;
@@ -49,7 +51,7 @@ public class DashboardService {
     private final UsuarioLookupPort usuarioLookupPort;
 
     public DashboardStatsDTO getStats(String login) {
-        logger.debug("{}Calculando estatísticas do dashboard", DomainLogging.prefix(DOMAIN));
+        logger.debug("{}Calculando estatísticas do dashboard", DOMAIN_PREFIX);
 
         if (login == null || login.isBlank()) {
             return emptyStats();
@@ -74,7 +76,7 @@ public class DashboardService {
                 ? cadastrosImportLookupPort.countFuncionariosAtivos()
                 : cadastrosImportLookupPort.countFuncionariosAtivosPorCentros(centrosScoped);
 
-            LocalDate competenciaInicioFallback = LocalDate.now().withDayOfMonth(1);
+            LocalDate competenciaInicioFallback = LocalDate.now(Clock.systemDefaultZone()).withDayOfMonth(1);
             LocalDate competenciaFimFallback = competenciaInicioFallback
                 .withDayOfMonth(competenciaInicioFallback.lengthOfMonth());
             long totalBeneficiosAtivos = centrosScoped == null
@@ -199,7 +201,7 @@ public class DashboardService {
                     valorTotal
                 );
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<CentroCustoStatsDTO> calcularStatsPorCentroCusto(List<FolhaLinhaSnapshot> folhaCompetencia) {
@@ -225,7 +227,7 @@ public class DashboardService {
                     valorTotal
                 );
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<CargoStatsDTO> calcularStatsPorCargo(List<FolhaLinhaSnapshot> folhaCompetencia) {
@@ -255,7 +257,7 @@ public class DashboardService {
                     valorTotal
                 );
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private BigDecimal calcularTotalProventos(List<FolhaLinhaSnapshot> folhaCompetencia) {
@@ -297,7 +299,7 @@ public class DashboardService {
             })
             .sorted((a, b) -> b.valorTotal().compareTo(a.valorTotal()))
             .limit(5)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<RubricaStatsDTO> calcularTopDescontos(List<FolhaLinhaSnapshot> folhaCompetencia) {
@@ -323,11 +325,11 @@ public class DashboardService {
             })
             .sorted((a, b) -> b.valorTotal().compareTo(a.valorTotal()))
             .limit(5)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<EvolucaoMensalDTO> calcularEvolucaoMensal() {
-        LocalDate dataInicio = LocalDate.now().minusMonths(11).withDayOfMonth(1);
+        LocalDate dataInicio = LocalDate.now(Clock.systemDefaultZone()).minusMonths(11).withDayOfMonth(1);
         List<FolhaEvolucaoSnapshot> evolucao = folhaConsultaPort.findEvolucaoUltimos12Meses(dataInicio);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM/yyyy");
         return evolucao.stream()
@@ -336,11 +338,11 @@ public class DashboardService {
                 item.totalLiquido(),
                 item.totalEmpregados()
             ))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<EvolucaoMensalDTO> calcularEvolucaoMensalScoped(Set<Long> centros) {
-        LocalDate dataInicio = LocalDate.now().minusMonths(11).withDayOfMonth(1);
+        LocalDate dataInicio = LocalDate.now(Clock.systemDefaultZone()).minusMonths(11).withDayOfMonth(1);
         List<FolhaEvolucaoSnapshot> competencias = folhaConsultaPort.findEvolucaoUltimos12Meses(dataInicio);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM/yyyy");
         return competencias.stream()
@@ -360,6 +362,6 @@ public class DashboardService {
                     empregados
                 );
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 }

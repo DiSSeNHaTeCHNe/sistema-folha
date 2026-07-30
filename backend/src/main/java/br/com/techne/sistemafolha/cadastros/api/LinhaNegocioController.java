@@ -1,6 +1,5 @@
 package br.com.techne.sistemafolha.cadastros.api;
 
-import br.com.techne.sistemafolha.cadastros.api.LinhaNegocioDTO;
 import br.com.techne.sistemafolha.cadastros.application.LinhaNegocioService;
 import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocioNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;

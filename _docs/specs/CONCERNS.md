@@ -20,9 +20,9 @@
 
 - Risk: Chave de assinatura previsível se `JWT_SECRET` não for definido no deploy.
 - Files: `backend/src/main/resources/application.yml` (`jwt.secret` com default longo)
-- Current mitigation: Override via `${JWT_SECRET:...}`; **`JwtSecretStartupValidator` fail-fast em prod** (adequação P1 T6 / AAP-09).
+- Current mitigation: Override via `${JWT_SECRET:...}`; **`JwtSecretStartupValidator` fail-fast em blank/default fora de profiles `dev`/`test`** (R2 T15 / AAP2-15).
 - Recommendations: Exigir secret em produção; rotacionar; nunca commitár secrets reais.
-- **Status:** Mitigated (startup validator); monitorar deploy env
+- **Status:** Resolved (R2 hardening — blank + default blocked non-dev/test)
 
 **SecurityConfig path prefix inconsistency:**
 
@@ -58,10 +58,10 @@
 **Hibernate ddl-auto + Flyway:**
 
 - Issue: `spring.jpa.hibernate.ddl-auto: update` junto com Flyway pode gerar drift fora das migrações.
-- Files: `application.yml`, `db/migration/*.sql`
+- Files: `application.yml`, `application-dev.yml`, `db/migration/*.sql`
 - Impact: Schemas não reproduzíveis entre ambientes.
-- Fix approach: `validate`/`none` fora de dev; schema só via Flyway.
-- **Status:** Open
+- Fix approach: `validate` default; `update` somente com profile `dev` explícito (`SPRING_PROFILES_ACTIVE=dev`).
+- **Status:** Resolved (R2 T14 / AAP2-14)
 
 **Datasource LAN commitado:**
 
@@ -161,10 +161,12 @@
 | S5804 user enumeration | MAJOR | `AuthenticationService` | Unified login/refresh failure paths | **Mitigated** (T15) |
 | S4502 CSRF disabled | CRITICAL | `SecurityConfig` | `@SuppressWarnings` + INTEGRATIONS.md | **Suppressed** (T15) |
 | S2245 pseudorandom | MAJOR | `FolhaPagamento/index.tsx` | Replace `Math.random` key | **Open** — fora escopo P1/P2; fix in follow-up |
-| `@Transactional` via `this` | CRITICAL | `FolhaTotalizacaoService`, `OrganogramaAcessoService` | Self-invocation bypasses proxy | **Open** — services não alterados em P1/P2 (AAP-22) |
+| `@Transactional` via `this` | CRITICAL | `FolhaTotalizacaoService`, `OrganogramaAcessoService` | Self-invocation bypasses proxy | **Resolved** (R2 T12–T13 / AAP2-12, AAP2-13) |
+| Login timing side-channel | MAJOR | `AuthenticationService` | Dummy BCrypt on missing user | **Resolved** (R2 T16 / AAP2-16) |
+| JWT filter logs Authorization | MAJOR | `JwtAuthenticationFilter` | Redact header value from debug logs | **Resolved** (R2 T17 / AAP2-17) |
 
 ---
 
 _Concerns audit: 2026-07-25_  
 _Sync adequação P2: 2026-07-29 (JaCoCo gate pass; Sonar bugs=0; vulns CRITICAL+MAJOR=4 documented in validation.md)_  
-_Sync adequação P3 T15: 2026-07-29 (S1149 logger→log in touched files; S5804/S4502 addressed)_
+_Sync adequação R2 Phase 2: 2026-07-29 (tx self-invocation, ddl-auto validate, JWT hardening, timing login, filter log redaction)_

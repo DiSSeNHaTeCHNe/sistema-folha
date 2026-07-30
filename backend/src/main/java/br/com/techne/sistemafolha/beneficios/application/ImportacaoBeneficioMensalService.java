@@ -34,6 +34,7 @@ public class ImportacaoBeneficioMensalService {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportacaoBeneficioMensalService.class);
     private static final String DOMAIN = "beneficios";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
     private static final String ABA_PLANILHA = "Planilha1";
     private static final int COL_CPF = 2;
     private static final int COL_NOME = 1;
@@ -73,7 +74,7 @@ public class ImportacaoBeneficioMensalService {
         boolean confirmarSubstituicao = Boolean.TRUE.equals(confirmar);
 
         logger.info("{}Iniciando importação de benefícios mensais - Arquivo: {}, competência: {} a {}",
-                DomainLogging.prefix(DOMAIN), arquivo.getOriginalFilename(), competenciaInicio, competenciaFim);
+                DOMAIN_PREFIX, arquivo.getOriginalFilename(), competenciaInicio, competenciaFim);
 
         verificarDuplicidadeSemConfirmacao(competenciaInicio, competenciaFim, confirmarSubstituicao);
 
@@ -172,7 +173,7 @@ public class ImportacaoBeneficioMensalService {
             beneficioMensalRepository.save(registro);
         }
 
-        logger.info("{}Importação concluída - processadas: {}, total: {}", DomainLogging.prefix(DOMAIN),                 registros.size(), totalValor);
+        logger.info("{}Importação concluída - processadas: {}, total: {}", DOMAIN_PREFIX, registros.size(), totalValor);
 
         return new ImportacaoResultadoDTO(
                 registros.size(),
@@ -204,7 +205,7 @@ public class ImportacaoBeneficioMensalService {
     }
 
     private void substituirRegistrosExistentes(LocalDate competenciaInicio, LocalDate competenciaFim) {
-        logger.info("{}Removendo registros existentes (ativos e inativos) para competência {} a {}", DomainLogging.prefix(DOMAIN),                 competenciaInicio, competenciaFim);
+        logger.info("{}Removendo registros existentes (ativos e inativos) para competência {} a {}", DOMAIN_PREFIX,                 competenciaInicio, competenciaFim);
         beneficioMensalRepository.deleteByCompetenciaInicioAndCompetenciaFim(competenciaInicio, competenciaFim);
     }
 

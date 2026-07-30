@@ -1,5 +1,8 @@
 package br.com.techne.sistemafolha.security;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,6 +57,23 @@ class JwtAuthenticationFilterTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void doFilterInternal_headerMalformado_naoLogaValorDoHeader() throws Exception {
+        String tokenLiteral = "Bearer eyJhbGciOiJIUzI1NiJ9.token";
+        request.addHeader("Authorization", tokenLiteral.substring(7));
+
+        ListAppender<ILoggingEvent> appender = capturarLogsJwtFilter();
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain).doFilter(request, response);
+        assertTrue(appender.list.stream()
+            .noneMatch(e -> e.getFormattedMessage().contains("eyJhbGciOiJIUzI1NiJ9")));
+        assertTrue(appender.list.stream()
+            .anyMatch(e -> e.getFormattedMessage().contains("Bearer esperado")));
     }
 
     @Test
@@ -101,5 +123,14 @@ class JwtAuthenticationFilterTest {
     private void assertEqualsPrincipal(String expectedLogin) {
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals(expectedLogin, SecurityContextHolder.getContext().getAuthentication().getName());
+    }
+
+    private ListAppender<ILoggingEvent> capturarLogsJwtFilter() {
+        Logger logger = (Logger) LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+        logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        return appender;
     }
 }

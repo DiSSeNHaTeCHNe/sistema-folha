@@ -32,6 +32,12 @@ if [[ ! -f backend/target/site/jacoco/jacoco.xml ]]; then
   echo "Aviso: jacoco.xml não gerado — Sonar seguirá sem cobertura Java" >&2
 fi
 
+echo "==> Testes + cobertura frontend (lcov para o Sonar)"
+(cd frontend && npm run test:coverage)
+if [[ ! -f frontend/coverage/lcov.info ]]; then
+  echo "Aviso: frontend/coverage/lcov.info não gerado — Sonar seguirá sem cobertura JS/TS" >&2
+fi
+
 echo "==> Rodando sonar-scanner (Docker)"
 # host.docker.internal: Sonar no host, scanner no container
 docker run --rm \

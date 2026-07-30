@@ -16,13 +16,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
     private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
     private static final String DOMAIN = "auth";
+    private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
 
     private final UsuarioRepository usuarioRepository;
     private final FuncionarioConsultaPort funcionarioConsultaPort;
@@ -33,7 +33,7 @@ public class UsuarioService {
     }
 
     public List<UsuarioDTO> listar(String nome, String login, Long funcionarioId) {
-        logger.info("{}Listando usuários com filtros", DomainLogging.prefix(DOMAIN));
+        logger.info("{}Listando usuários com filtros", DOMAIN_PREFIX);
 
         String nomePattern = null;
         if (nome != null && !nome.trim().isEmpty()) {
@@ -48,13 +48,13 @@ public class UsuarioService {
         return usuarioRepository.findByFiltros(nomePattern, loginPattern, funcionarioId)
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public UsuarioDTO buscarPorId(Long id) {
         logger.info("Buscando usuário por ID: {}", id);
         return usuarioRepository.findById(id)
-                .filter(u -> u.isAtivo())
+                .filter(Usuario::isAtivo)
                 .map(this::toDTO)
                 .orElseThrow(() -> new UsuarioNotFoundException(id));
     }
@@ -62,7 +62,7 @@ public class UsuarioService {
     public UsuarioDTO buscarPorLogin(String login) {
         logger.info("Buscando usuário por login: {}", login);
         return usuarioRepository.findByLoginAndAtivoTrue(login)
-                .filter(u -> u.isAtivo())
+                .filter(Usuario::isAtivo)
                 .map(this::toDTO)
                 .orElseThrow(() -> new UsuarioNotFoundException(login));
     }
@@ -90,7 +90,7 @@ public class UsuarioService {
     public UsuarioDTO atualizar(Long id, UsuarioDTO dto) {
         logger.info("Atualizando usuário ID: {}", id);
         Usuario usuario = usuarioRepository.findById(id)
-                .filter(u -> u.isAtivo())
+                .filter(Usuario::isAtivo)
                 .orElseThrow(() -> new UsuarioNotFoundException(id));
 
         if (!usuario.getLogin().equals(dto.login()) && 
@@ -122,7 +122,7 @@ public class UsuarioService {
     public void remover(Long id) {
         logger.info("Removendo usuário ID: {}", id);
         Usuario usuario = usuarioRepository.findById(id)
-                .filter(u -> u.isAtivo())
+                .filter(Usuario::isAtivo)
                 .orElseThrow(() -> new UsuarioNotFoundException(id));
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);
@@ -155,29 +155,18 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        logger.debug("Hash da senha atual armazenada: {}", usuario.getSenha());
-        logger.debug("Hash da senha atual fornecida: {}", passwordEncoder.encode(senhaAtual));
-
         if (!verificarSenha(senhaAtual, usuario.getSenha())) {
             logger.error("Senha atual incorreta para o usuário: {}", usuario.getLogin());
             throw new RuntimeException("Senha atual incorreta");
         }
 
         logger.info("Senha atual verificada com sucesso para o usuário: {}", usuario.getLogin());
-        String novaSenhaCriptografada = passwordEncoder.encode(novaSenha);
-        usuario.setSenha(novaSenhaCriptografada);
-        logger.debug("Nova senha criptografada: {}", novaSenhaCriptografada);
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
         usuarioRepository.save(usuario);
         logger.info("Senha alterada com sucesso para o usuário: {}", usuario.getLogin());
     }
 
     public boolean verificarSenha(String senhaTexto, String senhaHash) {
-        logger.debug("Verificando senha");
-        logger.debug("Senha em texto: {}", senhaTexto);
-        logger.debug("Hash armazenado: {}", senhaHash);
-        logger.debug("Hash gerado para comparação: {}", passwordEncoder.encode(senhaTexto));
-        boolean resultado = passwordEncoder.matches(senhaTexto, senhaHash);
-        logger.debug("Resultado da verificação: {}", resultado);
-        return resultado;
+        return passwordEncoder.matches(senhaTexto, senhaHash);
     }
 } 

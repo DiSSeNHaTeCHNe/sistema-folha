@@ -35,7 +35,7 @@ public class FuncionarioRubricaFixaService {
     public List<FuncionarioRubricaFixaDTO> listar(Long funcionarioId, Long rubricaId) {
         return funcionarioRubricaFixaRepository.findByFiltros(funcionarioId, rubricaId).stream()
             .map(this::toDTO)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @Transactional(readOnly = true)

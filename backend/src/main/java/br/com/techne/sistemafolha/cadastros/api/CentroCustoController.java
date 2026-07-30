@@ -1,6 +1,5 @@
 package br.com.techne.sistemafolha.cadastros.api;
 
-import br.com.techne.sistemafolha.cadastros.api.CentroCustoDTO;
 import br.com.techne.sistemafolha.cadastros.application.CentroCustoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

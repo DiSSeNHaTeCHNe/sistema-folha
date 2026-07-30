@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -336,6 +337,53 @@ class DashboardServiceTest {
         assertEquals(12L, stats.totalBeneficiosAtivos());
         verify(beneficioConsultaPort, never()).contarLancamentosAtivosNaCompetenciaPorCentros(
             any(), any(), any());
+    }
+
+    @Test
+    void getStats_acessoTotal_comResumo_agregaPorLinhaCentroCargoETops() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+
+        FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 2, false,
+            new BigDecimal("1000.00"));
+        FolhaLinhaSnapshot linha1 = linha(1L, 10L, "Centro A", 1L, "Linha A", 100L, "Analista",
+            1L, "001", "Salário", "PROVENTO", new BigDecimal("5000.00"));
+        FolhaLinhaSnapshot linha2 = linha(2L, 10L, "Centro A", 1L, "Linha A", 101L, "Dev",
+            2L, "002", "INSS", "DESCONTO", new BigDecimal("500.00"));
+        FolhaLinhaSnapshot linha3 = linha(2L, 20L, "Centro B", 2L, "Linha B", 101L, "Dev",
+            1L, "001", "Salário", "PROVENTO", new BigDecimal("3000.00"));
+
+        when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+            eq(COMPETENCIA_INICIO), eq(COMPETENCIA_FIM), eq(false), isNull()))
+            .thenReturn(List.of(linha1, linha2, linha3));
+        when(folhaTotalizacaoPort.calcularTotalCustoEmpresa(any(), any(), any(), any()))
+            .thenReturn(new BigDecimal("8000.00"));
+        when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(4L);
+        when(folhaConsultaPort.findEvolucaoUltimos12Meses(any())).thenReturn(List.of());
+
+        DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
+
+        assertEquals(2L, stats.totalFuncionarios());
+        assertEquals(new BigDecimal("8000.00"), stats.totalProventos());
+        assertEquals(new BigDecimal("500.00"), stats.totalDescontos());
+        assertEquals(2, stats.porLinhaNegocio().size());
+        assertEquals(2, stats.porCentroCusto().size());
+        assertEquals(2, stats.porCargo().size());
+        assertFalse(stats.topProventos().isEmpty());
+        assertFalse(stats.topDescontos().isEmpty());
+    }
+
+    @Test
+    void getStats_usuarioInexistente_retornaEmpty() {
+        when(usuarioLookupPort.findByLoginAndAtivoTrue("ghost")).thenReturn(Optional.empty());
+
+        DashboardStatsDTO stats = dashboardService.getStats("ghost");
+
+        assertEmptyStats(stats);
+        verify(organogramaAcessoPort, never()).obterContextoAcesso(any());
     }
 
     private void stubUsuario() {

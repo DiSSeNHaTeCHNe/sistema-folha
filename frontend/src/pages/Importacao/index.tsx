@@ -612,7 +612,7 @@ export default function Importacao() {
               <Typography variant="h6" gutterBottom>
                 Processar ficha da competência
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" component="p" sx={{ mb: 2 }}>
                 Reprocesse a ficha mensal de uma competência já importada, sem reenviar o arquivo ADP.
               </Typography>
 

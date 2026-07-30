@@ -26,12 +26,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +45,7 @@ public class BeneficioMensalService {
     private final OrganogramaAcessoPort organogramaAcessoPort;
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("java:S6809") // delegates to non-transactional helpers; extract bean deferred
     public List<BeneficioMensalDTO> listarPorCompetenciaParaUsuario(
             String login, LocalDate dataInicio, LocalDate dataFim) {
         AccessContextDTO contexto = obterContextoAcesso(login);
@@ -79,7 +81,7 @@ public class BeneficioMensalService {
         return listarPorFuncionario(funcionarioId, dataInicio, dataFim)
             .stream()
             .filter(dto -> aplicarFiltroAcesso(dto, contexto))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -97,6 +99,7 @@ public class BeneficioMensalService {
     }
 
     @Transactional
+    @SuppressWarnings("java:S6809") // delegates to non-transactional helpers; extract bean deferred
     public Optional<BeneficioMensalDTO> criarParaUsuario(String login, BeneficioMensalDTO dto) {
         AccessContextDTO contexto = obterContextoAcesso(login);
         Funcionario funcionario = funcionarioConsultaPort.findByIdAndAtivoTrue(dto.funcionarioId())
@@ -124,21 +127,21 @@ public class BeneficioMensalService {
             LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
         return buscarPorCompetencia(dataInicio, dataFim, centros).stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<BeneficioMensalResumoDTO> resumoPorCompetencia(
             LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
         return buscarResumoPorCompetencia(dataInicio, dataFim, centros).stream()
                 .map(this::toResumoDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<BeneficioMensalCompetenciaResumoDTO> listarCompetencias(
             LocalDate dataInicio, LocalDate dataFim, Set<Long> centros) {
         return buscarCompetenciasResumo(dataInicio, dataFim, centros).stream()
                 .map(this::toCompetenciaResumoDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<BeneficioMensalDTO> listarPorFuncionario(
@@ -148,7 +151,7 @@ public class BeneficioMensalService {
                         funcionarioId, dataInicio, dataFim)
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -193,7 +196,7 @@ public class BeneficioMensalService {
     private record PeriodoCompetencia(LocalDate inicio, LocalDate fim) {}
 
     private PeriodoCompetencia periodoDe(Integer ano, Integer mes) {
-        int anoEfetivo = ano != null ? ano : LocalDate.now().getYear();
+        int anoEfetivo = ano != null ? ano : LocalDate.now(Clock.systemDefaultZone()).getYear();
         if (anoEfetivo < 2000 || anoEfetivo > 2100) {
             throw new IllegalArgumentException("Ano deve estar entre 2000 e 2100");
         }
@@ -203,8 +206,8 @@ public class BeneficioMensalService {
             return new PeriodoCompetencia(inicio, fim);
         }
         return new PeriodoCompetencia(
-            LocalDate.of(anoEfetivo, 1, 1),
-            LocalDate.of(anoEfetivo, 12, 31)
+            LocalDate.of(anoEfetivo, Month.JANUARY, 1),
+            LocalDate.of(anoEfetivo, Month.DECEMBER, 31)
         );
     }
 
@@ -308,9 +311,10 @@ public class BeneficioMensalService {
         String centroCustoDescricao = null;
         Long linhaNegocioId = null;
         String linhaNegocioDescricao = null;
-        CentroCusto centroCusto = beneficio.getCentroCusto() != null
-            ? beneficio.getCentroCusto()
-            : (funcionario != null ? funcionario.getCentroCusto() : null);
+        CentroCusto centroCusto = beneficio.getCentroCusto();
+        if (centroCusto == null && funcionario != null) {
+            centroCusto = funcionario.getCentroCusto();
+        }
         if (centroCusto != null) {
             centroCustoId = centroCusto.getId();
             centroCustoDescricao = centroCusto.getDescricao();

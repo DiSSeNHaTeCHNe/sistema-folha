@@ -1,6 +1,5 @@
 package br.com.techne.sistemafolha.beneficios.api;
 
-import br.com.techne.sistemafolha.beneficios.api.TipoBeneficioDTO;
 import br.com.techne.sistemafolha.beneficios.application.TipoBeneficioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

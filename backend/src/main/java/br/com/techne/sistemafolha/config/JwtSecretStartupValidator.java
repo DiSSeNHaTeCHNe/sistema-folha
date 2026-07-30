@@ -29,18 +29,27 @@ public class JwtSecretStartupValidator {
 
     @PostConstruct
     void validateJwtSecret() {
+        if (jwtSecret.isBlank()) {
+            throw new IllegalStateException(
+                "JWT_SECRET não configurado: defina a variável de ambiente JWT_SECRET");
+        }
         if (!DEFAULT_JWT_SECRET.equals(jwtSecret)) {
             return;
         }
-        if (isProdProfile()) {
-            throw new IllegalStateException(
-                "JWT_SECRET não configurado: defina a variável de ambiente JWT_SECRET em produção");
+        if (isDevOrTestProfile()) {
+            log.warn(
+                "JWT_SECRET usando valor default do application.yml — permitido apenas em desenvolvimento/teste");
+            return;
         }
-        log.warn(
-            "JWT_SECRET usando valor default do application.yml — permitido apenas em desenvolvimento");
+        throw new IllegalStateException(
+            "JWT_SECRET não configurado: defina a variável de ambiente JWT_SECRET em ambientes não-dev");
     }
 
-    private boolean isProdProfile() {
-        return Arrays.stream(environment.getActiveProfiles()).anyMatch("prod"::equals);
+    private boolean isDevOrTestProfile() {
+        String[] profiles = environment.getActiveProfiles();
+        if (profiles.length == 0) {
+            return false;
+        }
+        return Arrays.stream(profiles).anyMatch(p -> "dev".equals(p) || "test".equals(p));
     }
 }
