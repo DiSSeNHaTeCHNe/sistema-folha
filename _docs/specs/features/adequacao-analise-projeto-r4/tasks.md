@@ -431,10 +431,10 @@ T14 → T15
 
 **Done when**:
 
-- [ ] `validation.md` com baseline commit, `new_coverage`, `new_branch_coverage`, agregado, QG, comando reprodução
-- [ ] Playwright e ADP: PASS ou N/A com motivo
-- [ ] `CONCERNS.md` atualizado (E2E, ADP, TESTING pointer)
-- [ ] Sonar final: QG OK; `new_violations` 0; metas internas registradas (85% / 70% branch) com ressalva se informativo
+- [x] `validation.md` com baseline commit, `new_coverage`, `new_branch_coverage`, agregado, QG, comando reprodução
+- [x] Playwright e ADP: PASS ou N/A com motivo
+- [x] `CONCERNS.md` atualizado (E2E, ADP, TESTING pointer)
+- [x] Sonar final: QG OK; `new_violations` 0; metas internas registradas (85% / 70% branch) com ressalva se informativo
 
 **Tests**: none  
 **Gate**: Sonar (final) + manual review

@@ -111,8 +111,8 @@
 - Files: `ImportacaoFolhaAdpService.java`
 - Why fragile: Arquivo grande + `@Transactional` amplo — timeout/rollback total.
 - Safe modification: Mudar parse/mapeamento com fixtures.
-- Test coverage: **`ImportacaoFolhaAdpServiceTest` + `ImportacaoFolhaAdpIntegrationTest`** (adequação R3 T11).
-- **Status:** Mitigated (unit + integration Docker-gated)
+- Test coverage: **`ImportacaoFolhaAdpServiceTest` + `ImportacaoFolhaAdpIntegrationTest`** (adequação R3 T11; R4 live N/A — Testcontainers skip).
+- **Status:** Mitigated (unit + integration Docker-gated; live evidence N/A @ R4 T10)
 
 **FolhaTotalizacaoService dual source:**
 
@@ -145,9 +145,13 @@
 
 **Frontend:**
 
-- What's not tested: E2E Playwright; some page branches still below 100%.
-- Progress (adequação R3): MSW harness + `api.test.ts` interceptors; 184 Vitest cases; page behavior tests (FolhaPagamento, BeneficiosMensais, RubricasFixas, Importacao, Organograma, Layout).
-- **Status:** Mitigated — Sonar `new_coverage` **80.0%** @ R3 gate (fix-cycle-1)
+- What's not tested: Some page branches still below 100%; ADP live path not exercised this run.
+- Progress (adequação R4): Playwright login smoke (`e2e/login.spec.ts`, `npm run test:e2e`); **186** Vitest cases; MSW/api.ts hardening.
+- **Status:** Mitigated — Sonar `new_coverage` **80.0%** @ R4 gate; E2E smoke added; internal meta 85% open
+
+**Harness docs:**
+
+- Canonical commands: `_docs/specs/TESTING.md`; local gate `./diversos/scripts/gate-r4-local.sh`
 
 **Exception handler:**
 
@@ -171,4 +175,5 @@
 
 _Concerns audit: 2026-07-25_  
 _Sync adequação P2: 2026-07-29 (JaCoCo gate pass; Sonar bugs=0; vulns CRITICAL+MAJOR=4 documented in validation.md)_  
-_Sync adequação R3: 2026-07-29 (Sonar QG OK; new_coverage 80.0%; MSW/api.ts FE coverage; S2245 + BeneficioMensal tx resolved; ADP integration mitigated)_
+_Sync adequação R3: 2026-07-29 (Sonar QG OK; new_coverage 80.0%; MSW/api.ts FE coverage; S2245 + BeneficioMensal tx resolved; ADP integration mitigated)_  
+_Sync adequação R4: 2026-07-29 (Playwright E2E smoke; 186 Vitest; gate-r4-local.sh; Sonar 80.0% QG OK — meta 85% informacional open; ver `_docs/specs/features/adequacao-analise-projeto-r4/validation.md`)_
