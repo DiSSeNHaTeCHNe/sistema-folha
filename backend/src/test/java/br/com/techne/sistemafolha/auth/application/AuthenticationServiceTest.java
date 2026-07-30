@@ -164,6 +164,18 @@ class AuthenticationServiceTest {
     }
 
     @Test
+    void refreshToken_expiradoOuRevogado_lancaMensagemInvalida() {
+        RefreshToken refreshToken = refreshTokenValido();
+        when(refreshTokenService.buscarPorToken("refresh-expirado")).thenReturn(Optional.of(refreshToken));
+        when(refreshTokenService.validarRefreshToken(refreshToken)).thenReturn(false);
+
+        RefreshTokenInvalidoException ex = assertThrows(RefreshTokenInvalidoException.class,
+            () -> authenticationService.refreshToken("refresh-expirado"));
+
+        assertEquals("Refresh token inválido ou expirado", ex.getMessage());
+    }
+
+    @Test
     void logout_comRefreshToken_revogaToken() {
         authenticationService.logout("refresh-token");
 

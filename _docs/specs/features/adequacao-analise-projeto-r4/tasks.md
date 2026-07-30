@@ -216,11 +216,11 @@ T14 → T15
 
 **Done when**:
 
-- [ ] Case cobre `validarRefreshToken == false` (não só `Optional.empty`)
-- [ ] Mensagem/exceção alinhada ao domínio existente
-- [ ] Gate: `cd backend && mvn test -Dtest=AuthenticationServiceTest` exit 0
-- [ ] Gate: `cd backend && mvn test -Dtest=ModularArchitectureTest` exit 0
-- [ ] Test count: +1 líquido; budget R4 acumulado ≤10
+- [x] Case cobre `validarRefreshToken == false` (não só `Optional.empty`)
+- [x] Mensagem/exceção alinhada ao domínio existente
+- [x] Gate: `cd backend && mvn test -Dtest=AuthenticationServiceTest` exit 0
+- [x] Gate: `cd backend && mvn test -Dtest=ModularArchitectureTest` exit 0
+- [x] Test count: +1 líquido; budget R4 acumulado ≤10
 
 **Tests**: unit  
 **Gate**: Quick BE + Arch
