@@ -5,6 +5,7 @@ import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensalNotFoundExcep
 import br.com.techne.sistemafolha.beneficios.domain.ImportacaoBeneficioMensalInvalidaException;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioCodigoDuplicadoException;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundException;
+import br.com.techne.sistemafolha.auth.domain.ApiKeyNotFoundException;
 import br.com.techne.sistemafolha.auth.domain.RefreshTokenInvalidoException;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioJaExisteException;
@@ -117,6 +118,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleRefreshTokenInvalidoException(RefreshTokenInvalidoException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(ApiKeyNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleApiKeyNotFoundException(ApiKeyNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
