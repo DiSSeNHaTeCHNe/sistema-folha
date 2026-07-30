@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { LoginRequest, LoginResponse } from '../types';
+import { getApiBaseUrl } from '../lib/apiBaseUrl';
 import { TokenService } from './tokenService';
 
 interface RetryableRequestConfig {
@@ -15,7 +16,7 @@ interface AxiosLikeError {
 
 // @ts-expect-error axios default export lacks create in bundled type resolution
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8083/api',
+  baseURL: getApiBaseUrl(),
   timeout: 10000,
 });
 

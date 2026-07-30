@@ -189,10 +189,10 @@ T14 → T15
 
 **Done when**:
 
-- [ ] Uma única definição de base URL (lib); handlers re-exportam ou importam
-- [ ] `api.ts` não duplica literal divergente
-- [ ] Gate: `cd frontend && npm test` — ≥184 passam (0 falhas)
-- [ ] Test count: sem deleção silenciosa vs floor R3
+- [x] Uma única definição de base URL (lib); handlers re-exportam ou importam
+- [x] `api.ts` não duplica literal divergente
+- [x] Gate: `cd frontend && npm test` — ≥184 passam (0 falhas)
+- [x] Test count: sem deleção silenciosa vs floor R3
 
 **Tests**: none  
 **Gate**: Quick FE
