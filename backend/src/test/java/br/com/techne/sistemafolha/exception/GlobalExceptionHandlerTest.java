@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -205,6 +206,19 @@ class GlobalExceptionHandlerTest {
         assertNotNull(response.getBody());
         assertEquals(401, response.getBody().status());
         assertEquals("Refresh token inválido ou expirado", response.getBody().message());
+    }
+
+    @Test
+    void handleMissingServletRequestParameterException_retorna400() {
+        MissingServletRequestParameterException ex = new MissingServletRequestParameterException(
+            "competenciaInicio", "LocalDate");
+
+        ResponseEntity<ErrorResponse> response = handler.handleMissingServletRequestParameterException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(400, response.getBody().status());
+        assertEquals("competenciaInicio: obrigatório", response.getBody().message());
     }
 
     @Test

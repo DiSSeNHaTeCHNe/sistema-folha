@@ -1,8 +1,10 @@
 package br.com.techne.sistemafolha.beneficios.api;
 
 import br.com.techne.sistemafolha.auth.application.ApiKeyService;
+import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.beneficios.application.BeneficioMensalService;
 import br.com.techne.sistemafolha.config.SecurityConfig;
+import br.com.techne.sistemafolha.exception.GlobalExceptionHandler;
 import br.com.techne.sistemafolha.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +17,23 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = BeneficioMensalController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, GlobalExceptionHandler.class})
 class BeneficioMensalControllerWebMvcTest {
+
+    private static final String API_KEY_BEARER = "Bearer sf_live_testkey1234567890abcdefghij";
 
     @Autowired
     private MockMvc mockMvc;
@@ -74,5 +82,29 @@ class BeneficioMensalControllerWebMvcTest {
 
         verify(beneficioMensalService).listarCompetenciasParaUsuario(
             eq("usuario.teste"), eq(2026), eq(3));
+    }
+
+    @Test
+    @WithMockUser(username = "usuario.teste", roles = "USER")
+    void listarPorCompetencia_semParams_retorna400() throws Exception {
+        mockMvc.perform(get("/beneficio-mensal"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("competenciaInicio: obrigatório"));
+    }
+
+    @Test
+    void listarPorCompetencia_bearerApiKey_semParams_retorna400() throws Exception {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setLogin("usuario.teste");
+        usuario.setAtivo(true);
+        usuario.setPermissoes(List.of("API_KEY"));
+        when(apiKeyService.autenticarPorChave(startsWith("sf_live_"))).thenReturn(Optional.of(usuario));
+
+        mockMvc.perform(get("/beneficio-mensal").header("Authorization", API_KEY_BEARER))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("competenciaInicio: obrigatório"));
     }
 }
