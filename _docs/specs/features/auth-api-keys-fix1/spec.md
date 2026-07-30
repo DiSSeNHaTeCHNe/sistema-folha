@@ -46,7 +46,16 @@ O MVP de API Keys entregou comportamento correto em unit tests e build, mas vár
 | UI tests | Vitest + Testing Library; mock `useAuth` / services — **sem** MSW global | AD-004 brownfield; espelhar `AdminRoute.test.tsx` | y |
 | PUT/PATCH write-guard | Testes unitários adicionais no filter existente | Gap test-quality code-review; não muda produto | y |
 
-**Open questions:** none — gaps derivados de `validation.md` e code-review já classificados **(b)**.
+**Open questions (deferred — code-review classificação c, fora dos ACs fix1):**
+
+| Item | Origem | Decisão |
+| ---- | ------ | ------- |
+| Sanitizar `\r`/`\n` em login/URI no log write-guard (CWE-117) | code-review security | Follow-up hardening; não bloqueia fix1 |
+| Prefixo `DomainLogging` no write-guard vs SLF4J plain | code-review architecture | Alinhar em refactor observability transversal |
+| Fail-safe se `save(ultimoUsoEm)` falhar (auth não deve cair) | code-review regression | Fora escopo sync MVP; avaliar pós-volume |
+| Debounce/batch `ultimo_uso_em` em hot path | code-review performance | Explicitamente out of scope parent |
+| Teste `ApiKeyRoute` redirect não autenticado → `/login` | code-review architecture | Não coberto por FIX1-09/10 |
+| ACL WebMvc mockar `OrganogramaAcessoPort` vs service stub | code-review architecture | Design fix1 escolheu paridade HTTP via service mock |
 
 **Remaining dimensions N/A for this scope:** rate limits, external deps, concurrency beyond sync update, data archival.
 
