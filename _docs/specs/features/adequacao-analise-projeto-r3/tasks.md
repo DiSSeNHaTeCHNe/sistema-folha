@@ -270,10 +270,10 @@ T15
 
 **Done when**:
 
-- [ ] `refreshToken` lança `RefreshTokenInvalidoException` para token ausente/inválido/revogado
-- [ ] `AuthenticationServiceTest.refreshToken_inexistente_*` asserta `RefreshTokenInvalidoException` (não `IllegalStateException`)
-- [ ] Gate: `cd backend && mvn test -Dtest=AuthenticationServiceTest` exit 0
-- [ ] Gate: `cd backend && mvn test -Dtest=ModularArchitectureTest` exit 0
+- [x] `refreshToken` lança `RefreshTokenInvalidoException` para token ausente/inválido/revogado
+- [x] `AuthenticationServiceTest.refreshToken_inexistente_*` asserta `RefreshTokenInvalidoException` (não `IllegalStateException`)
+- [x] Gate: `cd backend && mvn test -Dtest=AuthenticationServiceTest` exit 0
+- [x] Gate: `cd backend && mvn test -Dtest=ModularArchitectureTest` exit 0
 
 **Tests**: unit  
 **Gate**: Quick BE + Arch

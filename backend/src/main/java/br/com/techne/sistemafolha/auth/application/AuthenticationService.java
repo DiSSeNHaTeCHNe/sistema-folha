@@ -4,6 +4,7 @@ import br.com.techne.sistemafolha.auth.api.AcessoUsuarioDTO;
 import br.com.techne.sistemafolha.auth.api.LoginDTO;
 import br.com.techne.sistemafolha.auth.api.TokenDTO;
 import br.com.techne.sistemafolha.auth.domain.RefreshToken;
+import br.com.techne.sistemafolha.auth.domain.RefreshTokenInvalidoException;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
@@ -90,10 +91,10 @@ public class AuthenticationService {
         log.info("Processando refresh token");
 
         RefreshToken refreshToken = refreshTokenService.buscarPorToken(refreshTokenString)
-                .orElseThrow(() -> new IllegalStateException(MENSAGEM_REFRESH_INVALIDO));
+                .orElseThrow(() -> new RefreshTokenInvalidoException(MENSAGEM_REFRESH_INVALIDO));
 
         if (!refreshTokenService.validarRefreshToken(refreshToken)) {
-            throw new IllegalStateException(MENSAGEM_REFRESH_INVALIDO);
+            throw new RefreshTokenInvalidoException(MENSAGEM_REFRESH_INVALIDO);
         }
 
         Usuario usuario = refreshToken.getUsuario();
