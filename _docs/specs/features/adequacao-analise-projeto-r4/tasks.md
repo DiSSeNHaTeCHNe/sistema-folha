@@ -404,10 +404,10 @@ T14 → T15
 
 **Done when**:
 
-- [ ] `cd backend && mvn test` — 0 falhas; count ≥474
-- [ ] `bash diversos/scripts/check-jacoco-thresholds.sh` exit 0
-- [ ] `cd frontend && npm test` — ≥184; novos R4 ≤10
-- [ ] `ModularArchitectureTest` — zero violações AD-010
+- [x] `cd backend && mvn test` — 0 falhas; count ≥474
+- [x] `bash diversos/scripts/check-jacoco-thresholds.sh` exit 0
+- [x] `cd frontend && npm test` — ≥184; novos R4 ≤10
+- [x] `ModularArchitectureTest` — zero violações AD-010
 
 **Tests**: none  
 **Gate**: Full BE + Full FE + JaCoCo + Arch
