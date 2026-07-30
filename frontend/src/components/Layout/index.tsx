@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AlterarSenhaDialog } from '../AlterarSenhaDialog';
-import { isAdmin } from '../../utils/permissions';
+import { isAdmin, canAccessApiKeysPage } from '../../utils/permissions';
 import {
   AppBar,
   Box,
@@ -40,6 +40,7 @@ import {
   CloudUpload,
   ManageAccounts,
   Category,
+  VpnKey,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -52,6 +53,7 @@ export function Layout() {
   const [cadastroOpen, setCadastroOpen] = useState(false);
   const [alterarSenhaOpen, setAlterarSenhaOpen] = useState(false);
   const userIsAdmin = isAdmin(user);
+  const showApiKeysMenu = canAccessApiKeysPage(user);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -87,6 +89,8 @@ export function Layout() {
     { text: 'Relatórios', icon: <Assessment />, path: '/relatorios' },
   ];
 
+  const apiKeysMenuItem = { text: 'API Keys', icon: <VpnKey />, path: '/api-keys' };
+
   const cadastroItems = [
     { text: 'Usuários', icon: <ManageAccounts />, path: '/usuarios' },
     { text: 'Linhas de Negócio', icon: <Category />, path: '/linhas-negocio' },
@@ -116,6 +120,14 @@ export function Layout() {
             </ListItemButton>
           </ListItem>
         ))}
+        {showApiKeysMenu && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => navigate(apiKeysMenuItem.path)}>
+              <ListItemIcon>{apiKeysMenuItem.icon}</ListItemIcon>
+              <ListItemText primary={apiKeysMenuItem.text} />
+            </ListItemButton>
+          </ListItem>
+        )}
         {userIsAdmin && (
           <>
             <Divider />

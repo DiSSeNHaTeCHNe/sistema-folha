@@ -14,11 +14,13 @@ import { Relatorios } from '../pages/Relatorios';
 import { AuthProvider } from '../contexts/AuthContext';
 import { Layout } from '../components/Layout';
 import { AdminRoute } from './AdminRoute';
+import { ApiKeyRoute } from './ApiKeyRoute';
 import Cargos from '../pages/Cargos';
 import CentrosCusto from '../pages/CentrosCusto';
 import LinhasNegocio from '../pages/LinhasNegocio';
 import Organograma from '../pages/Organograma';
 import TiposBeneficio from '../pages/TiposBeneficio';
+import ApiKeys from '../pages/ApiKeys';
 
 function PrivateRoute() {
   const { user, loading } = useAuth();
@@ -54,6 +56,9 @@ export function RouterWithAuth() {
               <Route path="/beneficios-mensais" element={<BeneficiosMensais />} />
               <Route path="/beneficios" element={<Navigate to="/beneficios-mensais" replace />} />
               <Route path="/relatorios" element={<Relatorios />} />
+              <Route element={<ApiKeyRoute />}>
+                <Route path="/api-keys" element={<ApiKeys />} />
+              </Route>
               <Route element={<AdminRoute />}>
                 <Route path="/usuarios" element={<Usuarios />} />
                 <Route path="/linhas-negocio" element={<LinhasNegocio />} />
