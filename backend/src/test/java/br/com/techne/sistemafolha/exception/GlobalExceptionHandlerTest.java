@@ -18,6 +18,7 @@ import br.com.techne.sistemafolha.organograma.domain.OrganogramaAtivoConflictExc
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
@@ -204,6 +205,17 @@ class GlobalExceptionHandlerTest {
         assertNotNull(response.getBody());
         assertEquals(401, response.getBody().status());
         assertEquals("Refresh token inválido ou expirado", response.getBody().message());
+    }
+
+    @Test
+    void handleAccessDeniedException_retorna403() {
+        ResponseEntity<ErrorResponse> response = handler.handleAccessDeniedException(
+            new AccessDeniedException("Permissão API_KEY necessária"));
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(403, response.getBody().status());
+        assertEquals("Acesso negado", response.getBody().message());
     }
 
     @Test
