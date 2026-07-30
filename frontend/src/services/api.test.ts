@@ -116,21 +116,27 @@ describe('api.ts auth interceptors', () => {
   it('logs out and clears tokens when POST /auth/refresh returns 401', async () => {
     setValidTokens();
     const logoutListener = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     window.addEventListener('auth:logout', logoutListener);
 
     server.use(
       http.post(`${API_BASE_URL}/auth/refresh`, () => HttpResponse.json({}, { status: 401 })),
     );
 
-    await expect(
-      api.post('/auth/refresh', { refreshToken: 'old-refresh-token' }),
-    ).rejects.toMatchObject({ response: { status: 401 } });
+    try {
+      await api.post('/auth/refresh', { refreshToken: 'old-refresh-token' });
+      expect.fail('expected rejection');
+    } catch (error) {
+      expect((error as { response?: { status?: number } }).response?.status).toBe(401);
+    }
 
     expect(TokenService.getToken()).toBeNull();
     expect(TokenService.getRefreshToken()).toBeNull();
     expect(logoutListener).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledWith('Refresh token inválido ou expirado, fazendo logout...');
 
     window.removeEventListener('auth:logout', logoutListener);
+    consoleSpy.mockRestore();
   });
 
   it('treats 403 as unauthorized and refreshes before retrying', async () => {
@@ -380,6 +386,7 @@ describe('api.ts auth interceptors', () => {
   it('logs out when refresh endpoint returns 401 on a direct refreshToken call', async () => {
     setValidTokens();
     const logoutListener = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     window.addEventListener('auth:logout', logoutListener);
 
     server.use(
@@ -388,10 +395,18 @@ describe('api.ts auth interceptors', () => {
       ),
     );
 
-    await expect(refreshToken('stored-refresh')).rejects.toMatchObject({ response: { status: 401 } });
+    try {
+      await refreshToken('stored-refresh');
+      expect.fail('expected rejection');
+    } catch (error) {
+      expect((error as { response?: { status?: number } }).response?.status).toBe(401);
+    }
+
     expect(TokenService.getToken()).toBeNull();
     expect(logoutListener).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledWith('Refresh token inválido ou expirado, fazendo logout...');
 
     window.removeEventListener('auth:logout', logoutListener);
+    consoleSpy.mockRestore();
   });
 });
