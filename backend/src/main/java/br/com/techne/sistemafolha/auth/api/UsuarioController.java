@@ -1,12 +1,14 @@
 package br.com.techne.sistemafolha.auth.api;
 
 import br.com.techne.sistemafolha.auth.application.UsuarioService;
+import br.com.techne.sistemafolha.auth.domain.UsuarioNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,29 +25,43 @@ public class UsuarioController {
     public ResponseEntity<List<UsuarioDTO>> listar(
             @RequestParam(required = false) String nome,
             @RequestParam(required = false) String login,
-            @RequestParam(required = false) Long funcionarioId) {
-        return ResponseEntity.ok(usuarioService.listar(nome, login, funcionarioId));
+            @RequestParam(required = false) Long funcionarioId,
+            Authentication authentication) {
+        return ResponseEntity.ok(usuarioService.listarParaUsuario(
+            authentication.getName(), nome, login, funcionarioId));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Busca um usuário pelo ID")
     public ResponseEntity<UsuarioDTO> buscarPorId(
-            @Parameter(description = "ID do usuário") @PathVariable Long id) {
-        return ResponseEntity.ok(usuarioService.buscarPorId(id));
+            @Parameter(description = "ID do usuário") @PathVariable Long id,
+            Authentication authentication) {
+        try {
+            return ResponseEntity.ok(usuarioService.buscarPorIdParaUsuario(authentication.getName(), id));
+        } catch (UsuarioNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/login/{login}")
     @Operation(summary = "Busca um usuário pelo login")
     public ResponseEntity<UsuarioDTO> buscarPorLogin(
-            @Parameter(description = "Login do usuário") @PathVariable String login) {
-        return ResponseEntity.ok(usuarioService.buscarPorLogin(login));
+            @Parameter(description = "Login do usuário") @PathVariable String login,
+            Authentication authentication) {
+        try {
+            return ResponseEntity.ok(usuarioService.buscarPorLoginParaUsuario(authentication.getName(), login));
+        } catch (UsuarioNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/funcionario/{funcionarioId}")
     @Operation(summary = "Busca um usuário pelo ID do funcionário")
     public ResponseEntity<UsuarioDTO> buscarPorFuncionario(
-            @Parameter(description = "ID do funcionário") @PathVariable Long funcionarioId) {
-        UsuarioDTO usuario = usuarioService.buscarPorFuncionario(funcionarioId);
+            @Parameter(description = "ID do funcionário") @PathVariable Long funcionarioId,
+            Authentication authentication) {
+        UsuarioDTO usuario = usuarioService.buscarPorFuncionarioParaUsuario(
+            authentication.getName(), funcionarioId);
         if (usuario != null) {
             return ResponseEntity.ok(usuario);
         } else {
