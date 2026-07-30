@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import api, { resetApiAuthState } from './api';
+import api, { logout, resetApiAuthState } from './api';
 import { TokenService } from './tokenService';
 import { createAuthMswServer } from '../test/mswServer';
 import { API_BASE_URL, sampleLoginResponse } from '../test/handlers/authHandlers';
@@ -128,6 +128,124 @@ describe('api.ts auth interceptors', () => {
 
     expect(TokenService.getToken()).toBeNull();
     expect(TokenService.getRefreshToken()).toBeNull();
+    expect(logoutListener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener('auth:logout', logoutListener);
+  });
+
+  it('treats 403 as unauthorized and refreshes before retrying', async () => {
+    setValidTokens();
+    let protectedCallCount = 0;
+
+    server.use(
+      http.get(`${API_BASE_URL}/protected`, () => {
+        protectedCallCount += 1;
+        if (protectedCallCount === 1) {
+          return HttpResponse.json({}, { status: 403 });
+        }
+        return HttpResponse.json({ ok: true });
+      }),
+      http.post(`${API_BASE_URL}/auth/refresh`, () =>
+        HttpResponse.json(sampleLoginResponse({ token: 'forbidden-retry-token' })),
+      ),
+    );
+
+    const response = await api.get('/protected');
+
+    expect(response.status).toBe(200);
+    expect(protectedCallCount).toBe(2);
+    expect(TokenService.getToken()).toBe('forbidden-retry-token');
+  });
+
+  it('logs out without calling refresh when the refresh token is locally expired', async () => {
+    setValidTokens({
+      refreshExpiration: new Date(Date.now() - 60_000).toISOString(),
+    });
+    let refreshCallCount = 0;
+    const logoutListener = vi.fn();
+    window.addEventListener('auth:logout', logoutListener);
+
+    server.use(
+      http.get(`${API_BASE_URL}/protected`, () => HttpResponse.json({}, { status: 401 })),
+      http.post(`${API_BASE_URL}/auth/refresh`, () => {
+        refreshCallCount += 1;
+        return HttpResponse.json(sampleLoginResponse());
+      }),
+    );
+
+    await expect(api.get('/protected')).rejects.toBeDefined();
+
+    expect(refreshCallCount).toBe(0);
+    expect(TokenService.getToken()).toBeNull();
+    expect(logoutListener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener('auth:logout', logoutListener);
+  });
+
+  it('clears stored tokens after logout even when the server request fails', async () => {
+    setValidTokens();
+
+    server.use(
+      http.post(`${API_BASE_URL}/auth/logout`, () => HttpResponse.error()),
+    );
+
+    await logout();
+
+    expect(TokenService.getToken()).toBeNull();
+    expect(TokenService.getRefreshToken()).toBeNull();
+  });
+
+  it('clears stored tokens after a successful server logout', async () => {
+    setValidTokens();
+
+    server.use(
+      http.post(`${API_BASE_URL}/auth/logout`, () => HttpResponse.json({})),
+    );
+
+    await logout();
+
+    expect(TokenService.getToken()).toBeNull();
+    expect(TokenService.getRefreshToken()).toBeNull();
+  });
+
+  it('adds Authorization header to outgoing requests when a token is stored', async () => {
+    setValidTokens({ token: 'stored-token' });
+    let authHeader: string | null = null;
+
+    server.use(
+      http.get(`${API_BASE_URL}/protected`, ({ request }) => {
+        authHeader = request.headers.get('Authorization');
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+
+    await api.get('/protected');
+
+    expect(authHeader).toBe('Bearer stored-token');
+  });
+
+  it('logs out when refresh is attempted without a refresh token in storage', async () => {
+    localStorage.setItem('token', 'access-only');
+    localStorage.setItem(
+      'tokenExpiration',
+      new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    );
+    const logoutListener = vi.fn();
+    window.addEventListener('auth:logout', logoutListener);
+    let refreshCallCount = 0;
+
+    server.use(
+      http.get(`${API_BASE_URL}/protected`, () => HttpResponse.json({}, { status: 401 })),
+      http.post(`${API_BASE_URL}/auth/refresh`, () => {
+        refreshCallCount += 1;
+        return HttpResponse.json(sampleLoginResponse());
+      }),
+    );
+
+    await expect(api.get('/protected')).rejects.toBeDefined();
+
+    expect(refreshCallCount).toBe(0);
+    expect(TokenService.getToken()).toBeNull();
     expect(logoutListener).toHaveBeenCalledTimes(1);
 
     window.removeEventListener('auth:logout', logoutListener);
