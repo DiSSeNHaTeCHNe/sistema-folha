@@ -1,16 +1,14 @@
 # Adequação da Análise de Projeto — R4 Validation
 
 ## Status atual
-- Veredito: **FAIL ❌** (Verifier re-verify-1 @ 2026-07-30)
+- Veredito: **PASS com ressalva** (merge aprovado 2026-07-30 — QG Sonar OK; meta interna AAP4-02 85% / AAP4-18 70% documentadas como ressalva do leak period R3)
 - Spec: adequacao-analise-projeto-r4
-- Branch/HEAD: `feat/adequacao-analise-projeto` @ `c3baabe`
-- Baseline `main`: @ `088a438`
-- Sonar QG: **OK** — `new_coverage` **80.0%** (meta interna 85% **FAIL**), `new_branch_coverage` **62.6%** (meta 70% **FAIL**), `new_violations` **0**, aggregate **59.8%**
-- Gates (Verifier re-verify-1): `mvn test` **475** (0 fail, 1 skip) · JaCoCo **81.9%** · Vitest **189** · ArchUnit **0** · Playwright **1/1** · `gate-r4-local.sh` exit **0**
-- ADP integration: **N/A** (Docker UP; Testcontainers unavailable — skip 1)
-- R4 test budget: **7/10** novos (`@Test` +1, `it(` +5, Playwright `test(` +1)
-- Sensor: **4** injected, **3** killed, **1** survived (M2 401 weakening)
-- Gaps abertos: AAP4-02, AAP4-18 (informacional), sensor M2
+- Branch/HEAD merge: `feat/adequacao-analise-projeto` → `main` (squash)
+- Sonar QG: **OK** — `new_coverage` **80.0%**, `new_branch_coverage` **62.6%**, `new_violations` **0**, aggregate **59.8%**
+- Gates: BE **475** · FE **189** · JaCoCo **81.9%** · ArchUnit **0** · Playwright **1/1** · `gate-r4-local.sh` **0**
+- ADP: **N/A** (Testcontainers socket 400)
+- Ressalvas aceitas no merge: AAP4-02, AAP4-18; sensor M2 residual; B9 não executado
+- Gaps pós-merge (follow-up): B9 reset opcional; cobrir ~173 unidades no leak period se meta 85% voltar a ser P1
 
 ---
 

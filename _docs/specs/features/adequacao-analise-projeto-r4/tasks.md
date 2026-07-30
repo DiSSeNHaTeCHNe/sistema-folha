@@ -10,10 +10,10 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design**: `_docs/specs/features/adequacao-analise-projeto-r4/design.md`  
 **Spec**: `_docs/specs/features/adequacao-analise-projeto-r4/spec.md`  
-**Status**: Execute in progress — Batch 1 done (T1–T6 @ `9ee71bb`); Batch 2 next (T7–T15)  
+**Status**: Execute complete — merged to `main` (2026-07-30); QG OK; AAP4-02 meta 85% = ressalva documentada (80.0%)  
 **Branch base**: `main` @ `088a438` → `feat/adequacao-analise-projeto`
 
-**Budget global R4**: ≤ **10** novos `it(`/`test(` (AAP4-17). Contagem acumulada: T5 (+1) · T6 (+0 assertion edits) · T8 (+1 e2e) · T11 (+0–2). **Usado: 1/10**. Parar e perguntar se o budget for estourar.
+**Budget global R4**: ≤ **10** novos `it(`/`test(` (AAP4-17). Usado ~7–8/10 (T5+T8+T11+fix-cycle-1). Meta interna 85% não atingida — aceita como ressalva no merge (leak period R3).
 
 ---
 

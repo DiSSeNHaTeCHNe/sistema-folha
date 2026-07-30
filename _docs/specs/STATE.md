@@ -2,8 +2,8 @@
 
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
-**Last Updated:** 2026-07-29  
-**Current Work:** `adequacao-analise-projeto-r4` — Execute Batch 1 (T1–T6) em `feat/adequacao-analise-projeto`
+**Last Updated:** 2026-07-30  
+**Current Work:** `adequacao-analise-projeto-r4` — squash merge to `main` (QG OK; meta interna 85% documentada como ressalva)
 
 ---
 
@@ -117,14 +117,14 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Feature (Execute)**: `adequacao-analise-projeto-r4` → Batch 1 T1–T6 in progress on `feat/adequacao-analise-projeto` (synced from `main` @ `088a438`)
-- **Feature (tasks draft)**: `auth-api-keys` → Design A approved; `tasks.md` T1–T15 (3 batches); aguarda aprovação → Execute
-- **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `bcff5f9` (2026-07-29); Verifier PASS 21/21 ACs; Sonar QG OK @ `new_coverage` 80.0%
-- **Feature (done)**: `adequacao-analise-projeto` (R1) → squash merged to `main` @ `047e64d` (2026-07-29); Verifier PASS 24/24 ACs
-- **Feature (done)**: `adequacao-analise-projeto-r2` → squash merged to `main` @ `cb6e04a` (2026-07-29)
-- **Feature (done)**: `acl-cc-competencia` → rounds 1–3 complete @ `7e0421d`; squash merge pendente
-- **Feature (done)**: `organograma-linhas-hierarquia` → merged `main` (2026-07-29)
-- **Decisions**: AD-001…AD-014 active (see main)
+- **Feature (done)**: `adequacao-analise-projeto-r4` → squash merged to `main` (2026-07-30); QG OK @ `new_coverage` 80.0%; meta interna 85%/branch 70% = ressalva (leak period R3); Playwright PASS; ADP N/A Testcontainers
+- **Feature (tasks draft)**: `auth-api-keys` → Design A approved; `tasks.md` T1–T15; aguarda Execute
+- **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `bcff5f9`; Verifier PASS; Sonar QG OK @ 80.0%
+- **Feature (done)**: `adequacao-analise-projeto` (R1) → `main` @ `047e64d`
+- **Feature (done)**: `adequacao-analise-projeto-r2` → `main` @ `cb6e04a`
+- **Feature (done)**: `acl-cc-competencia` → @ `7e0421d`; squash merge pendente
+- **Feature (done)**: `organograma-linhas-hierarquia` → merged `main`
+- **Decisions**: AD-001…AD-014 active
 ---
 
 ## Blockers
