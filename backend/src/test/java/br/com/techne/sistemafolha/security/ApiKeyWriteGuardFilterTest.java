@@ -1,6 +1,9 @@
 package br.com.techne.sistemafolha.security;
 
 import jakarta.servlet.FilterChain;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -35,17 +39,68 @@ class ApiKeyWriteGuardFilterTest {
 
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
+    private ListAppender<ILoggingEvent> logAppender;
 
     @BeforeEach
     void setUp() {
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         SecurityContextHolder.clearContext();
+        logAppender = capturarLogsWriteGuard();
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+        if (logAppender != null) {
+            Logger logger = (Logger) LoggerFactory.getLogger(ApiKeyWriteGuardFilter.class);
+            logger.detachAppender(logAppender);
+        }
+    }
+
+    @Test
+    void doFilterInternal_postComApiKeyReadOnly_emiteWarnSemSecret() throws Exception {
+        configurarAuthComMarkerReadOnly();
+        request.setMethod(HttpMethod.POST.name());
+        request.setRequestURI("/folha-pagamento/processar");
+        request.addHeader("Authorization", "Bearer sf_live_abc12345secretvalue");
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(403, response.getStatus());
+        verify(filterChain, never()).doFilter(request, response);
+        assertTrue(logAppender.list.stream().anyMatch(e ->
+                e.getLevel().toString().equals("WARN")
+                        && e.getFormattedMessage().contains("admin")
+                        && e.getFormattedMessage().contains("POST")
+                        && e.getFormattedMessage().contains("/folha-pagamento/processar")));
+        assertTrue(logAppender.list.stream().noneMatch(e ->
+                e.getFormattedMessage().contains("sf_live_")
+                        || e.getFormattedMessage().contains("Authorization")));
+    }
+
+    @Test
+    void doFilterInternal_putComApiKeyReadOnly_retorna403() throws Exception {
+        configurarAuthComMarkerReadOnly();
+        request.setMethod(HttpMethod.PUT.name());
+        request.setRequestURI("/funcionarios/1");
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(403, response.getStatus());
+        verify(filterChain, never()).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_patchComApiKeyReadOnly_retorna403() throws Exception {
+        configurarAuthComMarkerReadOnly();
+        request.setMethod(HttpMethod.PATCH.name());
+        request.setRequestURI("/funcionarios/1");
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(403, response.getStatus());
+        verify(filterChain, never()).doFilter(request, response);
     }
 
     @Test
@@ -128,5 +183,14 @@ class ApiKeyWriteGuardFilterTest {
                 .build();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+    }
+
+    private ListAppender<ILoggingEvent> capturarLogsWriteGuard() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ApiKeyWriteGuardFilter.class);
+        logger.setLevel(ch.qos.logback.classic.Level.WARN);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        return appender;
     }
 }
