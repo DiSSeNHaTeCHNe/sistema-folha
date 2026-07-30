@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.config;
 
+import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 import br.com.techne.sistemafolha.beneficios.api.TipoBeneficioController;
 import br.com.techne.sistemafolha.beneficios.api.TipoBeneficioDTO;
 import br.com.techne.sistemafolha.beneficios.application.TipoBeneficioService;
@@ -38,6 +39,9 @@ class SecurityConfigTipoBeneficioTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @MockBean
+    private ApiKeyService apiKeyService;
 
     @Test
     @WithMockUser(roles = "USER")

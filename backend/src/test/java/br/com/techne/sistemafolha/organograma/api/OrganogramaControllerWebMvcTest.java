@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.organograma.api;
 
+import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 import br.com.techne.sistemafolha.config.SecurityConfig;
 import br.com.techne.sistemafolha.organograma.application.OrganogramaService;
 import br.com.techne.sistemafolha.organograma.domain.NoOrganogramaNotFoundException;
@@ -37,6 +38,9 @@ class OrganogramaControllerWebMvcTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @MockBean
+    private ApiKeyService apiKeyService;
 
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")

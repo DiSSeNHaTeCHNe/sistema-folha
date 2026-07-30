@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.importacao.api;
 
+import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 import br.com.techne.sistemafolha.config.SecurityConfig;
 import br.com.techne.sistemafolha.folha.api.ProcessamentoResultadoDTO;
 import br.com.techne.sistemafolha.folha.domain.FolhaProcessamentoFalhaException;
@@ -40,6 +41,9 @@ class ImportacaoFolhaAdpControllerWebMvcTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @MockBean
+    private ApiKeyService apiKeyService;
 
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")

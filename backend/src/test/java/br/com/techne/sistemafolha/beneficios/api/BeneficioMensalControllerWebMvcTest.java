@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.beneficios.api;
 
+import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 import br.com.techne.sistemafolha.beneficios.application.BeneficioMensalService;
 import br.com.techne.sistemafolha.config.SecurityConfig;
 import br.com.techne.sistemafolha.security.JwtService;
@@ -37,6 +38,9 @@ class BeneficioMensalControllerWebMvcTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @MockBean
+    private ApiKeyService apiKeyService;
 
     @Test
     @WithMockUser(username = "usuario.teste", roles = "USER")

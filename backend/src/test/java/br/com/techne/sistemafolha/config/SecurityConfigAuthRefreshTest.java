@@ -3,6 +3,7 @@ package br.com.techne.sistemafolha.config;
 import br.com.techne.sistemafolha.auth.api.AuthController;
 import br.com.techne.sistemafolha.auth.api.RefreshTokenRequest;
 import br.com.techne.sistemafolha.auth.api.TokenDTO;
+import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 import br.com.techne.sistemafolha.auth.application.AuthenticationService;
 import br.com.techne.sistemafolha.auth.domain.RefreshTokenInvalidoException;
 import br.com.techne.sistemafolha.exception.GlobalExceptionHandler;
@@ -46,6 +47,9 @@ class SecurityConfigAuthRefreshTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @MockBean
+    private ApiKeyService apiKeyService;
 
     @Test
     void postAuthRefresh_anonimoSemAuthorization_naoRetorna401() throws Exception {
