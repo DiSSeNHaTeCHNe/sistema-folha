@@ -73,6 +73,18 @@ class ApiKeyControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "apiuser")
+    void postApiKeys_nomeOmitido_retorna400() throws Exception {
+        when(apiKeyService.resolverUsuarioPorLogin("apiuser")).thenReturn(usuarioComPermissaoApiKey());
+
+        mockMvc.perform(post("/auth/api-keys")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"diasValidade\":30}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser(username = "apiuser")
     void postApiKeys_diasValidadeInvalidos_retorna400() throws Exception {
         when(apiKeyService.resolverUsuarioPorLogin("apiuser")).thenReturn(usuarioComPermissaoApiKey());
 

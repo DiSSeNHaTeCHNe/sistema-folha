@@ -298,6 +298,7 @@ class ApiKeyServiceTest {
         Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
 
         assertTrue(result.isEmpty());
+        verify(apiKeyRepository, never()).save(any());
     }
 
     @Test
@@ -311,6 +312,7 @@ class ApiKeyServiceTest {
         Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
 
         assertTrue(result.isEmpty());
+        verify(apiKeyRepository, never()).save(any());
     }
 
     @Test
@@ -324,6 +326,7 @@ class ApiKeyServiceTest {
         Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
 
         assertTrue(result.isEmpty());
+        verify(apiKeyRepository, never()).save(any());
     }
 
     @Test
@@ -351,6 +354,7 @@ class ApiKeyServiceTest {
         Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
 
         assertTrue(result.isEmpty());
+        verify(apiKeyRepository, never()).save(any());
     }
 
     @Test
