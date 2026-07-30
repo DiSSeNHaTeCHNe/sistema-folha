@@ -220,12 +220,66 @@ class ApiKeyServiceTest {
     }
 
     @Test
+    void autenticarPorChave_keyValida_persisteUltimoUsoEm() {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        ApiKey apiKey = apiKeyDoUsuario(usuario, 400L);
+        String chave = "sf_live_abc12345secretpart";
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse("sf_live_abc12345")).thenReturn(Optional.of(apiKey));
+        when(passwordEncoder.matches(chave, "hash")).thenReturn(true);
+        when(apiKeyRepository.save(apiKey)).thenReturn(apiKey);
+
+        Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
+
+        assertTrue(result.isPresent());
+        ArgumentCaptor<ApiKey> captor = ArgumentCaptor.forClass(ApiKey.class);
+        verify(apiKeyRepository).save(captor.capture());
+        assertNotNull(captor.getValue().getUltimoUsoEm());
+    }
+
+    @Test
+    void autenticarPorChave_hashInvalido_naoPersisteUltimoUsoEm() {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        ApiKey apiKey = apiKeyDoUsuario(usuario, 404L);
+        String chave = "sf_live_abc12345wrongsecret";
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse("sf_live_abc12345")).thenReturn(Optional.of(apiKey));
+        when(passwordEncoder.matches(chave, "hash")).thenReturn(false);
+
+        Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
+
+        assertTrue(result.isEmpty());
+        verify(apiKeyRepository, never()).save(any());
+    }
+
+    @Test
+    void autenticarPorChave_keyValida_listagemRefleteUltimoUsoEm() {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        ApiKey apiKey = apiKeyDoUsuario(usuario, 406L);
+        String chave = "sf_live_abc12345secretpart";
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse("sf_live_abc12345")).thenReturn(Optional.of(apiKey));
+        when(passwordEncoder.matches(chave, "hash")).thenReturn(true);
+        when(apiKeyRepository.save(apiKey)).thenAnswer(inv -> {
+            ApiKey saved = inv.getArgument(0);
+            saved.setUltimoUsoEm(LocalDateTime.now());
+            return saved;
+        });
+
+        apiKeyService.autenticarPorChave(chave);
+
+        when(apiKeyRepository.findByUsuarioIdOrderByDataCriacaoDesc(10L)).thenReturn(List.of(apiKey));
+        List<ApiKeyListDTO> result = apiKeyService.listar(usuario, null);
+
+        assertEquals(1, result.size());
+        assertNotNull(result.get(0).ultimoUsoEm());
+    }
+
+    @Test
     void autenticarPorChave_keyValida_retornaUsuarioDono() {
         Usuario usuario = usuarioComPermissaoApiKey();
         ApiKey apiKey = apiKeyDoUsuario(usuario, 400L);
         String chave = "sf_live_abc12345secretpart";
         when(apiKeyRepository.findByPrefixoAndRevogadoFalse("sf_live_abc12345")).thenReturn(Optional.of(apiKey));
         when(passwordEncoder.matches(chave, "hash")).thenReturn(true);
+        when(apiKeyRepository.save(apiKey)).thenReturn(apiKey);
 
         Optional<Usuario> result = apiKeyService.autenticarPorChave(chave);
 

@@ -97,6 +97,7 @@ public class ApiKeyService {
         }
     }
 
+    @Transactional
     public Optional<Usuario> autenticarPorChave(String chaveBruta) {
         if (chaveBruta == null || !chaveBruta.startsWith(CHAVE_PREFIX)) {
             return Optional.empty();
@@ -125,6 +126,9 @@ public class ApiKeyService {
             logger.debug("{}Autenticação API Key negada usuarioId={} prefixo={}", DOMAIN_PREFIX, usuario.getId(), prefixo);
             return Optional.empty();
         }
+
+        apiKey.setUltimoUsoEm(LocalDateTime.now());
+        apiKeyRepository.save(apiKey);
 
         return Optional.of(usuario);
     }
