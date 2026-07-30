@@ -10,10 +10,10 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design**: `_docs/specs/features/adequacao-analise-projeto-r4/design.md`  
 **Spec**: `_docs/specs/features/adequacao-analise-projeto-r4/spec.md`  
-**Status**: Draft — Tasks 2026-07-29  
+**Status**: Execute in progress — Batch 1 done (T1–T6 @ `9ee71bb`); Batch 2 next (T7–T15)  
 **Branch base**: `main` @ `088a438` → `feat/adequacao-analise-projeto`
 
-**Budget global R4**: ≤ **10** novos `it(`/`test(` (AAP4-17). Contagem acumulada nos commits: T5 (+1) · T6 (preferir reforçar existentes; +0–3) · T8 (+1 e2e) · T11 (+0–2). Parar e perguntar se o budget for estourar.
+**Budget global R4**: ≤ **10** novos `it(`/`test(` (AAP4-17). Contagem acumulada: T5 (+1) · T6 (+0 assertion edits) · T8 (+1 e2e) · T11 (+0–2). **Usado: 1/10**. Parar e perguntar se o budget for estourar.
 
 ---
 
@@ -271,9 +271,9 @@ T14 → T15
 
 **Done when**:
 
-- [ ] `@playwright/test` em `devDependencies`
-- [ ] Script `test:e2e` presente
-- [ ] `playwright.config.ts` com `baseURL` + `webServer` preview (sem BE)
+- [x] `@playwright/test` em `devDependencies`
+- [x] Script `test:e2e` presente
+- [x] `playwright.config.ts` com `baseURL` + `webServer` preview (sem BE)
 - [ ] Gate: `cd frontend && npm ci` exit 0; `npm test` ainda ≥184
 
 **Tests**: none  
