@@ -59,8 +59,8 @@ vi.mock('../../services/folhaPagamentoService', () => ({
 vi.mock('../../services/centroCustoService', () => ({
   centroCustoService: {
     listarTodos: vi.fn().mockResolvedValue([
-      { id: 1, descricao: 'Centro A' },
-      { id: 2, descricao: 'Centro B' },
+      { id: 1, descricao: 'TI' },
+      { id: 2, descricao: 'RH' },
     ]),
   },
 }));
@@ -311,5 +311,120 @@ describe('FolhaPagamento page', () => {
     const source = await import('./index?raw');
     expect(source.default).not.toMatch(/Math\.random\s*\(/);
     expect(source.default).toMatch(/key=\{[^}]+\.id\}/);
+  });
+
+  it('switches to Bruto totalizer tab in rubricas dialog', async () => {
+    vi.mocked(folhaPagamentoService.listarLinhasPorTotalizador).mockResolvedValue([
+      {
+        rubricaCodigo: '0010',
+        rubricaDescricao: 'Salario Base',
+        origemLinha: 'FOLHA_ADP',
+        contribuicao: 1000,
+        porcentagem: 100,
+      },
+    ]);
+
+    renderWithProviders(<FolhaPagamento />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Rubricas' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Bruto' }));
+
+    await waitFor(() => {
+      expect(folhaPagamentoService.listarLinhasPorTotalizador).toHaveBeenCalledWith(99, 'GROSS');
+    });
+  });
+
+  it('switches to Custo totalizer tab in rubricas dialog', async () => {
+    renderWithProviders(<FolhaPagamento />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Rubricas' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Custo' }));
+
+    await waitFor(() => {
+      expect(folhaPagamentoService.listarLinhasPorTotalizador).toHaveBeenCalledWith(99, 'COMPANY_COST');
+    });
+  });
+
+  it('shows rubrica lines grouped by origem in dialog', async () => {
+    vi.mocked(folhaPagamentoService.listarLinhasPorTotalizador).mockResolvedValue([
+      {
+        rubricaCodigo: '0010',
+        rubricaDescricao: 'Salario Base',
+        origemLinha: 'FOLHA_ADP',
+        contribuicao: 1000,
+        porcentagem: 100,
+      },
+      {
+        rubricaCodigo: '0020',
+        rubricaDescricao: 'Beneficio VR',
+        origemLinha: 'BENEFICIO',
+        contribuicao: 200,
+        porcentagem: 100,
+      },
+    ]);
+
+    renderWithProviders(<FolhaPagamento />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Rubricas' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Rubricas' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('0010 - Salario Base')).toBeInTheDocument();
+    });
+  });
+
+  it('filters funcionarios by centro de custo select', async () => {
+    renderWithProviders(<FolhaPagamento />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => {
+      expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+    });
+
+    fireEvent.mouseDown(screen.getByLabelText('Centro de Custo'));
+    fireEvent.click(await screen.findByRole('option', { name: 'TI' }));
+
+    expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+  });
+
+  it('shows empty resumos when fetch fails silently', async () => {
+    vi.mocked(resumoFolhaPagamentoService.listarPorAno).mockRejectedValue(new Error('fail'));
+
+    renderWithProviders(<FolhaPagamento />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Nenhum resumo de folha de pagamento encontrado.')).toBeInTheDocument();
+    });
   });
 });

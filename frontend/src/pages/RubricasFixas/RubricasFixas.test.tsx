@@ -209,4 +209,126 @@ describe('RubricasFixas page', () => {
       expect(toast.error).toHaveBeenCalledWith('Erro ao carregar dados iniciais');
     });
   });
+
+  it('shows funcionario name when funcionarioId is set', async () => {
+    vi.mocked(funcionarioRubricaFixaService.listar).mockResolvedValue([
+      { ...sampleRegistro, id: 2, funcionarioId: 10, funcionarioNome: 'Maria Silva' },
+    ]);
+
+    renderWithProviders(<RubricasFixas />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('cell', { name: 'Maria Silva' })).toBeInTheDocument();
+    });
+  });
+
+  it('shows closed vigencia range when vigenciaFim is set', async () => {
+    vi.mocked(funcionarioRubricaFixaService.listar).mockResolvedValue([
+      { ...sampleRegistro, vigenciaFim: '2026-12-31' },
+    ]);
+
+    renderWithProviders(<RubricasFixas />);
+
+    await waitFor(() => {
+      expect(screen.getByText('2026-01-01 a 2026-12-31')).toBeInTheDocument();
+    });
+  });
+
+  it('shows custom percentual when porcentagem is provided', async () => {
+    vi.mocked(funcionarioRubricaFixaService.listar).mockResolvedValue([
+      { ...sampleRegistro, porcentagem: 50 },
+    ]);
+
+    renderWithProviders(<RubricasFixas />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('cell', { name: '50%' })).toBeInTheDocument();
+    });
+  });
+
+  it('updates rubrica fixa from dialog submit', async () => {
+    vi.mocked(funcionarioRubricaFixaService.atualizar).mockResolvedValue(sampleRegistro);
+
+    renderWithProviders(<RubricasFixas />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Editar rubrica fixa' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Editar rubrica fixa' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Atualizar' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
+
+    await waitFor(() => {
+      expect(funcionarioRubricaFixaService.atualizar).toHaveBeenCalledWith(1, expect.any(Object));
+    });
+    expect(toast.success).toHaveBeenCalledWith('Rubrica fixa atualizada com sucesso');
+  });
+
+  it('shows toast error when delete fails', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.mocked(funcionarioRubricaFixaService.remover).mockRejectedValue(new Error('fail'));
+
+    renderWithProviders(<RubricasFixas />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Excluir rubrica fixa' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir rubrica fixa' }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Erro ao excluir rubrica fixa');
+    });
+  });
+
+  it('shows generic error when save fails without API message', async () => {
+    vi.mocked(funcionarioRubricaFixaService.atualizar).mockRejectedValue(new Error('network'));
+
+    renderWithProviders(<RubricasFixas />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Editar rubrica fixa' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Editar rubrica fixa' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Atualizar' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Erro ao salvar rubrica fixa');
+    });
+  });
+
+  it('shows toast error when list load fails', async () => {
+    vi.mocked(funcionarioRubricaFixaService.listar).mockRejectedValue(new Error('fail'));
+
+    renderWithProviders(<RubricasFixas />);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Erro ao carregar rubricas fixas');
+    });
+  });
+
+  it('closes dialog on cancel', async () => {
+    renderWithProviders(<RubricasFixas />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Nova Rubrica Fixa' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Nova Rubrica Fixa' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
 });

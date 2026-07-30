@@ -244,4 +244,90 @@ describe('BeneficiosMensais page', () => {
       expect(linhaNegocioService.listarTodos).toHaveBeenCalled();
     });
   });
+
+  it('filters funcionarios by linha de negocio', async () => {
+    renderWithProviders(<BeneficiosMensais />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => {
+      expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+    });
+
+    fireEvent.mouseDown(screen.getByLabelText('Linha de Negócio'));
+    fireEvent.click(await screen.findByRole('option', { name: 'Corporate' }));
+
+    expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+  });
+
+  it('filters funcionarios by centro de custo', async () => {
+    renderWithProviders(<BeneficiosMensais />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => {
+      expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+    });
+
+    fireEvent.mouseDown(screen.getByLabelText('Centro de Custo'));
+    fireEvent.click(await screen.findByRole('option', { name: 'TI' }));
+
+    expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+  });
+
+  it('clears funcionario filters', async () => {
+    renderWithProviders(<BeneficiosMensais />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Limpar' })).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Buscar funcionário' }), {
+      target: { value: 'maria' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar' }));
+
+    expect(screen.getByRole('textbox', { name: 'Buscar funcionário' })).toHaveValue('');
+  });
+
+  it('shows error when funcionarios fetch fails', async () => {
+    vi.mocked(beneficioMensalService.listar).mockRejectedValue(new Error('network'));
+
+    renderWithProviders(<BeneficiosMensais />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Erro ao buscar funcionários')).toBeInTheDocument();
+    });
+  });
+
+  it('shows empty funcionarios message when filter excludes all', async () => {
+    renderWithProviders(<BeneficiosMensais />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => {
+      expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Buscar funcionário' }), {
+      target: { value: 'inexistente' },
+    });
+
+    expect(screen.getByText('Nenhum funcionário encontrado para este período.')).toBeInTheDocument();
+  });
 });

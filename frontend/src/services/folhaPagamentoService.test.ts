@@ -80,4 +80,54 @@ describe('folhaPagamentoService', () => {
     });
     expect(result.totalFichas).toBe(1);
   });
+
+  it('queries period, id, totalizador lines and imports file', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/folha-pagamento`, ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        expect(params.get('dataInicio')).toBe('2026-01-01');
+        return HttpResponse.json([sampleFolha]);
+      }),
+      http.get(`${API_BASE_URL}/folha-pagamento/1`, () => HttpResponse.json(sampleFolha)),
+      http.get(`${API_BASE_URL}/folha-pagamento/fichas/5/linhas`, ({ request }) => {
+        expect(new URL(request.url).searchParams.get('totalizer')).toBe('NET');
+        return HttpResponse.json([
+          {
+            rubricaCodigo: '001',
+            rubricaDescricao: 'Salário',
+            origemLinha: 'FOLHA_ADP',
+            contribuicao: 1000,
+            valor: 1000,
+          },
+        ]);
+      }),
+      http.get(`${API_BASE_URL}/folha-pagamento/totais-funcionarios`, () =>
+        HttpResponse.json([
+          {
+            funcionarioId: 10,
+            funcionarioNome: 'João',
+            competenciaInicio: '2026-01-01',
+            competenciaFim: '2026-01-31',
+            totalRubricas: 1,
+            totalBeneficios: 0,
+            salBruto: 1000,
+            salLiquido: 800,
+            salCustoFolha: 900,
+            salCustoBeneficios: 0,
+            encargosRateados: 100,
+            custoEmpresa: 1000,
+          },
+        ]),
+      ),
+      http.post(`${API_BASE_URL}/folha-pagamento/importar`, () => HttpResponse.json([sampleFolha])),
+    );
+
+    expect(await folhaPagamentoService.buscarPorPeriodo('2026-01-01', '2026-01-31')).toHaveLength(1);
+    expect((await folhaPagamentoService.buscarPorId(1)).id).toBe(1);
+    expect(await folhaPagamentoService.listarLinhasPorTotalizador(5, 'NET')).toHaveLength(1);
+    expect(await folhaPagamentoService.consultarTotaisPorFuncionario('2026-01-01', '2026-01-31')).toHaveLength(1);
+
+    const file = new File(['data'], 'folha.txt', { type: 'text/plain' });
+    expect(await folhaPagamentoService.importar(file)).toHaveLength(1);
+  });
 });
