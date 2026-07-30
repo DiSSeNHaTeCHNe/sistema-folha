@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.config;
 
 import br.com.techne.sistemafolha.auth.application.ApiKeyService;
+import br.com.techne.sistemafolha.security.ApiKeyWriteGuardFilter;
 import br.com.techne.sistemafolha.security.JwtAuthenticationFilter;
 import br.com.techne.sistemafolha.security.JwtService;
 import org.springframework.context.annotation.Bean;
@@ -59,7 +60,13 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(apiKeyWriteGuardFilter(), JwtAuthenticationFilter.class)
             .build();
+    }
+
+    @Bean
+    public ApiKeyWriteGuardFilter apiKeyWriteGuardFilter() {
+        return new ApiKeyWriteGuardFilter();
     }
 
     @Bean
