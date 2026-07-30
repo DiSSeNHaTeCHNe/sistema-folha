@@ -227,7 +227,7 @@ Integrações e agentes (ex.: servidor MCP no Cursor) precisam autenticar na API
 | APIKEY-02 | P1: Criar (403) | Execute | Verified (fix1) |
 | APIKEY-03 | P1: Criar (validação) | Execute | Verified (fix1) |
 | APIKEY-04 | P1: Criar (formato) | Execute | Verified |
-| APIKEY-05 | P1: Auth leitura | Execute | Verified (fix1) |
+| APIKEY-05 | P1: Auth leitura | Execute | Verified (fix2 cadastro) |
 | APIKEY-06 | P1: Auth negação | Execute | Verified |
 | APIKEY-07 | P1: JWT regressão | Execute | Verified (fix-cycle-1 WebMvc mocks) |
 | APIKEY-08 | P1: Auth testes | Execute | Verified |
