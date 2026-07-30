@@ -377,10 +377,10 @@ T14 → T15
 
 **Done when**:
 
-- [ ] Skip documentado **ou** ≤2 casos adicionados no escopo AAP4-19
-- [ ] Budget R4 acumulado ≤10
-- [ ] Gates dos arquivos tocados verdes
-- [ ] Se ainda &lt;85% após budget: **parar e perguntar** (SPEC_DEVIATION / B9) — não inventar page tests
+- [x] Skip documentado **ou** ≤2 casos adicionados no escopo AAP4-19
+- [x] Budget R4 acumulado ≤10
+- [x] Gates dos arquivos tocados verdes
+- [x] Se ainda &lt;85% após budget: **parar e perguntar** (SPEC_DEVIATION / B9) — não inventar page tests
 
 **Tests**: unit (se houver código) / none (se skip)  
 **Gate**: Quick FE e/ou Quick BE conforme touch

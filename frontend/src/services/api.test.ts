@@ -357,6 +357,26 @@ describe('api.ts auth interceptors', () => {
     consoleSpy.mockRestore();
   });
 
+  it('logs out when refresh returns 500 during a 401 retry', async () => {
+    setValidTokens();
+    const logoutListener = vi.fn();
+    window.addEventListener('auth:logout', logoutListener);
+
+    server.use(
+      http.get(`${API_BASE_URL}/protected`, () => HttpResponse.json({}, { status: 401 })),
+      http.post(`${API_BASE_URL}/auth/refresh`, () =>
+        HttpResponse.json({ message: 'server error' }, { status: 500 }),
+      ),
+    );
+
+    await expect(api.get('/protected')).rejects.toThrow('Falha ao renovar token');
+
+    expect(TokenService.getToken()).toBeNull();
+    expect(logoutListener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener('auth:logout', logoutListener);
+  });
+
   it('logs out when refresh endpoint returns 401 on a direct refreshToken call', async () => {
     setValidTokens();
     const logoutListener = vi.fn();
