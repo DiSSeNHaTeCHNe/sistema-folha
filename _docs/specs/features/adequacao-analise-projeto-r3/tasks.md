@@ -297,9 +297,9 @@ T15
 
 **Done when**:
 
-- [ ] Handler retorna HTTP **401** (não 500 via `Exception.class`)
-- [ ] Teste em `GlobalExceptionHandlerTest` asserta status 401 + message
-- [ ] Gate: `cd backend && mvn test -Dtest=GlobalExceptionHandlerTest` exit 0
+- [x] Handler retorna HTTP **401** (não 500 via `Exception.class`)
+- [x] Teste em `GlobalExceptionHandlerTest` asserta status 401 + message
+- [x] Gate: `cd backend && mvn test -Dtest=GlobalExceptionHandlerTest` exit 0
 
 **Tests**: unit  
 **Gate**: Quick BE

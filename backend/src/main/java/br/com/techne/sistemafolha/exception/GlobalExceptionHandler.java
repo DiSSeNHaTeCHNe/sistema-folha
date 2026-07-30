@@ -5,6 +5,7 @@ import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensalNotFoundExcep
 import br.com.techne.sistemafolha.beneficios.domain.ImportacaoBeneficioMensalInvalidaException;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioCodigoDuplicadoException;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundException;
+import br.com.techne.sistemafolha.auth.domain.RefreshTokenInvalidoException;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioJaExisteException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
@@ -110,6 +111,12 @@ public class GlobalExceptionHandler {
             ImportacaoBeneficioMensalInvalidaException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(RefreshTokenInvalidoException.class)
+    public ResponseEntity<ErrorResponse> handleRefreshTokenInvalidoException(RefreshTokenInvalidoException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
