@@ -1,5 +1,7 @@
 package br.com.techne.sistemafolha.security;
 
+import br.com.techne.sistemafolha.auth.application.ApiKeyService;
+import br.com.techne.sistemafolha.auth.domain.Usuario;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -20,23 +22,34 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
+import java.util.List;
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
 
     private static final String LOGIN = "usuario.teste";
+    private static final String API_KEY = ApiKeySecurity.CHAVE_PREFIX + "abcd1234" + "secret-part";
 
     @Mock
     private JwtService jwtService;
 
     @Mock
     private UserDetailsService userDetailsService;
+
+    @Mock
+    private ApiKeyService apiKeyService;
 
     @Mock
     private FilterChain filterChain;
@@ -109,7 +122,47 @@ class JwtAuthenticationFilterTest {
 
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEqualsPrincipal(LOGIN);
+        assertFalse(temMarkerReadOnly());
         verify(filterChain).doFilter(request, response);
+        verifyNoInteractions(apiKeyService);
+    }
+
+    @Test
+    void doFilterInternal_apiKeyValida_configuraSecurityContextComMarkerReadOnly() throws Exception {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        request.addHeader("Authorization", "Bearer " + API_KEY);
+        when(apiKeyService.autenticarPorChave(API_KEY)).thenReturn(Optional.of(usuario));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
+        assertEquals(LOGIN, SecurityContextHolder.getContext().getAuthentication().getName());
+        assertTrue(temMarkerReadOnly());
+        verify(filterChain).doFilter(request, response);
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    void doFilterInternal_apiKeyInvalida_naoAutenticaENaoChamaJwtParser() throws Exception {
+        request.addHeader("Authorization", "Bearer " + API_KEY);
+        when(apiKeyService.autenticarPorChave(API_KEY)).thenReturn(Optional.empty());
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain).doFilter(request, response);
+        verify(jwtService, never()).extractLogin(anyString());
+    }
+
+    @Test
+    void doFilterInternal_apiKeyRevogadaOuExpirada_naoAutentica() throws Exception {
+        request.addHeader("Authorization", "Bearer " + API_KEY);
+        when(apiKeyService.autenticarPorChave(API_KEY)).thenReturn(Optional.empty());
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(jwtService, never()).extractLogin(anyString());
     }
 
     private UserDetails userDetails() {
@@ -118,6 +171,22 @@ class JwtAuthenticationFilterTest {
             .password("secret")
             .authorities(new SimpleGrantedAuthority("ROLE_USER"))
             .build();
+    }
+
+    private Usuario usuarioComPermissaoApiKey() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setLogin(LOGIN);
+        usuario.setSenha("secret");
+        usuario.setNome("Usuário Teste");
+        usuario.setPermissoes(List.of("API_KEY"));
+        usuario.setAtivo(true);
+        return usuario;
+    }
+
+    private boolean temMarkerReadOnly() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> ApiKeySecurity.ROLE_API_KEY_READONLY.equals(a.getAuthority()));
     }
 
     private void assertEqualsPrincipal(String expectedLogin) {

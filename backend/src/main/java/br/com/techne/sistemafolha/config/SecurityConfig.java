@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.config;
 
+import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 import br.com.techne.sistemafolha.security.JwtAuthenticationFilter;
 import br.com.techne.sistemafolha.security.JwtService;
 import org.springframework.context.annotation.Bean;
@@ -22,10 +23,15 @@ public class SecurityConfig {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final ApiKeyService apiKeyService;
 
-    public SecurityConfig(JwtService jwtService, UserDetailsService userDetailsService) {
+    public SecurityConfig(
+            JwtService jwtService,
+            UserDetailsService userDetailsService,
+            ApiKeyService apiKeyService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.apiKeyService = apiKeyService;
     }
 
     @Bean
@@ -58,6 +64,6 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtService, userDetailsService);
+        return new JwtAuthenticationFilter(jwtService, userDetailsService, apiKeyService);
     }
 } 
