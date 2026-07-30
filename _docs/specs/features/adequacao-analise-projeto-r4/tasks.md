@@ -324,9 +324,9 @@ T14 → T15
 
 **Done when**:
 
-- [ ] `sonar-analyze.sh` exit 0 (ou bloqueio documentado: Sonar DOWN)
-- [ ] Métricas registradas: QG, `new_coverage`, `new_branch_coverage`, `new_violations`, `coverage`
-- [ ] Decisão explícita: ≥85% → T11 pode skip código; &lt;85% → T11 obrigatório dentro AAP4-19; se budget esgotado → parar e perguntar (edge case spec)
+- [x] `sonar-analyze.sh` exit 0 (ou bloqueio documentado: Sonar DOWN)
+- [x] Métricas registradas: QG, `new_coverage`, `new_branch_coverage`, `new_violations`, `coverage`
+- [x] Decisão explícita: ≥85% → T11 pode skip código; &lt;85% → T11 obrigatório dentro AAP4-19; se budget esgotado → parar e perguntar (edge case spec)
 
 **Tests**: none  
 **Gate**: Sonar
@@ -350,10 +350,10 @@ T14 → T15
 
 **Done when**:
 
-- [ ] Comando Docker de verificação registrado
-- [ ] UP → teste exit 0 (persistência ≥1 linha pré-rollback)
-- [ ] DOWN → `mvn test` suite verde com skip; N/A motivo registrado
-- [ ] Falha Testcontainers com Docker UP é **bloqueante** (não mascarar)
+- [x] Comando Docker de verificação registrado
+- [ ] UP → teste exit 0 (persistência ≥1 linha pré-rollback) — **N/A**: Testcontainers unavailable (skip 1)
+- [x] DOWN → `mvn test` suite verde com skip; N/A motivo registrado
+- [x] Falha Testcontainers com Docker UP é **bloqueante** (não mascarar)
 
 **Tests**: none (evidência do teste de integração existente)  
 **Gate**: ADP Integration
