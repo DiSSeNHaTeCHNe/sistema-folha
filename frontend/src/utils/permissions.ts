@@ -15,3 +15,10 @@ export const CADASTRO_ROUTES = [
 export function isAdmin(user: Usuario | null | undefined): boolean {
   return user?.permissoes?.includes('ADMIN') ?? false;
 }
+
+export function canAccessApiKeysPage(user: Usuario | null | undefined): boolean {
+  if (!user?.permissoes) {
+    return false;
+  }
+  return user.permissoes.includes('API_KEY') || user.permissoes.includes('ADMIN');
+}
