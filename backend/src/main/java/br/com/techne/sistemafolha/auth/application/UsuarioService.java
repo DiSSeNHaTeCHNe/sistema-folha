@@ -4,9 +4,14 @@ import br.com.techne.sistemafolha.auth.api.UsuarioDTO;
 import br.com.techne.sistemafolha.auth.domain.UsuarioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
+import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.port.FuncionarioConsultaPort;
 import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
+import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
+import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
+import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
+import br.com.techne.sistemafolha.shared.access.CentroCustoEfetivo;
 import br.com.techne.sistemafolha.shared.logging.DomainLogging;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -16,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +33,8 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final FuncionarioConsultaPort funcionarioConsultaPort;
     private final PasswordEncoder passwordEncoder;
+    private final UsuarioLookupPort usuarioLookupPort;
+    private final OrganogramaAcessoPort organogramaAcessoPort;
 
     public List<UsuarioDTO> listarTodos() {
         return listar(null, null, null);
@@ -72,6 +80,84 @@ public class UsuarioService {
         return usuarioRepository.findByFuncionarioIdAndAtivoTrue(funcionarioId)
                 .map(this::toDTO)
                 .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioDTO> listarParaUsuario(String login, String nome, String loginFilter, Long funcionarioId) {
+        AccessContextDTO contexto = obterContextoAcesso(login);
+        if (acessoNegado(contexto)) {
+            return List.of();
+        }
+        if (contexto.acessoTotal()) {
+            return listar(nome, loginFilter, funcionarioId);
+        }
+        if (centrosVazios(contexto)) {
+            return List.of();
+        }
+        String nomePattern = null;
+        if (nome != null && !nome.trim().isEmpty()) {
+            nomePattern = "%" + nome.trim() + "%";
+        }
+        String loginPattern = null;
+        if (loginFilter != null && !loginFilter.trim().isEmpty()) {
+            loginPattern = "%" + loginFilter.trim() + "%";
+        }
+        return usuarioRepository.findByFiltros(nomePattern, loginPattern, funcionarioId)
+                .stream()
+                .filter(u -> usuarioNoEscopo(u, contexto))
+                .map(this::toDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UsuarioDTO buscarPorIdParaUsuario(String login, Long id) {
+        AccessContextDTO contexto = obterContextoAcesso(login);
+        if (acessoNegado(contexto)) {
+            throw new UsuarioNotFoundException(id);
+        }
+        if (contexto.acessoTotal()) {
+            return buscarPorId(id);
+        }
+        Usuario usuario = usuarioRepository.findById(id)
+                .filter(Usuario::isAtivo)
+                .orElseThrow(() -> new UsuarioNotFoundException(id));
+        if (!usuarioNoEscopo(usuario, contexto)) {
+            throw new UsuarioNotFoundException(id);
+        }
+        return toDTO(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public UsuarioDTO buscarPorLoginParaUsuario(String login, String alvoLogin) {
+        AccessContextDTO contexto = obterContextoAcesso(login);
+        if (acessoNegado(contexto)) {
+            throw new UsuarioNotFoundException(alvoLogin);
+        }
+        if (contexto.acessoTotal()) {
+            return buscarPorLogin(alvoLogin);
+        }
+        Usuario usuario = usuarioRepository.findByLoginAndAtivoTrue(alvoLogin)
+                .filter(Usuario::isAtivo)
+                .orElseThrow(() -> new UsuarioNotFoundException(alvoLogin));
+        if (!usuarioNoEscopo(usuario, contexto)) {
+            throw new UsuarioNotFoundException(alvoLogin);
+        }
+        return toDTO(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public UsuarioDTO buscarPorFuncionarioParaUsuario(String login, Long funcionarioId) {
+        AccessContextDTO contexto = obterContextoAcesso(login);
+        if (acessoNegado(contexto)) {
+            return null;
+        }
+        if (!contexto.acessoTotal()) {
+            Funcionario funcionario = funcionarioConsultaPort.findById(funcionarioId).orElse(null);
+            if (funcionario == null || !funcionarioNoEscopo(funcionario, contexto)) {
+                return null;
+            }
+        }
+        return buscarPorFuncionario(funcionarioId);
     }
 
     @Transactional
@@ -168,5 +254,42 @@ public class UsuarioService {
 
     public boolean verificarSenha(String senhaTexto, String senhaHash) {
         return passwordEncoder.matches(senhaTexto, senhaHash);
+    }
+
+    private AccessContextDTO obterContextoAcesso(String login) {
+        Usuario usuario = usuarioLookupPort.findByLoginAndAtivoTrue(login)
+            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        return organogramaAcessoPort.obterContextoAcesso(usuario.getId());
+    }
+
+    private boolean acessoNegado(AccessContextDTO contexto) {
+        return !contexto.acessoTotal()
+            && (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma());
+    }
+
+    private boolean centrosVazios(AccessContextDTO contexto) {
+        Set<Long> centros = contexto.centrosCustoIds();
+        return centros == null || centros.isEmpty();
+    }
+
+    private boolean usuarioNoEscopo(Usuario usuario, AccessContextDTO contexto) {
+        if (contexto.acessoTotal()) {
+            return true;
+        }
+        if (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma()) {
+            return false;
+        }
+        return funcionarioNoEscopo(usuario.getFuncionario(), contexto);
+    }
+
+    private boolean funcionarioNoEscopo(Funcionario funcionario, AccessContextDTO contexto) {
+        if (funcionario == null) {
+            return false;
+        }
+        CentroCusto centroCusto = funcionario.getCentroCusto();
+        if (centroCusto == null) {
+            return false;
+        }
+        return CentroCustoEfetivo.pertenceAoEscopo(centroCusto.getId(), contexto.centrosCustoIds());
     }
 } 

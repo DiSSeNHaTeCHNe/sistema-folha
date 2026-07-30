@@ -4,9 +4,13 @@ import br.com.techne.sistemafolha.auth.api.UsuarioDTO;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.auth.domain.UsuarioNotFoundException;
 import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
+import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
+import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.port.FuncionarioConsultaPort;
+import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
+import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -21,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,8 +54,95 @@ class UsuarioServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private UsuarioLookupPort usuarioLookupPort;
+
+    @Mock
+    private OrganogramaAcessoPort organogramaAcessoPort;
+
     @InjectMocks
     private UsuarioService usuarioService;
+
+    private static final String LOGIN = "gestor";
+    private static final Long USUARIO_LOOKUP_ID = 5L;
+
+    @Test
+    void listarParaUsuario_scoped_excluiUsuariosSemFuncionario() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+                .thenReturn(contextoRestrito(Set.of(793L)));
+        Usuario comFuncionario = usuarioComFuncionarioCc(793L);
+        Usuario semFuncionario = usuarioExistente();
+        when(usuarioRepository.findByFiltros(isNull(), isNull(), isNull()))
+                .thenReturn(List.of(comFuncionario, semFuncionario));
+
+        List<UsuarioDTO> result = usuarioService.listarParaUsuario(LOGIN, null, null, null);
+
+        assertEquals(1, result.size());
+        assertEquals(FUNCIONARIO_ID, result.get(0).funcionarioId());
+    }
+
+    @Test
+    void listarParaUsuario_scoped_excluiFuncionarioForaEscopo() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+                .thenReturn(contextoRestrito(Set.of(793L)));
+        Usuario inScope = usuarioComFuncionarioCc(793L);
+        Usuario outScope = usuarioComFuncionarioCc(999L);
+        when(usuarioRepository.findByFiltros(isNull(), isNull(), isNull()))
+                .thenReturn(List.of(inScope, outScope));
+
+        List<UsuarioDTO> result = usuarioService.listarParaUsuario(LOGIN, null, null, null);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void buscarPorIdParaUsuario_outOfScope_lancaUsuarioNotFoundException() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+                .thenReturn(contextoRestrito(Set.of(793L)));
+        Usuario outScope = usuarioComFuncionarioCc(999L);
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(outScope));
+
+        assertThrows(UsuarioNotFoundException.class,
+                () -> usuarioService.buscarPorIdParaUsuario(LOGIN, USUARIO_ID));
+    }
+
+    @Test
+    void listarParaUsuario_acessoTotal_delegaListarGlobal() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+                .thenReturn(contextoAcessoTotal());
+        when(usuarioRepository.findByFiltros(isNull(), isNull(), isNull()))
+                .thenReturn(List.of(usuarioExistente()));
+
+        List<UsuarioDTO> result = usuarioService.listarParaUsuario(LOGIN, null, null, null);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void buscarPorLoginParaUsuario_semFuncionario_lancaUsuarioNotFoundException() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+                .thenReturn(contextoRestrito(Set.of(793L)));
+        when(usuarioRepository.findByLoginAndAtivoTrue("admin")).thenReturn(Optional.of(usuarioExistente()));
+
+        assertThrows(UsuarioNotFoundException.class,
+                () -> usuarioService.buscarPorLoginParaUsuario(LOGIN, "admin"));
+    }
+
+    @Test
+    void buscarPorFuncionarioParaUsuario_foraEscopo_retornaNull() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+                .thenReturn(contextoRestrito(Set.of(793L)));
+        Funcionario outScope = funcionarioComCentroCusto(999L);
+        when(funcionarioConsultaPort.findById(FUNCIONARIO_ID)).thenReturn(Optional.of(outScope));
+
+        assertNull(usuarioService.buscarPorFuncionarioParaUsuario(LOGIN, FUNCIONARIO_ID));
+    }
 
     @Test
     void listar_sem_filtros_delegates_to_repository() {
@@ -365,5 +457,37 @@ class UsuarioServiceTest {
             null,
             null
         );
+    }
+
+    private void stubUsuarioLookup() {
+        Usuario usuario = new Usuario();
+        usuario.setId(USUARIO_LOOKUP_ID);
+        usuario.setLogin(LOGIN);
+        usuario.setAtivo(true);
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+    }
+
+    private AccessContextDTO contextoRestrito(Set<Long> centros) {
+        return new AccessContextDTO(true, true, false, centros, null, 2L, "TI", 1);
+    }
+
+    private AccessContextDTO contextoAcessoTotal() {
+        return new AccessContextDTO(true, true, true, Collections.emptySet(), null, null, null, null);
+    }
+
+    private Usuario usuarioComFuncionarioCc(Long ccId) {
+        Usuario usuario = usuarioExistente();
+        usuario.setFuncionario(funcionarioComCentroCusto(ccId));
+        return usuario;
+    }
+
+    private Funcionario funcionarioComCentroCusto(Long ccId) {
+        Funcionario funcionario = funcionarioAtivo(FUNCIONARIO_ID);
+        CentroCusto cc = new CentroCusto();
+        cc.setId(ccId);
+        cc.setDescricao("CC " + ccId);
+        cc.setAtivo(true);
+        funcionario.setCentroCusto(cc);
+        return funcionario;
     }
 }
