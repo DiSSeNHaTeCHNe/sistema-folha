@@ -117,7 +117,7 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Feature (done)**: `adequacao-analise-projeto-r4` → squash merged to `main` (2026-07-30); QG OK @ `new_coverage` 80.0%; meta interna 85%/branch 70% = ressalva (leak period R3); Playwright PASS; ADP N/A Testcontainers
+- **Feature (done)**: `adequacao-analise-projeto-r4` → squash merged to `main` @ `64acb93` (2026-07-30); QG OK @ `new_coverage` 80.0%; meta interna 85%/branch 70% = ressalva (leak period R3); Playwright PASS; ADP N/A Testcontainers
 - **Feature (tasks draft)**: `auth-api-keys` → Design A approved; `tasks.md` T1–T15; aguarda Execute
 - **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `bcff5f9`; Verifier PASS; Sonar QG OK @ 80.0%
 - **Feature (done)**: `adequacao-analise-projeto` (R1) → `main` @ `047e64d`
