@@ -1,8 +1,6 @@
 package br.com.techne.sistemafolha.auth.api;
 
 import br.com.techne.sistemafolha.auth.application.ApiKeyService;
-import br.com.techne.sistemafolha.auth.domain.Usuario;
-import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,15 +27,16 @@ import java.util.List;
 public class ApiKeyController {
 
     private final ApiKeyService apiKeyService;
-    private final UsuarioRepository usuarioRepository;
 
     @PostMapping
     @Operation(summary = "Cria uma API Key", description = "Retorna o secret completo apenas nesta resposta")
     public ResponseEntity<ApiKeyCreatedDTO> criar(
             @Valid @RequestBody ApiKeyCreateRequest request,
             Authentication authentication) {
-        Usuario usuario = resolverUsuario(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED).body(apiKeyService.criar(usuario, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                apiKeyService.criar(
+                        apiKeyService.resolverUsuarioPorLogin(authentication.getName()),
+                        request));
     }
 
     @GetMapping
@@ -45,8 +44,9 @@ public class ApiKeyController {
     public ResponseEntity<List<ApiKeyListDTO>> listar(
             @RequestParam(required = false) Long usuarioId,
             Authentication authentication) {
-        Usuario usuario = resolverUsuario(authentication);
-        return ResponseEntity.ok(apiKeyService.listar(usuario, usuarioId));
+        return ResponseEntity.ok(apiKeyService.listar(
+                apiKeyService.resolverUsuarioPorLogin(authentication.getName()),
+                usuarioId));
     }
 
     @DeleteMapping("/{id}")
@@ -54,13 +54,9 @@ public class ApiKeyController {
     public ResponseEntity<Void> revogar(
             @Parameter(description = "ID da API Key") @PathVariable Long id,
             Authentication authentication) {
-        Usuario usuario = resolverUsuario(authentication);
-        apiKeyService.revogar(usuario, id);
+        apiKeyService.revogar(
+                apiKeyService.resolverUsuarioPorLogin(authentication.getName()),
+                id);
         return ResponseEntity.noContent().build();
-    }
-
-    private Usuario resolverUsuario(Authentication authentication) {
-        return usuarioRepository.findByLoginAndAtivoTrue(authentication.getName())
-                .orElseThrow(() -> new IllegalStateException("Usuário autenticado não encontrado"));
     }
 }

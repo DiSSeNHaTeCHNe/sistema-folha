@@ -7,6 +7,7 @@ import br.com.techne.sistemafolha.auth.domain.ApiKey;
 import br.com.techne.sistemafolha.auth.domain.ApiKeyNotFoundException;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.auth.infrastructure.ApiKeyRepository;
+import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -41,6 +42,9 @@ class ApiKeyServiceTest {
 
     @Mock
     private ApiKeyRepository apiKeyRepository;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;

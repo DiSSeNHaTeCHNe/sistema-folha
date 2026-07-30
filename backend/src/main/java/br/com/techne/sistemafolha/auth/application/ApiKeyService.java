@@ -7,6 +7,7 @@ import br.com.techne.sistemafolha.auth.domain.ApiKey;
 import br.com.techne.sistemafolha.auth.domain.ApiKeyNotFoundException;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.auth.infrastructure.ApiKeyRepository;
+import br.com.techne.sistemafolha.auth.infrastructure.UsuarioRepository;
 import br.com.techne.sistemafolha.shared.logging.DomainLogging;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ public class ApiKeyService {
     private static final String PREFIXO_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
 
     private final ApiKeyRepository apiKeyRepository;
+    private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -125,6 +127,11 @@ public class ApiKeyService {
         }
 
         return Optional.of(usuario);
+    }
+
+    public Usuario resolverUsuarioPorLogin(String login) {
+        return usuarioRepository.findByLoginAndAtivoTrue(login)
+                .orElseThrow(() -> new IllegalStateException("Usuário autenticado não encontrado"));
     }
 
     private Long resolverUsuarioAlvoListagem(Usuario caller, Long usuarioId) {
