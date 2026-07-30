@@ -139,28 +139,57 @@ describe('api.ts auth interceptors', () => {
     consoleSpy.mockRestore();
   });
 
-  it('treats 403 as unauthorized and refreshes before retrying', async () => {
+  it('rejects 403 without refresh or logout', async () => {
     setValidTokens();
-    let protectedCallCount = 0;
+    let refreshCallCount = 0;
+    const logoutListener = vi.fn();
+    window.addEventListener('auth:logout', logoutListener);
 
     server.use(
-      http.get(`${API_BASE_URL}/protected`, () => {
-        protectedCallCount += 1;
-        if (protectedCallCount === 1) {
-          return HttpResponse.json({}, { status: 403 });
-        }
-        return HttpResponse.json({ ok: true });
+      http.get(`${API_BASE_URL}/protected`, () => HttpResponse.json({}, { status: 403 })),
+      http.post(`${API_BASE_URL}/auth/refresh`, () => {
+        refreshCallCount += 1;
+        return HttpResponse.json(sampleLoginResponse());
       }),
-      http.post(`${API_BASE_URL}/auth/refresh`, () =>
-        HttpResponse.json(sampleLoginResponse({ token: 'forbidden-retry-token' })),
-      ),
     );
 
-    const response = await api.get('/protected');
+    await expect(api.get('/protected')).rejects.toMatchObject({
+      response: { status: 403 },
+    });
 
-    expect(response.status).toBe(200);
-    expect(protectedCallCount).toBe(2);
-    expect(TokenService.getToken()).toBe('forbidden-retry-token');
+    expect(refreshCallCount).toBe(0);
+    expect(TokenService.getToken()).toBe('old-access-token');
+    expect(TokenService.getRefreshToken()).toBe('old-refresh-token');
+    expect(logoutListener).not.toHaveBeenCalled();
+
+    window.removeEventListener('auth:logout', logoutListener);
+  });
+
+  it('preserves tokens on 403 from POST /auth/api-keys without dispatching auth:logout', async () => {
+    setValidTokens();
+    let refreshCallCount = 0;
+    const logoutListener = vi.fn();
+    window.addEventListener('auth:logout', logoutListener);
+
+    server.use(
+      http.post(`${API_BASE_URL}/auth/api-keys`, () =>
+        HttpResponse.json({ message: 'Acesso negado' }, { status: 403 }),
+      ),
+      http.post(`${API_BASE_URL}/auth/refresh`, () => {
+        refreshCallCount += 1;
+        return HttpResponse.json(sampleLoginResponse());
+      }),
+    );
+
+    await expect(api.post('/auth/api-keys', { nome: 'test', diasValidade: 30 })).rejects.toMatchObject({
+      response: { status: 403 },
+    });
+
+    expect(refreshCallCount).toBe(0);
+    expect(TokenService.getToken()).toBe('old-access-token');
+    expect(logoutListener).not.toHaveBeenCalled();
+
+    window.removeEventListener('auth:logout', logoutListener);
   });
 
   it('logs out without calling refresh when the refresh token is locally expired', async () => {

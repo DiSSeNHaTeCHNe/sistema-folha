@@ -40,7 +40,7 @@ const processQueue = (error: unknown, token: string | null = null) => {
 };
 
 const isUnauthorizedStatus = (status?: number): boolean =>
-  status === 401 || status === 403;
+  status === 401;
 
 const logoutOnAuthFailure = (): void => {
   TokenService.clearTokens();
