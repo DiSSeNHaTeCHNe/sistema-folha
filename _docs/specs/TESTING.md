@@ -12,7 +12,7 @@
 | Frontend unit | Vitest 4 + Testing Library + jsdom | **184+** test cases across page/service tests |
 | Frontend HTTP mocks | MSW 2 (`msw/node`) | Isolated per test file via `createAuthMswServer()` — **not** global `setup.ts` |
 | Frontend coverage | `@vitest/coverage-v8` | `npm run test:coverage` → `frontend/coverage/lcov.info` |
-| E2E | Playwright (R4 target — T7–T8) | Not yet installed; login smoke planned with `page.route()` mock |
+| E2E | Playwright (`@playwright/test`) | `npm run test:e2e` — login smoke with `page.route()` mock (no backend) |
 
 ## Test Counts (baseline post-R3 @ `088a438`)
 
@@ -62,10 +62,10 @@ Page tests use `vi.mock` for services; HTTP-layer tests (`api.test.ts`) use MSW 
 **Auth client:** `api.test.ts` exercises 401→refresh→retry, logout on refresh failure, concurrent queue.  
 **Page tests:** mock service modules; no global MSW in `setup.ts`.
 
-### E2E (Playwright — R4 T7–T8)
+### E2E (Playwright)
 
-**Planned:** `npm run test:e2e` with `page.route()` mock of `POST */auth/login`; no backend required.  
-**Prerequisite when added:** `npx playwright install chromium`
+**Live:** `cd frontend && npm run test:e2e` — `e2e/login.spec.ts` mocks `POST */auth/login` and `GET */usuarios/login/:login` via `page.route()`; Vite preview started by `playwright.config.ts` (no backend).  
+**Prerequisite:** `npx playwright install chromium` (first run or CI image without browsers).
 
 ## Test Execution
 
@@ -83,7 +83,7 @@ Page tests use `vi.mock` for services; HTTP-layer tests (`api.test.ts`) use MSW 
 | Lint frontend | `cd frontend && npm run lint` |
 | Build frontend | `cd frontend && npm run build` |
 | Sonar local scan | `./diversos/scripts/sonar-analyze.sh` |
-| E2E (after T7) | `cd frontend && npm run test:e2e` |
+| E2E | `cd frontend && npm run test:e2e` |
 | Gate local (R4 P3) | `./diversos/scripts/gate-r4-local.sh` (optional `--docker`, `--e2e`, `--sonar`) |
 
 **Configuration:** Backend integration tests use `@ActiveProfiles("test")` + Testcontainers dynamic datasource. Frontend Vitest config in `frontend/vite.config.ts`.
@@ -119,7 +119,7 @@ Page tests use `vi.mock` for services; HTTP-layer tests (`api.test.ts`) use MSW 
 | Backend unit (Mockito) | Yes | No shared DB; mocks per test instance | `*ServiceTest.java` |
 | Backend integration (Testcontainers) | Yes (per class) | Dedicated PostgreSQL container | `ImportacaoFolhaAdpIntegrationTest` |
 | Frontend Vitest | Yes | jsdom + isolated MSW server per file | `createAuthMswServer()` lifecycle |
-| Playwright E2E | Planned | Single spec; mocked HTTP | T7–T8 |
+| Playwright E2E | Yes | Single spec; mocked HTTP via `page.route()` | `e2e/login.spec.ts` |
 
 ## Gate Check Commands
 
@@ -136,7 +136,7 @@ Page tests use `vi.mock` for services; HTTP-layer tests (`api.test.ts`) use MSW 
 | Full FE | Phase 3 / Verifier | `cd frontend && npm test` (≥184 cases) |
 | Build FE | Playwright / config | `cd frontend && npm run lint && npm run build` |
 | Sonar | Checkpoint + final | `./diversos/scripts/sonar-analyze.sh` |
-| E2E | After T7 | `cd frontend && npm run test:e2e` |
+| E2E | Playwright login smoke | `cd frontend && npm run test:e2e` |
 | Gate local P3 | Pre-merge | `./diversos/scripts/gate-r4-local.sh` |
 
 > **Brownfield note:** Frontend TARGET (AD-004: `src/features/`, TanStack Query everywhere) is unchanged — current `src/pages/` + `vi.mock` pattern is documented in `frontend/AGENTS.md`. MSW is isolated to HTTP test files, not global setup.
