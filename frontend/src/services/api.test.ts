@@ -383,6 +383,16 @@ describe('api.ts auth interceptors', () => {
     window.removeEventListener('auth:logout', logoutListener);
   });
 
+  it('rethrows errors thrown while attaching Authorization in the request interceptor', async () => {
+    const tokenSpy = vi.spyOn(TokenService, 'getToken').mockImplementation(() => {
+      throw new Error('token read failure');
+    });
+
+    await expect(api.get('/protected')).rejects.toThrow('token read failure');
+
+    tokenSpy.mockRestore();
+  });
+
   it('logs out when refresh endpoint returns 401 on a direct refreshToken call', async () => {
     setValidTokens();
     const logoutListener = vi.fn();
