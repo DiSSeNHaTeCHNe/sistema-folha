@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-07-30  
-**Current Work:** `auth-api-keys` — Execute T1–T16 complete on `feat/auth-api-keys` (2026-07-30); full gate PASS (32 BE tests + FE build)
+**Current Work:** `auth-api-keys-fix1` — Execute T1–T7 complete on `feat/auth-api-keys` (2026-07-30); full gate PASS; pending Verifier fix1
 
 ---
 
@@ -117,6 +117,7 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
+- **Feature (execute done, pending Verifier)**: `auth-api-keys-fix1` → branch `feat/auth-api-keys`; T1–T7 executed (2026-07-30); full gate PASS (BE: ApiKeyServiceTest + ApiKeyWriteGuardFilterTest + ApiKeyControllerWebMvcTest + ApiKeyAclWebMvcTest + JwtAuthenticationFilterTest + SecurityConfigAuthRefreshTest + ModularArchitectureTest; FE: ApiKeyRoute + Usuarios Vitest + `npm run build`); pending Verifier fix1
 - **Feature (execute done)**: `auth-api-keys` → branch `feat/auth-api-keys`; T1–T16 executed (2026-07-30); full gate PASS (`ApiKeyServiceTest` + `JwtAuthenticationFilterTest` + `ApiKeyWriteGuardFilterTest` = 32 tests; `npm run build` OK); pending merge to `main` + Verifier
 - **Feature (done)**: `adequacao-analise-projeto-r4` → squash merged to `main` @ `64acb93` (2026-07-30); QG OK @ `new_coverage` 80.0%; meta interna 85%/branch 70% = ressalva (leak period R3); Playwright PASS; ADP N/A Testcontainers
 - **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `bcff5f9`; Verifier PASS; Sonar QG OK @ 80.0%
