@@ -1,0 +1,18 @@
+# MCP bridge config — curated read-only tools for Cursor agents.
+# Secrets (API key) stay in .cursor/mcp.env — never in this file.
+spec: sistema-folha-openapi.json
+options:
+  readonly: true
+  only:
+    - obterInformacoesAcesso
+    - listarTodos
+    - consultarPorCompetencia
+    - consultarPorPeriodo
+    - listarMaisRecentes
+    - consultarTotaisPorFuncionario
+    - consultarPorPeriodo_1
+    - buscarFichaPorFuncionario
+    - listarCompetencias
+    - resumoPorCompetencia
+    - listar_2
+    - listar
