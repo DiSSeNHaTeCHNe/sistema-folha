@@ -124,6 +124,59 @@ class CadastrosImportLookupAdapterTest {
         assertEquals(0L, adapter.countFuncionariosAtivosPorCentros(Set.of()));
     }
 
+    @Test
+    void countFuncionariosAtivosPorCentros_centrosNull_retornaZero() {
+        assertEquals(0L, adapter.countFuncionariosAtivosPorCentros(null));
+    }
+
+    @Test
+    void countFuncionariosAtivosPorCentros_funcionarioSemCentro_exclui() {
+        Funcionario semCc = new Funcionario();
+        semCc.setId(1L);
+        semCc.setCentroCusto(null);
+        Funcionario comCc = funcionario(2L, "E2", 100L);
+        when(funcionarioRepository.findByAtivoTrue()).thenReturn(List.of(semCc, comCc));
+
+        assertEquals(1L, adapter.countFuncionariosAtivosPorCentros(Set.of(100L)));
+    }
+
+    @Test
+    void findFuncionarioByIdExterno_semCargoCentro_mapeiaNulls() {
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(1L);
+        funcionario.setIdExterno("EXT001");
+        funcionario.setNome("Sem refs");
+        funcionario.setCpf("12345678901");
+        when(funcionarioRepository.findByIdExterno("EXT001")).thenReturn(Optional.of(funcionario));
+
+        FuncionarioImportRef ref = adapter.findFuncionarioByIdExterno("EXT001").orElseThrow();
+
+        assertEquals(null, ref.cargoId());
+        assertEquals(null, ref.centroCustoId());
+        assertEquals(null, ref.linhaNegocioId());
+    }
+
+    @Test
+    void findFuncionarioByIdExterno_comLinhaNegocio_mapeiaId() {
+        Funcionario funcionario = funcionario(1L, "EXT001", 100L);
+        when(funcionarioRepository.findByIdExterno("EXT001")).thenReturn(Optional.of(funcionario));
+
+        assertEquals(10L, adapter.findFuncionarioByIdExterno("EXT001").orElseThrow().linhaNegocioId());
+    }
+
+    @Test
+    void findFuncionarioByIdExterno_centroSemLinhaNegocio_mapeiaNull() {
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(1L);
+        funcionario.setIdExterno("EXT001");
+        CentroCusto cc = new CentroCusto();
+        cc.setId(100L);
+        funcionario.setCentroCusto(cc);
+        when(funcionarioRepository.findByIdExterno("EXT001")).thenReturn(Optional.of(funcionario));
+
+        assertEquals(null, adapter.findFuncionarioByIdExterno("EXT001").orElseThrow().linhaNegocioId());
+    }
+
     private Funcionario funcionario(Long id, String idExterno, Long centroCustoId) {
         LinhaNegocio linhaNegocio = new LinhaNegocio();
         linhaNegocio.setId(10L);

@@ -3,7 +3,9 @@ package br.com.techne.sistemafolha.cadastros.application;
 import br.com.techne.sistemafolha.cadastros.api.FuncionarioDTO;
 import br.com.techne.sistemafolha.cadastros.api.FuncionarioStatusFiltro;
 import br.com.techne.sistemafolha.cadastros.domain.Cargo;
+import br.com.techne.sistemafolha.cadastros.domain.CargoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
+import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio;
@@ -29,6 +31,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -302,6 +305,368 @@ class FuncionarioServiceTest {
 
         assertEquals(3L, result.id());
         verify(funcionarioRepository, never()).existsByIdExterno(any());
+    }
+
+    @Test
+    void listar_nomeEmBranco_ignoraFiltroNome() {
+        when(funcionarioRepository.findByFiltros(null, null, null, null, true))
+            .thenReturn(List.of(funcionarioAtivo()));
+
+        assertEquals(1, funcionarioService.listar("   ", null, null, null, FuncionarioStatusFiltro.ATIVO).size());
+    }
+
+    @Test
+    void listar_statusTodos_passaAtivoNull() {
+        when(funcionarioRepository.findByFiltros(null, null, null, null, null))
+            .thenReturn(List.of(funcionarioAtivo()));
+
+        funcionarioService.listar(null, null, null, null, FuncionarioStatusFiltro.TODOS);
+        verify(funcionarioRepository).findByFiltros(null, null, null, null, null);
+    }
+
+    @Test
+    void listarParaUsuario_acessoNegado_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(false, false, false, Set.of(), null, null, null, null));
+
+        assertTrue(funcionarioService.listarParaUsuario(
+            LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO).isEmpty());
+    }
+
+    @Test
+    void listarParaUsuario_centrosNull_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, null, null, 2L, "TI", 1));
+
+        assertTrue(funcionarioService.listarParaUsuario(
+            LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO).isEmpty());
+    }
+
+    @Test
+    void listarParaUsuario_comNome_filtraComPattern() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(funcionarioRepository.findByFiltros("%Maria%", null, null, null, true))
+            .thenReturn(List.of(funcionarioAtivo()));
+
+        assertEquals(1, funcionarioService.listarParaUsuario(
+            LOGIN, "Maria", null, null, null, FuncionarioStatusFiltro.ATIVO).size());
+    }
+
+    @Test
+    void buscarPorIdParaUsuario_acessoNegado_lancaExcecao() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(false, false, false, Set.of(), null, null, null, null));
+
+        assertThrows(FuncionarioNotFoundException.class, () ->
+            funcionarioService.buscarPorIdParaUsuario(LOGIN, 1L));
+    }
+
+    @Test
+    void buscarPorIdParaUsuario_acessoTotal_delega() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(funcionarioRepository.findById(1L)).thenReturn(Optional.of(funcionarioAtivo()));
+
+        assertEquals(1L, funcionarioService.buscarPorIdParaUsuario(LOGIN, 1L).id());
+    }
+
+    @Test
+    void atualizar_cpfAlterado_validaUnicidade() {
+        Funcionario existente = funcionarioAtivo();
+        Funcionario outro = new Funcionario();
+        outro.setId(2L);
+        when(funcionarioRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(funcionarioRepository.findByCpfAndAtivoTrue("99999999999")).thenReturn(Optional.of(outro));
+        FuncionarioDTO dto = new FuncionarioDTO(
+            1L, "Maria", "99999999999", LocalDate.of(2024, 1, 15),
+            1L, "Analista", 1L, "TI", 1L, "Software", "MAT001", true);
+
+        assertThrows(IllegalArgumentException.class, () -> funcionarioService.atualizar(1L, dto));
+    }
+
+    @Test
+    void cadastrar_cargoInativo_lancaExcecao() {
+        Cargo inativo = cargoAtivo();
+        inativo.setAtivo(false);
+        when(funcionarioRepository.existsByCpfAndAtivoTrue(any())).thenReturn(false);
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(inativo));
+
+        assertThrows(CargoNotFoundException.class, () -> funcionarioService.cadastrar(dtoBase("11111111111", null)));
+    }
+
+    @Test
+    void cadastrar_centroCustoInativo_lancaExcecao() {
+        CentroCusto inativo = centroCustoAtivo();
+        inativo.setAtivo(false);
+        when(funcionarioRepository.existsByCpfAndAtivoTrue(any())).thenReturn(false);
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(cargoAtivo()));
+        when(centroCustoRepository.findById(1L)).thenReturn(Optional.of(inativo));
+
+        assertThrows(CentroCustoNotFoundException.class, () -> funcionarioService.cadastrar(dtoBase("11111111111", null)));
+    }
+
+    @Test
+    void listar_comNome_aplicaPattern() {
+        when(funcionarioRepository.findByFiltros("%Maria%", null, null, null, true))
+            .thenReturn(List.of(funcionarioAtivo()));
+
+        assertEquals(1, funcionarioService.listar("Maria", null, null, null, FuncionarioStatusFiltro.ATIVO).size());
+    }
+
+    @Test
+    void buscarPorIdParaUsuario_scopedNoEscopo_retornaDto() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        when(funcionarioRepository.findById(1L)).thenReturn(Optional.of(funcionarioComCentroCusto(10L)));
+
+        assertEquals(1L, funcionarioService.buscarPorIdParaUsuario(LOGIN, 1L).id());
+    }
+
+    @Test
+    void cadastrar_idExternoNull_naoValidaDuplicidade() {
+        when(funcionarioRepository.existsByCpfAndAtivoTrue("11111111111")).thenReturn(false);
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(cargoAtivo()));
+        when(centroCustoRepository.findById(1L)).thenReturn(Optional.of(centroCustoAtivo()));
+        when(funcionarioRepository.save(any(Funcionario.class))).thenAnswer(inv -> {
+            Funcionario f = inv.getArgument(0);
+            f.setId(5L);
+            return f;
+        });
+
+        funcionarioService.cadastrar(dtoBase("11111111111", null));
+
+        verify(funcionarioRepository, never()).existsByIdExterno(any());
+    }
+
+    @Test
+    void atualizar_idExternoConflito_lancaExcecao() {
+        Funcionario existente = funcionarioAtivo();
+        when(funcionarioRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(funcionarioRepository.existsByIdExternoAndIdNot("OUTRO", 1L)).thenReturn(true);
+        FuncionarioDTO dto = new FuncionarioDTO(
+            1L, "Maria", "12345678901", LocalDate.of(2024, 1, 15),
+            1L, "Analista", 1L, "TI", 1L, "Software", "OUTRO", true);
+
+        assertThrows(IllegalArgumentException.class, () -> funcionarioService.atualizar(1L, dto));
+    }
+
+    @Test
+    void listarParaUsuario_semFuncionarioVinculado_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(false, true, false, Set.of(10L), null, 2L, "TI", 1));
+
+        assertTrue(funcionarioService.listarParaUsuario(
+            LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO).isEmpty());
+        verify(funcionarioRepository, never()).findByFiltros(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void listar_statusInativoViaResolver_passaFalse() {
+        when(funcionarioRepository.findByFiltros(null, null, null, null, false)).thenReturn(List.of());
+
+        funcionarioService.listar(null, null, null, null, FuncionarioStatusFiltro.INATIVO);
+
+        verify(funcionarioRepository).findByFiltros(null, null, null, null, false);
+    }
+
+    @Test
+    void listarParaUsuario_nomeNull_naoAplicaPattern() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(funcionarioRepository.findByFiltros(null, null, null, null, true)).thenReturn(List.of());
+
+        funcionarioService.listarParaUsuario(LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO);
+
+        verify(funcionarioRepository).findByFiltros(null, null, null, null, true);
+    }
+
+    @Test
+    void listarParaUsuario_semOrganograma_acessoNegado() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, false, false, Set.of(10L), null, 2L, "TI", 1));
+
+        assertTrue(funcionarioService.listarParaUsuario(
+            LOGIN, null, null, null, null, FuncionarioStatusFiltro.ATIVO).isEmpty());
+    }
+
+    @Test
+    void cadastrar_cpfDuplicadoViaExistsByCpf_lancaExcecao() {
+        when(funcionarioRepository.existsByCpfAndAtivoTrue("11111111111")).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () ->
+            funcionarioService.cadastrar(dtoBase("11111111111", null)));
+    }
+
+    @Test
+    void listarParaUsuario_statusInativo_passaFalse() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(funcionarioRepository.findByFiltros(null, null, null, null, false)).thenReturn(List.of());
+
+        funcionarioService.listarParaUsuario(
+            LOGIN, null, null, null, null, FuncionarioStatusFiltro.INATIVO);
+
+        verify(funcionarioRepository).findByFiltros(null, null, null, null, false);
+    }
+
+    @Test
+    void listarParaUsuario_nomeVazio_naoAplicaPattern() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(funcionarioRepository.findByFiltros(null, null, null, null, true)).thenReturn(List.of());
+
+        funcionarioService.listarParaUsuario(
+            LOGIN, "   ", null, null, null, FuncionarioStatusFiltro.ATIVO);
+
+        verify(funcionarioRepository).findByFiltros(null, null, null, null, true);
+    }
+
+    @Test
+    void listarParaUsuario_centroCustoIdForaEscopo_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+
+        assertTrue(funcionarioService.listarParaUsuario(
+            LOGIN, null, null, 99L, null, FuncionarioStatusFiltro.ATIVO).isEmpty());
+    }
+
+    @Test
+    void listar_statusNull_passaAtivoTrue() {
+        when(funcionarioRepository.findByFiltros(null, null, null, null, true))
+            .thenReturn(List.of());
+
+        funcionarioService.listar(null, null, null, null, null);
+
+        verify(funcionarioRepository).findByFiltros(null, null, null, null, true);
+    }
+
+    @Test
+    void listarParaUsuario_centroCustoIdNoEscopo_consultaRepositorio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(793L)));
+        when(funcionarioRepository.findByFiltros(null, null, 793L, null, true))
+            .thenReturn(List.of(funcionarioComCentroCusto(793L)));
+
+        List<FuncionarioDTO> result = funcionarioService.listarParaUsuario(
+            LOGIN, null, null, 793L, null, FuncionarioStatusFiltro.ATIVO);
+
+        assertEquals(1, result.size());
+        verify(funcionarioRepository).findByFiltros(null, null, 793L, null, true);
+    }
+
+    @Test
+    void listarParaUsuario_scoped_comNome_aplicaPattern() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(793L)));
+        when(funcionarioRepository.findByFiltros("%Maria%", null, null, null, true))
+            .thenReturn(List.of(funcionarioComCentroCusto(793L)));
+
+        assertEquals(1, funcionarioService.listarParaUsuario(
+            LOGIN, "Maria", null, null, null, FuncionarioStatusFiltro.ATIVO).size());
+    }
+
+    @Test
+    void atualizar_cpfAlterado_mesmoFuncionario_naoConflita() {
+        Funcionario existente = funcionarioAtivo();
+        when(funcionarioRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(funcionarioRepository.findByCpfAndAtivoTrue("99999999999"))
+            .thenReturn(Optional.of(existente));
+        when(funcionarioRepository.existsByIdExternoAndIdNot("MAT001", 1L)).thenReturn(false);
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(cargoAtivo()));
+        when(centroCustoRepository.findById(1L)).thenReturn(Optional.of(centroCustoAtivo()));
+        when(funcionarioRepository.save(existente)).thenReturn(existente);
+
+        FuncionarioDTO dto = new FuncionarioDTO(
+            1L, "Maria", "99999999999", LocalDate.of(2024, 1, 15),
+            1L, "Analista", 1L, "TI", 1L, "Software", "MAT001", true);
+
+        assertEquals("99999999999", funcionarioService.atualizar(1L, dto).cpf());
+    }
+
+    @Test
+    void listarParaUsuario_statusNull_passaAtivoTrue() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(793L)));
+        when(funcionarioRepository.findByFiltros(null, null, null, null, true))
+            .thenReturn(List.of(funcionarioComCentroCusto(793L)));
+
+        funcionarioService.listarParaUsuario(LOGIN, null, null, null, null, null);
+
+        verify(funcionarioRepository).findByFiltros(null, null, null, null, true);
+    }
+
+    @Test
+    void listarParaUsuario_scoped_nomeVazio_naoAplicaPattern() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(793L)));
+        when(funcionarioRepository.findByFiltros(null, null, null, null, true))
+            .thenReturn(List.of(funcionarioComCentroCusto(793L)));
+
+        funcionarioService.listarParaUsuario(LOGIN, "   ", null, null, null, FuncionarioStatusFiltro.ATIVO);
+
+        verify(funcionarioRepository).findByFiltros(null, null, null, null, true);
+    }
+
+    @Test
+    void aplicarFiltroAcesso_acessoTotal_retornaTrue() throws Exception {
+        var method = FuncionarioService.class.getDeclaredMethod(
+            "aplicarFiltroAcesso", Funcionario.class, AccessContextDTO.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(
+            funcionarioService, funcionarioAtivo(), contextoAcessoTotal());
+
+        assertTrue(result);
+    }
+
+    @Test
+    void aplicarFiltroAcesso_semVinculoOrganograma_retornaFalse() throws Exception {
+        var method = FuncionarioService.class.getDeclaredMethod(
+            "aplicarFiltroAcesso", Funcionario.class, AccessContextDTO.class);
+        method.setAccessible(true);
+        AccessContextDTO contexto = new AccessContextDTO(false, true, false, Set.of(10L), null, 2L, "TI", 1);
+
+        boolean result = (boolean) method.invoke(
+            funcionarioService, funcionarioAtivo(), contexto);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void aplicarFiltroAcesso_semNoOrganograma_retornaFalse() throws Exception {
+        var method = FuncionarioService.class.getDeclaredMethod(
+            "aplicarFiltroAcesso", Funcionario.class, AccessContextDTO.class);
+        method.setAccessible(true);
+        AccessContextDTO contexto = new AccessContextDTO(true, false, false, Set.of(10L), null, 2L, "TI", 1);
+
+        boolean result = (boolean) method.invoke(
+            funcionarioService, funcionarioAtivo(), contexto);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void aplicarFiltroAcesso_funcionarioNull_retornaFalse() throws Exception {
+        var method = FuncionarioService.class.getDeclaredMethod(
+            "aplicarFiltroAcesso", Funcionario.class, AccessContextDTO.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(
+            funcionarioService, null, contextoRestrito(Set.of(10L)));
+
+        assertFalse(result);
     }
 
     private Funcionario funcionarioAtivo() {

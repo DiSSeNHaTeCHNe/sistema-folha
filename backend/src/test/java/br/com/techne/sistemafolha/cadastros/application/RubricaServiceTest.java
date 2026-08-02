@@ -20,9 +20,11 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -245,6 +247,257 @@ class RubricaServiceTest {
         assertEquals((short) 0, result.getOperadorBruto());
         assertEquals((short) -1, result.getOperadorLiquido());
         assertEquals((short) 0, result.getOperadorCusto());
+    }
+
+    @Test
+    void listar_statusTodos_passaAtivoNull() {
+        when(rubricaRepository.findByFiltros(null, null, null)).thenReturn(List.of(rubricaAtiva("001", "Salário")));
+
+        rubricaService.listar(null, null, br.com.techne.sistemafolha.cadastros.api.RubricaStatusFiltro.TODOS);
+
+        verify(rubricaRepository).findByFiltros(null, null, null);
+    }
+
+    @Test
+    void atualizar_codigoAlteradoDuplicado_lancaExcecao() {
+        Rubrica existente = rubricaAtiva("001", "Salário");
+        when(rubricaRepository.findByIdAndAtivoTrue(1L)).thenReturn(Optional.of(existente));
+        when(rubricaRepository.existsByCodigo("002")).thenReturn(true);
+
+        RubricaDTO dto = new RubricaDTO(1L, "002", "Outro", "PROVENTO", "PROVENTO", null,
+            (short) 1, (short) 1, (short) 1, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.atualizar(1L, dto));
+    }
+
+    @Test
+    void cadastrar_operadoresParciais_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("003")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+
+        RubricaDTO dto = new RubricaDTO(null, "003", "Teste", "PROVENTO", "PROVENTO", null,
+            (short) 1, null, (short) 1, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
+    }
+
+    @Test
+    void cadastrar_tipoOutro_aplicaOperadoresZero() {
+        when(rubricaRepository.existsByCodigo("004")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("INFORMATIVO")).thenReturn(Optional.of(tipoRubrica("INFORMATIVO")));
+        when(rubricaRepository.save(any(Rubrica.class))).thenAnswer(inv -> {
+            Rubrica r = inv.getArgument(0);
+            r.setId(4L);
+            return r;
+        });
+
+        RubricaDTO dto = new RubricaDTO(null, "004", "Info", "INFORMATIVO", "INFORMATIVO", null,
+            null, null, null, null);
+        RubricaDTO result = rubricaService.cadastrar(dto);
+
+        assertEquals((short) 0, result.getOperadorBruto());
+        assertTrue(result.getAtivo());
+    }
+
+    @Test
+    void cadastrar_semTipoRubrica_aplicaOperadoresZero() {
+        when(rubricaRepository.existsByCodigo("005")).thenReturn(false);
+        when(rubricaRepository.save(any(Rubrica.class))).thenAnswer(inv -> {
+            Rubrica r = inv.getArgument(0);
+            r.setId(5L);
+            return r;
+        });
+
+        RubricaDTO dto = new RubricaDTO(null, "005", "Sem tipo", null, null, null,
+            null, null, null, true);
+        RubricaDTO result = rubricaService.cadastrar(dto);
+
+        assertEquals((short) 0, result.getOperadorCusto());
+    }
+
+    @Test
+    void cadastrar_tipoNaoEncontrado_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("006")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("INVALIDO")).thenReturn(Optional.empty());
+
+        RubricaDTO dto = new RubricaDTO(null, "006", "X", "INVALIDO", "INVALIDO", null,
+            (short) 1, (short) 1, (short) 1, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
+    }
+
+    @Test
+    void listarTodas_rubricaSemTipo_mapeiaNull() {
+        Rubrica rubrica = rubricaAtiva("001", "Salário");
+        rubrica.setTipoRubrica(null);
+        when(rubricaRepository.findByAtivoTrue()).thenReturn(List.of(rubrica));
+
+        RubricaDTO result = rubricaService.listarTodas().get(0);
+
+        assertEquals(null, result.getTipoRubricaDescricao());
+    }
+
+    @Test
+    void listar_statusNull_usaAtivoTrue() {
+        when(rubricaRepository.findByFiltros(null, null, true)).thenReturn(List.of());
+
+        rubricaService.listar(null, null, null);
+
+        verify(rubricaRepository).findByFiltros(null, null, true);
+    }
+
+    @Test
+    void atualizar_mesmoCodigo_naoVerificaDuplicidade() {
+        Rubrica existente = rubricaAtiva("001", "Salário");
+        when(rubricaRepository.findByIdAndAtivoTrue(1L)).thenReturn(Optional.of(existente));
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+        when(rubricaRepository.save(any(Rubrica.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RubricaDTO dto = new RubricaDTO(1L, "001", "Salário Base", "PROVENTO", "PROVENTO", null,
+            (short) 1, (short) 1, (short) 1, true);
+        rubricaService.atualizar(1L, dto);
+
+        verify(rubricaRepository, never()).existsByCodigo(any());
+    }
+
+    @Test
+    void atualizar_codigoAlteradoSemConflito_persiste() {
+        Rubrica existente = rubricaAtiva("001", "Salário");
+        when(rubricaRepository.findByIdAndAtivoTrue(1L)).thenReturn(Optional.of(existente));
+        when(rubricaRepository.existsByCodigo("002")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+        when(rubricaRepository.save(any(Rubrica.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RubricaDTO dto = new RubricaDTO(1L, "002", "Novo", "PROVENTO", "PROVENTO", null,
+            (short) 1, (short) 1, (short) 1, true);
+
+        assertEquals("002", rubricaService.atualizar(1L, dto).getCodigo());
+    }
+
+    @Test
+    void cadastrar_tipoComDescricaoNull_aplicaOperadoresZero() {
+        when(rubricaRepository.existsByCodigo("009")).thenReturn(false);
+        TipoRubrica tipo = new TipoRubrica();
+        tipo.setDescricao(null);
+        when(tipoRubricaRepository.findByDescricao("X")).thenReturn(Optional.of(tipo));
+        when(rubricaRepository.save(any(Rubrica.class))).thenAnswer(inv -> {
+            Rubrica r = inv.getArgument(0);
+            r.setId(9L);
+            return r;
+        });
+
+        RubricaDTO dto = new RubricaDTO(null, "009", "X", "X", "X", null, null, null, null, true);
+        assertEquals((short) 0, rubricaService.cadastrar(dto).getOperadorLiquido());
+    }
+
+    @Test
+    void cadastrar_todosOperadoresExplicitos_persiste() {
+        when(rubricaRepository.existsByCodigo("010")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+        when(rubricaRepository.save(any(Rubrica.class))).thenAnswer(inv -> {
+            Rubrica r = inv.getArgument(0);
+            r.setId(10L);
+            return r;
+        });
+
+        RubricaDTO dto = new RubricaDTO(null, "010", "Custom", "PROVENTO", "PROVENTO", null,
+            (short) -1, (short) -1, (short) -1, true);
+        RubricaDTO result = rubricaService.cadastrar(dto);
+
+        assertEquals((short) -1, result.getOperadorCusto());
+    }
+
+    @Test
+    void cadastrar_operadorInvalido_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("007")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+
+        RubricaDTO dto = new RubricaDTO(null, "007", "X", "PROVENTO", "PROVENTO", null,
+            (short) 2, (short) 1, (short) 1, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
+    }
+
+    @Test
+    void cadastrar_apenasUmOperadorInformado_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("008")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+
+        RubricaDTO dto = new RubricaDTO(null, "008", "X", "PROVENTO", "PROVENTO", null,
+            (short) 1, null, null, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
+    }
+
+    @Test
+    void cadastrar_operadorLiquidoInvalido_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("011")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+
+        RubricaDTO dto = new RubricaDTO(null, "011", "X", "PROVENTO", "PROVENTO", null,
+            (short) 1, (short) 5, (short) 1, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
+    }
+
+    @Test
+    void cadastrar_operadorCustoInvalido_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("012")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+
+        RubricaDTO dto = new RubricaDTO(null, "012", "X", "PROVENTO", "PROVENTO", null,
+            (short) 1, (short) 1, (short) -2, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
+    }
+
+    @Test
+    void atualizar_comOperadoresExplicitos_persiste() {
+        Rubrica existente = rubricaAtiva("001", "Salário");
+        when(rubricaRepository.findByIdAndAtivoTrue(1L)).thenReturn(Optional.of(existente));
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+        when(rubricaRepository.save(any(Rubrica.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RubricaDTO dto = new RubricaDTO(1L, "001", "Salário", "PROVENTO", "PROVENTO", null,
+            (short) -1, (short) 0, (short) 1, true);
+
+        RubricaDTO result = rubricaService.atualizar(1L, dto);
+
+        assertEquals((short) -1, result.getOperadorBruto());
+        assertEquals((short) 0, result.getOperadorLiquido());
+    }
+
+    @Test
+    void cadastrar_apenasOperadorBrutoInformado_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("013")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+
+        RubricaDTO dto = new RubricaDTO(null, "013", "X", "PROVENTO", "PROVENTO", null,
+            (short) 1, null, null, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
+    }
+
+    @Test
+    void cadastrar_apenasOperadorLiquidoInformado_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("014")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+
+        RubricaDTO dto = new RubricaDTO(null, "014", "X", "PROVENTO", "PROVENTO", null,
+            null, (short) 1, null, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
+    }
+
+    @Test
+    void cadastrar_apenasOperadorCustoInformado_lancaExcecao() {
+        when(rubricaRepository.existsByCodigo("015")).thenReturn(false);
+        when(tipoRubricaRepository.findByDescricao("PROVENTO")).thenReturn(Optional.of(tipoRubrica("PROVENTO")));
+
+        RubricaDTO dto = new RubricaDTO(null, "015", "X", "PROVENTO", "PROVENTO", null,
+            null, null, (short) 1, true);
+
+        assertThrows(IllegalArgumentException.class, () -> rubricaService.cadastrar(dto));
     }
 
     private TipoRubrica tipoRubrica(String descricao) {

@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -318,6 +319,90 @@ class FuncionarioRubricaFixaServiceTest {
         when(rubricaRepository.findByIdAndAtivoTrue(RUBRICA_ID)).thenReturn(Optional.empty());
 
         assertThrows(RubricaNotFoundException.class, () -> funcionarioRubricaFixaService.criar(dto));
+    }
+
+    @Test
+    void criar_rubricaCalculada_valorNullPermitido() {
+        when(rubricaRepository.findByIdAndAtivoTrue(RUBRICA_ID)).thenReturn(Optional.of(rubrica("5000", true)));
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(FUNCIONARIO_ID)).thenReturn(Optional.of(funcionario()));
+        when(funcionarioRubricaFixaRepository.save(any(FuncionarioRubricaFixa.class))).thenAnswer(inv -> {
+            FuncionarioRubricaFixa e = inv.getArgument(0);
+            e.setId(100L);
+            return e;
+        });
+
+        FuncionarioRubricaFixaDTO dto = dto(FUNCIONARIO_ID, null, null);
+        assertEquals(null, funcionarioRubricaFixaService.criar(dto).valor());
+    }
+
+    @Test
+    void criar_vigenciaFimAntesInicio_lancaExcecao() {
+        when(rubricaRepository.findByIdAndAtivoTrue(RUBRICA_ID)).thenReturn(Optional.of(rubrica("900", false)));
+
+        FuncionarioRubricaFixaDTO dto = new FuncionarioRubricaFixaDTO(
+            null, FUNCIONARIO_ID, RUBRICA_ID, new BigDecimal("100.00"),
+            VIGENCIA_INICIO, VIGENCIA_INICIO.minusDays(1), null, true, null, null, null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> funcionarioRubricaFixaService.criar(dto));
+    }
+
+    @Test
+    void isRubricaCalculada_codigoNull_retornaFalse() {
+        Rubrica rubrica = rubrica("900", false);
+        rubrica.setCodigo(null);
+        assertFalse(funcionarioRubricaFixaService.isRubricaCalculada(rubrica));
+    }
+
+    @Test
+    void buscarPorId_inativo_lancaNotFound() {
+        FuncionarioRubricaFixa inativa = entityAtiva(1L, funcionario(), rubrica("900", false));
+        inativa.setAtivo(false);
+        when(funcionarioRubricaFixaRepository.findById(1L)).thenReturn(Optional.of(inativa));
+
+        assertThrows(FuncionarioRubricaFixaNotFoundException.class, () ->
+            funcionarioRubricaFixaService.buscarPorId(1L));
+    }
+
+    @Test
+    void remover_desativaRegistro() {
+        FuncionarioRubricaFixa entity = entityAtiva(1L, funcionario(), rubrica("900", false));
+        when(funcionarioRubricaFixaRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(funcionarioRubricaFixaRepository.save(entity)).thenReturn(entity);
+
+        funcionarioRubricaFixaService.remover(1L);
+
+        assertFalse(entity.getAtivo());
+    }
+
+    @Test
+    void criar_vigenciaFimNull_permitido() {
+        when(rubricaRepository.findByIdAndAtivoTrue(RUBRICA_ID)).thenReturn(Optional.of(rubrica("900", false)));
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(FUNCIONARIO_ID)).thenReturn(Optional.of(funcionario()));
+        when(funcionarioRubricaFixaRepository.save(any(FuncionarioRubricaFixa.class))).thenAnswer(inv -> {
+            FuncionarioRubricaFixa e = inv.getArgument(0);
+            e.setId(50L);
+            return e;
+        });
+
+        FuncionarioRubricaFixaDTO dto = dto(FUNCIONARIO_ID, new BigDecimal("100.00"), null);
+        assertEquals(null, funcionarioRubricaFixaService.criar(dto).vigenciaFim());
+    }
+
+    @Test
+    void criar_vigenciaFimValida_permitido() {
+        when(rubricaRepository.findByIdAndAtivoTrue(RUBRICA_ID)).thenReturn(Optional.of(rubrica("900", false)));
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(FUNCIONARIO_ID)).thenReturn(Optional.of(funcionario()));
+        when(funcionarioRubricaFixaRepository.save(any(FuncionarioRubricaFixa.class))).thenAnswer(inv -> {
+            FuncionarioRubricaFixa e = inv.getArgument(0);
+            e.setId(51L);
+            return e;
+        });
+
+        FuncionarioRubricaFixaDTO dto = new FuncionarioRubricaFixaDTO(
+            null, FUNCIONARIO_ID, RUBRICA_ID, new BigDecimal("100.00"),
+            VIGENCIA_INICIO, VIGENCIA_INICIO.plusMonths(1), null, true, null, null, null, null);
+
+        assertEquals(VIGENCIA_INICIO.plusMonths(1), funcionarioRubricaFixaService.criar(dto).vigenciaFim());
     }
 
     private FuncionarioRubricaFixaDTO dto(Long funcionarioId, BigDecimal valor, String comentario) {
