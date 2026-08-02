@@ -1,6 +1,6 @@
 # Testing Infrastructure
 
-**Analyzed:** 2026-07-29 (post-R3 harness — sync R4 T1)
+**Analyzed:** 2026-08-01 (post AD-014 cobertura 95% — feature `cobertura-testes-95` T22)
 
 ## Test Frameworks
 
@@ -9,17 +9,17 @@
 | Backend unit | JUnit 5 + Mockito (`@ExtendWith(MockitoExtension.class)`) | Services, auth, domain — mocks, no DB |
 | Backend integration | Spring Boot Test + Testcontainers | ADP import — Docker-gated `@EnabledIf` |
 | Backend coverage | JaCoCo (`jacoco-maven-plugin`) | Report: `backend/target/site/jacoco/jacoco.xml` |
-| Frontend unit | Vitest 4 + Testing Library + jsdom | **184+** test cases across page/service tests |
+| Frontend unit | Vitest 4 + Testing Library + jsdom | **436** test cases across 32 test files |
 | Frontend HTTP mocks | MSW 2 (`msw/node`) | Isolated per test file via `createAuthMswServer()` — **not** global `setup.ts` |
-| Frontend coverage | `@vitest/coverage-v8` | `npm run test:coverage` → `frontend/coverage/lcov.info` |
+| Frontend coverage | `@vitest/coverage-v8` | `npm run test:coverage` → `frontend/coverage/lcov.info` + `coverage-summary.json` |
 | E2E | Playwright (`@playwright/test`) | `npm run test:e2e` — login smoke with `page.route()` mock (no backend) |
 
-## Test Counts (baseline post-R3 @ `088a438`)
+## Test Counts (baseline post AD-014 @ `537a569`)
 
 | Suite | Count | Command |
 | ----- | ----- | ------- |
-| Backend | **474** (0 failures; 1 skip when Docker absent) | `cd backend && mvn test` |
-| Frontend Vitest | **184** (27 files) | `cd frontend && npm test` |
+| Backend | **1044** (0 failures; 1 skip when Docker absent) | `cd backend && mvn test` |
+| Frontend Vitest | **436** (32 files) | `cd frontend && npm test` |
 
 ## Test Organization
 
@@ -76,7 +76,8 @@ Page tests use `vi.mock` for services; HTTP-layer tests (`api.test.ts`) use MSW 
 | ADP integration (Docker) | `cd backend && mvn test -Dtest=ImportacaoFolhaAdpIntegrationTest` |
 | ArchUnit boundaries | `cd backend && mvn test -Dtest=ModularArchitectureTest` |
 | JaCoCo report | `cd backend && mvn test` → `target/site/jacoco/index.html` |
-| JaCoCo thresholds | `bash diversos/scripts/check-jacoco-thresholds.sh` |
+| JaCoCo thresholds (legacy) | `bash diversos/scripts/check-jacoco-thresholds.sh` — **superseded by AD-014** |
+| Coverage gate 95% (canônico) | `bash diversos/scripts/check-coverage-95.sh` |
 | All frontend tests | `cd frontend && npm test` |
 | Single FE test file | `cd frontend && npm test -- api.test` |
 | FE coverage | `cd frontend && npm run test:coverage` |
@@ -92,11 +93,13 @@ Page tests use `vi.mock` for services; HTTP-layer tests (`api.test.ts`) use MSW 
 
 | Metric | Target | Enforcement |
 | ------ | ------ | ----------- |
-| JaCoCo global (backend) | ≥ 75% | `check-jacoco-thresholds.sh` |
-| JaCoCo importacao package | ≥ 75% | same script |
-| Sonar `new_coverage` (leak period) | ≥ 80% QG floor; **85%** R4 internal meta | `sonar-analyze.sh` |
+| JaCoCo global (backend) LINE + BRANCH | ≥ **95%** | `check-coverage-95.sh` (AD-014) |
+| Vitest global (frontend) Lines + Branches | ≥ **95%** | `check-coverage-95.sh` (AD-014) |
+| Lombok gerado (`@lombok.Generated`) | Excluído do denominador | `backend/lombok.config` (AD-014) |
+| JaCoCo global (backend) | ≥ 75% | `check-jacoco-thresholds.sh` — **histórico, superseded** |
+| Sonar `new_coverage` (leak period) | ≥ 80% QG floor; **85%** R4 internal meta | `sonar-analyze.sh` (informacional) |
 | Sonar `new_violations` | 0 | Quality Gate |
-| Vitest floor | ≥ 184 cases | manual count in gate |
+| Vitest floor | ≥ 436 cases | manual count in gate |
 
 ## Test Coverage Matrix
 
@@ -131,9 +134,10 @@ Page tests use `vi.mock` for services; HTTP-layer tests (`api.test.ts`) use MSW 
 | Quick BE | Backend unit | `cd backend && mvn test -Dtest=<ClassTest>` |
 | ADP Integration | Docker available | `cd backend && mvn test -Dtest=ImportacaoFolhaAdpIntegrationTest` |
 | Arch | Backend structural | `cd backend && mvn test -Dtest=ModularArchitectureTest` |
-| JaCoCo | Phase 3 gates | `bash diversos/scripts/check-jacoco-thresholds.sh` |
-| Full BE | Phase 3 / Verifier | `cd backend && mvn test` (≥474, 0 failures) |
-| Full FE | Phase 3 / Verifier | `cd frontend && npm test` (≥184 cases) |
+| JaCoCo | Phase 3 gates | `bash diversos/scripts/check-jacoco-thresholds.sh` (legacy) |
+| Coverage 95% gate | Phase 4 / Verifier (AD-014) | `bash diversos/scripts/check-coverage-95.sh` |
+| Full BE | Phase 3 / Verifier | `cd backend && mvn test` (≥1044, 0 failures) |
+| Full FE | Phase 3 / Verifier | `cd frontend && npm test` (≥436 cases) |
 | Build FE | Playwright / config | `cd frontend && npm run lint && npm run build` |
 | Sonar | Checkpoint + final | `./diversos/scripts/sonar-analyze.sh` |
 | E2E | Playwright login smoke | `cd frontend && npm run test:e2e` |

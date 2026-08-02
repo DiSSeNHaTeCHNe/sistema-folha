@@ -450,10 +450,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Cenários: árvore, mover/associar nó, edição, render do gráfico, estados de erro/vazio
-- [ ] `npm test -- Organograma OrganogramaGrafico` passa
-- [ ] `pages/Organograma` e `components/OrganogramaGrafico` ≥ 95% linha e branch
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Cenários: árvore, mover/associar nó, edição, render do gráfico, estados de erro/vazio
+- [x] `npm test -- Organograma OrganogramaGrafico` passa
+- [x] `pages/Organograma` e `components/OrganogramaGrafico` ≥ 95% linha e branch
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: unit
 **Gate**: quick FE
@@ -472,10 +472,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Cenários: CRUD usuário, permissões, criação/revogação de API key, validação, erros
-- [ ] `npm test -- Usuarios ApiKeys` passa
-- [ ] `pages/Usuarios` e `pages/ApiKeys` ≥ 95% linha e branch
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Cenários: CRUD usuário, permissões, criação/revogação de API key, validação, erros
+- [x] `npm test -- Usuarios ApiKeys` passa
+- [x] `pages/Usuarios` e `pages/ApiKeys` ≥ 95% linha e branch
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: unit
 **Gate**: quick FE
@@ -494,10 +494,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Cenários: geração de relatório, filtros, cards do dashboard, estados loading/erro/vazio, ramos de permissão
-- [ ] `npm test -- Relatorios Dashboard` passa
-- [ ] `pages/Relatorios` e `pages/Dashboard` ≥ 95% linha e branch
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Cenários: geração de relatório, filtros, cards do dashboard, estados loading/erro/vazio, ramos de permissão
+- [x] `npm test -- Relatorios Dashboard` passa
+- [x] `pages/Relatorios` e `pages/Dashboard` ≥ 95% linha e branch
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: unit
 **Gate**: quick FE
@@ -516,9 +516,9 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Branches/linhas residuais cobertos nos arquivos não-página
-- [ ] `npm run test:coverage` → FE ≥ 95% linha E branch em "All files"
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Branches/linhas residuais cobertos nos arquivos não-página
+- [x] `npm run test:coverage` → FE ≥ 95% linha E branch em "All files"
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: unit
 **Gate**: coverage FE (`npm run test:coverage`)
@@ -537,11 +537,11 @@ T21 → T22
 
 **Done when**:
 
-- [ ] `cd backend && mvn test` → JaCoCo LINE ≥ 95% E BRANCH ≥ 95%
-- [ ] `cd frontend && npm run test:coverage` → Lines ≥ 95% E Branches ≥ 95%
-- [ ] `bash diversos/scripts/check-coverage-95.sh` sai com código 0 e imprime as 4 métricas ≥ 95%
-- [ ] Branches inatingíveis documentados em `validation.md` (COV-09)
-- [ ] Test count: ≥ 474 BE / ≥ 184 FE (nenhum removido)
+- [x] `cd backend && mvn test` → JaCoCo LINE ≥ 95% E BRANCH ≥ 95%
+- [x] `cd frontend && npm run test:coverage` → Lines ≥ 95% E Branches ≥ 95%
+- [x] `bash diversos/scripts/check-coverage-95.sh` sai com código 0 e imprime as 4 métricas ≥ 95%
+- [x] Branches inatingíveis documentados em `validation.md` (COV-09)
+- [x] Test count: ≥ 474 BE / ≥ 184 FE (nenhum removido)
 
 **Tests**: none (agregação)
 **Gate**: full (95 gate)
@@ -560,10 +560,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] `TESTING.md` "Coverage Targets" reflete 95% linha+branch (BE+FE) e AD-014 (Lombok excluído); remove/deprecia thresholds 75%/80–85% antigos como histórico
-- [ ] `TESTING.md` cita `check-coverage-95.sh` como gate canônico
-- [ ] `CONCERNS.md` "Test Coverage Gaps" atualizado (fechado)
-- [ ] Contagens finais de teste registradas
+- [x] `TESTING.md` "Coverage Targets" reflete 95% linha+branch (BE+FE) e AD-014 (Lombok excluído); remove/deprecia thresholds 75%/80–85% antigos como histórico
+- [x] `TESTING.md` cita `check-coverage-95.sh` como gate canônico
+- [x] `CONCERNS.md` "Test Coverage Gaps" atualizado (fechado)
+- [x] Contagens finais de teste registradas
 
 **Tests**: none (docs)
 **Gate**: build (nenhuma mudança de código)

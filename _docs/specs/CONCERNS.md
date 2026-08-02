@@ -137,21 +137,28 @@
 
 ## Test Coverage Gaps
 
-**Controllers / Security / Repositories:**
+**AD-014 gate (linha + branch ≥ 95%, BE + FE):**
 
-- What's not tested: Repositories SQL reais, integração end-to-end.
-- Progress (adequação P2): JWT filter/service tests (T9), GlobalExceptionHandler (T11), importação ADP (T10), organograma service+ACL+controller smoke (T8/T8-ext).
-- **Status:** Partially closed; Testcontainers follow-up
+- **Status:** **Closed** (2026-08-01, feature `cobertura-testes-95` T21)
+- Gate: `bash diversos/scripts/check-coverage-95.sh` — BE LINE 96.57%, BE BRANCH 95.39%, FE Lines 97.38%, FE Branches 95.01%
+- Contagens: **1044** testes BE (1 skip Docker-gated), **436** testes FE (32 arquivos)
+- Branches inatingíveis documentados: `_docs/specs/features/cobertura-testes-95/validation.md` (COV-09)
 
-**Frontend:**
+**Controllers / Security / Repositories (integração):**
 
-- What's not tested: Some page branches still below 100%; ADP live path not exercised this run.
-- Progress (adequação R4): Playwright login smoke (`e2e/login.spec.ts`, `npm run test:e2e`); **186** Vitest cases; MSW/api.ts hardening.
-- **Status:** Mitigated — Sonar `new_coverage` **80.0%** @ R4 gate; E2E smoke added; internal meta 85% open
+- What's not tested: Repositories SQL reais, integração end-to-end completa.
+- Progress: WebMvc controllers, JWT filter, GlobalExceptionHandler, ADP import unit + Docker-gated integration.
+- **Status:** Partially closed; Testcontainers follow-up for E2E DB paths
+
+**Frontend (residual informacional):**
+
+- Per-file branch gaps em algumas páginas (Rubricas, FolhaPagamento) permanecem abaixo de 100%; agregado FE ≥95% via gate AD-014.
+- E2E: Playwright login smoke (`e2e/login.spec.ts`); ADP live path não exercido nesta run.
+- **Status:** AD-014 meta closed; E2E smoke maintained
 
 **Harness docs:**
 
-- Canonical commands: `_docs/specs/TESTING.md`; local gate `./diversos/scripts/gate-r4-local.sh`
+- Canonical commands: `_docs/specs/TESTING.md`; gate 95%: `diversos/scripts/check-coverage-95.sh`
 
 **Exception handler:**
 
@@ -176,4 +183,5 @@
 _Concerns audit: 2026-07-25_  
 _Sync adequação P2: 2026-07-29 (JaCoCo gate pass; Sonar bugs=0; vulns CRITICAL+MAJOR=4 documented in validation.md)_  
 _Sync adequação R3: 2026-07-29 (Sonar QG OK; new_coverage 80.0%; MSW/api.ts FE coverage; S2245 + BeneficioMensal tx resolved; ADP integration mitigated)_  
-_Sync adequação R4: 2026-07-29 (Playwright E2E smoke; 186 Vitest; gate-r4-local.sh; Sonar 80.0% QG OK — meta 85% informacional open; ver `_docs/specs/features/adequacao-analise-projeto-r4/validation.md`)_
+_Sync adequação R4: 2026-07-29 (Playwright E2E smoke; 186 Vitest; gate-r4-local.sh; Sonar 80.0% QG OK — meta 85% informacional open; ver `_docs/specs/features/adequacao-analise-projeto-r4/validation.md`)_  
+_Sync cobertura AD-014: 2026-08-01 (gate 95% BE+FE verde; 1044 BE / 436 FE; `check-coverage-95.sh` canônico — ver `_docs/specs/features/cobertura-testes-95/validation.md`)_
