@@ -145,6 +145,17 @@ describe('ApiKeys page', () => {
     });
   });
 
+  it('keeps revoke enabled for ADMIN without API_KEY when keys exist', async () => {
+    mockUseAuth.mockReturnValue({ user: adminOnlyUser, loading: false });
+    vi.mocked(apiKeyService.listar).mockResolvedValue([activeKey]);
+
+    renderWithProviders(<ApiKeys />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /revogar api key integração/i })).toBeEnabled();
+    });
+  });
+
   it('validates create form fields', async () => {
     mockUseAuth.mockReturnValue({ user: apiKeyUser, loading: false });
     renderWithProviders(<ApiKeys />);

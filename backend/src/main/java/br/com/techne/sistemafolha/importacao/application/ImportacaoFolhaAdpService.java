@@ -177,8 +177,12 @@ public class ImportacaoFolhaAdpService {
 
                 Matcher totalEmpregadosMatcher = TOTAL_EMPREGADOS_PATTERN.matcher(linha);
                 if (totalEmpregadosMatcher.find()) {
-                    totalEmpregados = Integer.parseInt(totalEmpregadosMatcher.group(1));
-                    logger.info("Total de Empregados identificado: {}", totalEmpregados);
+                    try {
+                        totalEmpregados = Integer.parseInt(totalEmpregadosMatcher.group(1));
+                        logger.info("Total de Empregados identificado: {}", totalEmpregados);
+                    } catch (NumberFormatException e) {
+                        logger.error("Erro ao processar total de empregados na linha: {}", linha);
+                    }
                 }
 
                 Matcher totalEncargosMatcher = TOTAL_ENCARGOS_PATTERN.matcher(linha);

@@ -162,7 +162,9 @@ export default function Importacao() {
         toast.success(response.message);
         setFolhaAdpFileName('');
         setIsDecimoTerceiro(false);
-        folhaAdpFileRef.current!.value = '';
+        if (folhaAdpFileRef.current) {
+          folhaAdpFileRef.current.value = '';
+        }
       } else {
         setFolhaAdpState({
           loading: false,
@@ -238,7 +240,9 @@ export default function Importacao() {
       );
 
       setBeneficiosMensaisFileName('');
-      beneficiosMensaisFileRef.current!.value = '';
+      if (beneficiosMensaisFileRef.current) {
+        beneficiosMensaisFileRef.current.value = '';
+      }
     } catch (error: unknown) {
       const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
       if (axiosError.response?.status === 409) {
@@ -278,14 +282,18 @@ export default function Importacao() {
   const resetBeneficiosMensaisState = () => {
     setBeneficiosMensaisState({ loading: false, success: false, error: null });
     setBeneficiosMensaisFileName('');
-    beneficiosMensaisFileRef.current!.value = '';
+    if (beneficiosMensaisFileRef.current) {
+      beneficiosMensaisFileRef.current.value = '';
+    }
   };
 
   const resetFolhaAdpState = () => {
     setFolhaAdpState({ loading: false, success: false, error: null });
     setFolhaAdpFileName('');
     setIsDecimoTerceiro(false);
-    folhaAdpFileRef.current!.value = '';
+    if (folhaAdpFileRef.current) {
+      folhaAdpFileRef.current.value = '';
+    }
   };
 
   const handleProcessarCompetencia = async () => {
@@ -344,7 +352,9 @@ export default function Importacao() {
         });
         toast.success('Benefícios mensais importados com sucesso! Os dados anteriores foram substituídos.');
         setBeneficiosMensaisFileName('');
-        beneficiosMensaisFileRef.current!.value = '';
+        if (beneficiosMensaisFileRef.current) {
+          beneficiosMensaisFileRef.current.value = '';
+        }
       } catch (error: unknown) {
         const axiosError = error as { response?: { data?: { message?: string } } };
         const errorMessage = axiosError.response?.data?.message || 'Erro ao importar arquivo';

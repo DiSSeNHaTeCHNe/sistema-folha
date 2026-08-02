@@ -536,6 +536,56 @@ describe('Importacao page', () => {
     });
   });
 
+  it('clears file input value after successful folha ADP import', async () => {
+    vi.mocked(importacaoService.importarFolhaAdp).mockResolvedValue({
+      success: true,
+      message: 'Folha importada',
+      registrosProcessados: 1,
+      arquivo: 'folha.txt',
+    });
+
+    renderWithProviders(<Importacao />);
+    selectFolhaFile('minha-folha.txt');
+    const input = getFileInputs()[1] as HTMLInputElement;
+    Object.defineProperty(input, 'value', {
+      value: 'C:\\fakepath\\minha-folha.txt',
+      writable: true,
+      configurable: true,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Importar Folha ADP' }));
+
+    await waitFor(() => {
+      expect(importacaoService.importarFolhaAdp).toHaveBeenCalled();
+      expect(input.value).toBe('');
+    });
+  });
+
+  it('clears file input value after successful beneficios import', async () => {
+    vi.mocked(beneficioMensalService.importar).mockResolvedValue({
+      processadas: 1,
+      erros: 0,
+      totalValor: 10,
+      detalhesErros: [],
+    });
+
+    renderWithProviders(<Importacao />);
+    selectBeneficiosFile('planilha.xlsx');
+    const input = getFileInputs()[0] as HTMLInputElement;
+    Object.defineProperty(input, 'value', {
+      value: 'C:\\fakepath\\planilha.xlsx',
+      writable: true,
+      configurable: true,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Importar Benefícios Mensais' }));
+
+    await waitFor(() => {
+      expect(beneficioMensalService.importar).toHaveBeenCalled();
+      expect(input.value).toBe('');
+    });
+  });
+
   it('resets folha ADP state with Novo button', async () => {
     vi.mocked(importacaoService.importarFolhaAdp).mockResolvedValue({
       success: true,
@@ -551,6 +601,7 @@ describe('Importacao page', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Novo' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Novo' }));
     expect(screen.queryByText(/Importação realizada com sucesso/)).not.toBeInTheDocument();
+    expect((getFileInputs()[1] as HTMLInputElement).value).toBe('');
   });
 
   it('resets beneficios state with Novo button', async () => {
@@ -568,6 +619,7 @@ describe('Importacao page', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Novo' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Novo' }));
     expect(screen.queryByText(/Importação realizada com sucesso/)).not.toBeInTheDocument();
+    expect((getFileInputs()[0] as HTMLInputElement).value).toBe('');
   });
 
   it('displays selected file names', () => {

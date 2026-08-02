@@ -1066,8 +1066,13 @@ class ImportacaoFolhaAdpServiceTest {
     }
 
     @Test
-    void importar_totalEmpregadosInvalido_capturaErroParse() throws Exception {
-        String conteudo = "Competência: 01/10/2024 a 31/10/2024\nTotal de Empregados: xyz\n";
+    void importar_totalEmpregadosOverflow_naoMontaResumo() throws Exception {
+        String conteudo = "Competência: 01/10/2024 a 31/10/2024\n"
+            + "Total de Empregados: 999999999999999999999\n"
+            + "Total de Encargos: 100,00\n"
+            + "Total de Pagamentos: 1000,00\n"
+            + "Total de Descontos: 200,00\n"
+            + "Total Líquido: 800,00\n";
         importarResumoParcial(arquivoBytes(conteudo));
     }
 
