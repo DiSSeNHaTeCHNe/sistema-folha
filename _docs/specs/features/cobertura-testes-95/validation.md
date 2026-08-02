@@ -32,3 +32,18 @@
 | Local | Branch | Motivo |
 | ----- | ------ | ------ |
 | L249 | `quantidadeFuncionarios > 0` false | Entradas do `groupingBy(cargoId)` sempre têm ≥1 linha; `distinct()` de IDs nunca resulta em 0 dentro de um grupo não vazio. |
+
+## pages/Funcionarios — index.tsx
+
+| Local | Branch | Motivo |
+| ----- | ------ | ------ |
+| L245–246 | `cargoId` / `centroCustoId` falsy no `onSubmit` | Validação RHF (`required`) impede submit com selects vazios; ramos `undefined` no payload não são alcançáveis via UI. |
+
+## pages/Importacao — index.tsx
+
+| Local | Branch | Motivo |
+| ----- | ------ | ------ |
+| L325 | `!pendingFile \|\| !pendingTipo` early return em `handleConfirmSubstituicao` | Botão só existe com `pending*` preenchido pelo fluxo 409; guard defensivo. |
+| L329 | `pendingTipo === 'beneficiosMensais' && !pendingCompetencia` | 409 de benefícios sempre seta `pendingCompetencia` junto com `pendingTipo`. |
+| L379 | `handleCancelSubstituicao` else-if `beneficiosMensais` false com first-if false | Só ocorre com `pendingTipo === null` (estado inconsistente). |
+| L237 (removido T16) | `confirmar === true` no toast de `handleBeneficiosMensaisUpload` | Substituído por mensagem única; confirmação usa bloco dedicado em `handleConfirmSubstituicao`. |

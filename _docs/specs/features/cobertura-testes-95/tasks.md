@@ -295,10 +295,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Cada rota: happy path + 400 (validação) + 401/403 (auth/ACL) + 404 coberta
-- [ ] `mvn test -Dtest=CargoControllerWebMvcTest,CentroCustoControllerWebMvcTest,FuncionarioControllerWebMvcTest,FuncionarioRubricaFixaControllerWebMvcTest,LinhaNegocioControllerWebMvcTest,RubricaControllerWebMvcTest` passa
-- [ ] `cadastros/api` ≥ 95% linha e branch
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Cada rota: happy path + 400 (validação) + 401/403 (auth/ACL) + 404 coberta
+- [x] `mvn test -Dtest=CargoControllerWebMvcTest,CentroCustoControllerWebMvcTest,FuncionarioControllerWebMvcTest,FuncionarioRubricaFixaControllerWebMvcTest,LinhaNegocioControllerWebMvcTest,RubricaControllerWebMvcTest` passa
+- [x] `cadastros/api` ≥ 95% linha e branch
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: integration (WebMvc)
 **Gate**: quick
@@ -317,10 +317,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Cada rota: happy + edge + error (400/401/403/404) coberta
-- [ ] `mvn test -Dtest=FolhaFichaControllerWebMvcTest,FolhaPagamentoControllerWebMvcTest,FolhaProcessamentoControllerWebMvcTest,ResumoFolhaPagamentoControllerWebMvcTest` passa
-- [ ] `folha/api` ≥ 95% linha e branch
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Cada rota: happy + edge + error (400/401/403/404) coberta
+- [x] `mvn test -Dtest=FolhaFichaControllerWebMvcTest,FolhaPagamentoControllerWebMvcTest,FolhaProcessamentoControllerWebMvcTest,ResumoFolhaPagamentoControllerWebMvcTest` passa
+- [x] `folha/api` ≥ 95% linha e branch
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: integration (WebMvc)
 **Gate**: quick
@@ -339,10 +339,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Rotas auth: login ok/inválido, refresh ok/expirado, logout; usuário CRUD + ACL
-- [ ] `mvn test -Dtest=AuthControllerWebMvcTest,UsuarioControllerWebMvcTest,UsuarioAclWebMvcTest` passa
-- [ ] `auth/api` ≥ 95% linha e branch
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Rotas auth: login ok/inválido, refresh ok/expirado, logout; usuário CRUD + ACL
+- [x] `mvn test -Dtest=AuthControllerWebMvcTest,UsuarioControllerWebMvcTest,UsuarioAclWebMvcTest` passa
+- [x] `auth/api` ≥ 95% linha e branch
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: integration (WebMvc)
 **Gate**: quick
@@ -361,10 +361,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Rotas: happy + validação + auth/ACL + importação rejeitada
-- [ ] `mvn test -Dtest=TipoBeneficioControllerWebMvcTest,ImportacaoBeneficioMensalControllerWebMvcTest,BeneficioMensalControllerWebMvcTest` passa
-- [ ] `beneficios/api` ≥ 95% linha e branch
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Rotas: happy + validação + auth/ACL + importação rejeitada
+- [x] `mvn test -Dtest=TipoBeneficioControllerWebMvcTest,ImportacaoBeneficioMensalControllerWebMvcTest,BeneficioMensalControllerWebMvcTest` passa
+- [x] `beneficios/api` ≥ 95% linha e branch
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: integration (WebMvc)
 **Gate**: quick
@@ -383,11 +383,11 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Rotas organograma/importacao/dashboard: happy + edge + error cobertas
-- [ ] Branches à mão de domínio (organograma/domain 10 br) cobertos ou documentados como inatingíveis (COV-09)
-- [ ] `cd backend && mvn test` passa; JaCoCo BE ≥ 95% linha E branch (agregado)
-- [ ] `bash diversos/scripts/check-coverage-95.sh` reprova só nas métricas FE (BE verde)
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Rotas organograma/importacao/dashboard: happy + edge + error cobertas
+- [x] Branches à mão de domínio (organograma/domain 10 br) cobertos ou documentados como inatingíveis (COV-09)
+- [x] `cd backend && mvn test` passa; JaCoCo BE ≥ 95% linha E branch (agregado)
+- [x] `bash diversos/scripts/check-coverage-95.sh` reprova só nas métricas FE (BE verde)
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: integration (WebMvc) + unit (domain)
 **Gate**: coverage BE + full gate parcial
@@ -406,10 +406,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Cenários: listagem, filtros, criação/edição, validação de form, estados loading/erro/vazio, permissões condicionais
-- [ ] `npm test -- Funcionarios` passa
-- [ ] `pages/Funcionarios` ≥ 95% linha e branch (via `npm run test:coverage`)
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Cenários: listagem, filtros, criação/edição, validação de form, estados loading/erro/vazio, permissões condicionais
+- [x] `npm test -- Funcionarios` passa
+- [x] `pages/Funcionarios` ≥ 95% linha e branch (via `npm run test:coverage`)
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: unit
 **Gate**: quick FE
@@ -428,10 +428,10 @@ T21 → T22
 
 **Done when**:
 
-- [ ] Cenários: upload, seleção competência, sucesso/erro/rejeição de importação, estados de progresso
-- [ ] `npm test -- Importacao` passa
-- [ ] `pages/Importacao` ≥ 95% linha e branch
-- [ ] Nenhum teste existente removido/enfraquecido
+- [x] Cenários: upload, seleção competência, sucesso/erro/rejeição de importação, estados de progresso
+- [x] `npm test -- Importacao` passa
+- [x] `pages/Importacao` ≥ 95% linha e branch
+- [x] Nenhum teste existente removido/enfraquecido
 
 **Tests**: unit
 **Gate**: quick FE
