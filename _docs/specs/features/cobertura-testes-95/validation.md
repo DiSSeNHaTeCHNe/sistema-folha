@@ -47,3 +47,35 @@
 | L329 | `pendingTipo === 'beneficiosMensais' && !pendingCompetencia` | 409 de benefícios sempre seta `pendingCompetencia` junto com `pendingTipo`. |
 | L379 | `handleCancelSubstituicao` else-if `beneficiosMensais` false com first-if false | Só ocorre com `pendingTipo === null` (estado inconsistente). |
 | L237 (removido T16) | `confirmar === true` no toast de `handleBeneficiosMensaisUpload` | Substituído por mensagem única; confirmação usa bloco dedicado em `handleConfirmSubstituicao`. |
+
+## AlterarSenhaDialog — index.tsx
+
+| Local | Branch | Motivo |
+| ----- | ------ | ------ |
+| L72–74 | `novaSenha.length < 6` em `onSubmit` | RHF `minLength: 6` bloqueia submit antes; guard defensivo no handler. |
+| L77–79 | `novaSenha !== confirmarSenha` em `onSubmit` | RHF `validate` no campo confirmar bloqueia submit; guard defensivo. |
+
+## contexts/AuthContext — AuthContext.tsx
+
+| Local | Branch | Motivo |
+| ----- | ------ | ------ |
+| L166 | `useAuth` throw fora do provider | `createContext({} as AuthContextData)` retorna objeto truthy; hook nunca atinge o throw em testes de produção. |
+
+## pages/Rubricas — index.tsx (residual <95% branch por arquivo)
+
+| Local | Branch | Motivo |
+| ----- | ------ | ------ |
+| L124–126, L217, L363–409 | `operador* ?? 1`, mapeamento tipo, options map | Defaults cobertos indiretamente; ramos JSX de Select repetidos; agregado FE ≥95% (T20). |
+
+## Gate T21 — evidência (2026-08-01)
+
+Comando: `cd backend && mvn test && cd ../frontend && npm run test:coverage && bash diversos/scripts/check-coverage-95.sh`
+
+| Métrica | Valor | Status |
+| ------- | ----- | ------ |
+| Backend LINE | 96.57% (3430/3552) | PASS |
+| Backend BRANCH | 95.39% (1158/1214) | PASS |
+| Frontend Lines | 97.38% (1828/1877) | PASS |
+| Frontend Branches | 95.01% (991/1043) | PASS |
+
+Contagens: BE **1044** testes (1 skip Docker-gated); FE **436** testes (32 arquivos). Exit code gate: **0**.
