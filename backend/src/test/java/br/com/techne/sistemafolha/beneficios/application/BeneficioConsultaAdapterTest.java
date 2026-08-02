@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.beneficios.application;
 
 import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensal;
+import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficio;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalRepository;
@@ -232,6 +233,80 @@ class BeneficioConsultaAdapterTest {
     void somarValorPorCompetenciaECentros_competenciaNula_lancaIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () ->
             adapter.somarValorPorCompetenciaECentros(null, COMPETENCIA_FIM, Set.of(100L)));
+    }
+
+    @Test
+    void somarValorPorFuncionarioECompetencia_ignoraValorNull() {
+        BeneficioMensal comValor = lancamento(funcionario(1L), new BigDecimal("100.00"));
+        BeneficioMensal semValor = lancamento(funcionario(1L), null);
+        when(beneficioMensalRepository.findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                1L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(comValor, semValor));
+
+        assertEquals(new BigDecimal("100.00"),
+            adapter.somarValorPorFuncionarioECompetencia(1L, COMPETENCIA_INICIO, COMPETENCIA_FIM));
+    }
+
+    @Test
+    void contarLancamentosAtivosNaCompetenciaPorCentros_centrosNull_retornaZero() {
+        assertEquals(0L, adapter.contarLancamentosAtivosNaCompetenciaPorCentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, null));
+    }
+
+    @Test
+    void somarValorPorFuncionariosECompetencia_rowValorNull_trataComoZero() {
+        when(beneficioMensalRepository.sumValorPorFuncionariosECompetencia(
+                Set.of(1L), COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.<Object[]>of(new Object[]{1L, null}));
+
+        Map<Long, BigDecimal> result = adapter.somarValorPorFuncionariosECompetencia(
+            Set.of(1L), COMPETENCIA_INICIO, COMPETENCIA_FIM);
+
+        assertEquals(BigDecimal.ZERO, result.get(1L));
+    }
+
+    @Test
+    void findLinhasPorFuncionarioECompetencia_mapeiaSnapshots() {
+        TipoBeneficio tipo = new TipoBeneficio();
+        tipo.setCodigo("VR");
+        tipo.setDescricao("Vale Refeição");
+        BeneficioMensal lanc = lancamento(funcionario(1L), new BigDecimal("50.00"));
+        lanc.setId(10L);
+        lanc.setTipoBeneficio(tipo);
+        when(beneficioMensalRepository.findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                1L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(lanc));
+
+        assertEquals(1, adapter.findLinhasPorFuncionarioECompetencia(
+            1L, COMPETENCIA_INICIO, COMPETENCIA_FIM).size());
+    }
+
+    @Test
+    void somarValorPorCompetenciaECentros_totalNull_retornaZero() {
+        when(beneficioMensalRepository.sumValorPorCompetenciaECentros(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)))
+            .thenReturn(null);
+
+        assertEquals(BigDecimal.ZERO, adapter.somarValorPorCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)));
+    }
+
+    @Test
+    void validarCompetencia_fimNull_lancaIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () ->
+            adapter.existeDadosMensaisNaCompetencia(COMPETENCIA_INICIO, null));
+    }
+
+    @Test
+    void somarValorPorFuncionariosECompetencia_idsNull_retornaVazio() {
+        assertTrue(adapter.somarValorPorFuncionariosECompetencia(
+            null, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void somarValorPorCompetenciaECentros_centrosNull_retornaZero() {
+        assertEquals(BigDecimal.ZERO, adapter.somarValorPorCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, null));
     }
 
     private Funcionario funcionario(Long id) {

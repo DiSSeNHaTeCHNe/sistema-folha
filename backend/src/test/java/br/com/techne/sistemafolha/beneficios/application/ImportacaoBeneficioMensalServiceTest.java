@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -220,6 +221,314 @@ class ImportacaoBeneficioMensalServiceTest {
 
             assertTrue(ex.getMessage().contains("Planilha1"));
             verify(beneficioMensalRepository, never()).save(any());
+        }
+    }
+
+    @Test
+    void importar_arquivoNull_lancaIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () ->
+            importacaoBeneficioMensalService.importar(null, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void importar_arquivoVazio_lancaIllegalArgumentException() {
+        MockMultipartFile vazio = new MockMultipartFile("file", new byte[0]);
+        assertThrows(IllegalArgumentException.class, () ->
+            importacaoBeneficioMensalService.importar(vazio, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void importar_competenciaNull_lancaIllegalArgumentException() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhas(
+            linha("12345678901", "João Silva", "Vale", "5612", 100));
+        assertThrows(IllegalArgumentException.class, () ->
+            importacaoBeneficioMensalService.importar(arquivo, null, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void importar_pulaLinhaComCpfVazio() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhaManual(row -> {
+            row.createCell(1).setCellValue("Sem CPF");
+            row.createCell(2).setCellValue("");
+            row.createCell(8).setCellValue("5612");
+            row.createCell(9).setCellValue("Desc");
+            row.createCell(13).setCellValue(100.0);
+        }, row -> {
+            row.createCell(1).setCellValue("João Silva");
+            row.createCell(2).setCellValue("12345678901");
+            row.createCell(8).setCellValue("5612");
+            row.createCell(9).setCellValue("Vale");
+            row.createCell(13).setCellValue(150.0);
+        });
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ImportacaoResultadoDTO resultado = importacaoBeneficioMensalService.importar(
+            arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
+
+        assertEquals(1, resultado.processadas());
+    }
+
+    @Test
+    void importar_codigoVazio_registraErro() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhaManual(row -> {
+            row.createCell(1).setCellValue("João Silva");
+            row.createCell(2).setCellValue("12345678901");
+            row.createCell(8).setCellValue("");
+            row.createCell(9).setCellValue("Sem código");
+            row.createCell(13).setCellValue(100.0);
+        });
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+
+        assertThrows(ImportacaoBeneficioMensalInvalidaException.class, () ->
+            importacaoBeneficioMensalService.importar(arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void importar_valorTextoComVirgula() throws IOException {
+        MockMultipartFile arquivo = workbookComValorTexto("12345678901", "João Silva", "Vale", "5612", "R$ 1.234,56");
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ImportacaoResultadoDTO resultado = importacaoBeneficioMensalService.importar(
+            arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
+
+        assertEquals(new BigDecimal("1234.56"), resultado.totalValor());
+    }
+
+    @Test
+    void importar_valorInvalido_registraErro() throws IOException {
+        MockMultipartFile arquivo = workbookComValorTexto(
+            "12345678901", "João Silva", "Vale", "5612", "abc");
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+
+        assertThrows(ImportacaoBeneficioMensalInvalidaException.class, () ->
+            importacaoBeneficioMensalService.importar(arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void importar_valorBlank_registraErro() throws IOException {
+        MockMultipartFile arquivo = workbookComValorTexto(
+            "12345678901", "João Silva", "Vale", "5612", "");
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+
+        assertThrows(ImportacaoBeneficioMensalInvalidaException.class, () ->
+            importacaoBeneficioMensalService.importar(arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void importar_semDescricao_naoSetaObservacao() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhas(
+            linha("12345678901", "João Silva", "", "5612", 100)
+        );
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        importacaoBeneficioMensalService.importar(arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
+
+        ArgumentCaptor<BeneficioMensal> captor = ArgumentCaptor.forClass(BeneficioMensal.class);
+        verify(beneficioMensalRepository).save(captor.capture());
+        assertEquals(null, captor.getValue().getObservacao());
+    }
+
+    private MockMultipartFile workbookComValorTexto(
+            String cpf, String nome, String descricao, String codigo, String valorTexto) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            var sheet = workbook.createSheet("Planilha1");
+            sheet.createRow(0);
+            var row = sheet.createRow(1);
+            row.createCell(1).setCellValue(nome);
+            row.createCell(2).setCellValue(cpf);
+            row.createCell(8).setCellValue(codigo);
+            row.createCell(9).setCellValue(descricao);
+            row.createCell(13).setCellValue(valorTexto);
+            return toMultipart(workbook);
+        }
+    }
+
+    @Test
+    void importar_competenciaFimNull_lancaIllegalArgumentException() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhas(
+            linha("12345678901", "João Silva", "Vale", "5612", 100));
+        assertThrows(IllegalArgumentException.class, () ->
+            importacaoBeneficioMensalService.importar(arquivo, COMPETENCIA_INICIO, null, false));
+    }
+
+    @Test
+    void importar_pulaRowNull() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            var sheet = workbook.createSheet("Planilha1");
+            sheet.createRow(0);
+            sheet.createRow(2);
+            var row = sheet.createRow(2);
+            row.createCell(1).setCellValue("João Silva");
+            row.createCell(2).setCellValue("12345678901");
+            row.createCell(8).setCellValue("5612");
+            row.createCell(9).setCellValue("Vale");
+            row.createCell(13).setCellValue(100.0);
+            MockMultipartFile arquivo = toMultipart(workbook);
+            when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                    COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+            when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+            when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+            when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            assertEquals(1, importacaoBeneficioMensalService.importar(
+                arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false).processadas());
+        }
+    }
+
+    @Test
+    void importar_cpfCurto_normalizaComPadding() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhaManual(row -> {
+            row.createCell(1).setCellValue("João");
+            row.createCell(2).setCellValue("123456789");
+            row.createCell(8).setCellValue("5612");
+            row.createCell(9).setCellValue("Vale");
+            row.createCell(13).setCellValue(100.0);
+        });
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("00123456789")).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertEquals(1, importacaoBeneficioMensalService.importar(
+            arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false).processadas());
+    }
+
+    @Test
+    void importar_erroFuncionarioSemNome_formataErro() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhaManual(row -> {
+            row.createCell(1).setCellValue("");
+            row.createCell(2).setCellValue("00000000000");
+            row.createCell(8).setCellValue("5612");
+            row.createCell(9).setCellValue("Vale");
+            row.createCell(13).setCellValue(100.0);
+        });
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("00000000000")).thenReturn(Optional.empty());
+
+        ImportacaoBeneficioMensalInvalidaException ex = assertThrows(
+            ImportacaoBeneficioMensalInvalidaException.class, () ->
+                importacaoBeneficioMensalService.importar(arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+        assertTrue(ex.getDetalhesErros().get(0).contains("00000000000"));
+    }
+
+    @Test
+    void importar_valorCellBlank_registraErro() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            var sheet = workbook.createSheet("Planilha1");
+            sheet.createRow(0);
+            var row = sheet.createRow(1);
+            row.createCell(1).setCellValue("João Silva");
+            row.createCell(2).setCellValue("12345678901");
+            row.createCell(8).setCellValue("5612");
+            row.createCell(9).setCellValue("Vale");
+            row.createCell(13).setBlank();
+            MockMultipartFile arquivo = toMultipart(workbook);
+            when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                    COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+            when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+            when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+
+            assertThrows(ImportacaoBeneficioMensalInvalidaException.class, () ->
+                importacaoBeneficioMensalService.importar(arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+        }
+    }
+
+    @Test
+    void importar_cpfSomenteNaoDigitos_pulaLinha() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhaManual(row -> {
+            row.createCell(1).setCellValue("X");
+            row.createCell(2).setCellValue("abc");
+            row.createCell(8).setCellValue("5612");
+            row.createCell(13).setCellValue(100.0);
+        });
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+
+        ImportacaoResultadoDTO resultado = importacaoBeneficioMensalService.importar(
+            arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
+
+        assertEquals(0, resultado.processadas());
+    }
+
+    @Test
+    void importar_celulasNull_trataComoVazio() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            var sheet = workbook.createSheet("Planilha1");
+            sheet.createRow(0);
+            sheet.createRow(1);
+            MockMultipartFile arquivo = toMultipart(workbook);
+            when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                    COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+
+            assertEquals(0, importacaoBeneficioMensalService.importar(
+                arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false).processadas());
+        }
+    }
+
+    @Test
+    void importar_codigoNumericoComoTexto() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhaManual(row -> {
+            row.createCell(1).setCellValue("João Silva");
+            row.createCell(2).setCellValue("12345678901");
+            row.createCell(8).setCellValue("5612");
+            row.createCell(9).setCellValue("Vale");
+            row.createCell(13).setCellValue(100.0);
+        });
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertEquals(1, importacaoBeneficioMensalService.importar(
+            arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false).processadas());
+    }
+
+    @Test
+    void importar_valorNumericoCell() throws IOException {
+        MockMultipartFile arquivo = workbookComLinhas(
+            linha("12345678901", "João Silva", "Vale", "5612", 123.45));
+        when(beneficioMensalRepository.existsByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM)).thenReturn(false);
+        when(funcionarioConsultaPort.findByCpfAndAtivoTrue("12345678901")).thenReturn(Optional.of(funcionario));
+        when(tipoBeneficioRepository.findByCodigoAndAtivoTrue("5612")).thenReturn(Optional.of(tipoBeneficio));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertEquals(new BigDecimal("123.45"), importacaoBeneficioMensalService.importar(
+            arquivo, COMPETENCIA_INICIO, COMPETENCIA_FIM, false).totalValor());
+    }
+
+    private MockMultipartFile workbookComLinhaManual(Consumer<Row>... rowFillers) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            var sheet = workbook.createSheet("Planilha1");
+            sheet.createRow(0);
+            for (int i = 0; i < rowFillers.length; i++) {
+                var row = sheet.createRow(i + 1);
+                rowFillers[i].accept(row);
+            }
+            return toMultipart(workbook);
         }
     }
 

@@ -565,6 +565,420 @@ class BeneficioMensalServiceTest {
         verify(beneficioMensalRepository, never()).save(any());
     }
 
+    @Test
+    void resumoPorCompetenciaParaUsuario_acesso_negado_retorna_vazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoNegado(MotivoNegacaoAcesso.SEM_NO_ORGANOGRAMA));
+
+        assertTrue(beneficioMensalService.resumoPorCompetenciaParaUsuario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void resumoPorCompetenciaParaUsuario_centrosNull_retorna_vazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, null, null, 2L, "TI", 1));
+
+        assertTrue(beneficioMensalService.resumoPorCompetenciaParaUsuario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void listarPorFuncionarioParaUsuario_acesso_negado_retorna_vazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoNegado(MotivoNegacaoAcesso.SEM_FUNCIONARIO));
+
+        assertTrue(beneficioMensalService.listarPorFuncionarioParaUsuario(
+            LOGIN, 99L, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void listarPorFuncionarioParaUsuario_semOrganograma_filtra_tudo() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, false, false, Set.of(10L), null, 2L, "TI", 1));
+
+        assertTrue(beneficioMensalService.listarPorFuncionarioParaUsuario(
+            LOGIN, 99L, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+        verify(beneficioMensalRepository, never())
+            .findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(any(), any(), any());
+    }
+
+    @Test
+    void listarPorFuncionarioParaUsuario_scoped_filtraPorCentro() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        when(beneficioMensalRepository.findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                99L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(beneficio));
+
+        List<BeneficioMensalDTO> result = beneficioMensalService.listarPorFuncionarioParaUsuario(
+            LOGIN, 99L, COMPETENCIA_INICIO, COMPETENCIA_FIM);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_anoInvalido_lancaExcecao() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        assertThrows(IllegalArgumentException.class, () ->
+            beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 1999, null));
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_centrosNull_retorna_vazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, null, null, 2L, "TI", 1));
+
+        assertTrue(beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2024, null).isEmpty());
+    }
+
+    @Test
+    void listarCompetencias_projectionNulls_usaDefaults() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(beneficioMensalRepository.competenciasResumo(any(), any()))
+            .thenReturn(List.of(competenciaProjection(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, null, null, null)));
+
+        List<BeneficioMensalCompetenciaResumoDTO> result = beneficioMensalService.listarCompetenciasParaUsuario(
+            LOGIN, 2024, 10);
+
+        assertEquals(0L, result.get(0).totalFuncionarios());
+        assertEquals(BigDecimal.ZERO, result.get(0).totalBeneficios());
+        assertEquals(0L, result.get(0).qtdLancamentos());
+    }
+
+    @Test
+    void listarPorCompetencia_toDtoCamposNull_mapeiaNulls() {
+        BeneficioMensal beneficio = new BeneficioMensal();
+        beneficio.setId(1L);
+        beneficio.setValor(new BigDecimal("100.00"));
+        beneficio.setCompetenciaInicio(COMPETENCIA_INICIO);
+        beneficio.setCompetenciaFim(COMPETENCIA_FIM);
+        beneficio.setAtivo(true);
+        when(beneficioMensalRepository.findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(beneficio));
+
+        BeneficioMensalDTO dto = beneficioMensalService.listarPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Collections.emptySet()).get(0);
+
+        assertEquals(null, dto.funcionarioId());
+        assertEquals(null, dto.tipoBeneficioId());
+        assertEquals(null, dto.centroCustoId());
+        assertEquals(null, dto.linhaNegocioId());
+    }
+
+    @Test
+    void criarParaUsuario_funcionarioSemCentro_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        Funcionario func = funcionarioAtivo(99L);
+        func.setCentroCusto(null);
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(99L)).thenReturn(Optional.of(func));
+
+        assertTrue(beneficioMensalService.criarParaUsuario(
+            LOGIN, dtoBase(null, 99L, 2L, new BigDecimal("100.00"))).isEmpty());
+    }
+
+    @Test
+    void listarPorFuncionarioParaUsuario_dtoSemCentroCusto_exclui() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        beneficio.setCentroCusto(null);
+        beneficio.getFuncionario().setCentroCusto(null);
+        when(beneficioMensalRepository.findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                99L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(beneficio));
+
+        assertTrue(beneficioMensalService.listarPorFuncionarioParaUsuario(
+            LOGIN, 99L, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void resumoPorCompetenciaParaUsuario_centrosVazios_retorna_vazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, Collections.emptySet(), null, 2L, "TI", 1));
+
+        assertTrue(beneficioMensalService.resumoPorCompetenciaParaUsuario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_ano2101_lancaExcecao() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        assertThrows(IllegalArgumentException.class, () ->
+            beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2101, null));
+    }
+
+    @Test
+    void listarCompetencias_usuarioNaoEncontrado_lancaRuntimeException() {
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () ->
+            beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2024, null));
+    }
+
+    @Test
+    void criar_funcionarioNaoEncontrado_lancaExcecao() {
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(99L)).thenReturn(Optional.empty());
+        assertThrows(br.com.techne.sistemafolha.cadastros.domain.FuncionarioNotFoundException.class, () ->
+            beneficioMensalService.criar(dtoBase(null, 99L, 2L, new BigDecimal("100.00"))));
+    }
+
+    @Test
+    void criar_tipoBeneficioNaoEncontrado_lancaExcecao() {
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(99L)).thenReturn(Optional.of(funcionarioAtivo(99L)));
+        when(tipoBeneficioRepository.findById(2L)).thenReturn(Optional.empty());
+        assertThrows(br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundException.class, () ->
+            beneficioMensalService.criar(dtoBase(null, 99L, 2L, new BigDecimal("100.00"))));
+    }
+
+    @Test
+    void criar_tipoBeneficioInativo_lancaExcecao() {
+        TipoBeneficio inativo = tipoAtivo(2L, "VR");
+        inativo.setAtivo(false);
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(99L)).thenReturn(Optional.of(funcionarioAtivo(99L)));
+        when(tipoBeneficioRepository.findById(2L)).thenReturn(Optional.of(inativo));
+        assertThrows(br.com.techne.sistemafolha.beneficios.domain.TipoBeneficioNotFoundException.class, () ->
+            beneficioMensalService.criar(dtoBase(null, 99L, 2L, new BigDecimal("100.00"))));
+    }
+
+    @Test
+    void toDTO_comLinhaNegocioECargo_mapeiaCampos() {
+        br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio ln =
+            new br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio();
+        ln.setId(5L);
+        ln.setDescricao("TI");
+        CentroCusto cc = new CentroCusto();
+        cc.setId(10L);
+        cc.setDescricao("CC TI");
+        cc.setLinhaNegocio(ln);
+        br.com.techne.sistemafolha.cadastros.domain.Cargo cargo =
+            new br.com.techne.sistemafolha.cadastros.domain.Cargo();
+        cargo.setDescricao("Analista");
+        Funcionario func = funcionarioAtivo(99L);
+        func.setCentroCusto(cc);
+        func.setCargo(cargo);
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        beneficio.setFuncionario(func);
+        beneficio.setCentroCusto(cc);
+        when(beneficioMensalRepository.findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(beneficio));
+
+        BeneficioMensalDTO dto = beneficioMensalService.listarPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Collections.emptySet()).get(0);
+
+        assertEquals(5L, dto.linhaNegocioId());
+        assertEquals("Analista", dto.cargoDescricao());
+    }
+
+    @Test
+    void removerSeAutorizado_entitySemCentroCusto_retornaFalse() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        beneficio.setCentroCusto(null);
+        beneficio.getFuncionario().setCentroCusto(null);
+        when(beneficioMensalRepository.findById(1L)).thenReturn(Optional.of(beneficio));
+
+        assertFalse(beneficioMensalService.removerSeAutorizado(LOGIN, 1L));
+    }
+
+    @Test
+    void removerSeAutorizado_semFuncionarioVinculado_retornaFalse() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(false, true, false, Set.of(10L), null, 2L, "TI", 1));
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        when(beneficioMensalRepository.findById(1L)).thenReturn(Optional.of(beneficio));
+
+        assertFalse(beneficioMensalService.removerSeAutorizado(LOGIN, 1L));
+    }
+
+    @Test
+    void listarPorCompetenciaParaUsuario_restrito_centrosVazios_retorna_vazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, Collections.emptySet(), null, 2L, "TI", 1));
+
+        assertTrue(beneficioMensalService.listarPorCompetenciaParaUsuario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_anoOmitido_usaAnoCorrente() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(beneficioMensalRepository.competenciasResumo(any(), any())).thenReturn(List.of());
+
+        assertTrue(beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, null, null).isEmpty());
+    }
+
+    @Test
+    void removerSeAutorizado_entityComCentroNoEscopo_retornaTrue() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        when(beneficioMensalRepository.findById(1L)).thenReturn(Optional.of(beneficio));
+        when(beneficioMensalRepository.save(beneficio)).thenReturn(beneficio);
+
+        assertTrue(beneficioMensalService.removerSeAutorizado(LOGIN, 1L));
+    }
+
+    @Test
+    void listarPorFuncionarioParaUsuario_dtoCentroForaDoEscopo_exclui() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(99L)));
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        when(beneficioMensalRepository.findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                99L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(beneficio));
+
+        assertTrue(beneficioMensalService.listarPorFuncionarioParaUsuario(
+            LOGIN, 99L, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void removerSeAutorizado_semOrganograma_retornaFalse() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, false, false, Set.of(10L), null, 2L, "TI", 1));
+        when(beneficioMensalRepository.findById(1L)).thenReturn(Optional.of(beneficioAtivo(1L)));
+
+        assertFalse(beneficioMensalService.removerSeAutorizado(LOGIN, 1L));
+    }
+
+    @Test
+    void removerSeAutorizado_acessoTotal_retornaTrue() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        when(beneficioMensalRepository.findById(1L)).thenReturn(Optional.of(beneficio));
+        when(beneficioMensalRepository.save(beneficio)).thenReturn(beneficio);
+
+        assertTrue(beneficioMensalService.removerSeAutorizado(LOGIN, 1L));
+    }
+
+    @Test
+    void removerSeAutorizado_entityCentroDaLinhaNoEscopo_retornaTrue() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(20L)));
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        CentroCusto ccLinha = new CentroCusto();
+        ccLinha.setId(20L);
+        beneficio.setCentroCusto(ccLinha);
+        beneficio.getFuncionario().getCentroCusto().setId(10L);
+        when(beneficioMensalRepository.findById(1L)).thenReturn(Optional.of(beneficio));
+        when(beneficioMensalRepository.save(beneficio)).thenReturn(beneficio);
+
+        assertTrue(beneficioMensalService.removerSeAutorizado(LOGIN, 1L));
+    }
+
+    @Test
+    void criarParaUsuario_semOrganograma_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, false, false, Set.of(10L), null, 2L, "TI", 1));
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(99L)).thenReturn(Optional.of(funcionarioAtivo(99L)));
+
+        assertTrue(beneficioMensalService.criarParaUsuario(
+            LOGIN, dtoBase(null, 99L, 2L, new BigDecimal("100.00"))).isEmpty());
+    }
+
+    @Test
+    void listarPorFuncionarioParaUsuario_dtoCentroNoEscopo_inclui() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        when(beneficioMensalRepository.findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                99L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(beneficioAtivo(1L)));
+
+        assertEquals(1, beneficioMensalService.listarPorFuncionarioParaUsuario(
+            LOGIN, 99L, COMPETENCIA_INICIO, COMPETENCIA_FIM).size());
+    }
+
+    @Test
+    void listarCompetenciasParaUsuario_restrito_centrosVazios_retorna_vazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, Collections.emptySet(), null, 2L, "TI", 1));
+
+        assertTrue(beneficioMensalService.listarCompetenciasParaUsuario(LOGIN, 2024, null).isEmpty());
+    }
+
+    @Test
+    void resumoPorCompetenciaParaUsuario_restrito_comCentros_delega() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        when(beneficioMensalRepository.resumoPorCompetenciaAndCentroCustoIds(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(10L)))
+            .thenReturn(List.of(resumoProjection("VR", "Vale", new BigDecimal("100.00"), 1L)));
+
+        assertEquals(1, beneficioMensalService.resumoPorCompetenciaParaUsuario(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM).size());
+    }
+
+    @Test
+    void criarParaUsuario_acessoTotal_persiste() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(funcionarioConsultaPort.findByIdAndAtivoTrue(99L)).thenReturn(Optional.of(funcionarioAtivo(99L)));
+        when(tipoBeneficioRepository.findById(2L)).thenReturn(Optional.of(tipoAtivo(2L, "VR")));
+        when(beneficioMensalRepository.save(any(BeneficioMensal.class))).thenAnswer(inv -> {
+            BeneficioMensal b = inv.getArgument(0);
+            b.setId(1L);
+            return b;
+        });
+
+        assertTrue(beneficioMensalService.criarParaUsuario(
+            LOGIN, dtoBase(null, 99L, 2L, new BigDecimal("100.00"))).isPresent());
+    }
+
+    @Test
+    void removerSeAutorizado_entitySemCentroNaLinha_usaCentroFuncionario() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        BeneficioMensal beneficio = beneficioAtivo(1L);
+        beneficio.setCentroCusto(null);
+        when(beneficioMensalRepository.findById(1L)).thenReturn(Optional.of(beneficio));
+        when(beneficioMensalRepository.save(beneficio)).thenReturn(beneficio);
+
+        assertTrue(beneficioMensalService.removerSeAutorizado(LOGIN, 1L));
+    }
+
+    @Test
+    void listarPorFuncionarioParaUsuario_acessoTotal_incluiTodos() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(beneficioMensalRepository.findByFuncionarioIdAndCompetenciaInicioAndCompetenciaFimAndAtivoTrue(
+                99L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(beneficioAtivo(1L)));
+
+        assertEquals(1, beneficioMensalService.listarPorFuncionarioParaUsuario(
+            LOGIN, 99L, COMPETENCIA_INICIO, COMPETENCIA_FIM).size());
+    }
+
     private BeneficioMensalDTO dtoBase(Long id, Long funcionarioId, Long tipoBeneficioId, BigDecimal valor) {
         return new BeneficioMensalDTO(
                 id,
