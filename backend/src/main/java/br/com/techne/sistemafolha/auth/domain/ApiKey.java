@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Data
@@ -50,14 +51,14 @@ public class ApiKey {
 
     @PrePersist
     protected void onCreate() {
-        dataCriacao = LocalDateTime.now();
+        dataCriacao = LocalDateTime.now(Clock.systemDefaultZone());
         if (escopo == null) {
             escopo = ESCOPO_READ;
         }
     }
 
     public boolean isExpirada() {
-        return LocalDateTime.now().isAfter(dataExpiracao);
+        return LocalDateTime.now(Clock.systemDefaultZone()).isAfter(dataExpiracao);
     }
 
     public boolean isRevogado() {

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -64,7 +65,7 @@ public class ApiKeyService {
         apiKey.setPrefixo(prefixo);
         apiKey.setHashChave(hashChave);
         apiKey.setEscopo(ApiKey.ESCOPO_READ);
-        apiKey.setDataExpiracao(LocalDateTime.now().plusDays(diasValidade));
+        apiKey.setDataExpiracao(LocalDateTime.now(Clock.systemDefaultZone()).plusDays(diasValidade));
         apiKey.setRevogado(false);
 
         ApiKey salva = apiKeyRepository.save(apiKey);
@@ -127,7 +128,7 @@ public class ApiKeyService {
             return Optional.empty();
         }
 
-        apiKey.setUltimoUsoEm(LocalDateTime.now());
+        apiKey.setUltimoUsoEm(LocalDateTime.now(Clock.systemDefaultZone()));
         apiKeyRepository.save(apiKey);
 
         return Optional.of(usuario);

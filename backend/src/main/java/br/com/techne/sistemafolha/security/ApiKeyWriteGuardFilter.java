@@ -21,7 +21,7 @@ import java.util.Set;
 @Component
 public class ApiKeyWriteGuardFilter extends OncePerRequestFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(ApiKeyWriteGuardFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(ApiKeyWriteGuardFilter.class);
 
     private static final Set<String> MUTATING_METHODS = Set.of(
             HttpMethod.POST.name(),
@@ -38,7 +38,7 @@ public class ApiKeyWriteGuardFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         if (isMutatingMethod(request.getMethod()) && isApiKeyReadOnlyAuth()) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            logger.warn("API Key write blocked login={} method={} uri={}",
+            log.warn("API Key write blocked login={} method={} uri={}",
                     authentication.getName(), request.getMethod(), request.getRequestURI());
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;

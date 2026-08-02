@@ -287,7 +287,7 @@ export default function ApiKeys() {
               label="Nome"
               value={nome}
               onChange={(event) => setNome(event.target.value)}
-              inputProps={{ maxLength: 100 }}
+              slotProps={{ htmlInput: { maxLength: 100 } }}
               required
               fullWidth
             />
@@ -296,7 +296,7 @@ export default function ApiKeys() {
               type="number"
               value={diasValidade}
               onChange={(event) => setDiasValidade(event.target.value)}
-              inputProps={{ min: 1, max: 365 }}
+              slotProps={{ htmlInput: { min: 1, max: 365 } }}
               helperText="Entre 1 e 365 dias (padrão: 365)"
               fullWidth
             />
@@ -321,7 +321,7 @@ export default function ApiKeys() {
             label="Secret"
             value={createdKey?.chave ?? ''}
             fullWidth
-            InputProps={{ readOnly: true }}
+            slotProps={{ input: { readOnly: true } }}
             aria-label="Secret da API Key"
           />
         </DialogContent>
