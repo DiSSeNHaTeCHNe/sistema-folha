@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# SUPERSEDED (AD-014, feature cobertura-testes-95): use diversos/scripts/check-coverage-95.sh
+# (meta 95% linha+branch BE+FE). Este script permanece apenas como referência histórica dos
+# limiares por domínio (75% global) da série adequacao-analise-projeto-rN.
+#
 # Verifica limiares JaCoCo por domínio após `cd backend && mvn test`.
 # Exit 0 se todos os limiares forem atendidos; exit 1 caso contrário.
 set -euo pipefail
