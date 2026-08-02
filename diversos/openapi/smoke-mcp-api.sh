@@ -4,7 +4,6 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-ENV_FILE="${ROOT}/.cursor/mcp.env"
 BASE_URL="${SISTEMA_FOLHA_API_URL:-http://localhost:8083/api}"
 GLOBAL_EMPLOYEE_CEILING="${SMOKE_GLOBAL_EMPLOYEE_CEILING:-310}"
 
@@ -17,12 +16,15 @@ load_token() {
     echo "${SISTEMA_FOLHA_API_KEY}"
     return
   fi
-  if [[ -f "${ENV_FILE}" ]]; then
-    # shellcheck disable=SC1090
-    source "${ENV_FILE}"
-    echo "${OPENAPI_BEARER_TOKEN:-${SISTEMA_FOLHA_API_KEY:-}}"
-    return
-  fi
+  # Ordem: .cursor/mcp.env → ~/.config/sistema-folha/mcp.env (via SISTEMA_FOLHA_MCP_ENV)
+  for ENV_FILE in "${ROOT}/.cursor/mcp.env" "${SISTEMA_FOLHA_MCP_ENV:-${HOME}/.config/sistema-folha/mcp.env}"; do
+    if [[ -f "${ENV_FILE}" ]]; then
+      # shellcheck disable=SC1090
+      source "${ENV_FILE}"
+      echo "${OPENAPI_BEARER_TOKEN:-${SISTEMA_FOLHA_API_KEY:-}}"
+      return
+    fi
+  done
   echo ""
 }
 
@@ -33,7 +35,7 @@ skip() {
 
 token="$(load_token)"
 if [[ -z "${token}" ]]; then
-  skip "API key ausente (defina SISTEMA_FOLHA_API_KEY ou ${ENV_FILE})"
+  skip "API key ausente (defina SISTEMA_FOLHA_API_KEY, ${ROOT}/.cursor/mcp.env ou ${SISTEMA_FOLHA_MCP_ENV:-${HOME}/.config/sistema-folha/mcp.env})"
 fi
 
 if ! curl -sf --max-time 3 "${BASE_URL}/auth/acesso" -o /dev/null -H "Authorization: Bearer ${token}" 2>/dev/null; then
@@ -124,7 +126,8 @@ PY
 )"
   echo "[smoke-mcp-api] MCP-07: folha items=${folha_count}, cadastro funcionarios=${func_count:-?}, global ceiling=${GLOBAL_EMPLOYEE_CEILING}"
   if [[ "${folha_count}" -gt "${GLOBAL_EMPLOYEE_CEILING}" ]]; then
-    echo "[smoke-mcp-api] WARN: folha cardinality exceeds global ceiling — key may not be scoped" >&2
+    echo "[smoke-mcp-api] FAIL: folha cardinality (${folha_count}) exceeds global ceiling (${GLOBAL_EMPLOYEE_CEILING}) — response not scoped (MCP-07)" >&2
+    exit 1
   elif [[ -n "${func_count:-}" && "${folha_count}" -le "${func_count}" && "${folha_count}" -lt "${GLOBAL_EMPLOYEE_CEILING}" ]]; then
     echo "[smoke-mcp-api] OK: scoped cardinality evidence (folha ≤ cadastro < global ceiling)"
   else
