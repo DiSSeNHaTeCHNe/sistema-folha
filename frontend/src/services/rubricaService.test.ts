@@ -61,6 +61,25 @@ describe('rubricaService', () => {
     expect(result.id).toBe(1);
   });
 
+  it('maps rubrica tipo when tipoRubricaDescricao is absent', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/rubricas`, () =>
+        HttpResponse.json([
+          {
+            id: 2,
+            codigo: '002',
+            descricao: 'Desconto',
+            tipo: 'DESCONTO',
+            ativo: true,
+          },
+        ]),
+      ),
+    );
+
+    const result = await rubricaService.listar();
+    expect(result[0].tipo).toBe('DESCONTO');
+  });
+
   it('creates a rubrica with tipoRubricaDescricao payload', async () => {
     server.use(
       http.post(`${API_BASE_URL}/rubricas`, async ({ request }) => {

@@ -330,4 +330,85 @@ describe('BeneficiosMensais page', () => {
 
     expect(screen.getByText('Nenhum funcionário encontrado para este período.')).toBeInTheDocument();
   });
+
+  it('shows error when filter options fail to load', async () => {
+    vi.mocked(centroCustoService.listarTodos).mockRejectedValue(new Error('fail'));
+    renderWithProviders(<BeneficiosMensais />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Benefícios Mensais' })).toBeInTheDocument());
+  });
+
+  it('shows beneficios in detalhes dialog', async () => {
+    renderWithProviders(<BeneficiosMensais />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver Benefícios' }));
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+  });
+
+  it('aggregates multiple lancamentos for same funcionario', async () => {
+    vi.mocked(beneficioMensalService.listar).mockResolvedValue([
+      sampleLancamento,
+      { ...sampleLancamento, id: 2, valor: 300 },
+    ]);
+    renderWithProviders(<BeneficiosMensais />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByText('Maria Silva')).toBeInTheDocument());
+    expect(screen.getByText(/R\$\s*800,00/)).toBeInTheDocument();
+  });
+
+  it('renders preformatted competencia dates', async () => {
+    vi.mocked(beneficioMensalService.listarCompetencias).mockResolvedValue([
+      { ...sampleResumo, competenciaInicio: '01/01/2026', competenciaFim: '31/01/2026' },
+    ]);
+    renderWithProviders(<BeneficiosMensais />);
+    await waitFor(() => expect(screen.getByText('01/01/2026 a 31/01/2026')).toBeInTheDocument());
+  });
+
+  it('filters resumos by month', async () => {
+    renderWithProviders(<BeneficiosMensais />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Filtrar' })).toBeEnabled());
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Mês' }), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }));
+    await waitFor(() => expect(beneficioMensalService.listarCompetencias).toHaveBeenCalledWith(expect.any(Number), 3));
+  });
+
+  it('shows resumo fetch error', async () => {
+    vi.mocked(beneficioMensalService.listarCompetencias).mockRejectedValue(new Error('fail'));
+    renderWithProviders(<BeneficiosMensais />);
+    await waitFor(() => expect(screen.getByText('Erro ao buscar resumos de benefícios')).toBeInTheDocument());
+  });
+
+  it('shows funcionario card with missing optional metadata', async () => {
+    vi.mocked(beneficioMensalService.listar).mockResolvedValue([
+      {
+        ...sampleLancamento,
+        funcionarioNome: undefined,
+        cargoDescricao: undefined,
+        centroCustoDescricao: undefined,
+        linhaNegocioDescricao: undefined,
+      },
+    ]);
+    renderWithProviders(<BeneficiosMensais />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByText(/Cargo:/)).toBeInTheDocument());
+    expect(screen.getByText(/Centro de Custo:/)).toBeInTheDocument();
+  });
+
+  it('shows detalhes dialog with missing benefit fields', async () => {
+    vi.mocked(beneficioMensalService.listar).mockResolvedValue([
+      {
+        ...sampleLancamento,
+        tipoBeneficioCodigo: undefined,
+        tipoBeneficioDescricao: undefined,
+        observacao: undefined,
+      },
+    ]);
+    renderWithProviders(<BeneficiosMensais />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver Benefícios' }));
+    await waitFor(() => expect(screen.getAllByText('—').length).toBeGreaterThan(0));
+  });
 });

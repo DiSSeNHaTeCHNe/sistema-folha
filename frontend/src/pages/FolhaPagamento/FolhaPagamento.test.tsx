@@ -401,23 +401,6 @@ describe('FolhaPagamento page', () => {
     });
   });
 
-  it('filters funcionarios by centro de custo select', async () => {
-    renderWithProviders(<FolhaPagamento />);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
-    await waitFor(() => {
-      expect(screen.getByText('Maria Silva')).toBeInTheDocument();
-    });
-
-    fireEvent.mouseDown(screen.getByLabelText('Centro de Custo'));
-    fireEvent.click(await screen.findByRole('option', { name: 'TI' }));
-
-    expect(screen.getByText('Maria Silva')).toBeInTheDocument();
-  });
-
   it('shows empty resumos when fetch fails silently', async () => {
     vi.mocked(resumoFolhaPagamentoService.listarPorAno).mockRejectedValue(new Error('fail'));
 
@@ -426,5 +409,192 @@ describe('FolhaPagamento page', () => {
     await waitFor(() => {
       expect(screen.getByText('Nenhum resumo de folha de pagamento encontrado.')).toBeInTheDocument();
     });
+  });
+
+  it('shows funcionarios fetch error', async () => {
+    vi.mocked(folhaPagamentoService.consultarTotaisPorFuncionario).mockRejectedValue(new Error('fail'));
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByText('Erro ao buscar funcionários')).toBeInTheDocument());
+  });
+
+  it('shows detalhe error when ficha lookup fails', async () => {
+    vi.mocked(folhaPagamentoService.buscarFichaPorFuncionario).mockRejectedValue(new Error('fail'));
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Rubricas' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() => expect(screen.getByText('Erro ao carregar detalhe do funcionário')).toBeInTheDocument());
+  });
+
+  it('shows empty rubricas message for totalizer without lines', async () => {
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Rubricas' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() =>
+      expect(screen.getByText('Nenhuma rubrica encontrada para este totalizador.')).toBeInTheDocument(),
+    );
+  });
+
+  it('shows totalizer load error when switching tabs', async () => {
+    vi.mocked(folhaPagamentoService.listarLinhasPorTotalizador)
+      .mockResolvedValueOnce([])
+      .mockRejectedValue(new Error('fail'));
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Rubricas' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('tab', { name: 'Líquido' }));
+    await waitFor(() => expect(screen.getByText('Erro ao carregar linhas do totalizador')).toBeInTheDocument());
+  });
+
+  it('filters funcionarios by linha de negocio', async () => {
+    vi.mocked(folhaPagamentoService.consultarTotaisPorFuncionario).mockResolvedValue([
+      { ...sampleFuncionarioTotal, linhaNegocioDescricao: 'Linha A' },
+      { ...sampleFuncionarioTotal, funcionarioId: 11, funcionarioNome: 'Pedro', linhaNegocioDescricao: 'Outra' },
+    ]);
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByText('Maria Silva')).toBeInTheDocument());
+    fireEvent.mouseDown(screen.getByLabelText('Linha de Negócio'));
+    fireEvent.click(screen.getByRole('option', { name: 'Linha A' }));
+    expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+    expect(screen.queryByText('Pedro')).not.toBeInTheDocument();
+  });
+
+  it('renders beneficio percentual as dash and parses comma contribuicao', async () => {
+    vi.mocked(folhaPagamentoService.listarLinhasPorTotalizador).mockResolvedValue([
+      {
+        rubricaCodigo: '0030',
+        rubricaDescricao: 'VR',
+        origemLinha: 'BENEFICIO',
+        contribuicao: '1.234,56',
+        porcentagem: null,
+        valor: 100,
+      },
+      {
+        rubricaCodigo: '0040',
+        rubricaDescricao: 'Invalid pct',
+        origemLinha: 'FOLHA_ADP',
+        contribuicao: 50,
+        porcentagem: 'invalid',
+        valor: 50,
+      },
+    ]);
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('tab', { name: 'Custo' }));
+    await waitFor(() => expect(screen.getByText('0030 - VR')).toBeInTheDocument());
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+    expect(screen.getByText('100,00%')).toBeInTheDocument();
+  });
+
+  it('filters funcionarios by centro de custo select', async () => {
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByText('Maria Silva')).toBeInTheDocument());
+    fireEvent.mouseDown(screen.getByLabelText('Centro de Custo'));
+    fireEvent.click(screen.getByRole('option', { name: 'TI' }));
+    expect(screen.getByText('Maria Silva')).toBeInTheDocument();
+  });
+
+  it('shows funcionario metadata fallbacks and decimo terceiro dialog title', async () => {
+    vi.mocked(resumoFolhaPagamentoService.listarPorAno).mockResolvedValue([sampleResumoDecimo]);
+    vi.mocked(folhaPagamentoService.consultarTotaisPorFuncionario).mockResolvedValue([
+      {
+        ...sampleFuncionarioTotal,
+        cargoDescricao: '',
+        centroCustoDescricao: '',
+        linhaNegocioDescricao: '',
+        salCustoFolha: undefined,
+        salCustoBeneficios: undefined,
+      },
+    ]);
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByText('Cargo: -')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() => expect(screen.getByText(/13º salário/)).toBeInTheDocument());
+  });
+
+  it('groups rubricas with default origem label', async () => {
+    vi.mocked(folhaPagamentoService.listarLinhasPorTotalizador).mockResolvedValue([
+      {
+        rubricaCodigo: '0050',
+        rubricaDescricao: 'Sem origem',
+        origemLinha: '',
+        contribuicao: 'invalid',
+        porcentagem: '',
+        valor: 10,
+      },
+    ]);
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() => expect(screen.getByText('0050 - Sem origem')).toBeInTheDocument());
+    expect(screen.getByText('Folha ADP')).toBeInTheDocument();
+  });
+
+  it('does not switch totalizer when ficha is missing', async () => {
+    vi.mocked(folhaPagamentoService.buscarFichaPorFuncionario).mockResolvedValue(null);
+    vi.mocked(folhaPagamentoService.listarLinhasPorTotalizador).mockClear();
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver Rubricas' }));
+    await waitFor(() =>
+      expect(screen.getByText('Ficha não processada para este funcionário. Execute o processamento da competência.')).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('tab', { name: 'Líquido' })).not.toBeInTheDocument();
+    expect(folhaPagamentoService.listarLinhasPorTotalizador).not.toHaveBeenCalled();
+  });
+
+  it('renders preformatted competencia dates in resumo table', async () => {
+    vi.mocked(resumoFolhaPagamentoService.listarPorAno).mockResolvedValue([
+      { ...sampleResumo, competenciaInicio: '01/10/2024', competenciaFim: '31/10/2024' },
+    ]);
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByText('01/10/2024 a 31/10/2024')).toBeInTheDocument());
+  });
+
+  it('filters resumos by month', async () => {
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('spinbutton', { name: 'Mês' })).toBeInTheDocument());
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Mês' }), { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }));
+    await waitFor(() => expect(resumoFolhaPagamentoService.listarPorAno).toHaveBeenCalledWith(expect.any(Number), 10));
+  });
+
+  it('shows folha and beneficio cost breakdown on funcionario card', async () => {
+    vi.mocked(folhaPagamentoService.consultarTotaisPorFuncionario).mockResolvedValue([
+      { ...sampleFuncionarioTotal, salCustoFolha: 100, salCustoBeneficios: 50 },
+    ]);
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByText(/Folha:/)).toBeInTheDocument());
+    expect(screen.getByText(/Benefícios:/)).toBeInTheDocument();
+  });
+
+  it('shows empty funcionarios message when filters exclude all', async () => {
+    renderWithProviders(<FolhaPagamento />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver Funcionários' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Funcionários' }));
+    await waitFor(() => expect(screen.getByText('Maria Silva')).toBeInTheDocument());
+    fireEvent.change(screen.getByRole('textbox', { name: 'Buscar funcionário' }), { target: { value: 'zzzz' } });
+    expect(screen.getByText('Nenhum funcionário encontrado para este período.')).toBeInTheDocument();
   });
 });

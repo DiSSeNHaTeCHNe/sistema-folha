@@ -89,4 +89,14 @@ describe('Login page', () => {
       expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
     });
   });
+
+  it('toggles password visibility', () => {
+    renderWithProviders(<Login />);
+
+    const toggle = screen.getByRole('button', { name: 'toggle password visibility' });
+    fireEvent.click(toggle);
+    expect(screen.getByLabelText(/^Senha/)).toHaveAttribute('type', 'text');
+    fireEvent.click(toggle);
+    expect(screen.getByLabelText(/^Senha/)).toHaveAttribute('type', 'password');
+  });
 });

@@ -54,6 +54,14 @@ describe('ApiKeyRoute', () => {
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
+  it('redirects unauthenticated users to login', () => {
+    mockUseAuth.mockReturnValue({ user: null, loading: false });
+
+    renderApiKeyRoute();
+
+    expect(screen.getByText('login-page')).toBeInTheDocument();
+  });
+
   it('redirects users without API_KEY or ADMIN to dashboard', () => {
     mockUseAuth.mockReturnValue({ user: regularUser, loading: false });
 

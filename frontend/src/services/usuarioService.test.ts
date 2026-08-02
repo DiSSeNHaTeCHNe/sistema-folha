@@ -31,6 +31,30 @@ describe('usuarioService', () => {
     expect(users[0].login).toBe('admin');
   });
 
+  it('lists users with nome and funcionarioId filters', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/usuarios`, ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        expect(params.get('nome')).toBe('Maria');
+        expect(params.get('funcionarioId')).toBe('10');
+        return HttpResponse.json([sampleUsuario]);
+      }),
+    );
+
+    await usuarioService.listar({ nome: 'Maria', funcionarioId: 10 });
+  });
+
+  it('lists users without filters', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/usuarios`, ({ request }) => {
+        expect(new URL(request.url).search).toBe('');
+        return HttpResponse.json([sampleUsuario]);
+      }),
+    );
+
+    await usuarioService.listar();
+  });
+
   it('fetches user by id and login', async () => {
     server.use(
       http.get(`${API_BASE_URL}/usuarios/1`, () => HttpResponse.json(sampleUsuario)),
