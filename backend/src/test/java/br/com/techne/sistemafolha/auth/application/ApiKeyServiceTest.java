@@ -368,6 +368,76 @@ class ApiKeyServiceTest {
         assertTrue(appender.list.stream().noneMatch(e -> e.getFormattedMessage().contains("supersecretvalue")));
     }
 
+    @Test
+    void autenticarPorChave_nullOuPrefixoInvalido_retornaEmpty() {
+        assertTrue(apiKeyService.autenticarPorChave(null).isEmpty());
+        assertTrue(apiKeyService.autenticarPorChave("invalid_prefix").isEmpty());
+    }
+
+    @Test
+    void autenticarPorChave_chaveCurta_retornaEmpty() {
+        assertTrue(apiKeyService.autenticarPorChave("sf_live_abc").isEmpty());
+    }
+
+    @Test
+    void autenticarPorChave_prefixoNaoEncontrado_retornaEmpty() {
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse(anyString())).thenReturn(Optional.empty());
+
+        assertTrue(apiKeyService.autenticarPorChave("sf_live_abc12345secretpart").isEmpty());
+    }
+
+    @Test
+    void listar_adminSemUsuarioId_usaCallerId() {
+        Usuario admin = usuarioAdmin();
+        when(apiKeyRepository.findByUsuarioIdOrderByDataCriacaoDesc(1L)).thenReturn(List.of());
+
+        apiKeyService.listar(admin, null);
+
+        verify(apiKeyRepository).findByUsuarioIdOrderByDataCriacaoDesc(1L);
+    }
+
+    @Test
+    void resolverUsuarioPorLogin_encontrado_retornaUsuario() {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        when(usuarioRepository.findByLoginAndAtivoTrue("usuario.api")).thenReturn(Optional.of(usuario));
+
+        assertEquals(10L, apiKeyService.resolverUsuarioPorLogin("usuario.api").getId());
+    }
+
+    @Test
+    void resolverUsuarioPorLogin_inexistente_lancaIllegalStateException() {
+        when(usuarioRepository.findByLoginAndAtivoTrue("x")).thenReturn(Optional.empty());
+
+        assertThrows(IllegalStateException.class, () -> apiKeyService.resolverUsuarioPorLogin("x"));
+    }
+
+    @Test
+    void listar_naoAdminComUsuarioIdDiferente_lancaApiKeyNotFoundException() {
+        Usuario caller = usuarioComPermissaoApiKey();
+        assertThrows(ApiKeyNotFoundException.class, () -> apiKeyService.listar(caller, 99L));
+    }
+
+    @Test
+    void revogar_semPermissaoApiKey_lancaApiKeyNotFoundException() {
+        Usuario semPerm = usuarioSemPermissaoApiKey();
+        ApiKey key = apiKeyDoUsuario(usuarioOutro(), 1L);
+        when(apiKeyRepository.findById(1L)).thenReturn(Optional.of(key));
+
+        assertThrows(ApiKeyNotFoundException.class, () -> apiKeyService.revogar(semPerm, 1L));
+    }
+
+    @Test
+    void autenticarPorChave_usuarioPermissoesNull_retornaEmpty() {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        usuario.setPermissoes(null);
+        ApiKey apiKey = apiKeyDoUsuario(usuario, 500L);
+        String chave = "sf_live_abc12345secretpart";
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse("sf_live_abc12345")).thenReturn(Optional.of(apiKey));
+        when(passwordEncoder.matches(chave, "hash")).thenReturn(true);
+
+        assertTrue(apiKeyService.autenticarPorChave(chave).isEmpty());
+    }
+
     private ListAppender<ILoggingEvent> capturarLogsApiKeyService() {
         Logger logger = (Logger) LoggerFactory.getLogger(ApiKeyService.class);
         logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
