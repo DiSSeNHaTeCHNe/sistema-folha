@@ -23,11 +23,19 @@ Após regenerar a spec, rode `validate-mcp-whitelist.sh` para garantir que os `o
 
    Alternativa: `~/.config/sistema-folha/mcp.env` com a mesma variável.
 
-3. No Cursor: **Settings → MCP** → habilite `sistema-folha` e clique em **Refresh**.
+3. **Cursor:** Settings → **MCP** → habilite `sistema-folha` → **Refresh**.
 
-   Após alterar `api-to-mcp.yml` ou regenerar a OpenAPI, faça **Refresh** novamente para o Cursor recarregar a lista de tools.
+   Config do projeto: `.cursor/mcp.json` (caminho relativo ao repo).
 
-A config do projeto está em `.cursor/mcp.json` (bridge OpenAPI → MCP via `@sgaluza/api-to-mcp`).
+4. **Claude Desktop:** edite `~/Library/Application Support/Claude/claude_desktop_config.json` e use o mesmo launcher com **caminho absoluto** (Claude não aceita paths relativos). Modelo: `diversos/openapi/claude-desktop-mcp.example.json`.
+
+   A API key fica em `.cursor/mcp.env` (ou `~/.config/sistema-folha/mcp.env`) — **não** coloque o token no JSON do Claude.
+
+   Reinicie o Claude Desktop após salvar o config.
+
+   Após alterar `api-to-mcp.yml` ou regenerar a OpenAPI, faça **Refresh** (Cursor) ou reinicie (Claude) para recarregar a lista de tools.
+
+Bridge OpenAPI → MCP via `@sgaluza/api-to-mcp` + whitelist versionada.
 
 Whitelist versionada: `diversos/openapi/api-to-mcp.yml` (`readonly: true` + 12 `operationId`).
 

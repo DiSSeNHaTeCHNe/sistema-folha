@@ -47,4 +47,7 @@ export OPENAPI_BEARER_TOKEN="${TOKEN}"
 # Cursor/GUI apps often miss asdf shims in PATH
 export PATH="${HOME}/.asdf/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 
-exec npx -y @sgaluza/api-to-mcp rest --config "${CONFIG}"
+# api-to-mcp resolves spec path relative to cwd — run from openapi dir
+OPENAPI_DIR="$(dirname "${CONFIG}")"
+cd "${OPENAPI_DIR}"
+exec npx -y @sgaluza/api-to-mcp rest --config "$(basename "${CONFIG}")"

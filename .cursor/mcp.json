@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sistema-folha": {
+      "command": "bash",
+      "args": [".cursor/scripts/mcp-sistema-folha.sh"]
+    }
+  }
+}

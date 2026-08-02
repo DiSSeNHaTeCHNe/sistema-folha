@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "sistema-folha": {
+      "command": "bash",
+      "args": [
+        "/ABSOLUTE/PATH/TO/sistema-folha/.cursor/scripts/mcp-sistema-folha.sh"
+      ],
+      "env": {
+        "PATH": "/Users/YOU/.asdf/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}
