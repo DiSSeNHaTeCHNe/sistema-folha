@@ -4,8 +4,12 @@ import br.com.techne.sistemafolha.folha.api.FolhaPagamentoDTO;
 import br.com.techne.sistemafolha.folha.api.FolhaTotaisFuncionarioDTO;
 import br.com.techne.sistemafolha.cadastros.domain.Cargo;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
+import br.com.techne.sistemafolha.cadastros.domain.CentroCustoNotFoundException;
 import br.com.techne.sistemafolha.folha.domain.FolhaPagamento;
+import br.com.techne.sistemafolha.folha.domain.ResumoFolhaPagamento;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
+import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocio;
+import br.com.techne.sistemafolha.cadastros.domain.LinhaNegocioNotFoundException;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
@@ -33,8 +37,10 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -487,6 +493,194 @@ class FolhaPagamentoServiceTest {
 
         assertFalse(folhaPagamentoService.removerSeAutorizado(LOGIN, 999L));
         verify(folhaPagamentoRepository, never()).softDelete(any());
+    }
+
+    @Test
+    void consultarPorPeriodo_datasNull_consultaFindAll() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(folhaPagamentoRepository.findAll()).thenReturn(List.of(folhaAtiva(10L, 99L)));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorPeriodo(LOGIN, null, null, null);
+
+        assertEquals(1, result.size());
+        verify(folhaPagamentoRepository).findAll();
+    }
+
+    @Test
+    void consultarPorLinhaNegocio_comAcesso_retornaLinhas() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        LinhaNegocio ln = new LinhaNegocio();
+        ln.setId(7L);
+        when(cadastrosLookupPort.findLinhaNegocioById(7L)).thenReturn(Optional.of(ln));
+        when(folhaPagamentoRepository.findByLinhaNegocioAndDataInicioBetweenAndAtivoTrue(ln, DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folhaAtiva(10L, 99L)));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorLinhaNegocio(
+            LOGIN, 7L, DATA_INICIO, DATA_FIM);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void consultarPorLinhaNegocio_naoEncontrada_lancaExcecao() {
+        stubUsuario();
+        when(cadastrosLookupPort.findLinhaNegocioById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(LinhaNegocioNotFoundException.class, () ->
+            folhaPagamentoService.consultarPorLinhaNegocio(LOGIN, 99L, DATA_INICIO, DATA_FIM));
+    }
+
+    @Test
+    void consultarPorCentroCusto_naoEncontrado_lancaExcecao() {
+        stubUsuario();
+        when(organogramaAcessoPort.usuarioPodeAcessarCentroCusto(USUARIO_ID, 5L)).thenReturn(true);
+        when(cadastrosLookupPort.findCentroCustoById(5L)).thenReturn(Optional.empty());
+
+        assertThrows(CentroCustoNotFoundException.class, () ->
+            folhaPagamentoService.consultarPorCentroCusto(LOGIN, 5L, DATA_INICIO, DATA_FIM));
+    }
+
+    @Test
+    void consultarTotaisPorFuncionario_scopedCentrosVazios_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Collections.emptySet()));
+
+        assertTrue(folhaPagamentoService.consultarTotaisPorFuncionario(
+            LOGIN, DATA_INICIO, DATA_FIM, false).isEmpty());
+        verify(folhaConsultaPort, never()).findLinhasAtivasPorCompetencia(any(), any(), anyBoolean(), any());
+    }
+
+    @Test
+    void consultarTotaisPorFuncionario_acessoTotal_comEncargosNoResumo() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        FolhaLinhaSnapshot linha = new FolhaLinhaSnapshot(
+            99L, "João", 10L, "TI", null, null, 5L, "Analista",
+            1L, "001", "Salário", "PROVENTO", new BigDecimal("5000"),
+            (short) 1, (short) 1, (short) 1, br.com.techne.sistemafolha.folha.domain.OrigemLinha.FOLHA_ADP, null);
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(DATA_INICIO, DATA_FIM, false, null))
+            .thenReturn(List.of(linha));
+        ResumoFolhaPagamento resumo = new ResumoFolhaPagamento();
+        resumo.setTotalEncargos(new BigDecimal("800.00"));
+        when(resumoFolhaPagamentoRepository.findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
+                DATA_INICIO, DATA_FIM, false))
+            .thenReturn(List.of(resumo));
+        when(folhaTotalizacaoService.calcularTotaisPorFuncionario(
+                eq(List.of(linha)), eq(contextoAcessoTotal()), eq(new BigDecimal("800.00")), eq(DATA_INICIO), eq(DATA_FIM)))
+            .thenReturn(List.of());
+
+        folhaPagamentoService.consultarTotaisPorFuncionario(LOGIN, DATA_INICIO, DATA_FIM, false);
+
+        verify(folhaTotalizacaoService).calcularTotaisPorFuncionario(
+            eq(List.of(linha)), eq(contextoAcessoTotal()), eq(new BigDecimal("800.00")), eq(DATA_INICIO), eq(DATA_FIM));
+    }
+
+    @Test
+    void removerSeAutorizado_folhaInativa_retornaFalse() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        FolhaPagamento inativa = folhaAtiva(3L, 99L);
+        inativa.setAtivo(false);
+        when(folhaPagamentoRepository.findById(3L)).thenReturn(Optional.of(inativa));
+
+        assertFalse(folhaPagamentoService.removerSeAutorizado(LOGIN, 3L));
+        verify(folhaPagamentoRepository, never()).softDelete(any());
+    }
+
+    @Test
+    void consultarPorFuncionario_semOrganograma_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, false, false, Set.of(10L), null, 2L, "TI", 1));
+        when(folhaPagamentoRepository.findByFuncionarioIdAndDataInicioBetweenAndAtivoTrue(
+                99L, DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folhaAtiva(10L, 99L)));
+
+        assertTrue(folhaPagamentoService.consultarPorFuncionario(
+            LOGIN, 99L, DATA_INICIO, DATA_FIM, null).isEmpty());
+    }
+
+    @Test
+    void consultarPorPeriodo_somenteDataInicioNull_usaFindAll() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(folhaPagamentoRepository.findAll()).thenReturn(List.of(folhaAtiva(10L, 99L)));
+
+        assertEquals(1, folhaPagamentoService.consultarPorPeriodo(LOGIN, null, DATA_FIM, null).size());
+        verify(folhaPagamentoRepository).findAll();
+    }
+
+    @Test
+    void consultarPorPeriodo_somenteDataFimNull_usaFindAll() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        when(folhaPagamentoRepository.findAll()).thenReturn(List.of(folhaAtiva(10L, 99L)));
+
+        assertEquals(1, folhaPagamentoService.consultarPorPeriodo(LOGIN, DATA_INICIO, null, null).size());
+        verify(folhaPagamentoRepository).findAll();
+    }
+
+    @Test
+    void consultarTotaisPorFuncionario_semFuncionarioVinculado_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(false, true, false, Set.of(10L), null, 2L, "TI", 1));
+
+        assertTrue(folhaPagamentoService.consultarTotaisPorFuncionario(
+            LOGIN, DATA_INICIO, DATA_FIM, false).isEmpty());
+    }
+
+    @Test
+    void consultarPorPeriodo_folhaSemCentroCusto_filtraPorFuncionario() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        FolhaPagamento folha = folhaAtiva(10L, 99L);
+        folha.setCentroCusto(null);
+        folha.getFuncionario().getCentroCusto().setId(10L);
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folha));
+
+        List<FolhaPagamentoDTO> result = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, DATA_INICIO, DATA_FIM, null);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void consultarPorPeriodo_folhaSemCentroCustoNemFuncionario_excluiDoEscopo() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        FolhaPagamento folha = folhaAtiva(10L, 99L);
+        folha.setCentroCusto(null);
+        folha.getFuncionario().setCentroCusto(null);
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folha));
+
+        assertTrue(folhaPagamentoService.consultarPorPeriodo(LOGIN, DATA_INICIO, DATA_FIM, null).isEmpty());
+    }
+
+    @Test
+    void consultarPorPeriodo_dtoCamposOpcionaisNull_mapeiaNulls() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        FolhaPagamento folha = folhaAtiva(10L, 99L);
+        folha.setCargo(null);
+        folha.setCentroCusto(null);
+        folha.setLinhaNegocio(null);
+        when(folhaPagamentoRepository.findByDataInicioBetweenAndAtivoTrue(DATA_INICIO, DATA_FIM))
+            .thenReturn(List.of(folha));
+
+        FolhaPagamentoDTO dto = folhaPagamentoService.consultarPorPeriodo(
+            LOGIN, DATA_INICIO, DATA_FIM, null).get(0);
+
+        assertEquals(null, dto.cargoId());
+        assertEquals(null, dto.centroCustoId());
+        assertEquals(null, dto.linhaNegocioId());
     }
 
     private void stubUsuario() {

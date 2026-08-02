@@ -360,6 +360,173 @@ class FolhaFichaConsultaServiceTest {
             folhaFichaConsultaService.listarLinhasPorTotalizador(LOGIN, FICHA_ID, Totalizador.GROSS));
     }
 
+    @Test
+    void listarLinhasPorTotalizador_acessoTotal_semBeneficios() {
+        stubUsuario(contextoAcessoTotal());
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linha("001", "Salário", (short) 1, (short) 1, (short) 1, new BigDecimal("1000.00"), OrigemLinha.FOLHA_ADP)
+            ));
+
+        List<FichaLinhaDetalheDTO> result = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.GROSS);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_semOrganograma_retorna404() {
+        stubUsuario(new AccessContextDTO(true, false, false, Set.of(CENTRO_A), null, 2L, "TI", 1));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+
+        assertThrows(FichaMensalNotFoundException.class, () ->
+            folhaFichaConsultaService.listarLinhasPorTotalizador(LOGIN, FICHA_ID, Totalizador.GROSS));
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_contribuicaoZero_filtraLinha() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linha("002", "INSS", (short) 0, (short) -1, (short) 0, new BigDecimal("800.00"), OrigemLinha.FOLHA_ADP)
+            ));
+
+        List<FichaLinhaDetalheDTO> gross = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.GROSS);
+
+        assertTrue(gross.isEmpty());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_companyCost_beneficioZero_naoInclui() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linha("001", "Salário", (short) 1, (short) 1, (short) 1, new BigDecimal("1000.00"), OrigemLinha.FOLHA_ADP)
+            ));
+        when(beneficioConsultaPort.findLinhasPorFuncionarioECompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(new BeneficioLinhaSnapshot(1L, "VR", "Vale", BigDecimal.ZERO)));
+
+        List<FichaLinhaDetalheDTO> result = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.COMPANY_COST);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_usuarioNaoEncontrado_lancaRuntimeException() {
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () ->
+            folhaFichaConsultaService.listarLinhasPorTotalizador(LOGIN, FICHA_ID, Totalizador.GROSS));
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_net_contribuicaoZero_filtraLinha() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linha("001", "Zerado", (short) 1, (short) 1, (short) 1, BigDecimal.ZERO, OrigemLinha.FOLHA_ADP)
+            ));
+
+        assertTrue(folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.NET).isEmpty());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_companyCost_beneficioValorNull_trataComoZero() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linha("001", "Salário", (short) 1, (short) 1, (short) 1, new BigDecimal("1000.00"), OrigemLinha.FOLHA_ADP)
+            ));
+        when(beneficioConsultaPort.findLinhasPorFuncionarioECompetencia(
+            FUNCIONARIO_ID, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(new BeneficioLinhaSnapshot(1L, "VR", "Vale", null)));
+
+        List<FichaLinhaDetalheDTO> result = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.COMPANY_COST);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_semFuncionarioVinculado_retorna404() {
+        stubUsuario(new AccessContextDTO(false, true, false, Set.of(CENTRO_A), null, 2L, "TI", 1));
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+
+        assertThrows(FichaMensalNotFoundException.class, () ->
+            folhaFichaConsultaService.listarLinhasPorTotalizador(LOGIN, FICHA_ID, Totalizador.GROSS));
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_fichaSemCentroCusto_retorna404() {
+        stubUsuario(contextoRestrito(Set.of(CENTRO_A)));
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(FUNCIONARIO_ID);
+        funcionario.setCentroCusto(null);
+        FichaMensal ficha = new FichaMensal();
+        ficha.setId(FICHA_ID);
+        ficha.setFuncionario(funcionario);
+        ficha.setCompetenciaInicio(COMPETENCIA_INICIO);
+        ficha.setCompetenciaFim(COMPETENCIA_FIM);
+        ficha.setAtivo(true);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+
+        assertThrows(FichaMensalNotFoundException.class, () ->
+            folhaFichaConsultaService.listarLinhasPorTotalizador(LOGIN, FICHA_ID, Totalizador.GROSS));
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_operadoresNull_trataComoZero() {
+        stubUsuario(contextoAcessoTotal());
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        FichaLinha linha = linha("001", "Salário", (short) 1, (short) 1, (short) 1,
+            new BigDecimal("1000.00"), OrigemLinha.FOLHA_ADP);
+        linha.setOperadorBruto(null);
+        linha.setOperadorLiquido(null);
+        linha.setOperadorCusto(null);
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID)).thenReturn(List.of(linha));
+
+        assertTrue(folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.GROSS).isEmpty());
+        assertTrue(folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.NET).isEmpty());
+        assertTrue(folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.COMPANY_COST).isEmpty());
+    }
+
+    @Test
+    void listarLinhasPorTotalizador_origemNull_usaFolhaAdp() {
+        stubUsuario(contextoAcessoTotal());
+        FichaMensal ficha = ficha(CENTRO_A);
+        when(fichaMensalRepository.findByIdAtivoWithFuncionario(FICHA_ID)).thenReturn(Optional.of(ficha));
+        when(fichaLinhaRepository.findByFichaMensalIdAndAtivoTrue(FICHA_ID))
+            .thenReturn(List.of(
+                linha("001", "Salário", (short) 1, (short) 1, (short) 1, new BigDecimal("1000.00"), null)
+            ));
+
+        List<FichaLinhaDetalheDTO> result = folhaFichaConsultaService.listarLinhasPorTotalizador(
+            LOGIN, FICHA_ID, Totalizador.GROSS);
+
+        assertEquals(1, result.size());
+        assertEquals(OrigemLinha.FOLHA_ADP.name(), result.get(0).origemLinha());
+    }
+
     private void stubUsuario(AccessContextDTO contexto) {
         Usuario usuario = new Usuario();
         usuario.setId(USUARIO_ID);

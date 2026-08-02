@@ -434,6 +434,96 @@ class ResumoFolhaPagamentoServiceTest {
             COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(CENTRO_A));
     }
 
+    @Test
+    void listarMaisRecentes_acessoNegado_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoNegado(MotivoNegacaoAcesso.SEM_NO_ORGANOGRAMA));
+
+        assertTrue(resumoFolhaPagamentoService.listarMaisRecentes(LOGIN).isEmpty());
+        verify(resumoFolhaPagamentoRepository, never()).findLatestResumos();
+    }
+
+    @Test
+    void listarMaisRecentes_acessoTotal_mapeiaResumos() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubGlobalSemLinhas();
+        when(resumoFolhaPagamentoRepository.findLatestResumos()).thenReturn(List.of(resumoAtivo(20L)));
+
+        List<ResumoFolhaPagamentoDTO> result = resumoFolhaPagamentoService.listarMaisRecentes(LOGIN);
+
+        assertEquals(1, result.size());
+        assertEquals(20L, result.get(0).id());
+    }
+
+    @Test
+    void consultarPorCompetencia_acessoNegado_retornaEmpty() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoNegado(MotivoNegacaoAcesso.SEM_FUNCIONARIO));
+
+        assertTrue(resumoFolhaPagamentoService.consultarPorCompetencia(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+        verify(resumoFolhaPagamentoRepository, never())
+            .findByCompetenciaInicioAndCompetenciaFimAndAtivoTrue(any(), any());
+    }
+
+    @Test
+    void consultarPorPeriodo_acessoNegado_retornaVazio() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoNegado(MotivoNegacaoAcesso.SEM_NO_ORGANOGRAMA));
+
+        assertTrue(resumoFolhaPagamentoService.consultarPorPeriodo(
+            LOGIN, COMPETENCIA_INICIO, COMPETENCIA_FIM).isEmpty());
+    }
+
+    @Test
+    void listarTodos_usuarioNaoEncontrado_lancaRuntimeException() {
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () ->
+            resumoFolhaPagamentoService.listarTodos(LOGIN, 2024, null));
+    }
+
+    @Test
+    void listarTodos_scoped_comBeneficios_agregaCustoEmpresa() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(CENTRO_A)));
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of(101L, new BigDecimal("200.00")));
+
+        ResumoFolhaPagamento snapshot = resumoAtivo(30L);
+        when(resumoFolhaPagamentoRepository.findByCompetenciaInicioBetweenAndAtivoTrue(
+                ANO_2024_INICIO, ANO_2024_FIM))
+            .thenReturn(List.of(snapshot));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(CENTRO_A)))
+            .thenReturn(List.of(linha(101L, CENTRO_A, "PROVENTO", "5000.00")));
+
+        List<ResumoFolhaPagamentoDTO> result = resumoFolhaPagamentoService.listarTodos(LOGIN, 2024, null);
+
+        assertEquals(0, new BigDecimal("5200.00").compareTo(result.get(0).totalCustoEmpresa()));
+    }
+
+    @Test
+    void listarTodos_ano2101_lancaIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () ->
+            resumoFolhaPagamentoService.listarTodos(LOGIN, 2101, null));
+    }
+
+    @Test
+    void listarTodos_acessoNegado_centrosNull_retornaListaVazia() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, null, null, 2L, "TI", 1));
+
+        assertTrue(resumoFolhaPagamentoService.listarTodos(LOGIN, 2024, null).isEmpty());
+        verify(resumoFolhaPagamentoRepository, never()).findByCompetenciaInicioBetweenAndAtivoTrue(any(), any());
+    }
+
     private void stubGlobalSemLinhas() {
         when(folhaConsultaPort.findLinhasAtivasPorCompetencia(any(), any(), anyBoolean(), isNull()))
             .thenReturn(List.of());

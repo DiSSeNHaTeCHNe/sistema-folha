@@ -378,6 +378,291 @@ class FolhaConsultaAdapterTest {
         assertEquals(new BigDecimal("138.63"), result.get(0).porcentagem());
     }
 
+    @Test
+    void existsResumoAtivo_quandoExiste_retornaTrue() {
+        ResumoFolhaPagamento resumo = resumo(COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("100.00"), 1, false);
+        when(resumoFolhaPagamentoRepository
+            .findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(resumo));
+
+        assertTrue(adapter.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void existsResumoAtivo_quandoNaoExiste_retornaFalse() {
+        when(resumoFolhaPagamentoRepository
+            .findByCompetenciaInicioAndCompetenciaFimAndDecimoTerceiroAndAtivoTrue(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of());
+
+        assertEquals(false, adapter.existsResumoAtivo(COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void existsAtivaByCpf_delegaParaRepository() {
+        when(folhaPagamentoRepository.existsAtivaByCpfAndCompetenciaExcludingFuncionario(
+            "123", 1L, COMPETENCIA_INICIO, COMPETENCIA_FIM, false)).thenReturn(true);
+
+        assertTrue(adapter.existsAtivaByCpfAndCompetenciaExcludingFuncionario(
+            "123", 1L, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void existsByFuncionarioIdAndRubricaId_delegaParaRepository() {
+        when(folhaPagamentoRepository.existsByFuncionarioIdAndRubricaIdAndPeriodoAndDecimoTerceiro(
+            1L, 2L, COMPETENCIA_INICIO, COMPETENCIA_FIM, false)).thenReturn(false);
+
+        assertEquals(false, adapter.existsByFuncionarioIdAndRubricaIdAndPeriodo(
+            1L, 2L, COMPETENCIA_INICIO, COMPETENCIA_FIM, false));
+    }
+
+    @Test
+    void findResumoMaisRecente_encargosNull_usaZero() {
+        ResumoFolhaPagamento resumo = resumo(COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("100.00"), 1, false);
+        resumo.setTotalEncargos(null);
+        when(resumoFolhaPagamentoRepository.findByCompetenciaMaisRecente()).thenReturn(List.of(resumo));
+
+        Optional<FolhaResumoSnapshot> result = adapter.findResumoMaisRecente();
+
+        assertTrue(result.isPresent());
+        assertEquals(BigDecimal.ZERO, result.get().totalEncargos());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_adpSemCentroNaLinha_usaCentroDoFuncionario() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+
+        FolhaPagamento folha = folhaPagamento(1L, 100L, "CC Alpha", new BigDecimal("1000.00"), false);
+        folha.setCentroCusto(null);
+        folha.setLinhaNegocio(null);
+        folha.setCargo(null);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(folha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals(1, result.size());
+        assertEquals(100L, result.get(0).centroCustoId());
+        assertEquals(5L, result.get(0).cargoId());
+        assertEquals(10L, result.get(0).linhaNegocioId());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_fichaSemSnapshotCc_usaCentroFuncionario() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+
+        FichaLinha linha = fichaLinhaSemSnapshotCc(1L, 200L, new BigDecimal("800.00"));
+        when(fichaLinhaRepository.findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals(1, result.size());
+        assertEquals(200L, result.get(0).centroCustoId());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_fichaOrigemNull_usaFolhaAdp() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+
+        FichaLinha linha = fichaLinha(1L, 100L, new BigDecimal("500.00"), (short) 1, (short) 1, (short) 1,
+            null, null);
+        when(fichaLinhaRepository.findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals(OrigemLinha.FOLHA_ADP, result.get(0).origemLinha());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_fichaOperadoresNull_usamZero() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+
+        FichaLinha linha = fichaLinha(1L, 100L, new BigDecimal("500.00"), (short) 0, (short) 0, (short) 0,
+            OrigemLinha.FOLHA_ADP, null);
+        linha.setOperadorBruto(null);
+        linha.setOperadorLiquido(null);
+        linha.setOperadorCusto(null);
+
+        when(fichaLinhaRepository.findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals((short) 0, result.get(0).operadorBruto());
+        assertEquals((short) 0, result.get(0).operadorLiquido());
+        assertEquals((short) 0, result.get(0).operadorCusto());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_centrosVazios_fichaUsaFetchGlobal() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+        FichaLinha linha = fichaLinha(1L, 100L, new BigDecimal("100.00"), (short) 1, (short) 1, (short) 1,
+            OrigemLinha.FOLHA_ADP, null);
+        when(fichaLinhaRepository.findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of());
+
+        assertEquals(1, result.size());
+        verify(fichaLinhaRepository).findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false);
+    }
+
+    @Test
+    void findResumoMaisRecente_encargosPresentes_preservaValor() {
+        ResumoFolhaPagamento resumo = resumo(COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 10, false);
+        resumo.setTotalEncargos(new BigDecimal("8000.00"));
+        when(resumoFolhaPagamentoRepository.findByCompetenciaMaisRecente()).thenReturn(List.of(resumo));
+
+        Optional<FolhaResumoSnapshot> result = adapter.findResumoMaisRecente();
+
+        assertEquals(new BigDecimal("8000.00"), result.orElseThrow().totalEncargos());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_adpSemCentroNemFuncionario_mapeiaCamposNull() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(1L);
+        funcionario.setNome("Sem CC");
+        funcionario.setCentroCusto(null);
+        funcionario.setCargo(null);
+
+        TipoRubrica tipoRubrica = new TipoRubrica();
+        tipoRubrica.setDescricao("PROVENTO");
+        Rubrica rubrica = new Rubrica();
+        rubrica.setId(1L);
+        rubrica.setCodigo("0010");
+        rubrica.setDescricao("Salário");
+        rubrica.setTipoRubrica(tipoRubrica);
+
+        FolhaPagamento folha = new FolhaPagamento();
+        folha.setFuncionario(funcionario);
+        folha.setRubrica(rubrica);
+        folha.setCentroCusto(null);
+        folha.setLinhaNegocio(null);
+        folha.setCargo(null);
+        folha.setValor(new BigDecimal("1000.00"));
+        folha.setDataInicio(COMPETENCIA_INICIO);
+        folha.setDataFim(COMPETENCIA_FIM);
+        folha.setDecimoTerceiro(false);
+        folha.setAtivo(true);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(folha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals(1, result.size());
+        assertEquals(null, result.get(0).centroCustoId());
+        assertEquals(null, result.get(0).linhaNegocioId());
+        assertEquals(null, result.get(0).cargoId());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_adpFiltraQuandoSemCentroNaLinhaNemFuncionario() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(false);
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(1L);
+        funcionario.setNome("Sem CC");
+        funcionario.setCentroCusto(null);
+
+        Rubrica rubrica = new Rubrica();
+        rubrica.setId(1L);
+        rubrica.setCodigo("0010");
+        rubrica.setDescricao("Salário");
+        TipoRubrica tipo = new TipoRubrica();
+        tipo.setDescricao("PROVENTO");
+        rubrica.setTipoRubrica(tipo);
+
+        FolhaPagamento folha = new FolhaPagamento();
+        folha.setFuncionario(funcionario);
+        folha.setRubrica(rubrica);
+        folha.setCentroCusto(null);
+        folha.setValor(new BigDecimal("1000.00"));
+        folha.setDataInicio(COMPETENCIA_INICIO);
+        folha.setDataFim(COMPETENCIA_FIM);
+        folha.setDecimoTerceiro(false);
+        folha.setAtivo(true);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroWithFetch(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(folha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, Set.of(100L));
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void findLinhasAtivasPorCompetencia_fichaSemCentroSemCargoSemLn_mapeiaNulls() {
+        when(fichaMensalRepository.existsByCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(true);
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(1L);
+        funcionario.setNome("Func");
+        funcionario.setCentroCusto(null);
+        funcionario.setCargo(null);
+
+        TipoRubrica tipoRubrica = new TipoRubrica();
+        tipoRubrica.setDescricao("PROVENTO");
+        Rubrica rubrica = new Rubrica();
+        rubrica.setId(1L);
+        rubrica.setCodigo("0010");
+        rubrica.setDescricao("Salário");
+        rubrica.setTipoRubrica(tipoRubrica);
+
+        FichaMensal fichaMensal = new FichaMensal();
+        fichaMensal.setFuncionario(funcionario);
+        fichaMensal.setCompetenciaInicio(COMPETENCIA_INICIO);
+        fichaMensal.setCompetenciaFim(COMPETENCIA_FIM);
+        fichaMensal.setDecimoTerceiro(false);
+        fichaMensal.setAtivo(true);
+
+        FichaLinha linha = new FichaLinha();
+        linha.setFichaMensal(fichaMensal);
+        linha.setRubrica(rubrica);
+        linha.setValor(new BigDecimal("500.00"));
+        linha.setOperadorBruto((short) 1);
+        linha.setOperadorLiquido((short) 1);
+        linha.setOperadorCusto((short) 1);
+        linha.setOrigemLinha(OrigemLinha.FOLHA_ADP);
+        linha.setAtivo(true);
+
+        when(fichaLinhaRepository.findByCompetenciaWithFetch(COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+
+        List<FolhaLinhaSnapshot> result = adapter.findLinhasAtivasPorCompetencia(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals(1, result.size());
+        assertEquals(null, result.get(0).centroCustoId());
+        assertEquals(null, result.get(0).linhaNegocioId());
+        assertEquals(null, result.get(0).cargoId());
+    }
+
     private ResumoFolhaPagamento resumo(
             LocalDate inicio, LocalDate fim, BigDecimal totalLiquido, int empregados, boolean decimoTerceiro) {
         ResumoFolhaPagamento resumo = new ResumoFolhaPagamento();
@@ -527,6 +812,45 @@ class FolhaConsultaAdapterTest {
         FichaMensal fichaMensal = new FichaMensal();
         fichaMensal.setFuncionario(funcionario);
         fichaMensal.setCentroCusto(ccSnapshot);
+        fichaMensal.setCompetenciaInicio(COMPETENCIA_INICIO);
+        fichaMensal.setCompetenciaFim(COMPETENCIA_FIM);
+        fichaMensal.setDecimoTerceiro(false);
+        fichaMensal.setAtivo(true);
+
+        FichaLinha linha = new FichaLinha();
+        linha.setFichaMensal(fichaMensal);
+        linha.setRubrica(rubrica);
+        linha.setValor(valor);
+        linha.setOperadorBruto((short) 1);
+        linha.setOperadorLiquido((short) 1);
+        linha.setOperadorCusto((short) 1);
+        linha.setOrigemLinha(OrigemLinha.FOLHA_ADP);
+        linha.setAtivo(true);
+        return linha;
+    }
+
+    private FichaLinha fichaLinhaSemSnapshotCc(Long funcionarioId, Long ccFuncionarioId, BigDecimal valor) {
+        CentroCusto ccFunc = new CentroCusto();
+        ccFunc.setId(ccFuncionarioId);
+        ccFunc.setDescricao("CC Func");
+        ccFunc.setLinhaNegocio(linhaNegocio(10L));
+
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId(funcionarioId);
+        funcionario.setNome("Func " + funcionarioId);
+        funcionario.setCentroCusto(ccFunc);
+        funcionario.setCargo(cargo(5L));
+
+        TipoRubrica tipoRubrica = new TipoRubrica();
+        tipoRubrica.setDescricao("PROVENTO");
+        Rubrica rubrica = new Rubrica();
+        rubrica.setId(1L);
+        rubrica.setCodigo("0010");
+        rubrica.setDescricao("Salário");
+        rubrica.setTipoRubrica(tipoRubrica);
+
+        FichaMensal fichaMensal = new FichaMensal();
+        fichaMensal.setFuncionario(funcionario);
         fichaMensal.setCompetenciaInicio(COMPETENCIA_INICIO);
         fichaMensal.setCompetenciaFim(COMPETENCIA_FIM);
         fichaMensal.setDecimoTerceiro(false);

@@ -104,6 +104,16 @@ class EncargosRateioServiceTest {
         Map<Long, BigDecimal> rateio = service.ratearPorFuncionario(bruto, new BigDecimal("1.00"));
 
         assertTrue(EncargosRateioService.somaDentroDaTolerancia(new BigDecimal("1.00"), rateio));
+        assertEquals(0, new BigDecimal("0.34").compareTo(rateio.get(3L)));
+    }
+
+    @Test
+    void ratearPorFuncionario_diferencaZero_naoAjustaUltimaParcela() {
+        Map<Long, BigDecimal> bruto = Map.of(1L, new BigDecimal("1000.00"));
+
+        Map<Long, BigDecimal> rateio = service.ratearPorFuncionario(bruto, new BigDecimal("500.00"));
+
+        assertEquals(0, new BigDecimal("500.00").compareTo(rateio.get(1L)));
     }
 
     @Test
