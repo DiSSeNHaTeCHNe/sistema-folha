@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RefObject } from 'react';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { toast } from 'react-toastify';
 import Importacao from './index';
@@ -6,6 +7,38 @@ import { renderWithProviders } from '../../test/renderWithProviders';
 import { importacaoService } from '../../services/importacaoService';
 import { beneficioMensalService } from '../../services/beneficioMensalService';
 import { folhaPagamentoService } from '../../services/folhaPagamentoService';
+
+const fileRefControl = vi.hoisted(() => ({
+  capture: false,
+  callIndex: 0,
+  beneficiosRef: { current: null as HTMLInputElement | null },
+  folhaRef: { current: null as HTMLInputElement | null },
+  reset() {
+    this.capture = false;
+    this.callIndex = 0;
+    this.beneficiosRef.current = null;
+    this.folhaRef.current = null;
+  },
+  enableCapture() {
+    this.reset();
+    this.capture = true;
+  },
+}));
+
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react')>();
+  return {
+    ...actual,
+    useRef: <T,>(initial: T) => {
+      if (fileRefControl.capture) {
+        const slot = fileRefControl.callIndex % 2;
+        fileRefControl.callIndex += 1;
+        return (slot === 0 ? fileRefControl.beneficiosRef : fileRefControl.folhaRef) as RefObject<T>;
+      }
+      return actual.useRef(initial);
+    },
+  };
+});
 
 vi.mock('../../services/importacaoService', () => ({
   importacaoService: {
@@ -783,6 +816,119 @@ describe('Importacao page', () => {
       success: true,
       message: 'OK',
       registrosProcessados: 1,
+    });
+  });
+
+  describe('null-safe file ref guards', () => {
+    afterEach(() => {
+      fileRefControl.reset();
+    });
+
+    it('completes folha ADP import when folhaAdpFileRef.current is null', async () => {
+      let resolveImport!: (value: unknown) => void;
+      vi.mocked(importacaoService.importarFolhaAdp).mockImplementation(
+        () => new Promise((resolve) => { resolveImport = resolve; }),
+      );
+
+      fileRefControl.enableCapture();
+      renderWithProviders(<Importacao />);
+      selectFolhaFile();
+      fireEvent.click(screen.getByRole('button', { name: 'Importar Folha ADP' }));
+
+      fileRefControl.folhaRef.current = null;
+      resolveImport({
+        success: true,
+        message: 'Folha importada',
+        registrosProcessados: 1,
+        arquivo: 'folha.txt',
+      });
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Folha importada');
+      });
+    });
+
+    it('completes beneficios import when beneficiosMensaisFileRef.current is null', async () => {
+      let resolveImport!: (value: unknown) => void;
+      vi.mocked(beneficioMensalService.importar).mockImplementation(
+        () => new Promise((resolve) => { resolveImport = resolve; }),
+      );
+
+      fileRefControl.enableCapture();
+      renderWithProviders(<Importacao />);
+      selectBeneficiosFile();
+      fireEvent.click(screen.getByRole('button', { name: 'Importar Benefícios Mensais' }));
+
+      fileRefControl.beneficiosRef.current = null;
+      resolveImport({ processadas: 1, erros: 0, totalValor: 10, detalhesErros: [] });
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Benefícios mensais importados com sucesso!');
+      });
+    });
+
+    it('resets folha ADP state when folhaAdpFileRef.current is null', async () => {
+      vi.mocked(importacaoService.importarFolhaAdp).mockResolvedValue({
+        success: true,
+        message: 'OK',
+        registrosProcessados: 1,
+        arquivo: 'folha.txt',
+      });
+
+      fileRefControl.enableCapture();
+      renderWithProviders(<Importacao />);
+      selectFolhaFile('minha-folha.txt');
+      fireEvent.click(screen.getByRole('button', { name: 'Importar Folha ADP' }));
+
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Novo' })).toBeInTheDocument());
+      fileRefControl.folhaRef.current = null;
+      fireEvent.click(screen.getByRole('button', { name: 'Novo' }));
+
+      expect(screen.queryByText(/Importação realizada com sucesso/)).not.toBeInTheDocument();
+    });
+
+    it('resets beneficios state when beneficiosMensaisFileRef.current is null', async () => {
+      vi.mocked(beneficioMensalService.importar).mockResolvedValue({
+        processadas: 1,
+        erros: 0,
+        totalValor: 10,
+        detalhesErros: [],
+      });
+
+      fileRefControl.enableCapture();
+      renderWithProviders(<Importacao />);
+      selectBeneficiosFile('planilha.xlsx');
+      fireEvent.click(screen.getByRole('button', { name: 'Importar Benefícios Mensais' }));
+
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Novo' })).toBeInTheDocument());
+      fileRefControl.beneficiosRef.current = null;
+      fireEvent.click(screen.getByRole('button', { name: 'Novo' }));
+
+      expect(screen.queryByText(/Importação realizada com sucesso/)).not.toBeInTheDocument();
+    });
+
+    it('confirms beneficios substitution when beneficiosMensaisFileRef.current is null', async () => {
+      let resolveConfirm!: (value: unknown) => void;
+      vi.mocked(beneficioMensalService.importar)
+        .mockRejectedValueOnce({ response: { status: 409, data: { message: 'Conflito' } } })
+        .mockImplementationOnce(() => new Promise((resolve) => { resolveConfirm = resolve; }));
+
+      fileRefControl.enableCapture();
+      renderWithProviders(<Importacao />);
+      selectBeneficiosFile();
+      fireEvent.click(screen.getByRole('button', { name: 'Importar Benefícios Mensais' }));
+
+      await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmar Substituição' }));
+
+      fileRefControl.beneficiosRef.current = null;
+      resolveConfirm({ processadas: 2, erros: 0, totalValor: 50, detalhesErros: [] });
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          'Benefícios mensais importados com sucesso! Os dados anteriores foram substituídos.',
+        );
+      });
     });
   });
 });
