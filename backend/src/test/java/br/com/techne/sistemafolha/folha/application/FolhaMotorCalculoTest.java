@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FolhaMotorCalculoTest {
 
@@ -125,6 +126,54 @@ class FolhaMotorCalculoTest {
     void porcentagemEfetiva_nullRetorna100() {
         assertEquals(new BigDecimal("100"), FolhaMotorCalculo.porcentagemEfetiva(null));
         assertEquals(new BigDecimal("138.63"), FolhaMotorCalculo.porcentagemEfetiva(new BigDecimal("138.63")));
+    }
+
+    @Test
+    void calcularPorLinhas_listaNullOuVazia_retornaZeros() {
+        FolhaMotorCalculo.TotaisFuncionario nullList = FolhaMotorCalculo.calcularPorLinhas(null);
+        assertEquals(new BigDecimal("0.00"), nullList.bruto());
+        assertEquals(new BigDecimal("0.00"), nullList.liquido());
+        assertEquals(new BigDecimal("0.00"), nullList.custoFolha());
+
+        FolhaMotorCalculo.TotaisFuncionario empty = FolhaMotorCalculo.calcularPorLinhas(List.of());
+        assertEquals(new BigDecimal("0.00"), empty.bruto());
+        assertEquals(new BigDecimal("0.00"), empty.liquido());
+        assertEquals(new BigDecimal("0.00"), empty.custoFolha());
+    }
+
+    @Test
+    void calcularPorLinhas_valorNull_trataComoZero() {
+        FolhaMotorCalculo.LinhaCalculoInput linha =
+            new FolhaMotorCalculo.LinhaCalculoInput(null, (short) 1, (short) 1, (short) 1, null);
+
+        FolhaMotorCalculo.TotaisFuncionario totais = FolhaMotorCalculo.calcularPorLinhas(List.of(linha));
+
+        assertEquals(new BigDecimal("0.00"), totais.bruto());
+        assertEquals(new BigDecimal("0.00"), totais.liquido());
+        assertEquals(new BigDecimal("0.00"), totais.custoFolha());
+    }
+
+    @Test
+    void contribuicao_valorNull_trataComoZero() {
+        FolhaMotorCalculo.LinhaCalculoInput linha =
+            new FolhaMotorCalculo.LinhaCalculoInput(null, (short) 1, (short) 1, (short) 1, null);
+
+        assertEquals(new BigDecimal("0.00"),
+            FolhaMotorCalculo.contribuicao(linha, FolhaMotorCalculo.Totalizador.GROSS));
+    }
+
+    @Test
+    void linhaCalculoInput_construtorSemPorcentagem_usaNull() {
+        FolhaMotorCalculo.LinhaCalculoInput linha =
+            new FolhaMotorCalculo.LinhaCalculoInput(new BigDecimal("100.00"), (short) 1, (short) 1, (short) 1);
+
+        assertEquals(new BigDecimal("100.00"), linha.valor());
+        assertEquals(null, linha.porcentagem());
+    }
+
+    @Test
+    void arredondar_aplicaHalfUpDuasCasas() {
+        assertEquals(new BigDecimal("1.23"), FolhaMotorCalculo.arredondar(new BigDecimal("1.234")));
     }
 
     private FolhaMotorCalculo.LinhaCalculoInput linha(
