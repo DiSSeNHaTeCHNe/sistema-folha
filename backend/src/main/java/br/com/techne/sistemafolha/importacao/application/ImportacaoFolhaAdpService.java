@@ -177,52 +177,32 @@ public class ImportacaoFolhaAdpService {
 
                 Matcher totalEmpregadosMatcher = TOTAL_EMPREGADOS_PATTERN.matcher(linha);
                 if (totalEmpregadosMatcher.find()) {
-                    try {
-                        totalEmpregados = Integer.parseInt(totalEmpregadosMatcher.group(1));
-                        logger.info("Total de Empregados identificado: {}", totalEmpregados);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total de empregados na linha: {}", linha);
-                    }
+                    totalEmpregados = Integer.parseInt(totalEmpregadosMatcher.group(1));
+                    logger.info("Total de Empregados identificado: {}", totalEmpregados);
                 }
 
                 Matcher totalEncargosMatcher = TOTAL_ENCARGOS_PATTERN.matcher(linha);
                 if (totalEncargosMatcher.find()) {
-                    try {
-                        totalEncargos = parseBigDecimal(totalEncargosMatcher.group(1));
-                        logger.info("Total de Encargos identificado: {}", totalEncargos);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total de encargos na linha: {}", linha);
-                    }
+                    totalEncargos = parseBigDecimal(totalEncargosMatcher.group(1));
+                    logger.info("Total de Encargos identificado: {}", totalEncargos);
                 }
 
                 Matcher totalPagamentosMatcher = TOTAL_PAGAMENTOS_PATTERN.matcher(linha);
                 if (totalPagamentosMatcher.find()) {
-                    try {
-                        totalPagamentos = parseBigDecimal(totalPagamentosMatcher.group(1));
-                        logger.info("Total de Pagamentos identificado: {}", totalPagamentos);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total de pagamentos na linha: {}", linha);
-                    }
+                    totalPagamentos = parseBigDecimal(totalPagamentosMatcher.group(1));
+                    logger.info("Total de Pagamentos identificado: {}", totalPagamentos);
                 }
 
                 Matcher totalDescontosMatcher = TOTAL_DESCONTOS_PATTERN.matcher(linha);
                 if (totalDescontosMatcher.find()) {
-                    try {
-                        totalDescontos = parseBigDecimal(totalDescontosMatcher.group(1));
-                        logger.info("Total de Descontos identificado: {}", totalDescontos);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total de descontos na linha: {}", linha);
-                    }
+                    totalDescontos = parseBigDecimal(totalDescontosMatcher.group(1));
+                    logger.info("Total de Descontos identificado: {}", totalDescontos);
                 }
 
                 Matcher totalLiquidoMatcher = TOTAL_LIQUIDO_PATTERN.matcher(linha);
                 if (totalLiquidoMatcher.find()) {
-                    try {
-                        totalLiquido = parseBigDecimal(totalLiquidoMatcher.group(1));
-                        logger.info("Total Líquido identificado: {}", totalLiquido);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total líquido na linha: {}", linha);
-                    }
+                    totalLiquido = parseBigDecimal(totalLiquidoMatcher.group(1));
+                    logger.info("Total Líquido identificado: {}", totalLiquido);
                 }
             }
         } catch (Exception e) {
