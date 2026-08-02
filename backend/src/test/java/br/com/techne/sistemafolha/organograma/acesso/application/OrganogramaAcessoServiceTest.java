@@ -216,6 +216,60 @@ class OrganogramaAcessoServiceTest {
         assertEquals(Set.of(100L), service.obterCentrosCustoAcessiveis(USUARIO_ID));
     }
 
+    @Test
+    void obterContextoAcesso_usuarioInexistente_negaSemFuncionario() {
+        when(usuarioLookupPort.findById(99L)).thenReturn(Optional.empty());
+
+        AccessContextDTO contexto = service.obterContextoAcesso(99L);
+
+        assertEquals(MotivoNegacaoAcesso.SEM_FUNCIONARIO, contexto.motivoNegacao());
+    }
+
+    @Test
+    void obterContextoAcesso_multiplosVinculos_usaPrimeiroNo() {
+        Funcionario funcionario = funcionario(1L);
+        Usuario usuario = usuario(USUARIO_ID, funcionario);
+        NoOrganograma no1 = no(5L, "A", 1);
+        NoOrganograma no2 = no(6L, "B", 1);
+        when(usuarioLookupPort.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(funcionarioOrganogramaRepository.findByFuncionarioWithNoAtivo(funcionario))
+            .thenReturn(List.of(vinculo(funcionario, no1), vinculo(funcionario, no2)));
+        when(centroCustoOrganogramaRepository.findByNoOrganogramaWithCentroCustoAtivo(no1))
+            .thenReturn(List.of(centroNoOrganograma(centro(10L))));
+        when(noOrganogramaRepository.findByParentAndAtivoTrueOrderByPosicao(no1))
+            .thenReturn(Collections.emptyList());
+
+        AccessContextDTO contexto = service.obterContextoAcesso(USUARIO_ID);
+
+        assertEquals(5L, contexto.noOrganogramaId());
+        assertTrue(contexto.centrosCustoIds().contains(10L));
+    }
+
+    @Test
+    void obterContextoAcesso_acessoTotalComFuncionario_marcaVinculo() {
+        Funcionario funcionario = funcionario(1L);
+        Usuario usuario = usuario(USUARIO_ID, funcionario,
+            List.of(OrganogramaAcessoService.PERMISSAO_ACESSO_TOTAL));
+        when(usuarioLookupPort.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+
+        AccessContextDTO contexto = service.obterContextoAcesso(USUARIO_ID);
+
+        assertTrue(contexto.acessoTotal());
+        assertTrue(contexto.temFuncionarioVinculado());
+    }
+
+    @Test
+    void obterContextoAcesso_permissoesNull_naoConcedeAcessoTotal() {
+        Usuario usuario = usuario(USUARIO_ID, null);
+        usuario.setPermissoes(null);
+        when(usuarioLookupPort.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+
+        AccessContextDTO contexto = service.obterContextoAcesso(USUARIO_ID);
+
+        assertFalse(contexto.acessoTotal());
+        assertEquals(MotivoNegacaoAcesso.SEM_FUNCIONARIO, contexto.motivoNegacao());
+    }
+
     private Usuario usuario(Long id, Funcionario funcionario) {
         return usuario(id, funcionario, Collections.emptyList());
     }

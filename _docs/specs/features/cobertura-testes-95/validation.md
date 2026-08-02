@@ -20,3 +20,15 @@
 | Local | Branch | Motivo |
 | ----- | ------ | ------ |
 | L175 | `operador == null` | Inatingível após guarda L134 (`configurarOperadores`) exigir os três operadores. |
+
+## organograma/application — OrganogramaService.construirArvore
+
+| Local | Branch | Motivo |
+| ----- | ------ | ------ |
+| L433 | `parent.children() != null` false | `toDTO` / `toDTOCompleto` sempre inicializam `children` com `new ArrayList<>()`; DTO com `children == null` não é produzido pelo serviço. |
+
+## dashboard/application — DashboardService.calcularStatsPorCargo
+
+| Local | Branch | Motivo |
+| ----- | ------ | ------ |
+| L249 | `quantidadeFuncionarios > 0` false | Entradas do `groupingBy(cargoId)` sempre têm ≥1 linha; `distinct()` de IDs nunca resulta em 0 dentro de um grupo não vazio. |

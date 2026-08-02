@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -384,6 +385,135 @@ class DashboardServiceTest {
 
         assertEmptyStats(stats);
         verify(organogramaAcessoPort, never()).obterContextoAcesso(any());
+    }
+
+    @Test
+    void getStats_loginBlank_retornaEmpty() {
+        assertEmptyStats(dashboardService.getStats("   "));
+    }
+
+    @Test
+    void getStats_motivoNegacaoExplicito_retornaEmpty() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(false, false, false, Set.of(),
+                MotivoNegacaoAcesso.SEM_FUNCIONARIO, null, null, null));
+
+        assertEmptyStats(dashboardService.getStats(LOGIN));
+    }
+
+    @Test
+    void getStats_scopedCentrosVazios_retornaEmpty() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, Collections.emptySet(), null, 2L, "TI", 1));
+
+        assertEmptyStats(dashboardService.getStats(LOGIN));
+    }
+
+    @Test
+    void getStats_semOrganograma_retornaEmpty() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(false, true, false, Set.of(10L), null, null, null, null));
+
+        assertEmptyStats(dashboardService.getStats(LOGIN));
+    }
+
+    @Test
+    void getStats_restritoSemResumo_contaFuncionariosPorCentros() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(contextoRestrito(Set.of(10L)));
+        when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.empty());
+        when(cadastrosImportLookupPort.countFuncionariosAtivosPorCentros(Set.of(10L))).thenReturn(3L);
+        when(beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
+            any(), any(), eq(Set.of(10L)))).thenReturn(2L);
+
+        DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
+
+        assertEquals(3L, stats.totalFuncionarios());
+        assertEquals(2L, stats.totalBeneficiosAtivos());
+    }
+
+    @Test
+    void getStats_comResumo_filtraLinhasSemIdsOpcionais() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
+            LocalDate.of(2024, 10, 1), LocalDate.of(2024, 10, 31),
+            BigDecimal.TEN, 1, false, BigDecimal.ONE);
+        when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
+        FolhaLinhaSnapshot linhaSemIds = linha(
+            null, null, null, null, null, null, null,
+            null, null, null, "PROVENTO", null);
+        FolhaLinhaSnapshot linhaCompleta = linha(
+            1L, 10L, "CC", 20L, "LN", 30L, "Cargo",
+            40L, "R001", "Salário", "PROVENTO", BigDecimal.TEN);
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+            resumo.competenciaInicio(), resumo.competenciaFim(), false, null))
+            .thenReturn(List.of(linhaSemIds, linhaCompleta));
+        when(folhaTotalizacaoPort.calcularTotalCustoEmpresa(any(), any(), any(), any()))
+            .thenReturn(BigDecimal.TEN);
+        when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(any(), any())).thenReturn(0L);
+        when(folhaConsultaPort.findEvolucaoUltimos12Meses(any())).thenReturn(List.of());
+
+        DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
+
+        assertEquals(1L, stats.totalFuncionarios());
+        assertFalse(stats.porLinhaNegocio().isEmpty());
+        assertFalse(stats.topProventos().isEmpty());
+    }
+
+    @Test
+    void getStats_centrosNullNoContexto_retornaEmpty() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, null, null, 2L, "TI", 1));
+
+        assertEmptyStats(dashboardService.getStats(LOGIN));
+    }
+
+    @Test
+    void getStats_comFuncionarioSemNoOrganograma_retornaEmpty() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
+            .thenReturn(new AccessContextDTO(true, false, false, Set.of(10L), null, null, null, null));
+
+        assertEmptyStats(dashboardService.getStats(LOGIN));
+    }
+
+    @Test
+    void getStats_topRubricasOrdenaELimitaCinco() {
+        stubUsuario();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+
+        FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, BigDecimal.TEN, 1, false, BigDecimal.ONE);
+        List<FolhaLinhaSnapshot> linhas = new java.util.ArrayList<>();
+        for (int i = 1; i <= 6; i++) {
+            linhas.add(linha(1L, 10L, "CC", 1L, "LN", 100L, "Cargo",
+                (long) i, "00" + i, "Rub " + i, "PROVENTO", BigDecimal.valueOf(i * 100)));
+            linhas.add(linha(1L, 10L, "CC", 1L, "LN", 100L, "Cargo",
+                (long) (10 + i), "D0" + i, "Desc " + i, "DESCONTO", BigDecimal.valueOf(i * 10)));
+        }
+        linhas.add(linha(1L, 10L, "CC", 1L, "LN", 100L, "Cargo",
+            null, null, "Sem rubrica", "DESCONTO", BigDecimal.ONE));
+
+        when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumo));
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(any(), any(), eq(false), isNull()))
+            .thenReturn(linhas);
+        when(folhaTotalizacaoPort.calcularTotalCustoEmpresa(any(), any(), any(), any()))
+            .thenReturn(BigDecimal.TEN);
+        when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(any(), any())).thenReturn(0L);
+        when(folhaConsultaPort.findEvolucaoUltimos12Meses(any())).thenReturn(List.of());
+
+        DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
+
+        assertEquals(5, stats.topProventos().size());
+        assertEquals(5, stats.topDescontos().size());
+        assertEquals(6L, stats.topProventos().get(0).id());
+        assertEquals(16L, stats.topDescontos().get(0).id());
     }
 
     private void stubUsuario() {
