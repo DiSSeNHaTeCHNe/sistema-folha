@@ -51,4 +51,16 @@ jwt:
 logging:
   level:
     root: INFO
-    br.com.techne.sistemafolha: DEBUG 
+    br.com.techne.sistemafolha: DEBUG
+
+relatorios:
+  branding:
+    primary-color: "#7836FC"
+    secondary-color: "#3661FC"
+    text-color: "#273340"
+    muted-background: "#f8fafc"
+    logo-path: "classpath:branding/logo.png"
+  geracao:
+    timeout-segundos: 60
+    max-tamanho-mb: 50
+    max-jobs-simultaneos-por-usuario: 3
