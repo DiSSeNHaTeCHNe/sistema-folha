@@ -16,6 +16,10 @@ import br.com.techne.sistemafolha.cadastros.domain.RubricaNotFoundException;
 import br.com.techne.sistemafolha.folha.domain.FichaMensalNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.NoOrganogramaNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.OrganogramaAtivoConflictException;
+import br.com.techne.sistemafolha.relatorios.domain.RelatorioAcessoNegadoException;
+import br.com.techne.sistemafolha.relatorios.domain.RelatorioGeracaoLimiteException;
+import br.com.techne.sistemafolha.relatorios.domain.RelatorioIndisponivelException;
+import br.com.techne.sistemafolha.relatorios.domain.RelatorioNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -126,6 +130,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleApiKeyNotFoundException(ApiKeyNotFoundException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RelatorioNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRelatorioNotFoundException(RelatorioNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RelatorioIndisponivelException.class)
+    public ResponseEntity<ErrorResponse> handleRelatorioIndisponivelException(RelatorioIndisponivelException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(RelatorioGeracaoLimiteException.class)
+    public ResponseEntity<ErrorResponse> handleRelatorioGeracaoLimiteException(RelatorioGeracaoLimiteException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    @ExceptionHandler(RelatorioAcessoNegadoException.class)
+    public ResponseEntity<ErrorResponse> handleRelatorioAcessoNegadoException(RelatorioAcessoNegadoException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
