@@ -63,8 +63,15 @@ class FolhaExecutivoPdfRendererTest {
         byte[] pdf = renderer.render(model);
         String text = extractText(pdf);
 
+        assertTrue(text.contains("Total Funcion"));
+        assertTrue(text.contains("Custo Empresa"));
+        assertTrue(text.contains("Total Proventos"));
+        assertTrue(text.contains("Total Descontos"));
         assertTrue(text.contains("150"));
-        assertTrue(text.contains("9.000") || text.contains("9000") || text.contains("R$"));
+        assertTrue(text.contains("8.000") || text.contains("8000"));
+        assertTrue(text.contains("1.000") || text.contains("1000"));
+        assertTrue(text.contains("9.000") || text.contains("9000"));
+        assertTrue(text.contains("Gerado em: 15/06/2024 10:00"));
     }
 
     private RelatorioFolhaModel modelCompleto(boolean semDados) {

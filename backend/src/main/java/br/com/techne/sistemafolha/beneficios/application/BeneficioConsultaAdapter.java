@@ -11,12 +11,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,6 +27,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class BeneficioConsultaAdapter implements BeneficioConsultaPort {
+
+    private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
 
     private final BeneficioMensalRepository beneficioMensalRepository;
 
@@ -113,11 +118,13 @@ public class BeneficioConsultaAdapter implements BeneficioConsultaPort {
     public BigDecimal somarValorPorCompetenciaECentros(
             LocalDate competenciaInicio, LocalDate competenciaFim, Set<Long> centrosCustoIds) {
         validarCompetencia(competenciaInicio, competenciaFim);
-        if (centrosCustoIds == null || centrosCustoIds.isEmpty()) {
+        if (centrosCustoIds != null && centrosCustoIds.isEmpty()) {
             return BigDecimal.ZERO;
         }
-        BigDecimal total = beneficioMensalRepository.sumValorPorCompetenciaECentros(
-            competenciaInicio, competenciaFim, centrosCustoIds);
+        BigDecimal total = centrosCustoIds == null
+            ? beneficioMensalRepository.sumValorPorCompetenciaGlobal(competenciaInicio, competenciaFim)
+            : beneficioMensalRepository.sumValorPorCompetenciaECentros(
+                competenciaInicio, competenciaFim, centrosCustoIds);
         return total != null ? total : BigDecimal.ZERO;
     }
 
@@ -154,12 +161,24 @@ public class BeneficioConsultaAdapter implements BeneficioConsultaPort {
                 tipoBeneficioId, competenciaInicio, competenciaFim)
             : beneficioMensalRepository.topFuncionariosPorTipoCentros(
                 tipoBeneficioId, competenciaInicio, competenciaFim, centrosCustoIds);
-        return projections.stream()
-            .limit(limit)
-            .map(p -> new BeneficioFuncionarioValorSnapshot(
-                p.getFuncionarioId(), p.getFuncionarioNome(),
-                p.getValor() != null ? p.getValor() : BigDecimal.ZERO))
+        List<BeneficioFuncionarioValorSnapshot> mapped = projections.stream()
+            .map(this::toFuncionarioSnapshot)
             .toList();
+        if (mapped.size() <= limit) {
+            return mapped;
+        }
+        List<BeneficioFuncionarioValorSnapshot> top = new ArrayList<>(mapped.subList(0, limit));
+        long outrosCount = mapped.size() - limit;
+        BigDecimal outrosValor = mapped.subList(limit, mapped.size()).stream()
+            .map(BeneficioFuncionarioValorSnapshot::valor)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        top.add(new BeneficioFuncionarioValorSnapshot(
+            null,
+            formatOutrosLabel(outrosCount, outrosValor),
+            outrosValor,
+            null,
+            null));
+        return top;
     }
 
     @Override
@@ -208,6 +227,21 @@ public class BeneficioConsultaAdapter implements BeneficioConsultaPort {
                 p.getTipoDescricao(),
                 p.getTotal() != null ? p.getTotal() : BigDecimal.ZERO))
             .toList();
+    }
+
+    private BeneficioFuncionarioValorSnapshot toFuncionarioSnapshot(
+            br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioFuncionarioValorProjection p) {
+        return new BeneficioFuncionarioValorSnapshot(
+            p.getFuncionarioId(),
+            p.getFuncionarioNome(),
+            p.getValor() != null ? p.getValor() : BigDecimal.ZERO,
+            p.getCentroCustoCodigo(),
+            p.getCentroCustoDescricao());
+    }
+
+    private String formatOutrosLabel(long funcionarios, BigDecimal valor) {
+        NumberFormat currency = NumberFormat.getCurrencyInstance(PT_BR);
+        return "Outros (" + funcionarios + " funcionários, " + currency.format(valor) + ")";
     }
 
     private BeneficioTipoResumoSnapshot toTipoResumoSnapshot(

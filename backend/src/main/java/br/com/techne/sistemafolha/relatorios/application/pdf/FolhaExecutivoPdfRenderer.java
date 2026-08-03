@@ -21,15 +21,19 @@ import org.springframework.stereotype.Component;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 @Component
 @RequiredArgsConstructor
 public class FolhaExecutivoPdfRenderer {
 
     private static final int TOP_N = 15;
+    private static final DateTimeFormatter GERADO_EM_FORMAT =
+        DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.forLanguageTag("pt-BR"));
 
     private final RelatorioLayoutHelper layoutHelper;
     private final RelatorioChartImageFactory chartFactory;
@@ -102,13 +106,15 @@ public class FolhaExecutivoPdfRenderer {
         PdfPTable kpis = new PdfPTable(4);
         kpis.setWidthPercentage(100);
         kpis.setSpacingBefore(12);
-        addKpiCell(kpis, "Funcionários", String.valueOf(stats.totalFuncionarios()), theme);
-        addKpiCell(kpis, "Custo Folha", layoutHelper.formatCurrency(stats.custoMensalFolha()), theme);
-        addKpiCell(kpis, "Benefícios Ativos", String.valueOf(stats.totalBeneficiosAtivos()), theme);
-        addKpiCell(kpis, "Proventos", layoutHelper.formatCurrency(stats.totalProventos()), theme);
+        addKpiCell(kpis, "Total Funcionários", String.valueOf(stats.totalFuncionarios()), theme);
+        addKpiCell(kpis, "Custo Empresa", layoutHelper.formatCurrency(stats.custoMensalFolha()), theme);
+        addKpiCell(kpis, "Total Proventos", layoutHelper.formatCurrency(stats.totalProventos()), theme);
+        addKpiCell(kpis, "Total Descontos", layoutHelper.formatCurrency(stats.totalDescontos()), theme);
         document.add(kpis);
 
         Font metaFont = layoutHelper.bodyFont(theme);
+        document.add(new Paragraph(
+            "Gerado em: " + model.geradoEm().format(GERADO_EM_FORMAT), metaFont));
         document.add(new Paragraph("Gerado por: " + model.geradoPor(), metaFont));
         document.add(new Paragraph("Gerado pelo Sistema de Folha — Techne", metaFont));
     }

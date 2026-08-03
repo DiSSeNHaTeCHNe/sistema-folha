@@ -128,10 +128,11 @@ public class BeneficioCustoPdfRenderer {
                     tipo.codigo() + " — " + tipo.descricao(),
                     layoutHelper.bodyFont(theme)));
                 document.add(layoutHelper.createZebraTable(
-                    List.of("Funcionário", "Valor"),
+                    List.of("Funcionário", "Centro de Custo", "Valor"),
                     funcionarios.stream()
                         .map(f -> List.of(
                             f.funcionarioNome(),
+                            formatCentroCusto(f),
                             layoutHelper.formatCurrency(f.valor())))
                         .toList(),
                     theme));
@@ -149,5 +150,23 @@ public class BeneficioCustoPdfRenderer {
                     layoutHelper.formatCurrency(m.total())))
                 .toList(),
             theme));
+    }
+
+    private String formatCentroCusto(BeneficioFuncionarioValorSnapshot funcionario) {
+        if (funcionario.funcionarioId() == null) {
+            return "";
+        }
+        String codigo = funcionario.centroCustoCodigo();
+        String descricao = funcionario.centroCustoDescricao();
+        if (codigo != null && descricao != null) {
+            return codigo + " — " + descricao;
+        }
+        if (descricao != null) {
+            return descricao;
+        }
+        if (codigo != null) {
+            return codigo;
+        }
+        return "";
     }
 }

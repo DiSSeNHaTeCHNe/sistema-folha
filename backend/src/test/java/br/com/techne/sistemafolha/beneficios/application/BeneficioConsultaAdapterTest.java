@@ -228,6 +228,20 @@ class BeneficioConsultaAdapterTest {
     }
 
     @Test
+    void somarValorPorCompetenciaECentros_centrosNull_usaConsultaGlobal() {
+        when(beneficioMensalRepository.sumValorPorCompetenciaGlobal(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(new BigDecimal("3200.00"));
+
+        BigDecimal total = adapter.somarValorPorCompetenciaECentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, null);
+
+        assertEquals(new BigDecimal("3200.00"), total);
+        verify(beneficioMensalRepository).sumValorPorCompetenciaGlobal(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM);
+    }
+
+    @Test
     void somarValorPorCompetenciaECentros_centrosVazios_retornaZero() {
         BigDecimal total = adapter.somarValorPorCompetenciaECentros(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of());
@@ -363,9 +377,10 @@ class BeneficioConsultaAdapterTest {
         List<BeneficioFuncionarioValorSnapshot> result = adapter.topFuncionariosPorTipo(
             1L, COMPETENCIA_INICIO, COMPETENCIA_FIM, null, 2);
 
-        assertEquals(2, result.size());
+        assertEquals(3, result.size());
         assertEquals("Ana", result.get(0).funcionarioNome());
-        assertEquals(new BigDecimal("900"), result.get(0).valor());
+        assertEquals("CC01", result.get(0).centroCustoCodigo());
+        assertTrue(result.get(2).funcionarioNome().startsWith("Outros (1 funcion"));
     }
 
     @Test
@@ -409,10 +424,17 @@ class BeneficioConsultaAdapterTest {
 
     private BeneficioFuncionarioValorProjection funcionarioProjection(
             Long id, String nome, BigDecimal valor) {
+        return funcionarioProjection(id, nome, valor, "CC01", "Centro Admin");
+    }
+
+    private BeneficioFuncionarioValorProjection funcionarioProjection(
+            Long id, String nome, BigDecimal valor, String ccCodigo, String ccDescricao) {
         return new BeneficioFuncionarioValorProjection() {
             @Override public Long getFuncionarioId() { return id; }
             @Override public String getFuncionarioNome() { return nome; }
             @Override public BigDecimal getValor() { return valor; }
+            @Override public String getCentroCustoCodigo() { return ccCodigo; }
+            @Override public String getCentroCustoDescricao() { return ccDescricao; }
         };
     }
 

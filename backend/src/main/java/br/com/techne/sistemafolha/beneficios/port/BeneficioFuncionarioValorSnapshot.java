@@ -5,5 +5,7 @@ import java.math.BigDecimal;
 public record BeneficioFuncionarioValorSnapshot(
     Long funcionarioId,
     String funcionarioNome,
-    BigDecimal valor
+    BigDecimal valor,
+    String centroCustoCodigo,
+    String centroCustoDescricao
 ) {}

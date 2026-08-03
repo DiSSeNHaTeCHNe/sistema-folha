@@ -1,9 +1,16 @@
 package br.com.techne.sistemafolha.relatorios.application.pdf;
 
+import com.lowagie.text.Document;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.parser.PdfTextExtractor;
 import br.com.techne.sistemafolha.relatorios.application.BrandingTheme;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -57,5 +64,24 @@ class RelatorioLayoutHelperTest {
     @Test
     void createFooterEvent_retornaEventHelper() {
         assertNotNull(helper.createFooterEvent());
+    }
+
+    @Test
+    void createFooterEvent_paginaComTotalPaginas() throws Exception {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4);
+            PdfWriter writer = PdfWriter.getInstance(document, out);
+            writer.setPageEvent(helper.createFooterEvent());
+            document.open();
+            document.add(new Paragraph("Capa"));
+            document.newPage();
+            document.add(new Paragraph("Conteúdo"));
+            document.close();
+
+            PdfReader reader = new PdfReader(out.toByteArray());
+            String page2Text = new PdfTextExtractor(reader).getTextFromPage(2);
+            reader.close();
+            assertTrue(page2Text.contains("Página 2 de 2"));
+        }
     }
 }

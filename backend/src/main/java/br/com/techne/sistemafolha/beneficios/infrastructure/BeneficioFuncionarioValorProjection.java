@@ -6,4 +6,6 @@ public interface BeneficioFuncionarioValorProjection {
     Long getFuncionarioId();
     String getFuncionarioNome();
     BigDecimal getValor();
+    String getCentroCustoCodigo();
+    String getCentroCustoDescricao();
 }

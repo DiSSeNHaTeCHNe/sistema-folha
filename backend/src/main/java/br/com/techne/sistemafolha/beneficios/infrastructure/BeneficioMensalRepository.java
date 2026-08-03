@@ -159,6 +159,17 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         WHERE bm.ativo = true
           AND bm.competenciaInicio = :competenciaInicio
           AND bm.competenciaFim = :competenciaFim
+        """)
+    BigDecimal sumValorPorCompetenciaGlobal(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim);
+
+    @Query("""
+        SELECT COALESCE(SUM(bm.valor), 0)
+        FROM BeneficioMensal bm
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
           AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
         """)
     BigDecimal sumValorPorCompetenciaECentros(
@@ -199,14 +210,17 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         @Param("centroCustoIds") Collection<Long> centroCustoIds);
 
     @Query("""
-        SELECT f.id AS funcionarioId, f.nome AS funcionarioNome, SUM(bm.valor) AS valor
+        SELECT f.id AS funcionarioId, f.nome AS funcionarioNome,
+               cc.codigo AS centroCustoCodigo, cc.descricao AS centroCustoDescricao,
+               SUM(bm.valor) AS valor
         FROM BeneficioMensal bm
         JOIN bm.funcionario f
+        JOIN f.centroCusto cc
         WHERE bm.ativo = true
           AND bm.tipoBeneficio.id = :tipoBeneficioId
           AND bm.competenciaInicio = :competenciaInicio
           AND bm.competenciaFim = :competenciaFim
-        GROUP BY f.id, f.nome
+        GROUP BY f.id, f.nome, cc.codigo, cc.descricao
         ORDER BY SUM(bm.valor) DESC
         """)
     List<BeneficioFuncionarioValorProjection> topFuncionariosPorTipoGlobal(
@@ -215,15 +229,18 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         @Param("competenciaFim") LocalDate competenciaFim);
 
     @Query("""
-        SELECT f.id AS funcionarioId, f.nome AS funcionarioNome, SUM(bm.valor) AS valor
+        SELECT f.id AS funcionarioId, f.nome AS funcionarioNome,
+               cc.codigo AS centroCustoCodigo, cc.descricao AS centroCustoDescricao,
+               SUM(bm.valor) AS valor
         FROM BeneficioMensal bm
         JOIN bm.funcionario f
+        JOIN f.centroCusto cc
         WHERE bm.ativo = true
           AND bm.tipoBeneficio.id = :tipoBeneficioId
           AND bm.competenciaInicio = :competenciaInicio
           AND bm.competenciaFim = :competenciaFim
           AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
-        GROUP BY f.id, f.nome
+        GROUP BY f.id, f.nome, cc.codigo, cc.descricao
         ORDER BY SUM(bm.valor) DESC
         """)
     List<BeneficioFuncionarioValorProjection> topFuncionariosPorTipoCentros(

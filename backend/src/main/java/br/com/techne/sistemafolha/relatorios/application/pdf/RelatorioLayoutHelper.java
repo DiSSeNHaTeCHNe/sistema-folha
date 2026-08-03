@@ -6,9 +6,12 @@ import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfPageEventHelper;
+import com.lowagie.text.pdf.PdfTemplate;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Component;
 
@@ -102,21 +105,47 @@ public class RelatorioLayoutHelper {
 
     public PdfPageEventHelper createFooterEvent() {
         return new PdfPageEventHelper() {
+            private PdfTemplate totalPagesTemplate;
+            private BaseFont baseFont;
+
+            @Override
+            public void onOpenDocument(PdfWriter writer, Document document) {
+                totalPagesTemplate = writer.getDirectContent().createTemplate(30, 16);
+                try {
+                    baseFont = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
+                } catch (Exception e) {
+                    throw new IllegalStateException("Erro ao inicializar fonte do rodapé", e);
+                }
+            }
+
             @Override
             public void onEndPage(PdfWriter writer, Document document) {
                 if (writer.getPageNumber() <= 1) {
                     return;
                 }
-                Phrase footer = new Phrase(
-                    FOOTER_TEXT + " | Página " + writer.getPageNumber(),
-                    footerFont());
-                com.lowagie.text.pdf.ColumnText.showTextAligned(
-                    writer.getDirectContent(),
-                    Element.ALIGN_CENTER,
-                    footer,
-                    (document.left() + document.right()) / 2,
-                    document.bottom() - 10,
-                    0);
+                PdfContentByte canvas = writer.getDirectContent();
+                String prefix = FOOTER_TEXT + " | Página " + writer.getPageNumber() + " de ";
+                float textSize = 8f;
+                float textBase = document.bottom() - 10;
+                float textWidth = baseFont.getWidthPoint(prefix, textSize);
+                float centerX = (document.left() + document.right()) / 2;
+                float startX = centerX - textWidth / 2 - 6;
+
+                canvas.beginText();
+                canvas.setFontAndSize(baseFont, textSize);
+                canvas.setTextMatrix(startX, textBase);
+                canvas.showText(prefix);
+                canvas.endText();
+                canvas.addTemplate(totalPagesTemplate, startX + textWidth, textBase);
+            }
+
+            @Override
+            public void onCloseDocument(PdfWriter writer, Document document) {
+                totalPagesTemplate.beginText();
+                totalPagesTemplate.setFontAndSize(baseFont, 8f);
+                totalPagesTemplate.setTextMatrix(0, 0);
+                totalPagesTemplate.showText(String.valueOf(writer.getPageNumber() - 1));
+                totalPagesTemplate.endText();
             }
         };
     }

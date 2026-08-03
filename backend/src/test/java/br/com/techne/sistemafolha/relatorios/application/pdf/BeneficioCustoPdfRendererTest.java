@@ -65,11 +65,32 @@ class BeneficioCustoPdfRendererTest {
         assertTrue(text.contains("R$") && (text.contains("1.500") || text.contains("1500")));
     }
 
+    @Test
+    void render_drillDownContemCentroCustoEOutros() {
+        BeneficioTipoResumoSnapshot vr = new BeneficioTipoResumoSnapshot(
+            1L, "4000", "Vale Refeição", new BigDecimal("1500.00"), 10L);
+        List<BeneficioFuncionarioValorSnapshot> funcionarios = List.of(
+            new BeneficioFuncionarioValorSnapshot(100L, "Maria Silva", new BigDecimal("500.00"), "CC01", "CC Admin"),
+            new BeneficioFuncionarioValorSnapshot(null, "Outros (3 funcionários, R$ 200,00)",
+                new BigDecimal("200.00"), null, null));
+
+        RelatorioBeneficioModel model = new RelatorioBeneficioModel(
+            theme, "06/2024", "gestor@teste.com", LocalDateTime.of(2024, 6, 15, 10, 0),
+            new BigDecimal("1500.00"), 10L, new BigDecimal("9000.00"), new BigDecimal("10500.00"),
+            List.of(vr), Map.of(1L, funcionarios), List.of(), false, false);
+
+        String text = extractText(renderer.render(model));
+
+        assertTrue(text.contains("CC Admin"));
+        assertTrue(text.contains("Outros"));
+        assertTrue(text.contains("funcion"));
+    }
+
     private RelatorioBeneficioModel modelCompleto(boolean semBeneficios, boolean semFolha) {
         BeneficioTipoResumoSnapshot vr = new BeneficioTipoResumoSnapshot(
             1L, "4000", "Vale Refeição", new BigDecimal("1500.00"), 10L);
         BeneficioFuncionarioValorSnapshot func = new BeneficioFuncionarioValorSnapshot(
-            100L, "Maria Silva", new BigDecimal("500.00"));
+            100L, "Maria Silva", new BigDecimal("500.00"), "CC01", "CC Admin");
         BeneficioCcTipoSnapshot matriz = new BeneficioCcTipoSnapshot(
             10L, "CC Admin", 1L, "4000", "Vale Refeição", new BigDecimal("1500.00"));
 
