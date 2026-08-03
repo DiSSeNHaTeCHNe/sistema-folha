@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Service
@@ -42,6 +43,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
     private final OrganogramaAcessoPort organogramaAcessoPort;
+    private final Clock clock;
 
     @Transactional
     @SuppressWarnings("java:S5804") // Mensagem unificada login/senha (AAP-08); UsernameNotFoundException exigido pelo contrato de auth
@@ -64,7 +66,7 @@ public class AuthenticationService {
 
             RefreshToken refreshToken = refreshTokenService.criarRefreshToken(loginDTO.login());
 
-            LocalDateTime tokenExpiration = LocalDateTime.now().plusSeconds(jwtService.getJwtExpirationTime() / 1000);
+            LocalDateTime tokenExpiration = LocalDateTime.now(clock).plusSeconds(jwtService.getJwtExpirationTime() / 1000);
             LocalDateTime refreshExpiration = refreshToken.getDataExpiracao();
 
             AcessoUsuarioDTO acessoUsuario = obterAcessoUsuario(usuario.getId());
@@ -105,7 +107,7 @@ public class AuthenticationService {
         
         RefreshToken newRefreshToken = refreshTokenService.criarRefreshToken(usuario.getLogin());
         
-        LocalDateTime tokenExpiration = LocalDateTime.now().plusSeconds(jwtService.getJwtExpirationTime() / 1000);
+        LocalDateTime tokenExpiration = LocalDateTime.now(clock).plusSeconds(jwtService.getJwtExpirationTime() / 1000);
         LocalDateTime refreshExpiration = newRefreshToken.getDataExpiracao();
         
         AcessoUsuarioDTO acessoUsuario = obterAcessoUsuario(usuario.getId());

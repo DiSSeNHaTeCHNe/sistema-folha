@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -42,11 +43,13 @@ public class ImportacaoFolhaAdpService {
     private static final Logger logger = LoggerFactory.getLogger(ImportacaoFolhaAdpService.class);
     private static final String DOMAIN = "importacao";
     private static final String DOMAIN_PREFIX = DomainLogging.prefix(DOMAIN);
+    private static final String EMPRESA_FILIAL_0065_TECHNE_EDUCACAO = "Filial    0065  TECHNE - EDUCACAO";
 
     private final CadastrosImportLookupPort cadastrosImportLookupPort;
     private final FolhaConsultaPort folhaConsultaPort;
     private final FolhaImportacaoPort folhaImportacaoPort;
     private final FolhaProcessamentoPort folhaProcessamentoPort;
+    private final Clock clock;
 
     private final List<String> rubricasIgnore = List.of(
         "VENDAS E PRE VENDAS-CRONA"
@@ -64,18 +67,20 @@ public class ImportacaoFolhaAdpService {
             CadastrosImportLookupPort cadastrosImportLookupPort,
             FolhaConsultaPort folhaConsultaPort,
             FolhaImportacaoPort folhaImportacaoPort,
-            FolhaProcessamentoPort folhaProcessamentoPort) {
+            FolhaProcessamentoPort folhaProcessamentoPort,
+            Clock clock) {
         this.cadastrosImportLookupPort = cadastrosImportLookupPort;
         this.folhaConsultaPort = folhaConsultaPort;
         this.folhaImportacaoPort = folhaImportacaoPort;
         this.folhaProcessamentoPort = folhaProcessamentoPort;
+        this.clock = clock;
         inicializarMapaEmpresas();
     }
 
     private void inicializarMapaEmpresas() {
-        empresa.put("258", "Filial    0065  TECHNE - EDUCACAO");
-        empresa.put("149", "Filial    0065  TECHNE - EDUCACAO");
-        empresa.put("245", "Filial    0065  TECHNE - EDUCACAO");
+        empresa.put("258", EMPRESA_FILIAL_0065_TECHNE_EDUCACAO);
+        empresa.put("149", EMPRESA_FILIAL_0065_TECHNE_EDUCACAO);
+        empresa.put("245", EMPRESA_FILIAL_0065_TECHNE_EDUCACAO);
     }
 
     @Transactional
@@ -180,49 +185,33 @@ public class ImportacaoFolhaAdpService {
                     try {
                         totalEmpregados = Integer.parseInt(totalEmpregadosMatcher.group(1));
                         logger.info("Total de Empregados identificado: {}", totalEmpregados);
-                    } catch (Exception e) {
+                    } catch (NumberFormatException e) {
                         logger.error("Erro ao processar total de empregados na linha: {}", linha);
                     }
                 }
 
                 Matcher totalEncargosMatcher = TOTAL_ENCARGOS_PATTERN.matcher(linha);
                 if (totalEncargosMatcher.find()) {
-                    try {
-                        totalEncargos = parseBigDecimal(totalEncargosMatcher.group(1));
-                        logger.info("Total de Encargos identificado: {}", totalEncargos);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total de encargos na linha: {}", linha);
-                    }
+                    totalEncargos = parseBigDecimal(totalEncargosMatcher.group(1));
+                    logger.info("Total de Encargos identificado: {}", totalEncargos);
                 }
 
                 Matcher totalPagamentosMatcher = TOTAL_PAGAMENTOS_PATTERN.matcher(linha);
                 if (totalPagamentosMatcher.find()) {
-                    try {
-                        totalPagamentos = parseBigDecimal(totalPagamentosMatcher.group(1));
-                        logger.info("Total de Pagamentos identificado: {}", totalPagamentos);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total de pagamentos na linha: {}", linha);
-                    }
+                    totalPagamentos = parseBigDecimal(totalPagamentosMatcher.group(1));
+                    logger.info("Total de Pagamentos identificado: {}", totalPagamentos);
                 }
 
                 Matcher totalDescontosMatcher = TOTAL_DESCONTOS_PATTERN.matcher(linha);
                 if (totalDescontosMatcher.find()) {
-                    try {
-                        totalDescontos = parseBigDecimal(totalDescontosMatcher.group(1));
-                        logger.info("Total de Descontos identificado: {}", totalDescontos);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total de descontos na linha: {}", linha);
-                    }
+                    totalDescontos = parseBigDecimal(totalDescontosMatcher.group(1));
+                    logger.info("Total de Descontos identificado: {}", totalDescontos);
                 }
 
                 Matcher totalLiquidoMatcher = TOTAL_LIQUIDO_PATTERN.matcher(linha);
                 if (totalLiquidoMatcher.find()) {
-                    try {
-                        totalLiquido = parseBigDecimal(totalLiquidoMatcher.group(1));
-                        logger.info("Total Líquido identificado: {}", totalLiquido);
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar total líquido na linha: {}", linha);
-                    }
+                    totalLiquido = parseBigDecimal(totalLiquidoMatcher.group(1));
+                    logger.info("Total Líquido identificado: {}", totalLiquido);
                 }
             }
         } catch (Exception e) {
@@ -421,8 +410,8 @@ public class ImportacaoFolhaAdpService {
     }
 
     private LocalDate[] extrairPeriodoCompetencia(MultipartFile arquivo) throws IOException {
-        LocalDate dataInicio = LocalDate.now();
-        LocalDate dataFim = LocalDate.now();
+        LocalDate dataInicio = LocalDate.now(clock);
+        LocalDate dataFim = LocalDate.now(clock);
 
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(arquivo.getInputStream(), Charset.forName("WINDOWS-1252")))) {

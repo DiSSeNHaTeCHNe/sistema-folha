@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -27,6 +28,7 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UsuarioRepository usuarioRepository;
     private final JwtService jwtService;
+    private final Clock clock;
 
     @Transactional
     public RefreshToken criarRefreshToken(String login) {
@@ -39,7 +41,7 @@ public class RefreshTokenService {
         refreshTokenRepository.revogarTodosPorUsuario(usuario);
         
         String token = jwtService.generateRefreshToken();
-        LocalDateTime dataExpiracao = LocalDateTime.now()
+        LocalDateTime dataExpiracao = LocalDateTime.now(clock)
                 .plusSeconds(jwtService.getRefreshExpirationTime() / 1000);
         
         RefreshToken refreshToken = new RefreshToken();
@@ -71,7 +73,7 @@ public class RefreshTokenService {
     @Transactional
     public void limparTokensExpirados() {
         logger.info("Limpando refresh tokens expirados");
-        refreshTokenRepository.deleteByDataExpiracaoBefore(LocalDateTime.now());
+        refreshTokenRepository.deleteByDataExpiracaoBefore(LocalDateTime.now(clock));
     }
 
     public boolean validarRefreshToken(RefreshToken refreshToken) {
@@ -80,7 +82,12 @@ public class RefreshTokenService {
             return false;
         }
         
-        if (!refreshToken.isValido()) {
+        if (refreshToken.getRevogado()) {
+            logger.warn("Refresh token inválido");
+            return false;
+        }
+
+        if (LocalDateTime.now(clock).isAfter(refreshToken.getDataExpiracao())) {
             logger.warn("Refresh token inválido");
             return false;
         }

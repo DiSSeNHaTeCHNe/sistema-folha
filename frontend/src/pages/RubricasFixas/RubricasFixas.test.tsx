@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { toast } from 'react-toastify';
 import RubricasFixas from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
@@ -330,5 +330,101 @@ describe('RubricasFixas page', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
+  });
+
+  it('shows Todos for global rubrica fixa', async () => {
+    renderWithProviders(<RubricasFixas />);
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Todos' })).toBeInTheDocument());
+  });
+
+  it('creates rubrica fixa', async () => {
+    vi.mocked(funcionarioRubricaFixaService.criar).mockResolvedValue(sampleRegistro);
+    renderWithProviders(<RubricasFixas />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Nova Rubrica Fixa' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.mouseDown(within(dialog).getAllByRole('combobox')[0]);
+    fireEvent.click(screen.getByRole('option', { name: '001 - Salário' }));
+    fireEvent.change(within(dialog).getByLabelText('Valor'), { target: { value: '1000' } });
+    fireEvent.change(within(dialog).getByLabelText(/Vigência início/i), { target: { value: '2026-01-01' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cadastrar' }));
+    await waitFor(() => expect(funcionarioRubricaFixaService.criar).toHaveBeenCalled());
+  });
+
+  it('shows API error message on save failure', async () => {
+    vi.mocked(funcionarioRubricaFixaService.atualizar).mockRejectedValue({
+      response: { data: { message: 'Vigência inválida' } },
+    });
+    renderWithProviders(<RubricasFixas />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar rubrica fixa' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Atualizar' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Vigência inválida'));
+  });
+
+  it('does not delete when confirmation is cancelled', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderWithProviders(<RubricasFixas />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Excluir rubrica fixa' }));
+    expect(funcionarioRubricaFixaService.remover).not.toHaveBeenCalled();
+  });
+
+  it('opens edit dialog with optional empty fields', async () => {
+    vi.mocked(funcionarioRubricaFixaService.listar).mockResolvedValue([
+      {
+        ...sampleRegistro,
+        valor: null,
+        comentario: null,
+        vigenciaFim: null,
+        porcentagem: null,
+      },
+    ]);
+    renderWithProviders(<RubricasFixas />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar rubrica fixa' }));
+    expect(await screen.findByRole('heading', { name: 'Editar Rubrica Fixa' })).toBeInTheDocument();
+  });
+
+  it('shows funcionario id when nome is missing', async () => {
+    vi.mocked(funcionarioRubricaFixaService.listar).mockResolvedValue([
+      { ...sampleRegistro, funcionarioId: 99, funcionarioNome: null },
+    ]);
+    renderWithProviders(<RubricasFixas />);
+    await waitFor(() => expect(screen.getByRole('cell', { name: '99' })).toBeInTheDocument());
+  });
+
+  it('selects specific funcionario on create', async () => {
+    vi.mocked(funcionarioRubricaFixaService.criar).mockResolvedValue({
+      ...sampleRegistro,
+      funcionarioId: 10,
+      funcionarioNome: 'Maria Silva',
+    });
+    renderWithProviders(<RubricasFixas />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Nova Rubrica Fixa' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.mouseDown(within(dialog).getAllByRole('combobox')[0]);
+    fireEvent.click(screen.getByRole('option', { name: '001 - Salário' }));
+    fireEvent.mouseDown(within(dialog).getAllByRole('combobox')[1]);
+    fireEvent.click(screen.getByRole('option', { name: 'Maria Silva' }));
+    fireEvent.change(within(dialog).getByLabelText('Valor'), { target: { value: '1000' } });
+    fireEvent.change(within(dialog).getByLabelText(/Vigência início/i), { target: { value: '2026-01-01' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cadastrar' }));
+    await waitFor(() =>
+      expect(funcionarioRubricaFixaService.criar).toHaveBeenCalledWith(
+        expect.objectContaining({ funcionarioId: 10 }),
+      ),
+    );
+  });
+
+  it('shows fallback error when API response is not an object', async () => {
+    vi.mocked(funcionarioRubricaFixaService.atualizar).mockRejectedValue({ response: { data: 'erro' } });
+    renderWithProviders(<RubricasFixas />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar rubrica fixa' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Atualizar' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Erro ao salvar rubrica fixa'));
+  });
+
+  it('submits filter form', async () => {
+    renderWithProviders(<RubricasFixas />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Filtrar' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }));
+    await waitFor(() => expect(funcionarioRubricaFixaService.listar).toHaveBeenCalled());
   });
 });

@@ -19,6 +19,7 @@ import java.util.Set;
 public class RubricaService {
 
     private static final Set<Short> OPERADORES_VALIDOS = Set.of((short) -1, (short) 0, (short) 1);
+    private static final String RUBRICA_NAO_ENCONTRADA_COM_ID = "Rubrica não encontrada com ID: ";
 
     private final RubricaRepository rubricaRepository;
     private final TipoRubricaRepository tipoRubricaRepository;
@@ -61,7 +62,7 @@ public class RubricaService {
     public RubricaDTO buscarPorId(Long id) {
         return rubricaRepository.findByIdAndAtivoTrue(id)
             .map(this::toDTO)
-            .orElseThrow(() -> new RubricaNotFoundException("Rubrica não encontrada com ID: " + id));
+            .orElseThrow(() -> new RubricaNotFoundException(RUBRICA_NAO_ENCONTRADA_COM_ID + id));
     }
 
     @Transactional
@@ -78,7 +79,7 @@ public class RubricaService {
     @Transactional
     public RubricaDTO atualizar(Long id, RubricaDTO dto) {
         Rubrica rubrica = rubricaRepository.findByIdAndAtivoTrue(id)
-            .orElseThrow(() -> new RubricaNotFoundException("Rubrica não encontrada com ID: " + id));
+            .orElseThrow(() -> new RubricaNotFoundException(RUBRICA_NAO_ENCONTRADA_COM_ID + id));
 
         if (!rubrica.getCodigo().equals(dto.getCodigo()) && rubricaRepository.existsByCodigo(dto.getCodigo())) {
             throw new IllegalArgumentException("Já existe uma rubrica com o código: " + dto.getCodigo());
@@ -92,8 +93,8 @@ public class RubricaService {
 
     @Transactional
     public void remover(Long id) {
-        Rubrica rubrica = rubricaRepository.findByIdAndAtivoTrue(id)
-            .orElseThrow(() -> new RubricaNotFoundException("Rubrica não encontrada com ID: " + id));
+        rubricaRepository.findByIdAndAtivoTrue(id)
+            .orElseThrow(() -> new RubricaNotFoundException(RUBRICA_NAO_ENCONTRADA_COM_ID + id));
 
         rubricaRepository.softDelete(id);
     }
@@ -124,7 +125,7 @@ public class RubricaService {
             rubrica.setTipoRubrica(tipo);
         }
         rubrica.setPorcentagem(dto.getPorcentagem());
-        rubrica.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+        rubrica.setAtivo(dto.getAtivo() == null || dto.getAtivo());
         configurarOperadores(rubrica, dto);
         return rubrica;
     }

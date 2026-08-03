@@ -70,6 +70,17 @@ const getApiErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
+const togglePermissao = (
+  permissoes: string[],
+  permissao: string,
+  checked: boolean,
+): string[] => {
+  if (checked) {
+    return [...permissoes, permissao];
+  }
+  return permissoes.filter((p) => p !== permissao);
+};
+
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [funcionarios, setFuncionarios] = useState<{id: number, nome: string, cpf: string}[]>([]);
@@ -238,6 +249,80 @@ export default function Usuarios() {
     return colors[permissao] || 'default';
   };
 
+  const renderUsuariosTableBody = () => {
+    if (loading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={5} align="center">
+            Carregando...
+          </TableCell>
+        </TableRow>
+      );
+    }
+    if (usuarios.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={5} align="center">
+            Nenhum usuário encontrado
+          </TableCell>
+        </TableRow>
+      );
+    }
+    return usuarios.map((usuario) => (
+      <TableRow key={usuario.id}>
+        <TableCell>
+          <Box display="flex" alignItems="center">
+            <Person sx={{ mr: 1, color: 'text.secondary' }} />
+            {usuario.login}
+          </Box>
+        </TableCell>
+        <TableCell>{usuario.nome}</TableCell>
+        <TableCell>
+          {usuario.funcionarioNome ? (
+            <Box>
+              <Typography variant="body2">
+                {usuario.funcionarioNome}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {usuario.funcionarioCpf}
+              </Typography>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Não vinculado
+            </Typography>
+          )}
+        </TableCell>
+        <TableCell>
+          <Box display="flex" flexWrap="wrap" gap={0.5}>
+            {usuario.permissoes.map((permissao) => (
+              <Chip
+                key={permissao}
+                label={permissao}
+                size="small"
+                color={getPermissaoColor(permissao)}
+              />
+            ))}
+          </Box>
+        </TableCell>
+        <TableCell align="center">
+          <IconButton
+            onClick={() => handleOpen(usuario)}
+            color="primary"
+          >
+            <EditIcon />
+          </IconButton>
+          <IconButton
+            onClick={() => handleDelete(usuario.id)}
+            color="error"
+          >
+            <DeleteIcon />
+          </IconButton>
+        </TableCell>
+      </TableRow>
+    ));
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
@@ -361,73 +446,7 @@ export default function Usuarios() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  Carregando...
-                </TableCell>
-              </TableRow>
-            ) : usuarios.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  Nenhum usuário encontrado
-                </TableCell>
-              </TableRow>
-            ) : (
-              usuarios.map((usuario) => (
-                <TableRow key={usuario.id}>
-                  <TableCell>
-                    <Box display="flex" alignItems="center">
-                      <Person sx={{ mr: 1, color: 'text.secondary' }} />
-                      {usuario.login}
-                    </Box>
-                  </TableCell>
-                  <TableCell>{usuario.nome}</TableCell>
-                  <TableCell>
-                    {usuario.funcionarioNome ? (
-                      <Box>
-                        <Typography variant="body2">
-                          {usuario.funcionarioNome}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {usuario.funcionarioCpf}
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        Não vinculado
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" flexWrap="wrap" gap={0.5}>
-                      {usuario.permissoes.map((permissao) => (
-                        <Chip
-                          key={permissao}
-                          label={permissao}
-                          size="small"
-                          color={getPermissaoColor(permissao)}
-                        />
-                      ))}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={() => handleOpen(usuario)}
-                      color="primary"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDelete(usuario.id)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+            {renderUsuariosTableBody()}
           </TableBody>
         </Table>
       </TableContainer>
@@ -614,13 +633,13 @@ export default function Usuarios() {
                                   <Checkbox
                                     checked={field.value.includes(permissao)}
                                     onChange={(e) => {
-                                      if (e.target.checked) {
-                                        field.onChange([...field.value, permissao]);
-                                      } else {
-                                        field.onChange(
-                                          field.value.filter((p) => p !== permissao)
-                                        );
-                                      }
+                                      field.onChange(
+                                        togglePermissao(
+                                          field.value,
+                                          permissao,
+                                          e.target.checked,
+                                        ),
+                                      );
                                     }}
                                   />
                                 }

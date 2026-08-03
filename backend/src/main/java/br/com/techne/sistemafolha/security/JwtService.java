@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
@@ -34,6 +35,11 @@ public class JwtService {
     private long refreshExpiration;
 
     private final SecureRandom secureRandom = new SecureRandom();
+    private final Clock clock;
+
+    public JwtService(Clock clock) {
+        this.clock = clock;
+    }
 
     public String extractLogin(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -53,7 +59,7 @@ public class JwtService {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         return Jwts.builder()
                 .claims(extraClaims)
                 .subject(userDetails.getUsername())
@@ -79,7 +85,7 @@ public class JwtService {
     }
 
     public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        return extractExpiration(token).isBefore(Instant.now(clock));
     }
 
     public long getRefreshExpirationTime() {
@@ -90,8 +96,8 @@ public class JwtService {
         return jwtExpiration;
     }
 
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+    private Instant extractExpiration(String token) {
+        return extractClaim(token, claims -> claims.getExpiration().toInstant());
     }
 
     private Claims extractAllClaims(String token) {

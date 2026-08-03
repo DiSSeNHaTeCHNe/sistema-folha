@@ -3,6 +3,7 @@ package br.com.techne.sistemafolha.folha.application;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
 import br.com.techne.sistemafolha.cadastros.domain.FuncionarioRubricaFixa;
+import br.com.techne.sistemafolha.cadastros.domain.RegimeTrabalho;
 import br.com.techne.sistemafolha.cadastros.domain.Rubrica;
 import br.com.techne.sistemafolha.cadastros.domain.TipoRubrica;
 import br.com.techne.sistemafolha.cadastros.port.CadastrosLookupPort;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -706,6 +708,232 @@ class FolhaProcessamentoServiceTest {
         verify(fichaMensalRepository, org.mockito.Mockito.atLeast(4)).save(fichaCaptor.capture());
         FichaMensal fichaReprocesso = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
         assertEquals(new BigDecimal("10700.00"), fichaReprocesso.getCustoFolha());
+    }
+
+    @Test
+    void processar_funcionarioNaoClt_ignoraGrupo() {
+        Funcionario pj = funcionario(99L);
+        RegimeTrabalho regime = new RegimeTrabalho();
+        regime.setCodigo("PJ");
+        regime.setAtivo(true);
+        pj.setRegimeTrabalho(regime);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linha = linhaAdp(pj, provento, new BigDecimal("10000.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        assertEquals(0, resultado.totalFichas());
+        assertEquals(0, resultado.totalLinhas());
+        verify(fichaLinhaRepository, times(0)).save(any(FichaLinha.class));
+    }
+
+    @Test
+    void processar_regimeInativo_ignoraGrupo() {
+        Funcionario funcionario = funcionario(1L);
+        RegimeTrabalho regime = new RegimeTrabalho();
+        regime.setCodigo("CLT");
+        regime.setAtivo(false);
+        funcionario.setRegimeTrabalho(regime);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linha = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, null);
+
+        assertEquals(0, resultado.totalFichas());
+        verify(fichaLinhaRepository, times(0)).save(any(FichaLinha.class));
+    }
+
+    @Test
+    void processar_recalcularFerias_rubricaNaoEncontrada_naoInjetaLinha() {
+        Funcionario funcionario = funcionario(1L);
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("12000.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(cadastrosLookupPort.findRubricaAtivaByCodigo("5000")).thenReturn(Optional.empty());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(true));
+
+        assertEquals(1, resultado.totalLinhas());
+        verify(fichaLinhaRepository, times(1)).save(any(FichaLinha.class));
+    }
+
+    @Test
+    void processar_semCentroCustoNaLinhaNemFuncionario_centroCustoNull() {
+        Funcionario funcionario = funcionario(1L);
+        funcionario.setCentroCusto(null);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(null, fichaFinal.getCentroCusto());
+    }
+
+    @Test
+    void processar_centroCustoDaLinhaQuandoCoincideComEfetivo() {
+        CentroCusto ccLinha = centroCusto(100L);
+        Funcionario funcionario = funcionario(1L);
+        funcionario.setCentroCusto(centroCusto(200L));
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linhaSalario = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        linhaSalario.setCentroCusto(ccLinha);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linhaSalario));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertEquals(100L, fichaFinal.getCentroCusto().getId());
+        assertSame(ccLinha, fichaFinal.getCentroCusto());
+    }
+
+    @Test
+    void processar_regimeCltCodigoErrado_ignoraGrupo() {
+        Funcionario funcionario = funcionario(1L);
+        RegimeTrabalho regime = new RegimeTrabalho();
+        regime.setCodigo("ESTAGIO");
+        regime.setAtivo(true);
+        funcionario.setRegimeTrabalho(regime);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linha = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        assertEquals(0, resultado.totalFichas());
+    }
+
+    @Test
+    void processar_regimeNull_trataComoClt() {
+        Funcionario funcionario = funcionario(1L);
+        funcionario.setRegimeTrabalho(null);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linha = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProcessamentoResultadoDTO resultado = folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        assertEquals(1, resultado.totalFichas());
+    }
+
+    @Test
+    void processar_centroCustoEfetivo_retornaCentroDoFuncionarioQuandoLinhaSemCc() {
+        CentroCusto ccFuncionario = centroCusto(200L);
+        Funcionario funcionario = funcionario(1L);
+        funcionario.setCentroCusto(ccFuncionario);
+
+        Rubrica provento = rubricaProvento(1L);
+        FolhaPagamento linha = linhaAdp(funcionario, provento, new BigDecimal("10000.00"));
+        linha.setCentroCusto(null);
+
+        when(folhaPagamentoRepository.findByCompetenciaAndDecimoTerceiroAndAtivoTrue(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false))
+            .thenReturn(List.of(linha));
+        when(cadastrosLookupPort.findRubricasFixasVigentesNaCompetencia(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of());
+        when(fichaMensalRepository.save(any(FichaMensal.class))).thenAnswer(inv -> {
+            FichaMensal ficha = inv.getArgument(0);
+            if (ficha.getId() == null) {
+                ficha.setId(100L);
+            }
+            return ficha;
+        });
+        when(fichaLinhaRepository.save(any(FichaLinha.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        folhaProcessamentoService.processar(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, false, new ProcessamentoOpcoes(false));
+
+        ArgumentCaptor<FichaMensal> fichaCaptor = ArgumentCaptor.forClass(FichaMensal.class);
+        verify(fichaMensalRepository, org.mockito.Mockito.atLeast(2)).save(fichaCaptor.capture());
+        FichaMensal fichaFinal = fichaCaptor.getAllValues().get(fichaCaptor.getAllValues().size() - 1);
+        assertSame(ccFuncionario, fichaFinal.getCentroCusto());
     }
 
     private Rubrica rubricaFerias() {

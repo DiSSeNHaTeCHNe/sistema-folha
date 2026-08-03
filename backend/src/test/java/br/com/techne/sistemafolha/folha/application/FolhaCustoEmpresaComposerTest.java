@@ -40,4 +40,15 @@ class FolhaCustoEmpresaComposerTest {
 
         assertEquals(new BigDecimal("10.01"), resultado);
     }
+
+    @Test
+    void compor_custoFolhaNull_trataComoZero() {
+        BigDecimal resultado = FolhaCustoEmpresaComposer.compor(
+            null,
+            new BigDecimal("100.00"),
+            new BigDecimal("50.00")
+        );
+
+        assertEquals(new BigDecimal("150.00"), resultado);
+    }
 }

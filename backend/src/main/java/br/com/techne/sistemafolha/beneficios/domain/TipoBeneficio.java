@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Data
@@ -40,12 +41,12 @@ public class TipoBeneficio {
 
     @PrePersist
     protected void onCreate() {
-        dataCriacao = LocalDateTime.now();
-        dataAtualizacao = LocalDateTime.now();
+        dataCriacao = LocalDateTime.now(Clock.systemDefaultZone());
+        dataAtualizacao = LocalDateTime.now(Clock.systemDefaultZone());
     }
 
     @PreUpdate
     protected void onUpdate() {
-        dataAtualizacao = LocalDateTime.now();
+        dataAtualizacao = LocalDateTime.now(Clock.systemDefaultZone());
     }
 }

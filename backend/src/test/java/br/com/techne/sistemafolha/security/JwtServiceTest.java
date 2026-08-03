@@ -7,6 +7,8 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,7 +23,7 @@ class JwtServiceTest {
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
+        jwtService = new JwtService(Clock.systemDefaultZone());
         ReflectionTestUtils.setField(jwtService, "secretKey", SECRET);
         ReflectionTestUtils.setField(jwtService, "jwtExpiration", 86_400_000L);
         ReflectionTestUtils.setField(jwtService, "refreshExpiration", 604_800_000L);

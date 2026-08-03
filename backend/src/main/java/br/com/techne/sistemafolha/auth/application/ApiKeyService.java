@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -43,6 +44,7 @@ public class ApiKeyService {
     private final ApiKeyRepository apiKeyRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
 
     @Transactional
     public ApiKeyCreatedDTO criar(Usuario usuario, ApiKeyCreateRequest request) {
@@ -64,7 +66,7 @@ public class ApiKeyService {
         apiKey.setPrefixo(prefixo);
         apiKey.setHashChave(hashChave);
         apiKey.setEscopo(ApiKey.ESCOPO_READ);
-        apiKey.setDataExpiracao(LocalDateTime.now().plusDays(diasValidade));
+        apiKey.setDataExpiracao(LocalDateTime.now(clock).plusDays(diasValidade));
         apiKey.setRevogado(false);
 
         ApiKey salva = apiKeyRepository.save(apiKey);
@@ -116,7 +118,12 @@ public class ApiKeyService {
         }
 
         ApiKey apiKey = apiKeyOpt.get();
-        if (!apiKey.isValida() || !passwordEncoder.matches(chaveBruta, apiKey.getHashChave())) {
+        if (apiKey.isRevogado() || LocalDateTime.now(clock).isAfter(apiKey.getDataExpiracao())) {
+            logger.debug("{}Autenticação API Key inválida prefixo={}", DOMAIN_PREFIX, prefixo);
+            return Optional.empty();
+        }
+
+        if (!passwordEncoder.matches(chaveBruta, apiKey.getHashChave())) {
             logger.debug("{}Autenticação API Key inválida prefixo={}", DOMAIN_PREFIX, prefixo);
             return Optional.empty();
         }
@@ -127,7 +134,7 @@ public class ApiKeyService {
             return Optional.empty();
         }
 
-        apiKey.setUltimoUsoEm(LocalDateTime.now());
+        apiKey.setUltimoUsoEm(LocalDateTime.now(clock));
         apiKeyRepository.save(apiKey);
 
         return Optional.of(usuario);

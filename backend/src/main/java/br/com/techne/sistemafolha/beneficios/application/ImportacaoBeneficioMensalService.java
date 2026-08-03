@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ImportacaoBeneficioMensalService {
@@ -64,12 +65,7 @@ public class ImportacaoBeneficioMensalService {
             LocalDate competenciaFim,
             Boolean confirmar) throws IOException {
 
-        if (arquivo == null || arquivo.isEmpty()) {
-            throw new IllegalArgumentException("Arquivo de importação é obrigatório");
-        }
-        if (competenciaInicio == null || competenciaFim == null) {
-            throw new IllegalArgumentException("Competência de início e fim são obrigatórias");
-        }
+        validarParametrosImportacao(arquivo, competenciaInicio, competenciaFim);
 
         boolean confirmarSubstituicao = Boolean.TRUE.equals(confirmar);
 
@@ -78,80 +74,10 @@ public class ImportacaoBeneficioMensalService {
 
         verificarDuplicidadeSemConfirmacao(competenciaInicio, competenciaFim, confirmarSubstituicao);
 
-        List<String> detalhesErros = new ArrayList<>();
-        List<BeneficioMensal> registros = new ArrayList<>();
-        BigDecimal totalValor = BigDecimal.ZERO;
-
+        ResultadoProcessamentoPlanilha resultado;
         try (Workbook workbook = WorkbookFactory.create(arquivo.getInputStream())) {
-            Sheet sheet = workbook.getSheet(ABA_PLANILHA);
-            if (sheet == null) {
-                throw new IllegalArgumentException("Aba '" + ABA_PLANILHA + "' não encontrada no arquivo");
-            }
-
-            for (int rowIndex = PRIMEIRA_LINHA_DADOS; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
-                Row row = sheet.getRow(rowIndex);
-                if (row == null) {
-                    continue;
-                }
-
-                String cpf = normalizarCpf(lerTexto(row.getCell(COL_CPF)));
-                if (cpf.isEmpty()) {
-                    continue;
-                }
-
-                int linhaPlanilha = rowIndex + 1;
-                String nome = lerTexto(row.getCell(COL_NOME));
-                String descricao = lerTexto(row.getCell(COL_DESCRICAO));
-                String codigo = lerCodigoTipoBeneficio(row.getCell(COL_CODIGO));
-
-                Funcionario funcionario = funcionarioConsultaPort.findByCpfAndAtivoTrue(cpf).orElse(null);
-                if (funcionario == null) {
-                    detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome,
-                            "Funcionário ativo não encontrado para o CPF informado"));
-                    continue;
-                }
-
-                if (codigo.isEmpty()) {
-                    detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome,
-                            "Código do tipo de benefício é obrigatório"));
-                    continue;
-                }
-
-                TipoBeneficio tipoBeneficio = tipoBeneficioRepository.findByCodigoAndAtivoTrue(codigo).orElse(null);
-                if (tipoBeneficio == null) {
-                    detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome,
-                            "Tipo de benefício não encontrado para o código: " + codigo));
-                    continue;
-                }
-
-                BigDecimal valor;
-                try {
-                    valor = lerValor(row.getCell(COL_VALOR));
-                } catch (IllegalArgumentException ex) {
-                    detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome, ex.getMessage()));
-                    continue;
-                }
-
-                if (valor.compareTo(BigDecimal.ZERO) < 0) {
-                    detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome,
-                            "Valor deve ser maior ou igual a zero"));
-                    continue;
-                }
-
-                BeneficioMensal beneficio = new BeneficioMensal();
-                beneficio.setFuncionario(funcionario);
-                beneficio.setTipoBeneficio(tipoBeneficio);
-                beneficio.setValor(valor);
-                beneficio.setCompetenciaInicio(competenciaInicio);
-                beneficio.setCompetenciaFim(competenciaFim);
-                if (!descricao.isEmpty()) {
-                    beneficio.setObservacao(descricao);
-                }
-                beneficio.setAtivo(true);
-
-                registros.add(beneficio);
-                totalValor = totalValor.add(valor);
-            }
+            Sheet sheet = obterAbaPlanilha(workbook);
+            resultado = processarPlanilha(sheet, competenciaInicio, competenciaFim);
         } catch (IllegalArgumentException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -159,11 +85,160 @@ public class ImportacaoBeneficioMensalService {
             throw new IllegalArgumentException("Arquivo inválido ou corrompido: " + ex.getMessage());
         }
 
-        if (!detalhesErros.isEmpty()) {
+        if (!resultado.detalhesErros().isEmpty()) {
             logger.warn("Importação rejeitada - {} erro(s) encontrado(s), nenhum registro persistido",
-                    detalhesErros.size());
-            throw new ImportacaoBeneficioMensalInvalidaException(detalhesErros);
+                    resultado.detalhesErros().size());
+            throw new ImportacaoBeneficioMensalInvalidaException(resultado.detalhesErros());
         }
+
+        persistirRegistros(resultado.registros(), competenciaInicio, competenciaFim, confirmarSubstituicao);
+
+        logger.info("{}Importação concluída - processadas: {}, total: {}", DOMAIN_PREFIX,
+                resultado.registros().size(), resultado.totalValor());
+
+        return new ImportacaoResultadoDTO(
+                resultado.registros().size(),
+                resultado.detalhesErros().size(),
+                resultado.totalValor(),
+                resultado.detalhesErros()
+        );
+    }
+
+    private void validarParametrosImportacao(
+            MultipartFile arquivo,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim) {
+        if (arquivo == null || arquivo.isEmpty()) {
+            throw new IllegalArgumentException("Arquivo de importação é obrigatório");
+        }
+        if (competenciaInicio == null || competenciaFim == null) {
+            throw new IllegalArgumentException("Competência de início e fim são obrigatórias");
+        }
+    }
+
+    private Sheet obterAbaPlanilha(Workbook workbook) {
+        Sheet sheet = workbook.getSheet(ABA_PLANILHA);
+        if (sheet == null) {
+            throw new IllegalArgumentException("Aba '" + ABA_PLANILHA + "' não encontrada no arquivo");
+        }
+        return sheet;
+    }
+
+    private record ResultadoProcessamentoPlanilha(
+            List<BeneficioMensal> registros,
+            List<String> detalhesErros,
+            BigDecimal totalValor) {
+    }
+
+    private ResultadoProcessamentoPlanilha processarPlanilha(
+            Sheet sheet,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim) {
+
+        List<String> detalhesErros = new ArrayList<>();
+        List<BeneficioMensal> registros = new ArrayList<>();
+        BigDecimal totalValor = BigDecimal.ZERO;
+
+        for (int rowIndex = PRIMEIRA_LINHA_DADOS; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
+            if (row == null) {
+                continue;
+            }
+
+            Optional<BeneficioMensal> beneficioOpt = processarLinha(
+                    row, rowIndex, competenciaInicio, competenciaFim, detalhesErros);
+            if (beneficioOpt.isPresent()) {
+                BeneficioMensal beneficio = beneficioOpt.get();
+                registros.add(beneficio);
+                totalValor = totalValor.add(beneficio.getValor());
+            }
+        }
+
+        return new ResultadoProcessamentoPlanilha(registros, detalhesErros, totalValor);
+    }
+
+    private Optional<BeneficioMensal> processarLinha(
+            Row row,
+            int rowIndex,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            List<String> detalhesErros) {
+
+        String cpf = normalizarCpf(lerTexto(row.getCell(COL_CPF)));
+        if (cpf.isEmpty()) {
+            return Optional.empty();
+        }
+
+        int linhaPlanilha = rowIndex + 1;
+        String nome = lerTexto(row.getCell(COL_NOME));
+        String descricao = lerTexto(row.getCell(COL_DESCRICAO));
+        String codigo = lerCodigoTipoBeneficio(row.getCell(COL_CODIGO));
+
+        Funcionario funcionario = funcionarioConsultaPort.findByCpfAndAtivoTrue(cpf).orElse(null);
+        if (funcionario == null) {
+            detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome,
+                    "Funcionário ativo não encontrado para o CPF informado"));
+            return Optional.empty();
+        }
+
+        if (codigo.isEmpty()) {
+            detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome,
+                    "Código do tipo de benefício é obrigatório"));
+            return Optional.empty();
+        }
+
+        TipoBeneficio tipoBeneficio = tipoBeneficioRepository.findByCodigoAndAtivoTrue(codigo).orElse(null);
+        if (tipoBeneficio == null) {
+            detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome,
+                    "Tipo de benefício não encontrado para o código: " + codigo));
+            return Optional.empty();
+        }
+
+        BigDecimal valor;
+        try {
+            valor = lerValor(row.getCell(COL_VALOR));
+        } catch (IllegalArgumentException ex) {
+            detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome, ex.getMessage()));
+            return Optional.empty();
+        }
+
+        if (valor.compareTo(BigDecimal.ZERO) < 0) {
+            detalhesErros.add(formatarErro(linhaPlanilha, cpf, nome,
+                    "Valor deve ser maior ou igual a zero"));
+            return Optional.empty();
+        }
+
+        BeneficioMensal beneficio = criarBeneficioMensal(
+                funcionario, tipoBeneficio, valor, competenciaInicio, competenciaFim, descricao);
+        return Optional.of(beneficio);
+    }
+
+    private BeneficioMensal criarBeneficioMensal(
+            Funcionario funcionario,
+            TipoBeneficio tipoBeneficio,
+            BigDecimal valor,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            String descricao) {
+
+        BeneficioMensal beneficio = new BeneficioMensal();
+        beneficio.setFuncionario(funcionario);
+        beneficio.setTipoBeneficio(tipoBeneficio);
+        beneficio.setValor(valor);
+        beneficio.setCompetenciaInicio(competenciaInicio);
+        beneficio.setCompetenciaFim(competenciaFim);
+        if (!descricao.isEmpty()) {
+            beneficio.setObservacao(descricao);
+        }
+        beneficio.setAtivo(true);
+        return beneficio;
+    }
+
+    private void persistirRegistros(
+            List<BeneficioMensal> registros,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            boolean confirmarSubstituicao) {
 
         if (confirmarSubstituicao) {
             substituirRegistrosExistentes(competenciaInicio, competenciaFim);
@@ -172,15 +247,6 @@ public class ImportacaoBeneficioMensalService {
         for (BeneficioMensal registro : registros) {
             beneficioMensalRepository.save(registro);
         }
-
-        logger.info("{}Importação concluída - processadas: {}, total: {}", DOMAIN_PREFIX, registros.size(), totalValor);
-
-        return new ImportacaoResultadoDTO(
-                registros.size(),
-                detalhesErros.size(),
-                totalValor,
-                detalhesErros
-        );
     }
 
     private void verificarDuplicidadeSemConfirmacao(

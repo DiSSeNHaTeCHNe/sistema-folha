@@ -128,6 +128,64 @@ class FolhaLinhaAgregacaoTest {
         assertEquals(0, new BigDecimal("4150.00").compareTo(totais.totalCustoEmpresa()));
     }
 
+    @Test
+    void agregar_listaNull_retornaTodosZeros() {
+        FolhaLinhaAgregacao.Totais totais = agregacao.agregar(null);
+
+        assertEquals(0L, totais.empregados());
+        assertEquals(0, BigDecimal.ZERO.compareTo(totais.pagamentos()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(totais.descontos()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(totais.liquido()));
+    }
+
+    @Test
+    void agregarComBeneficiosEEncargos_listaNull_retornaZeros() {
+        FolhaLinhaAgregacao.TotaisResumo totais = agregacao.agregar(null, Map.of(), Map.of());
+
+        assertEquals(0L, totais.empregados());
+        assertEquals(0, BigDecimal.ZERO.compareTo(totais.totalBruto()));
+    }
+
+    @Test
+    void agregarComBeneficiosEEncargos_beneficiosNull_trataComoMapaVazio() {
+        List<FolhaLinhaSnapshot> linhas = List.of(
+            linhaOperadores(1L, "1000.00", (short) 1, (short) 1, (short) 1)
+        );
+
+        FolhaLinhaAgregacao.TotaisResumo totais = agregacao.agregar(linhas, null, Map.of());
+
+        assertEquals(0, new BigDecimal("1000.00").compareTo(totais.totalCustoEmpresa()));
+    }
+
+    @Test
+    void agregarComBeneficiosEEncargos_ignoraLinhasSemFuncionarioId() {
+        FolhaLinhaSnapshot semFuncionario = new FolhaLinhaSnapshot(
+            null, "Anônimo", 1L, "CC", 1L, "LN", 1L, "Cargo",
+            1L, "001", "Rubrica", "PROVENTO", new BigDecimal("999.00"),
+            (short) 1, (short) 1, (short) 1, OrigemLinha.FOLHA_ADP, null);
+        List<FolhaLinhaSnapshot> linhas = List.of(
+            semFuncionario,
+            linhaOperadores(2L, "1000.00", (short) 1, (short) 1, (short) 1)
+        );
+
+        FolhaLinhaAgregacao.TotaisResumo totais = agregacao.agregar(linhas, Map.of(), Map.of());
+
+        assertEquals(1L, totais.empregados());
+        assertEquals(0, new BigDecimal("1000.00").compareTo(totais.totalBruto()));
+    }
+
+    @Test
+    void agregarComBeneficiosEEncargos_valorNullNaLinha_trataComoZero() {
+        FolhaLinhaSnapshot linhaValorNull = new FolhaLinhaSnapshot(
+            1L, "Func 1", 1L, "CC", 1L, "LN", 1L, "Cargo",
+            1L, "001", "Rubrica", "PROVENTO", null,
+            (short) 1, (short) 1, (short) 1, OrigemLinha.FOLHA_ADP, null);
+
+        FolhaLinhaAgregacao.TotaisResumo totais = agregacao.agregar(List.of(linhaValorNull), Map.of(), Map.of());
+
+        assertEquals(0, BigDecimal.ZERO.setScale(2).compareTo(totais.totalBruto()));
+    }
+
     private static FolhaLinhaSnapshot linha(Long funcionarioId, String tipo, String valor) {
         short ob = "PROVENTO".equals(tipo) ? (short) 1 : (short) 0;
         short ol = "DESCONTO".equals(tipo) ? (short) -1 : ("PROVENTO".equals(tipo) ? (short) 1 : (short) 0);

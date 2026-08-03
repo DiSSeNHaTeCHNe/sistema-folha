@@ -16,12 +16,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,8 +54,43 @@ class ApiKeyServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Spy
+    private Clock clock = Clock.systemDefaultZone();
+
     @InjectMocks
     private ApiKeyService apiKeyService;
+
+    @Test
+    void criar_comClockFixo_expiracaoValidaAntesEExpiradaDepois() {
+        ZoneId zone = ZoneId.systemDefault();
+        Instant base = Instant.parse("2024-06-01T12:00:00Z");
+        Clock clockAntes = Clock.fixed(base, zone);
+        ApiKeyService serviceA = new ApiKeyService(apiKeyRepository, usuarioRepository, passwordEncoder, clockAntes);
+
+        Usuario usuario = usuarioComPermissaoApiKey();
+        ApiKey[] salva = new ApiKey[1];
+        when(passwordEncoder.encode(anyString())).thenAnswer(inv -> inv.getArgument(0));
+        when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> {
+            ApiKey key = inv.getArgument(0);
+            key.setId(99L);
+            key.setDataCriacao(LocalDateTime.now(clockAntes));
+            salva[0] = key;
+            return key;
+        });
+
+        ApiKeyCreatedDTO result = serviceA.criar(usuario, new ApiKeyCreateRequest("Clock test", 7));
+
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse(result.prefixo())).thenReturn(Optional.of(salva[0]));
+        when(passwordEncoder.matches(result.chave(), salva[0].getHashChave())).thenReturn(true);
+        when(apiKeyRepository.save(salva[0])).thenReturn(salva[0]);
+
+        assertTrue(serviceA.autenticarPorChave(result.chave()).isPresent());
+
+        Clock clockDepois = Clock.fixed(base.plus(8, ChronoUnit.DAYS), zone);
+        ApiKeyService serviceB = new ApiKeyService(apiKeyRepository, usuarioRepository, passwordEncoder, clockDepois);
+
+        assertTrue(serviceB.autenticarPorChave(result.chave()).isEmpty());
+    }
 
     @Test
     void criar_comPermissaoApiKey_persisteEscopoReadHashDiferenteDaChave() {
@@ -366,6 +406,76 @@ class ApiKeyServiceTest {
         apiKeyService.autenticarPorChave(chave);
 
         assertTrue(appender.list.stream().noneMatch(e -> e.getFormattedMessage().contains("supersecretvalue")));
+    }
+
+    @Test
+    void autenticarPorChave_nullOuPrefixoInvalido_retornaEmpty() {
+        assertTrue(apiKeyService.autenticarPorChave(null).isEmpty());
+        assertTrue(apiKeyService.autenticarPorChave("invalid_prefix").isEmpty());
+    }
+
+    @Test
+    void autenticarPorChave_chaveCurta_retornaEmpty() {
+        assertTrue(apiKeyService.autenticarPorChave("sf_live_abc").isEmpty());
+    }
+
+    @Test
+    void autenticarPorChave_prefixoNaoEncontrado_retornaEmpty() {
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse(anyString())).thenReturn(Optional.empty());
+
+        assertTrue(apiKeyService.autenticarPorChave("sf_live_abc12345secretpart").isEmpty());
+    }
+
+    @Test
+    void listar_adminSemUsuarioId_usaCallerId() {
+        Usuario admin = usuarioAdmin();
+        when(apiKeyRepository.findByUsuarioIdOrderByDataCriacaoDesc(1L)).thenReturn(List.of());
+
+        apiKeyService.listar(admin, null);
+
+        verify(apiKeyRepository).findByUsuarioIdOrderByDataCriacaoDesc(1L);
+    }
+
+    @Test
+    void resolverUsuarioPorLogin_encontrado_retornaUsuario() {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        when(usuarioRepository.findByLoginAndAtivoTrue("usuario.api")).thenReturn(Optional.of(usuario));
+
+        assertEquals(10L, apiKeyService.resolverUsuarioPorLogin("usuario.api").getId());
+    }
+
+    @Test
+    void resolverUsuarioPorLogin_inexistente_lancaIllegalStateException() {
+        when(usuarioRepository.findByLoginAndAtivoTrue("x")).thenReturn(Optional.empty());
+
+        assertThrows(IllegalStateException.class, () -> apiKeyService.resolverUsuarioPorLogin("x"));
+    }
+
+    @Test
+    void listar_naoAdminComUsuarioIdDiferente_lancaApiKeyNotFoundException() {
+        Usuario caller = usuarioComPermissaoApiKey();
+        assertThrows(ApiKeyNotFoundException.class, () -> apiKeyService.listar(caller, 99L));
+    }
+
+    @Test
+    void revogar_semPermissaoApiKey_lancaApiKeyNotFoundException() {
+        Usuario semPerm = usuarioSemPermissaoApiKey();
+        ApiKey key = apiKeyDoUsuario(usuarioOutro(), 1L);
+        when(apiKeyRepository.findById(1L)).thenReturn(Optional.of(key));
+
+        assertThrows(ApiKeyNotFoundException.class, () -> apiKeyService.revogar(semPerm, 1L));
+    }
+
+    @Test
+    void autenticarPorChave_usuarioPermissoesNull_retornaEmpty() {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        usuario.setPermissoes(null);
+        ApiKey apiKey = apiKeyDoUsuario(usuario, 500L);
+        String chave = "sf_live_abc12345secretpart";
+        when(apiKeyRepository.findByPrefixoAndRevogadoFalse("sf_live_abc12345")).thenReturn(Optional.of(apiKey));
+        when(passwordEncoder.matches(chave, "hash")).thenReturn(true);
+
+        assertTrue(apiKeyService.autenticarPorChave(chave).isEmpty());
     }
 
     private ListAppender<ILoggingEvent> capturarLogsApiKeyService() {

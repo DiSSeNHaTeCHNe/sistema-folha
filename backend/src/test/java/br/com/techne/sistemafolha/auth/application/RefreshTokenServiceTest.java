@@ -13,11 +13,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,8 +48,36 @@ class RefreshTokenServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Spy
+    private Clock clock = Clock.systemDefaultZone();
+
     @InjectMocks
     private RefreshTokenService refreshTokenService;
+
+    @Test
+    void criarRefreshToken_comClockFixo_expiracaoValidaAntesEExpiradaDepois() {
+        ZoneId zone = ZoneId.systemDefault();
+        Instant base = Instant.parse("2024-06-01T12:00:00Z");
+        Clock clockAntes = Clock.fixed(base, zone);
+        RefreshTokenService serviceA = new RefreshTokenService(
+            refreshTokenRepository, usuarioRepository, jwtService, clockAntes);
+
+        Usuario usuario = usuarioAtivo();
+        when(usuarioRepository.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+        when(jwtService.generateRefreshToken()).thenReturn(TOKEN);
+        when(jwtService.getRefreshExpirationTime()).thenReturn(86_400_000L);
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RefreshToken token = serviceA.criarRefreshToken(LOGIN);
+
+        assertTrue(serviceA.validarRefreshToken(token));
+
+        Clock clockDepois = Clock.fixed(base.plusSeconds(86401), zone);
+        RefreshTokenService serviceB = new RefreshTokenService(
+            refreshTokenRepository, usuarioRepository, jwtService, clockDepois);
+
+        assertFalse(serviceB.validarRefreshToken(token));
+    }
 
     @Test
     void criarRefreshToken_revogaAntigosEPersisteNovo() {

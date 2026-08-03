@@ -15,6 +15,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.http.MediaType;
+
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +27,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -106,5 +110,64 @@ class BeneficioMensalControllerWebMvcTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("competenciaInicio: obrigatório"));
+    }
+
+    @Test
+    @WithMockUser(username = "usuario.teste", roles = "USER")
+    void resumoPorCompetencia_retorna200() throws Exception {
+        when(beneficioMensalService.resumoPorCompetenciaParaUsuario(
+            eq("usuario.teste"), eq(LocalDate.parse("2026-01-01")), eq(LocalDate.parse("2026-01-31"))))
+            .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/beneficio-mensal/resumo")
+                .param("competenciaInicio", "2026-01-01")
+                .param("competenciaFim", "2026-01-31"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "usuario.teste", roles = "USER")
+    void listarPorFuncionario_retorna200() throws Exception {
+        when(beneficioMensalService.listarPorFuncionarioParaUsuario(
+            eq("usuario.teste"), eq(1L), eq(LocalDate.parse("2026-01-01")), eq(LocalDate.parse("2026-01-31"))))
+            .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/beneficio-mensal/funcionario/1")
+                .param("competenciaInicio", "2026-01-01")
+                .param("competenciaFim", "2026-01-31"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "usuario.teste", roles = "USER")
+    void criar_semPermissao_retorna403() throws Exception {
+        when(beneficioMensalService.criarParaUsuario(eq("usuario.teste"), any()))
+            .thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/beneficio-mensal")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"funcionarioId":1,"tipoBeneficioId":1,"competenciaInicio":"2026-01-01",
+                    "competenciaFim":"2026-01-31","valor":100.0}
+                    """))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "usuario.teste", roles = "USER")
+    void remover_naoAutorizado_retorna404() throws Exception {
+        when(beneficioMensalService.removerSeAutorizado("usuario.teste", 99L)).thenReturn(false);
+
+        mockMvc.perform(delete("/beneficio-mensal/99"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "usuario.teste", roles = "USER")
+    void remover_autorizado_retorna204() throws Exception {
+        when(beneficioMensalService.removerSeAutorizado("usuario.teste", 1L)).thenReturn(true);
+
+        mockMvc.perform(delete("/beneficio-mensal/1"))
+            .andExpect(status().isNoContent());
     }
 }

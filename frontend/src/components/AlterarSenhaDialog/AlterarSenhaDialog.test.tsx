@@ -63,4 +63,61 @@ describe('AlterarSenhaDialog', () => {
 
     expect(mockOnClose).toHaveBeenCalled();
   });
+
+  it('shows validation when passwords mismatch', async () => {
+    render(<AlterarSenhaDialog open onClose={mockOnClose} userId={1} />);
+
+    fireEvent.change(screen.getByLabelText('Senha atual'), { target: { value: 'oldpass' } });
+    fireEvent.change(screen.getByLabelText('Nova senha'), { target: { value: 'secret1' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nova senha'), { target: { value: 'other' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Alterar senha' }));
+
+    expect(await screen.findByText('As senhas não coincidem')).toBeInTheDocument();
+  });
+
+  it('shows generic error for non-400 failures', async () => {
+    vi.mocked(usuarioService.alterarSenha).mockRejectedValue(new Error('fail'));
+
+    render(<AlterarSenhaDialog open onClose={mockOnClose} userId={1} />);
+
+    fireEvent.change(screen.getByLabelText('Senha atual'), { target: { value: 'oldpass' } });
+    fireEvent.change(screen.getByLabelText('Nova senha'), { target: { value: 'secret1' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nova senha'), { target: { value: 'secret1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Alterar senha' }));
+
+    expect(await screen.findByText('Erro ao alterar senha')).toBeInTheDocument();
+  });
+
+  it('shows password length validation', async () => {
+    render(<AlterarSenhaDialog open onClose={mockOnClose} userId={1} />);
+
+    fireEvent.change(screen.getByLabelText('Senha atual'), { target: { value: 'oldpass' } });
+    fireEvent.change(screen.getByLabelText('Nova senha'), { target: { value: '12345' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nova senha'), { target: { value: '12345' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Alterar senha' }));
+
+    expect(await screen.findByText('A senha deve ter pelo menos 6 caracteres')).toBeInTheDocument();
+  });
+
+  it('resets form when dialog reopens', () => {
+    const { rerender } = render(<AlterarSenhaDialog open onClose={mockOnClose} userId={1} />);
+    fireEvent.change(screen.getByLabelText('Senha atual'), { target: { value: 'typed' } });
+    rerender(<AlterarSenhaDialog open={false} onClose={mockOnClose} userId={1} />);
+    rerender(<AlterarSenhaDialog open onClose={mockOnClose} userId={1} />);
+    expect(screen.getByLabelText('Senha atual')).toHaveValue('');
+  });
+
+  it('toggles visibility for nova and confirmar senha fields', () => {
+    render(<AlterarSenhaDialog open onClose={mockOnClose} userId={1} />);
+    const [novaToggle, confirmarToggle] = screen
+      .getAllByRole('button')
+      .filter((btn) => btn.querySelector('svg'));
+    fireEvent.click(novaToggle);
+    fireEvent.click(confirmarToggle);
+    expect(screen.getByLabelText('Nova senha')).toHaveAttribute('type', 'text');
+    expect(screen.getByLabelText('Confirmar nova senha')).toHaveAttribute('type', 'text');
+    fireEvent.click(novaToggle);
+    fireEvent.click(confirmarToggle);
+    expect(screen.getByLabelText('Nova senha')).toHaveAttribute('type', 'password');
+  });
 });

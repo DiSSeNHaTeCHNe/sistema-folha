@@ -91,6 +91,12 @@ class FolhaTotalizacaoServiceTest {
     }
 
     @Test
+    void calcularTotaisPorFuncionario_listaNull_retornaVazio() {
+        assertEquals(List.of(), folhaTotalizacaoService.calcularTotaisPorFuncionario(
+            null, contextoAcessoTotal(), BigDecimal.ZERO, COMPETENCIA_INICIO, COMPETENCIA_FIM));
+    }
+
+    @Test
     void calcularTotaisPorFuncionario_proventoEDesconto_descontoImpactaSomenteLiquido() {
         when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
             .thenReturn(Map.of());
@@ -112,6 +118,70 @@ class FolhaTotalizacaoServiceTest {
         assertEquals(new BigDecimal("8500.00"), total.salLiquido());
         assertEquals(new BigDecimal("10000.00"), total.salCustoFolha());
         assertEquals(BigDecimal.ZERO.setScale(2), total.encargosRateados());
+    }
+
+    @Test
+    void calcularTotaisPorFuncionario_ignoraLinhasSemFuncionarioId() {
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of());
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+                1L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(0);
+
+        FolhaLinhaSnapshot semId = new FolhaLinhaSnapshot(
+            null, "Anônimo", 10L, "TI", 1L, "LN", 1L, "Cargo",
+            1L, "001", "Rubrica", "PROVENTO", new BigDecimal("999.00"),
+            (short) 1, (short) 1, (short) 1, OrigemLinha.FOLHA_ADP, null);
+
+        List<FolhaTotaisFuncionarioDTO> resultado = folhaTotalizacaoService.calcularTotaisPorFuncionario(
+            List.of(semId, linhaSnapshot(1L, "Ana", (short) 1, (short) 1, (short) 1, "1000.00")),
+            contextoAcessoTotal(), BigDecimal.ZERO, COMPETENCIA_INICIO, COMPETENCIA_FIM);
+
+        assertEquals(1, resultado.size());
+        assertEquals(1L, resultado.get(0).funcionarioId());
+    }
+
+    @Test
+    void calcularTotaisPorFuncionario_ordenarPorNomeIgnoreCase() {
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of());
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(any(), any(), any()))
+            .thenReturn(0);
+
+        List<FolhaTotaisFuncionarioDTO> resultado = folhaTotalizacaoService.calcularTotaisPorFuncionario(
+            List.of(
+                linhaSnapshot(2L, "Bruno", (short) 1, (short) 1, (short) 1, "1000.00"),
+                linhaSnapshot(1L, "ana", (short) 1, (short) 1, (short) 1, "2000.00")),
+            contextoAcessoTotal(), BigDecimal.ZERO, COMPETENCIA_INICIO, COMPETENCIA_FIM);
+
+        assertEquals("ana", resultado.get(0).funcionarioNome());
+        assertEquals("Bruno", resultado.get(1).funcionarioNome());
+    }
+
+    @Test
+    void calcularTotalCustoEmpresa_listaVaziaOuNull_retornaZero() {
+        assertEquals(new BigDecimal("0.00"),
+            folhaTotalizacaoService.calcularTotalCustoEmpresa(
+                List.of(), COMPETENCIA_INICIO, COMPETENCIA_FIM, contextoAcessoTotal()));
+        assertEquals(new BigDecimal("0.00"),
+            folhaTotalizacaoService.calcularTotalCustoEmpresa(
+                null, COMPETENCIA_INICIO, COMPETENCIA_FIM, contextoAcessoTotal()));
+    }
+
+    @Test
+    void calcularTotalCustoEmpresa_somaCustoEmpresaDosFuncionarios() {
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of());
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(any(), any(), any()))
+            .thenReturn(0);
+
+        BigDecimal total = folhaTotalizacaoService.calcularTotalCustoEmpresa(
+            List.of(
+                linhaSnapshot(1L, "A", (short) 1, (short) 1, (short) 1, "3000.00"),
+                linhaSnapshot(2L, "B", (short) 1, (short) 1, (short) 1, "2000.00")),
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, contextoAcessoTotal());
+
+        assertEquals(new BigDecimal("5000.00"), total);
     }
 
     @Test
@@ -161,7 +231,27 @@ class FolhaTotalizacaoServiceTest {
     }
 
     @Test
-    void calcularTotaisPorFuncionario_arredondaHalfUpDuasCasas() {
+    void calcularTotaisPorFuncionario_valorNullNaLinha_trataComoZero() {
+        when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
+            .thenReturn(Map.of());
+        when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(
+                1L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(0);
+
+        FolhaLinhaSnapshot linhaValorNull = new FolhaLinhaSnapshot(
+            1L, "Ana", 10L, "TI", 1L, "LN", 1L, "Cargo",
+            1L, "001", "Rubrica", "PROVENTO", null,
+            (short) 1, (short) 1, (short) 1, OrigemLinha.FOLHA_ADP, null);
+
+        List<FolhaTotaisFuncionarioDTO> resultado = folhaTotalizacaoService.calcularTotaisPorFuncionario(
+            List.of(linhaValorNull), contextoAcessoTotal(), BigDecimal.ZERO,
+            COMPETENCIA_INICIO, COMPETENCIA_FIM);
+
+        assertEquals(new BigDecimal("0.00"), resultado.get(0).salBruto());
+    }
+
+    @Test
+    void calcularTotaisPorFuncionario_arredondaHalfUpDuasCasasFabio() {
         when(beneficioConsultaPort.somarValorPorFuncionariosECompetencia(any(), any(), any()))
             .thenReturn(Map.of());
         when(beneficioConsultaPort.contarLancamentosPorFuncionarioECompetencia(

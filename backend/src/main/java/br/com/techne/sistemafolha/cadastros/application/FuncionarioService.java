@@ -91,7 +91,7 @@ public class FuncionarioService {
                 .stream()
                 .filter(f -> aplicarFiltroAcesso(f, contexto))
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)

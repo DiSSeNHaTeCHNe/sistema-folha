@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,8 +74,8 @@ public class NoOrganograma {
 
     @PrePersist
     protected void onCreate() {
-        dataCriacao = LocalDateTime.now();
-        dataAtualizacao = LocalDateTime.now();
+        dataCriacao = LocalDateTime.now(Clock.systemDefaultZone());
+        dataAtualizacao = LocalDateTime.now(Clock.systemDefaultZone());
         
         // Se o parent existe, definir o nível baseado no parent
         if (parent != null && parent.getNivel() != null) {
@@ -86,7 +87,7 @@ public class NoOrganograma {
 
     @PreUpdate
     protected void onUpdate() {
-        dataAtualizacao = LocalDateTime.now();
+        dataAtualizacao = LocalDateTime.now(Clock.systemDefaultZone());
     }
 
     // Método auxiliar para verificar se é um nó raiz

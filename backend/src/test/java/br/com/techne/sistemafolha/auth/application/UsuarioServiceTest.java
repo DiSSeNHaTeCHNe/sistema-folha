@@ -430,6 +430,210 @@ class UsuarioServiceTest {
         assertTrue(appender.list.stream().noneMatch(e -> e.getFormattedMessage().contains("hash")));
     }
 
+    @Test
+    void listarParaUsuario_acessoNegado_retornaVazio() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(new AccessContextDTO(false, false, false, Set.of(), null, null, null, null));
+
+        assertTrue(usuarioService.listarParaUsuario(LOGIN, null, null, null).isEmpty());
+    }
+
+    @Test
+    void listarParaUsuario_scoped_comNomeLogin_aplicaPatterns() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(contextoRestrito(Set.of(793L)));
+        Usuario comFuncionario = usuarioComFuncionarioCc(793L);
+        when(usuarioRepository.findByFiltros("%Gest%", "%ges%", null)).thenReturn(List.of(comFuncionario));
+
+        assertEquals(1, usuarioService.listarParaUsuario(LOGIN, "Gest", "ges", null).size());
+    }
+
+    @Test
+    void buscarPorIdParaUsuario_acessoNegado_lancaExcecao() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(new AccessContextDTO(false, false, false, Set.of(), null, null, null, null));
+
+        assertThrows(UsuarioNotFoundException.class, () ->
+            usuarioService.buscarPorIdParaUsuario(LOGIN, USUARIO_ID));
+    }
+
+    @Test
+    void buscarPorIdParaUsuario_acessoTotal_delega() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID)).thenReturn(contextoAcessoTotal());
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuarioExistente()));
+
+        assertEquals(USUARIO_ID, usuarioService.buscarPorIdParaUsuario(LOGIN, USUARIO_ID).id());
+    }
+
+    @Test
+    void buscarPorLoginParaUsuario_acessoTotal_delega() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID)).thenReturn(contextoAcessoTotal());
+        when(usuarioRepository.findByLoginAndAtivoTrue("gestor")).thenReturn(Optional.of(usuarioExistente()));
+
+        assertEquals("gestor", usuarioService.buscarPorLoginParaUsuario(LOGIN, "gestor").login());
+    }
+
+    @Test
+    void buscarPorFuncionarioParaUsuario_acessoTotal_delega() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID)).thenReturn(contextoAcessoTotal());
+        when(usuarioRepository.findByFuncionarioIdAndAtivoTrue(FUNCIONARIO_ID))
+            .thenReturn(Optional.of(usuarioComFuncionarioCc(793L)));
+
+        assertEquals(FUNCIONARIO_ID, usuarioService.buscarPorFuncionarioParaUsuario(
+            LOGIN, FUNCIONARIO_ID).funcionarioId());
+    }
+
+    @Test
+    void buscarPorFuncionarioParaUsuario_acessoNegado_retornaNull() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(new AccessContextDTO(false, false, false, Set.of(), null, null, null, null));
+
+        assertNull(usuarioService.buscarPorFuncionarioParaUsuario(LOGIN, FUNCIONARIO_ID));
+    }
+
+    @Test
+    void cadastrar_comFuncionarioId_vinculaFuncionario() {
+        when(usuarioRepository.existsByLoginAndAtivoTrue("novo")).thenReturn(false);
+        when(funcionarioConsultaPort.findById(FUNCIONARIO_ID)).thenReturn(Optional.of(funcionarioAtivo(FUNCIONARIO_ID)));
+        when(passwordEncoder.encode("senha")).thenReturn("hash");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> {
+            Usuario u = inv.getArgument(0);
+            u.setId(99L);
+            return u;
+        });
+
+        UsuarioDTO dto = new UsuarioDTO(null, "novo", "senha", "Novo", List.of("USER"), FUNCIONARIO_ID, null, null);
+        assertEquals(FUNCIONARIO_ID, usuarioService.cadastrar(dto).funcionarioId());
+    }
+
+    @Test
+    void atualizar_loginAlteradoSemConflito_persiste() {
+        Usuario usuario = usuarioExistente();
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.existsByLoginAndAtivoTrue("gestor2")).thenReturn(false);
+        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+
+        UsuarioDTO dto = new UsuarioDTO(USUARIO_ID, "gestor2", null, "Gestor", List.of("USER"), null, null, null);
+        assertEquals("gestor2", usuarioService.atualizar(USUARIO_ID, dto).login());
+        verify(usuarioRepository).existsByLoginAndAtivoTrue("gestor2");
+    }
+
+    @Test
+    void usuarioNoEscopo_funcionarioNull_retornaFalse() throws Exception {
+        var method = UsuarioService.class.getDeclaredMethod(
+            "usuarioNoEscopo", Usuario.class, AccessContextDTO.class);
+        method.setAccessible(true);
+        Usuario semFuncionario = usuarioExistente();
+
+        assertFalse((boolean) method.invoke(
+            usuarioService, semFuncionario, contextoRestrito(Set.of(10L))));
+    }
+
+    @Test
+    void listarParaUsuario_scoped_nomeLoginVazios_naoAplicaPattern() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(contextoRestrito(Set.of(793L)));
+        when(usuarioRepository.findByFiltros(null, null, null)).thenReturn(List.of());
+
+        usuarioService.listarParaUsuario(LOGIN, "   ", "   ", null);
+
+        verify(usuarioRepository).findByFiltros(null, null, null);
+    }
+
+    @Test
+    void buscarPorLoginParaUsuario_acessoNegado_lancaExcecao() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(new AccessContextDTO(false, false, false, Set.of(), null, null, null, null));
+
+        assertThrows(UsuarioNotFoundException.class, () ->
+            usuarioService.buscarPorLoginParaUsuario(LOGIN, "outro"));
+    }
+
+    @Test
+    void buscarPorLoginParaUsuario_scopedNoEscopo_retornaDto() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(contextoRestrito(Set.of(793L)));
+        when(usuarioRepository.findByLoginAndAtivoTrue("gestor"))
+            .thenReturn(Optional.of(usuarioComFuncionarioCc(793L)));
+
+        assertEquals("gestor", usuarioService.buscarPorLoginParaUsuario(LOGIN, "gestor").login());
+    }
+
+    @Test
+    void buscarPorFuncionarioParaUsuario_funcionarioInexistente_retornaNull() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(contextoRestrito(Set.of(793L)));
+        when(funcionarioConsultaPort.findById(FUNCIONARIO_ID)).thenReturn(Optional.empty());
+
+        assertNull(usuarioService.buscarPorFuncionarioParaUsuario(LOGIN, FUNCIONARIO_ID));
+    }
+
+    @Test
+    void atualizar_semSenha_naoReencode() {
+        Usuario usuario = usuarioExistente();
+        usuario.setSenha("hash-antigo");
+        when(usuarioRepository.findById(USUARIO_ID)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(usuario)).thenReturn(usuario);
+
+        UsuarioDTO dto = new UsuarioDTO(USUARIO_ID, "gestor", null, "Gestor", List.of("USER"), null, null, null);
+        usuarioService.atualizar(USUARIO_ID, dto);
+
+        verify(passwordEncoder, never()).encode(any());
+        assertEquals("hash-antigo", usuario.getSenha());
+    }
+
+    @Test
+    void usuarioNoEscopo_acessoTotal_retornaTrue() throws Exception {
+        var method = UsuarioService.class.getDeclaredMethod(
+            "usuarioNoEscopo", Usuario.class, AccessContextDTO.class);
+        method.setAccessible(true);
+
+        assertTrue((boolean) method.invoke(
+            usuarioService, usuarioExistente(), contextoAcessoTotal()));
+    }
+
+    @Test
+    void usuarioNoEscopo_semOrganograma_retornaFalse() throws Exception {
+        var method = UsuarioService.class.getDeclaredMethod(
+            "usuarioNoEscopo", Usuario.class, AccessContextDTO.class);
+        method.setAccessible(true);
+        AccessContextDTO ctx = new AccessContextDTO(true, false, false, Set.of(10L), null, 2L, "TI", 1);
+
+        assertFalse((boolean) method.invoke(
+            usuarioService, usuarioComFuncionarioCc(10L), ctx));
+    }
+
+    @Test
+    void funcionarioNoEscopo_semCentroCusto_retornaFalse() throws Exception {
+        var method = UsuarioService.class.getDeclaredMethod(
+            "funcionarioNoEscopo", Funcionario.class, AccessContextDTO.class);
+        method.setAccessible(true);
+        Funcionario f = funcionarioAtivo(FUNCIONARIO_ID);
+
+        assertFalse((boolean) method.invoke(
+            usuarioService, f, contextoRestrito(Set.of(10L))));
+    }
+
+    @Test
+    void listarParaUsuario_centrosNull_retornaVazio() {
+        stubUsuarioLookup();
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_LOOKUP_ID))
+            .thenReturn(new AccessContextDTO(true, true, false, null, null, 2L, "TI", 1));
+
+        assertTrue(usuarioService.listarParaUsuario(LOGIN, null, null, null).isEmpty());
+    }
+
     private ListAppender<ILoggingEvent> capturarLogsUsuarioService() {
         Logger logger = (Logger) LoggerFactory.getLogger(UsuarioService.class);
         logger.setLevel(ch.qos.logback.classic.Level.DEBUG);

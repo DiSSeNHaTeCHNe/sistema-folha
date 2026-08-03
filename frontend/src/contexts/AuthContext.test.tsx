@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useEffect } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import { AuthProvider, useAuth } from './AuthContext';
@@ -40,6 +41,7 @@ function AuthProbe() {
       <div>authenticated:{String(isAuthenticated)}</div>
       <div>user:{user?.login ?? 'none'}</div>
       <div>can-access-1:{String(podeAcessarCentroCusto(1))}</div>
+      <div>can-access-99:{String(podeAcessarCentroCusto(99))}</div>
       <button type="button" onClick={() => login({ login: 'admin', senha: 'secret' })}>
         do-login
       </button>
@@ -201,6 +203,96 @@ describe('AuthContext', () => {
     localStorage.setItem('user', '{invalid-json');
 
     renderAuthProbe();
+
+    await waitFor(() => {
+      expect(screen.getByText('user:none')).toBeInTheDocument();
+    });
+  });
+
+  it('denies centro de custo when id is not in accessible list', async () => {
+    setValidTokens();
+    localStorage.setItem('user', JSON.stringify(sampleUser));
+    localStorage.setItem('acessoUsuario', JSON.stringify(sampleAcesso));
+
+    renderAuthProbe();
+
+    await waitFor(() => {
+      expect(screen.getByText('can-access-99:false')).toBeInTheDocument();
+    });
+  });
+
+  it('rejects failed login attempts', async () => {
+    server.use(
+      http.post(`${API_BASE_URL}/auth/login`, () => HttpResponse.json({}, { status: 401 })),
+    );
+
+    let loginError: unknown;
+    function LoginErrorProbe() {
+      const { login, loading } = useAuth();
+      useEffect(() => {
+        if (!loading) {
+          void login({ login: 'admin', senha: 'bad' }).catch((error) => {
+            loginError = error;
+          });
+        }
+      }, [loading, login]);
+      return null;
+    }
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginErrorProbe />
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(loginError).toBeDefined());
+  });
+
+  it('initializes with valid tokens but no stored user', async () => {
+    setValidTokens();
+    renderAuthProbe();
+    await waitFor(() => {
+      expect(screen.getByText('authenticated:false')).toBeInTheDocument();
+    });
+    expect(screen.getByText('user:none')).toBeInTheDocument();
+  });
+
+  it('logs in without acessoUsuario payload', async () => {
+    server.use(
+      http.post(`${API_BASE_URL}/auth/login`, () =>
+        HttpResponse.json({
+          ...sampleLoginResponse({ login: 'plain' }),
+          acessoUsuario: undefined,
+        }),
+      ),
+      http.get(`${API_BASE_URL}/usuarios/login/plain`, () =>
+        HttpResponse.json({ id: 2, login: 'plain', nome: 'Plain', permissoes: ['CONSULTA'] }),
+      ),
+    );
+
+    renderAuthProbe();
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'do-login' }));
+    await waitFor(() => expect(screen.getByText('user:plain')).toBeInTheDocument());
+  });
+
+  it('still clears session when logout API fails', async () => {
+    setValidTokens();
+    localStorage.setItem('user', JSON.stringify(sampleUser));
+
+    server.use(
+      http.post(`${API_BASE_URL}/auth/logout`, () => HttpResponse.json({}, { status: 500 })),
+    );
+
+    renderAuthProbe();
+
+    await waitFor(() => {
+      expect(screen.getByText('user:stored')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'do-logout' }));
 
     await waitFor(() => {
       expect(screen.getByText('user:none')).toBeInTheDocument();
