@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
+import { fireEvent, screen, waitFor, act } from '@testing-library/react';
 import { Relatorios } from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { relatorioService } from '../../services/relatorioService';
@@ -22,6 +22,14 @@ const folhaPending = {
   ...folhaReport,
   id: 2,
   status: 'PENDENTE' as const,
+  dataProcessamento: undefined,
+};
+
+const folhaError = {
+  ...folhaReport,
+  id: 4,
+  status: 'ERRO' as const,
+  erro: 'Falha interna na geração',
   dataProcessamento: undefined,
 };
 
@@ -62,15 +70,24 @@ function setupMocks() {
 describe('Relatorios page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.setSystemTime(new Date('2026-06-15T12:00:00'));
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     setupMocks();
     vi.spyOn(window.URL, 'createObjectURL').mockReturnValue('blob:url');
     vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => undefined);
   });
 
-  it('renders the page title without real HTTP', async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.setSystemTime(new Date());
+  });
+
+  it('renders hub with catalog cards and competencia picker', async () => {
     renderWithProviders(<Relatorios />);
-    expect(screen.getByRole('heading', { name: 'Relatórios' })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByRole('tab', { name: 'Folha de Pagamento' })).toBeInTheDocument());
+    expect(await screen.findByRole('heading', { name: 'Relatórios Executivos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Executivo de Folha' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Custo Benefício + Folha' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Selecionar competência mês e ano')).toBeInTheDocument();
   });
 
   it('shows load error notification', async () => {
@@ -79,13 +96,25 @@ describe('Relatorios page', () => {
     await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Erro ao carregar relatórios', 'error'));
   });
 
-  it('lists folha reports and downloads processed report', async () => {
+  it('generates folha report using selected competencia from list match', async () => {
+    vi.mocked(relatorioService.gerarRelatorioFolha).mockResolvedValue(folhaReport);
+    renderWithProviders(<Relatorios />);
+    await screen.findByRole('heading', { name: 'Executivo de Folha' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar novamente Executivo de Folha' }));
+
+    await waitFor(() => {
+      expect(relatorioService.gerarRelatorioFolha).toHaveBeenCalledWith(6, 2026);
+      expect(showNotification).toHaveBeenCalledWith('Relatório de folha em geração', 'success');
+    });
+  });
+
+  it('downloads processed folha report', async () => {
     vi.mocked(relatorioService.downloadRelatorioFolha).mockResolvedValue(new Blob(['pdf']));
     renderWithProviders(<Relatorios />);
-    await waitFor(() => expect(screen.getByText('6/2026')).toBeInTheDocument());
+    await screen.findByRole('button', { name: 'Baixar PDF Executivo de Folha' });
 
-    const row = screen.getByText('6/2026').closest('tr')!;
-    fireEvent.click(within(row).getByRole('button'));
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF Executivo de Folha' }));
 
     await waitFor(() => {
       expect(relatorioService.downloadRelatorioFolha).toHaveBeenCalledWith(1);
@@ -93,69 +122,88 @@ describe('Relatorios page', () => {
     });
   });
 
-  it('disables download for non-processed folha report', async () => {
+  it('disables generation while folha report is pending', async () => {
     vi.mocked(relatorioService.listarRelatoriosFolha).mockResolvedValue([folhaPending]);
     renderWithProviders(<Relatorios />);
-    await waitFor(() => expect(screen.getByText('6/2026')).toBeInTheDocument());
-    const row = screen.getByText('6/2026').closest('tr')!;
-    expect(within(row).getByRole('button')).toBeDisabled();
+    await screen.findByRole('status');
+    expect(screen.getByRole('button', { name: /aguardando processamento/i })).toBeDisabled();
   });
 
-  it('generates folha report successfully', async () => {
+  it('polls list while folha report is pending', async () => {
+    vi.mocked(relatorioService.listarRelatoriosFolha).mockResolvedValue([folhaPending]);
+    renderWithProviders(<Relatorios />);
+    await screen.findByRole('status');
+
+    const callsBefore = vi.mocked(relatorioService.listarRelatoriosFolha).mock.calls.length;
+
+    await act(async () => {
+      vi.advanceTimersByTime(2100);
+    });
+
+    await waitFor(() => {
+      expect(vi.mocked(relatorioService.listarRelatoriosFolha).mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+  });
+
+  it('shows error state with retry for folha report', async () => {
+    vi.mocked(relatorioService.listarRelatoriosFolha).mockResolvedValue([folhaError]);
     vi.mocked(relatorioService.gerarRelatorioFolha).mockResolvedValue(folhaReport);
     renderWithProviders(<Relatorios />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Gerar Relatório' })).toBeEnabled());
-    fireEvent.click(screen.getByRole('button', { name: 'Gerar Relatório' }));
+
+    await screen.findByRole('alert');
+    expect(screen.getByRole('alert')).toHaveTextContent('Falha interna na geração');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente Executivo de Folha' }));
+
     await waitFor(() => {
       expect(relatorioService.gerarRelatorioFolha).toHaveBeenCalled();
-      expect(showNotification).toHaveBeenCalledWith('Relatório de folha gerado com sucesso', 'success');
     });
   });
 
-  it('shows generate error on folha tab', async () => {
-    vi.mocked(relatorioService.gerarRelatorioFolha).mockRejectedValue(new Error('fail'));
-    renderWithProviders(<Relatorios />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Gerar Relatório' })).toBeEnabled());
-    fireEvent.click(screen.getByRole('button', { name: 'Gerar Relatório' }));
-    await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Erro ao gerar relatório', 'error'));
-  });
-
-  it('shows download error on folha tab', async () => {
-    vi.mocked(relatorioService.downloadRelatorioFolha).mockRejectedValue(new Error('fail'));
-    renderWithProviders(<Relatorios />);
-    await waitFor(() => expect(screen.getByText('6/2026')).toBeInTheDocument());
-    fireEvent.click(within(screen.getByText('6/2026').closest('tr')!).getByRole('button'));
-    await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Erro ao baixar relatório', 'error'));
-  });
-
-  it('switches to beneficio tab and generates report', async () => {
+  it('generates beneficio report successfully', async () => {
     vi.mocked(relatorioService.gerarRelatorioBeneficio).mockResolvedValue(beneficioReport);
     renderWithProviders(<Relatorios />);
-    await waitFor(() => expect(screen.getByRole('tab', { name: 'Benefícios' })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('tab', { name: 'Benefícios' }));
-    await waitFor(() => expect(screen.getByText('6/2026')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Gerar Relatório' }));
+    await screen.findByRole('heading', { name: 'Custo Benefício + Folha' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar novamente Custo Benefício + Folha' }));
+
     await waitFor(() => {
       expect(relatorioService.gerarRelatorioBeneficio).toHaveBeenCalled();
-      expect(showNotification).toHaveBeenCalledWith('Relatório de benefícios gerado com sucesso', 'success');
+      expect(showNotification).toHaveBeenCalledWith('Relatório de benefícios em geração', 'success');
     });
   });
 
-  it('downloads beneficio report from beneficio tab', async () => {
+  it('downloads beneficio report when processed', async () => {
     vi.mocked(relatorioService.downloadRelatorioBeneficio).mockResolvedValue(new Blob(['pdf']));
     renderWithProviders(<Relatorios />);
-    fireEvent.click(await screen.findByRole('tab', { name: 'Benefícios' }));
-    await waitFor(() => expect(screen.getByText('6/2026')).toBeInTheDocument());
-    fireEvent.click(within(screen.getByText('6/2026').closest('tr')!).getByRole('button'));
+    await screen.findByRole('button', { name: 'Baixar PDF Custo Benefício + Folha' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF Custo Benefício + Folha' }));
+
     await waitFor(() => {
       expect(relatorioService.downloadRelatorioBeneficio).toHaveBeenCalledWith(3);
       expect(showNotification).toHaveBeenCalledWith('Relatório baixado com sucesso', 'success');
     });
   });
 
-  it('shows dash when dataProcessamento is missing', async () => {
-    vi.mocked(relatorioService.listarRelatoriosFolha).mockResolvedValue([folhaPending]);
+  it('shows generate error on folha card', async () => {
+    vi.mocked(relatorioService.listarRelatoriosFolha).mockResolvedValue([]);
+    vi.mocked(relatorioService.gerarRelatorioFolha).mockRejectedValue(new Error('fail'));
     renderWithProviders(<Relatorios />);
-    await waitFor(() => expect(screen.getByText('-')).toBeInTheDocument());
+    await screen.findByRole('button', { name: 'Gerar Executivo de Folha' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar Executivo de Folha' }));
+
+    await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Erro ao gerar relatório de folha', 'error'));
+  });
+
+  it('shows download error on folha card', async () => {
+    vi.mocked(relatorioService.downloadRelatorioFolha).mockRejectedValue(new Error('fail'));
+    renderWithProviders(<Relatorios />);
+    await screen.findByRole('button', { name: 'Baixar PDF Executivo de Folha' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF Executivo de Folha' }));
+
+    await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Erro ao baixar relatório', 'error'));
   });
 });

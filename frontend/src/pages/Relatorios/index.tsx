@@ -1,63 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Container,
   Typography,
-  Paper,
-  Tabs,
-  Tab,
   Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
+  Grid,
+  Alert,
   CircularProgress,
 } from '@mui/material';
-import { Download as DownloadIcon } from '@mui/icons-material';
+import { Assessment as AssessmentIcon, CardGiftcard as CardGiftcardIcon } from '@mui/icons-material';
 import { relatorioService } from '../../services/relatorioService';
 import type { RelatorioFolha, RelatorioBeneficio } from '../../services/relatorioService';
 import { useNotification } from '../../hooks/useNotification';
 import { Notification } from '../../components/Notification';
+import { CompetenciaPicker, type Competencia } from './CompetenciaPicker';
+import { RelatorioCatalogCard } from './RelatorioCatalogCard';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
+const POLL_INTERVAL_MS = 2000;
+
+function currentCompetencia(): Competencia {
+  const now = new Date();
+  return { mes: now.getMonth() + 1, ano: now.getFullYear() };
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`relatorio-tabpanel-${index}`}
-      aria-labelledby={`relatorio-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
+function findForCompetencia<T extends { mes: number; ano: number }>(
+  list: T[],
+  competencia: Competencia,
+): T | undefined {
+  return list.find((r) => r.mes === competencia.mes && r.ano === competencia.ano);
 }
 
 export function Relatorios() {
-  const [tabValue, setTabValue] = useState(0);
+  const [competencia, setCompetencia] = useState<Competencia>(currentCompetencia);
   const [relatoriosFolha, setRelatoriosFolha] = useState<RelatorioFolha[]>([]);
   const [relatoriosBeneficio, setRelatoriosBeneficio] = useState<RelatorioBeneficio[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [generatingFolha, setGeneratingFolha] = useState(false);
+  const [generatingBeneficio, setGeneratingBeneficio] = useState(false);
+  const [downloadingFolha, setDownloadingFolha] = useState(false);
+  const [downloadingBeneficio, setDownloadingBeneficio] = useState(false);
   const { notification, showNotification, hideNotification } = useNotification();
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
+  const relatorioFolha = findForCompetencia(relatoriosFolha, competencia);
+  const relatorioBeneficio = findForCompetencia(relatoriosBeneficio, competencia);
 
-  const carregarRelatorios = async () => {
+  const carregarRelatorios = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const [folha, beneficio] = await Promise.all([
         relatorioService.listarRelatoriosFolha(),
         relatorioService.listarRelatoriosBeneficio(),
@@ -65,194 +54,167 @@ export function Relatorios() {
       setRelatoriosFolha(folha);
       setRelatoriosBeneficio(beneficio);
     } catch {
-      showNotification('Erro ao carregar relatórios', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const gerarRelatorio = async () => {
-    try {
-      setLoading(true);
-      const data = new Date();
-      const mes = data.getMonth() + 1;
-      const ano = data.getFullYear();
-
-      if (tabValue === 0) {
-        await relatorioService.gerarRelatorioFolha(mes, ano);
-        showNotification('Relatório de folha gerado com sucesso', 'success');
-      } else {
-        await relatorioService.gerarRelatorioBeneficio(mes, ano);
-        showNotification('Relatório de benefícios gerado com sucesso', 'success');
+      if (!silent) {
+        showNotification('Erro ao carregar relatórios', 'error');
       }
-
-      await carregarRelatorios();
-    } catch {
-      showNotification('Erro ao gerar relatório', 'error');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+    }
+  }, [showNotification]);
+
+  const hasPending = relatorioFolha?.status === 'PENDENTE' || relatorioBeneficio?.status === 'PENDENTE';
+
+  useEffect(() => {
+    carregarRelatorios();
+  }, [carregarRelatorios]);
+
+  useEffect(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+
+    if (hasPending) {
+      pollRef.current = setInterval(() => {
+        void carregarRelatorios(true);
+      }, POLL_INTERVAL_MS);
+    }
+
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [hasPending, carregarRelatorios]);
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const gerarRelatorioFolha = async () => {
+    if (relatorioFolha?.status === 'PENDENTE') return;
+    try {
+      setGeneratingFolha(true);
+      await relatorioService.gerarRelatorioFolha(competencia.mes, competencia.ano);
+      showNotification('Relatório de folha em geração', 'success');
+      await carregarRelatorios(true);
+    } catch {
+      showNotification('Erro ao gerar relatório de folha', 'error');
+    } finally {
+      setGeneratingFolha(false);
     }
   };
 
-  const downloadRelatorio = async (id: number) => {
+  const gerarRelatorioBeneficio = async () => {
+    if (relatorioBeneficio?.status === 'PENDENTE') return;
     try {
-      setLoading(true);
-      const blob = tabValue === 0
-        ? await relatorioService.downloadRelatorioFolha(id)
-        : await relatorioService.downloadRelatorioBeneficio(id);
+      setGeneratingBeneficio(true);
+      await relatorioService.gerarRelatorioBeneficio(competencia.mes, competencia.ano);
+      showNotification('Relatório de benefícios em geração', 'success');
+      await carregarRelatorios(true);
+    } catch {
+      showNotification('Erro ao gerar relatório de benefícios', 'error');
+    } finally {
+      setGeneratingBeneficio(false);
+    }
+  };
 
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `relatorio-${tabValue === 0 ? 'folha' : 'beneficio'}-${id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
+  const downloadRelatorioFolha = async () => {
+    if (!relatorioFolha || relatorioFolha.status !== 'PROCESSADO') return;
+    try {
+      setDownloadingFolha(true);
+      const blob = await relatorioService.downloadRelatorioFolha(relatorioFolha.id);
+      downloadBlob(blob, `relatorio-folha-${competencia.mes}-${competencia.ano}.pdf`);
       showNotification('Relatório baixado com sucesso', 'success');
     } catch {
       showNotification('Erro ao baixar relatório', 'error');
     } finally {
-      setLoading(false);
+      setDownloadingFolha(false);
     }
   };
 
-  useEffect(() => {
-    carregarRelatorios();
-  }, []);
+  const downloadRelatorioBeneficio = async () => {
+    if (!relatorioBeneficio || relatorioBeneficio.status !== 'PROCESSADO') return;
+    try {
+      setDownloadingBeneficio(true);
+      const blob = await relatorioService.downloadRelatorioBeneficio(relatorioBeneficio.id);
+      downloadBlob(blob, `relatorio-beneficio-${competencia.mes}-${competencia.ano}.pdf`);
+      showNotification('Relatório baixado com sucesso', 'success');
+    } catch {
+      showNotification('Erro ao baixar relatório', 'error');
+    } finally {
+      setDownloadingBeneficio(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress size={60} />
+      </Box>
+    );
+  }
 
   return (
-    <Container>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Relatórios
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
+        Relatórios Executivos
+      </Typography>
+      <Typography variant="body1" color="text.secondary" mb={4}>
+        Gere PDFs premium com KPIs, gráficos e breakdowns para apresentações gerenciais.
       </Typography>
 
-      <Paper sx={{ width: '100%', mb: 2 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="relatorio tabs">
-          <Tab label="Folha de Pagamento" />
-          <Tab label="Benefícios" />
-        </Tabs>
+      <Box mb={4} maxWidth={320}>
+        <CompetenciaPicker value={competencia} onChange={setCompetencia} />
+      </Box>
 
-        <TabPanel value={tabValue} index={0}>
-          <Box sx={{ mb: 2 }}>
-            <Button
-              variant="contained"
-              onClick={gerarRelatorio}
-              disabled={loading}
-              startIcon={loading && <CircularProgress size={20} color="inherit" />}
-            >
-              Gerar Relatório
-            </Button>
-          </Box>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <RelatorioCatalogCard
+            title="Executivo de Folha"
+            description="PDF com KPIs de custo empresa, breakdown por centro de custo, linha de negócio, top rubricas e evolução mensal."
+            icon={<AssessmentIcon />}
+            status={relatorioFolha?.status}
+            erro={relatorioFolha?.erro ?? 'Erro ao gerar relatório. Tente novamente.'}
+            totalLabel="Total folha"
+            totalValue={relatorioFolha?.totalFolha}
+            onGenerate={gerarRelatorioFolha}
+            onDownload={downloadRelatorioFolha}
+            onRetry={gerarRelatorioFolha}
+            generating={generatingFolha}
+            downloading={downloadingFolha}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <RelatorioCatalogCard
+            title="Custo Benefício + Folha"
+            description="PDF consolidando custo de benefícios por tipo e custo de folha — substitui planilhas manuais de fechamento."
+            icon={<CardGiftcardIcon />}
+            status={relatorioBeneficio?.status}
+            erro={relatorioBeneficio?.erro ?? 'Erro ao gerar relatório. Tente novamente.'}
+            totalLabel="Total benefícios"
+            totalValue={relatorioBeneficio?.totalValor}
+            onGenerate={gerarRelatorioBeneficio}
+            onDownload={downloadRelatorioBeneficio}
+            onRetry={gerarRelatorioBeneficio}
+            generating={generatingBeneficio}
+            downloading={downloadingBeneficio}
+          />
+        </Grid>
+      </Grid>
 
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Mês/Ano</TableCell>
-                  <TableCell>Total Funcionários</TableCell>
-                  <TableCell>Total Folha</TableCell>
-                  <TableCell>Total Benefícios</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Data Processamento</TableCell>
-                  <TableCell>Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {relatoriosFolha.map((relatorio) => (
-                  <TableRow key={relatorio.id}>
-                    <TableCell>{`${relatorio.mes}/${relatorio.ano}`}</TableCell>
-                    <TableCell>{relatorio.totalFuncionarios}</TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(relatorio.totalFolha)}
-                    </TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(relatorio.totalBeneficios)}
-                    </TableCell>
-                    <TableCell>{relatorio.status}</TableCell>
-                    <TableCell>
-                      {relatorio.dataProcessamento
-                        ? new Date(relatorio.dataProcessamento).toLocaleString('pt-BR')
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={() => downloadRelatorio(relatorio.id)}
-                        disabled={relatorio.status !== 'PROCESSADO' || loading}
-                      >
-                        <DownloadIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={1}>
-          <Box sx={{ mb: 2 }}>
-            <Button
-              variant="contained"
-              onClick={gerarRelatorio}
-              disabled={loading}
-              startIcon={loading && <CircularProgress size={20} color="inherit" />}
-            >
-              Gerar Relatório
-            </Button>
-          </Box>
-
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Mês/Ano</TableCell>
-                  <TableCell>Total Benefícios</TableCell>
-                  <TableCell>Total Valor</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Data Processamento</TableCell>
-                  <TableCell>Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {relatoriosBeneficio.map((relatorio) => (
-                  <TableRow key={relatorio.id}>
-                    <TableCell>{`${relatorio.mes}/${relatorio.ano}`}</TableCell>
-                    <TableCell>{relatorio.totalBeneficios}</TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(relatorio.totalValor)}
-                    </TableCell>
-                    <TableCell>{relatorio.status}</TableCell>
-                    <TableCell>
-                      {relatorio.dataProcessamento
-                        ? new Date(relatorio.dataProcessamento).toLocaleString('pt-BR')
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={() => downloadRelatorio(relatorio.id)}
-                        disabled={relatorio.status !== 'PROCESSADO' || loading}
-                      >
-                        <DownloadIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </TabPanel>
-      </Paper>
+      {!relatorioFolha && !relatorioBeneficio && (
+        <Alert severity="info" sx={{ mt: 3 }}>
+          Nenhum relatório gerado para {competencia.mes}/{competencia.ano}. Selecione o tipo e clique em Gerar.
+        </Alert>
+      )}
 
       <Notification
         open={notification.open}
@@ -262,4 +224,4 @@ export function Relatorios() {
       />
     </Container>
   );
-} 
+}
