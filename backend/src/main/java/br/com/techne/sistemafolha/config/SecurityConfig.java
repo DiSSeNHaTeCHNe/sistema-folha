@@ -21,6 +21,7 @@ public class SecurityConfig {
     private static final String ROLE_ADMIN = "ADMIN";
     private static final String TIPO_BENEFICIO = "/tipo-beneficio";
     private static final String TIPO_BENEFICIO_ALL = "/tipo-beneficio/**";
+    private static final String RELATORIOS = "/relatorios/**";
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -57,6 +58,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, TIPO_BENEFICIO).hasRole(ROLE_ADMIN)
                 .requestMatchers(HttpMethod.PUT, TIPO_BENEFICIO_ALL).hasRole(ROLE_ADMIN)
                 .requestMatchers(HttpMethod.DELETE, TIPO_BENEFICIO_ALL).hasRole(ROLE_ADMIN)
+                .requestMatchers(RELATORIOS).authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
