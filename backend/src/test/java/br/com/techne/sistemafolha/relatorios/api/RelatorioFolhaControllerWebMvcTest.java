@@ -5,7 +5,9 @@ import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.config.SecurityConfig;
 import br.com.techne.sistemafolha.exception.GlobalExceptionHandler;
 import br.com.techne.sistemafolha.relatorios.application.RelatorioGeracaoService;
+import br.com.techne.sistemafolha.relatorios.domain.RelatorioAcessoNegadoException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioIndisponivelException;
+import br.com.techne.sistemafolha.relatorios.domain.RelatorioNotFoundException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioStatus;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioTipo;
 import br.com.techne.sistemafolha.security.JwtService;
@@ -21,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -119,6 +122,73 @@ class RelatorioFolhaControllerWebMvcTest {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_PDF))
             .andExpect(content().bytes(pdf));
+    }
+
+    @Test
+    @WithMockUser(username = "gestor@teste.com", roles = "USER")
+    void download_erro_retorna409() throws Exception {
+        when(relatorioGeracaoService.downloadPdf("gestor@teste.com", 1L, RelatorioTipo.FOLHA))
+            .thenThrow(new RelatorioIndisponivelException(RelatorioStatus.ERRO));
+
+        mockMvc.perform(get("/relatorios/folha/1/download"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    @WithMockUser(username = "gestor@teste.com", roles = "USER")
+    void download_naoEncontrado_retorna404() throws Exception {
+        when(relatorioGeracaoService.downloadPdf("gestor@teste.com", 99L, RelatorioTipo.FOLHA))
+            .thenThrow(new RelatorioNotFoundException(99L));
+
+        mockMvc.perform(get("/relatorios/folha/99/download"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    @WithMockUser(username = "gestor@teste.com", roles = "USER")
+    void gerar_mesInvalido_retorna400BeanValidation() throws Exception {
+        mockMvc.perform(post("/relatorios/folha")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"mes\":13,\"ano\":2024}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser(username = "gestor@teste.com", roles = "USER")
+    void gerar_aclNegado_retorna403() throws Exception {
+        YearMonth atual = YearMonth.now();
+        when(relatorioGeracaoService.gerarFolha(
+            eq("gestor@teste.com"), eq(atual.getMonthValue()), eq(atual.getYear())))
+            .thenThrow(new RelatorioAcessoNegadoException());
+
+        mockMvc.perform(post("/relatorios/folha")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"mes\":" + atual.getMonthValue() + ",\"ano\":" + atual.getYear() + "}"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status").value(403));
+    }
+
+    @Test
+    @WithMockUser(username = "gestor@teste.com", roles = "USER")
+    void listar_retornaRelatoriosOrdenadosAnoMesDesc() throws Exception {
+        RelatorioFolhaDTO recente = new RelatorioFolhaDTO(
+            2L, 6, 2026, 10, new BigDecimal("5000"), new BigDecimal("500"),
+            RelatorioStatus.PROCESSADO, LocalDateTime.now(), null);
+        RelatorioFolhaDTO antigo = new RelatorioFolhaDTO(
+            1L, 1, 2024, 5, new BigDecimal("3000"), new BigDecimal("300"),
+            RelatorioStatus.PROCESSADO, LocalDateTime.now(), null);
+        when(relatorioGeracaoService.listarFolha("gestor@teste.com"))
+            .thenReturn(List.of(recente, antigo));
+
+        mockMvc.perform(get("/relatorios/folha"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].ano").value(2026))
+            .andExpect(jsonPath("$[0].mes").value(6))
+            .andExpect(jsonPath("$[1].ano").value(2024))
+            .andExpect(jsonPath("$[1].mes").value(1));
     }
 
     @Test

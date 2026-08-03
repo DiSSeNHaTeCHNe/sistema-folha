@@ -129,7 +129,7 @@ class RelatorioGeracaoWorkerTest {
         verify(relatorioRepository).save(captor.capture());
         Relatorio salvo = captor.getValue();
         assertEquals(RelatorioStatus.ERRO, salvo.getStatus());
-        assertEquals(500, salvo.getErro().length());
+        assertEquals("Erro ao gerar relatório", salvo.getErro());
         verify(relatorioArquivoRepository, never()).save(any());
     }
 

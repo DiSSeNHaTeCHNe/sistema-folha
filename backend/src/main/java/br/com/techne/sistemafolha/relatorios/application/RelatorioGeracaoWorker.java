@@ -74,7 +74,7 @@ public class RelatorioGeracaoWorker {
                 relatorioId, login, mes, ano);
         } catch (Exception e) {
             log.error("Erro ao processar relatório {} login={}", relatorioId, login, e);
-            marcarErro(relatorio, e.getMessage());
+            marcarErro(relatorio, "Erro ao gerar relatório");
         }
 
         return CompletableFuture.completedFuture(null);

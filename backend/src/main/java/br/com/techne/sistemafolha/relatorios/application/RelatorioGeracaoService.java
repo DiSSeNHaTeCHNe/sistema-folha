@@ -15,9 +15,12 @@ import br.com.techne.sistemafolha.relatorios.domain.RelatorioStatus;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioTipo;
 import br.com.techne.sistemafolha.relatorios.infrastructure.RelatorioArquivoRepository;
 import br.com.techne.sistemafolha.relatorios.infrastructure.RelatorioRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -28,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Service
-@RequiredArgsConstructor
 public class RelatorioGeracaoService {
 
     private final RelatorioRepository relatorioRepository;
@@ -37,26 +39,44 @@ public class RelatorioGeracaoService {
     private final RelatorioGeracaoProperties properties;
     private final UsuarioLookupPort usuarioLookupPort;
     private final OrganogramaAcessoPort organogramaAcessoPort;
+    private final TransactionTemplate transactionTemplate;
 
-    @Transactional
-    public RelatorioFolhaDTO gerarFolha(String login, int mes, int ano) {
-        Relatorio relatorio = iniciarGeracao(login, RelatorioTipo.FOLHA, mes, ano);
-        aguardarProcessamento(relatorio.getId());
-        return toFolhaDto(recarregar(relatorio.getId()));
+    public RelatorioGeracaoService(
+            RelatorioRepository relatorioRepository,
+            RelatorioArquivoRepository relatorioArquivoRepository,
+            RelatorioGeracaoWorker relatorioGeracaoWorker,
+            RelatorioGeracaoProperties properties,
+            UsuarioLookupPort usuarioLookupPort,
+            OrganogramaAcessoPort organogramaAcessoPort,
+            PlatformTransactionManager transactionManager) {
+        this.relatorioRepository = relatorioRepository;
+        this.relatorioArquivoRepository = relatorioArquivoRepository;
+        this.relatorioGeracaoWorker = relatorioGeracaoWorker;
+        this.properties = properties;
+        this.usuarioLookupPort = usuarioLookupPort;
+        this.organogramaAcessoPort = organogramaAcessoPort;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    @Transactional
+    public RelatorioFolhaDTO gerarFolha(String login, int mes, int ano) {
+        ProcessamentoHandle handle = transactionTemplate.execute(
+            status -> iniciarGeracao(login, RelatorioTipo.FOLHA, mes, ano));
+        aguardarProcessamento(handle.future());
+        return toFolhaDto(recarregar(handle.relatorioId()));
+    }
+
     public RelatorioBeneficioDTO gerarBeneficio(String login, int mes, int ano) {
-        Relatorio relatorio = iniciarGeracao(login, RelatorioTipo.BENEFICIO, mes, ano);
-        aguardarProcessamento(relatorio.getId());
-        return toBeneficioDto(recarregar(relatorio.getId()));
+        ProcessamentoHandle handle = transactionTemplate.execute(
+            status -> iniciarGeracao(login, RelatorioTipo.BENEFICIO, mes, ano));
+        aguardarProcessamento(handle.future());
+        return toBeneficioDto(recarregar(handle.relatorioId()));
     }
 
     @Transactional(readOnly = true)
     public List<RelatorioFolhaDTO> listarFolha(String login) {
-        Usuario usuario = obterUsuario(login);
+        obterUsuario(login);
         return relatorioRepository
-            .findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(usuario.getId(), RelatorioTipo.FOLHA)
+            .findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo.FOLHA)
             .stream()
             .map(this::toFolhaDto)
             .toList();
@@ -64,9 +84,9 @@ public class RelatorioGeracaoService {
 
     @Transactional(readOnly = true)
     public List<RelatorioBeneficioDTO> listarBeneficio(String login) {
-        Usuario usuario = obterUsuario(login);
+        obterUsuario(login);
         return relatorioRepository
-            .findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(usuario.getId(), RelatorioTipo.BENEFICIO)
+            .findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo.BENEFICIO)
             .stream()
             .map(this::toBeneficioDto)
             .toList();
@@ -90,7 +110,7 @@ public class RelatorioGeracaoService {
             .orElseThrow(() -> new RelatorioIndisponivelException(relatorio.getStatus()));
     }
 
-    private Relatorio iniciarGeracao(String login, RelatorioTipo tipo, int mes, int ano) {
+    private ProcessamentoHandle iniciarGeracao(String login, RelatorioTipo tipo, int mes, int ano) {
         validarCompetencia(mes, ano);
         Usuario usuario = obterUsuario(login);
         validarAcesso(usuario.getId());
@@ -119,8 +139,40 @@ public class RelatorioGeracaoService {
         relatorio.setTotalBeneficios(null);
         relatorio.setTotalValor(null);
         relatorio = relatorioRepository.save(relatorio);
-        return relatorio;
+        CompletableFuture<Void> future = enfileirarProcessamentoAposCommit(relatorio.getId());
+        return new ProcessamentoHandle(relatorio.getId(), future);
     }
+
+    private CompletableFuture<Void> enfileirarProcessamentoAposCommit(Long relatorioId) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    relatorioGeracaoWorker.processar(relatorioId)
+                        .whenComplete((result, error) -> {
+                            if (error != null) {
+                                future.completeExceptionally(error);
+                            } else {
+                                future.complete(null);
+                            }
+                        });
+                }
+            });
+        } else {
+            relatorioGeracaoWorker.processar(relatorioId)
+                .whenComplete((result, error) -> {
+                    if (error != null) {
+                        future.completeExceptionally(error);
+                    } else {
+                        future.complete(null);
+                    }
+                });
+        }
+        return future;
+    }
+
+    private record ProcessamentoHandle(Long relatorioId, CompletableFuture<Void> future) {}
 
     private Relatorio criarNovoRelatorio(Usuario usuario, RelatorioTipo tipo, int mes, int ano) {
         long pendentes = relatorioRepository.countByUsuarioIdAndStatusAndAtivoTrue(
@@ -138,9 +190,8 @@ public class RelatorioGeracaoService {
         return relatorio;
     }
 
-    private void aguardarProcessamento(Long relatorioId) {
+    private void aguardarProcessamento(CompletableFuture<Void> future) {
         try {
-            CompletableFuture<Void> future = relatorioGeracaoWorker.processar(relatorioId);
             future.get(properties.getTimeoutSegundos(), TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             // REL-01: timeout → retorna PENDENTE (polling no FE)

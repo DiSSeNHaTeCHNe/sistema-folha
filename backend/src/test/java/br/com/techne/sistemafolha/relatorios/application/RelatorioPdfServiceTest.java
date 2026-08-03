@@ -165,6 +165,37 @@ class RelatorioPdfServiceTest {
         verify(organogramaAcessoPort).obterContextoAcesso(USUARIO_ID);
     }
 
+    @Test
+    void renderBeneficioCusto_acessoTotal_somaBeneficiosGlobal() {
+        AccessContextDTO contexto = new AccessContextDTO(
+            true, true, true, null, null, null, null, null);
+        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contexto);
+        when(folhaConsultaPort.findLinhasAtivasPorCompetencia(
+            eq(competenciaInicio), eq(competenciaFim), eq(false), eq(null)))
+            .thenReturn(List.of());
+        when(folhaTotalizacaoPort.calcularTotalCustoEmpresa(
+            anyList(), eq(competenciaInicio), eq(competenciaFim), eq(contexto)))
+            .thenReturn(new BigDecimal("8000.00"));
+        when(beneficioConsultaPort.somarValorPorCompetenciaECentros(
+            eq(competenciaInicio), eq(competenciaFim), eq(null)))
+            .thenReturn(new BigDecimal("2000.00"));
+        when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(
+            eq(competenciaInicio), eq(competenciaFim)))
+            .thenReturn(5L);
+        when(beneficioConsultaPort.resumoPorTipo(
+            eq(competenciaInicio), eq(competenciaFim), eq(null)))
+            .thenReturn(List.of());
+        when(beneficioConsultaPort.matrizCentroCustoPorTipo(
+            eq(competenciaInicio), eq(competenciaFim), eq(null), eq(5), eq(5)))
+            .thenReturn(List.of());
+        when(beneficioCustoPdfRenderer.render(any())).thenReturn("%PDF-benef".getBytes(StandardCharsets.UTF_8));
+
+        relatorioPdfService.renderBeneficioCusto(LOGIN, USUARIO_ID, MES, ANO);
+
+        verify(beneficioConsultaPort).somarValorPorCompetenciaECentros(
+            competenciaInicio, competenciaFim, null);
+    }
+
     private static DashboardStatsDTO statsComDados() {
         return new DashboardStatsDTO(
             150L,

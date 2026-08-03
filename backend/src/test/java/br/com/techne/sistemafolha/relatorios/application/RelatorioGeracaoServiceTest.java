@@ -19,9 +19,15 @@ import br.com.techne.sistemafolha.relatorios.infrastructure.RelatorioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.quality.Strictness;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -37,11 +43,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RelatorioGeracaoServiceTest {
 
     private static final String LOGIN = "gestor@teste.com";
@@ -56,10 +64,11 @@ class RelatorioGeracaoServiceTest {
     private UsuarioLookupPort usuarioLookupPort;
     @Mock
     private OrganogramaAcessoPort organogramaAcessoPort;
+    @Mock
+    private PlatformTransactionManager transactionManager;
 
     private RelatorioGeracaoProperties properties;
 
-    @InjectMocks
     private RelatorioGeracaoService service;
 
     private Usuario usuario;
@@ -70,13 +79,27 @@ class RelatorioGeracaoServiceTest {
         properties = new RelatorioGeracaoProperties();
         properties.setTimeoutSegundos(60);
         properties.setMaxJobsSimultaneosPorUsuario(3);
+
+        TransactionStatus txStatus = new SimpleTransactionStatus();
+        when(transactionManager.getTransaction(any())).thenReturn(txStatus);
+        doAnswer(invocation -> {
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                for (TransactionSynchronization sync : TransactionSynchronizationManager.getSynchronizations()) {
+                    sync.afterCommit();
+                }
+                TransactionSynchronizationManager.clearSynchronization();
+            }
+            return null;
+        }).when(transactionManager).commit(any());
+
         service = new RelatorioGeracaoService(
             relatorioRepository,
             relatorioArquivoRepository,
             relatorioGeracaoWorker,
             properties,
             usuarioLookupPort,
-            organogramaAcessoPort);
+            organogramaAcessoPort,
+            transactionManager);
 
         usuario = new Usuario();
         usuario.setId(1L);
@@ -194,5 +217,34 @@ class RelatorioGeracaoServiceTest {
 
         assertThrows(RelatorioNotFoundException.class,
             () -> service.downloadPdf(LOGIN, 99L, RelatorioTipo.FOLHA));
+    }
+
+    @Test
+    void gerarFolha_disparaWorkerAposCommit() {
+        int mes = 1;
+        int ano = YearMonth.now().getYear();
+        relatorio.setMes(mes);
+
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+        when(organogramaAcessoPort.obterContextoAcesso(1L)).thenReturn(
+            new AccessContextDTO(true, true, true, null, null, 1L, "Dir", 1));
+        when(relatorioRepository.findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(
+            1L, RelatorioTipo.FOLHA, mes, ano)).thenReturn(Optional.empty());
+        when(relatorioRepository.countByUsuarioIdAndStatusAndAtivoTrue(1L, RelatorioStatus.PENDENTE))
+            .thenReturn(0L);
+        when(relatorioRepository.save(any())).thenAnswer(invocation -> {
+            Relatorio salvo = invocation.getArgument(0);
+            salvo.setId(10L);
+            return salvo;
+        });
+        when(relatorioGeracaoWorker.processar(10L)).thenAnswer(invocation -> {
+            relatorio.setStatus(RelatorioStatus.PROCESSADO);
+            return CompletableFuture.completedFuture(null);
+        });
+        when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+
+        service.gerarFolha(LOGIN, mes, ano);
+
+        verify(relatorioGeracaoWorker).processar(10L);
     }
 }

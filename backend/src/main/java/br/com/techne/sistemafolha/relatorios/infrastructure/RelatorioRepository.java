@@ -11,6 +11,8 @@ import java.util.Optional;
 @Repository
 public interface RelatorioRepository extends JpaRepository<Relatorio, Long> {
 
+    List<Relatorio> findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo tipo);
+
     List<Relatorio> findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(Long usuarioId, RelatorioTipo tipo);
 
     Optional<Relatorio> findByIdAndUsuarioIdAndAtivoTrue(Long id, Long usuarioId);
