@@ -29,22 +29,44 @@ class BeneficioCustoPdfRendererTest {
     }
 
     @Test
-    void render_contemTituloETabelaTipos() {
+    void render_contemTituloCapaKpisSpecEResumoPorTipo() {
         byte[] pdf = renderer.render(modelCompleto(false, false));
-        String text = extractText(pdf);
+        String text = PdfTextTestHelper.extractAllText(pdf);
 
         assertTrue(new String(pdf, 0, 4, StandardCharsets.US_ASCII).startsWith("%PDF"));
         assertTrue(text.contains("Relat") && text.contains("rio de Custo"));
         assertTrue(text.contains("Benef") && text.contains("cios e Folha"));
+        assertTrue(text.contains("Total Benef"));
+        assertTrue(text.contains("Qtd. Lan"));
+        assertTrue(text.contains("Total Custo Folha"));
+        assertTrue(text.contains("Custo Empresa Consolidado"));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("1500.00")));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("9000.00")));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("10500.00")));
+        assertTrue(text.contains("10"));
+
+        assertTrue(text.contains("Resumo por Tipo"));
         assertTrue(text.contains("4000"));
         assertTrue(text.contains("Vale Refei"));
-        assertTrue(text.contains("R$"));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("1500.00")));
+    }
+
+    @Test
+    void render_matrizContemSecaoEValores() {
+        byte[] pdf = renderer.render(modelCompleto(false, false));
+        String text = PdfTextTestHelper.extractAllText(pdf);
+
+        assertTrue(text.contains("Matriz Centro de Custo"));
+        assertTrue(text.contains("CC Admin"));
+        assertTrue(text.contains("4000"));
+        assertTrue(text.contains("Vale Refei"));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("1500.00")));
     }
 
     @Test
     void render_semBeneficios_contemNota() {
         byte[] pdf = renderer.render(modelCompleto(true, false));
-        String text = extractText(pdf);
+        String text = PdfTextTestHelper.extractAllText(pdf);
 
         assertTrue(text.contains("Nenhum benef") && text.contains("cio lan"));
     }
@@ -52,7 +74,7 @@ class BeneficioCustoPdfRendererTest {
     @Test
     void render_semFolha_contemNotaFolha() {
         byte[] pdf = renderer.render(modelCompleto(false, true));
-        String text = extractText(pdf);
+        String text = PdfTextTestHelper.extractAllText(pdf);
 
         assertTrue(text.contains("Sem dados de folha"));
     }
@@ -60,7 +82,7 @@ class BeneficioCustoPdfRendererTest {
     @Test
     void render_valoresFormatadosPtBr() {
         byte[] pdf = renderer.render(modelCompleto(false, false));
-        String text = extractText(pdf);
+        String text = PdfTextTestHelper.extractAllText(pdf);
 
         assertTrue(text.contains("R$") && (text.contains("1.500") || text.contains("1500")));
     }
@@ -79,7 +101,7 @@ class BeneficioCustoPdfRendererTest {
             new BigDecimal("1500.00"), 10L, new BigDecimal("9000.00"), new BigDecimal("10500.00"),
             List.of(vr), Map.of(1L, funcionarios), List.of(), false, false);
 
-        String text = extractText(renderer.render(model));
+        String text = PdfTextTestHelper.extractAllText(renderer.render(model));
 
         assertTrue(text.contains("CC Admin"));
         assertTrue(text.contains("Outros"));
@@ -108,9 +130,5 @@ class BeneficioCustoPdfRendererTest {
             semBeneficios ? List.of() : List.of(matriz),
             semBeneficios,
             semFolha);
-    }
-
-    private String extractText(byte[] pdf) {
-        return new String(pdf, StandardCharsets.ISO_8859_1);
     }
 }

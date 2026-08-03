@@ -26,11 +26,23 @@ class RelatorioChartImageFactoryTest {
     @Test
     void lineChart_comDoisPontos_retornaPngNonEmpty() {
         byte[] png = factory.lineChart(
-            List.of("Jan/2024", "Fev/2024"),
-            List.of(new BigDecimal("1000"), new BigDecimal("1500")),
+            List.of("Jan/2024", "Jun/2024"),
+            List.of(new BigDecimal("7000"), new BigDecimal("9000")),
             theme);
 
         assertTrue(png.length > 0);
+    }
+
+    @Test
+    void lineChart_labelsMesAno_formatoMmmYyyy() {
+        List<String> labels = List.of("Jan/2024", "Fev/2024", "Mar/2024");
+        byte[] png = factory.lineChart(
+            labels,
+            List.of(new BigDecimal("1000"), new BigDecimal("1500"), new BigDecimal("1200")),
+            theme);
+
+        assertTrue(png.length > 0);
+        labels.forEach(label -> assertTrue(label.matches("[A-Za-z]{3}/\\d{4}")));
     }
 
     @Test

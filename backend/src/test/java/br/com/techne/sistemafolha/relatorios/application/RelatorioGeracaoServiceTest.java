@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -217,6 +218,38 @@ class RelatorioGeracaoServiceTest {
 
         assertThrows(RelatorioNotFoundException.class,
             () -> service.downloadPdf(LOGIN, 99L, RelatorioTipo.FOLHA));
+    }
+
+    @Test
+    void listarFolha_usaOrdenacaoRepositorioAnoMesDesc() {
+        Relatorio antigo = new Relatorio();
+        antigo.setId(1L);
+        antigo.setTipo(RelatorioTipo.FOLHA);
+        antigo.setMes(1);
+        antigo.setAno(2024);
+        antigo.setStatus(RelatorioStatus.PROCESSADO);
+        antigo.setAtivo(true);
+
+        Relatorio recente = new Relatorio();
+        recente.setId(2L);
+        recente.setTipo(RelatorioTipo.FOLHA);
+        recente.setMes(6);
+        recente.setAno(2026);
+        recente.setStatus(RelatorioStatus.PROCESSADO);
+        recente.setAtivo(true);
+
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+        when(relatorioRepository.findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo.FOLHA))
+            .thenReturn(List.of(recente, antigo));
+
+        List<RelatorioFolhaDTO> resultado = service.listarFolha(LOGIN);
+
+        assertEquals(2, resultado.size());
+        assertEquals(2026, resultado.get(0).ano());
+        assertEquals(6, resultado.get(0).mes());
+        assertEquals(2024, resultado.get(1).ano());
+        assertEquals(1, resultado.get(1).mes());
+        verify(relatorioRepository).findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo.FOLHA);
     }
 
     @Test

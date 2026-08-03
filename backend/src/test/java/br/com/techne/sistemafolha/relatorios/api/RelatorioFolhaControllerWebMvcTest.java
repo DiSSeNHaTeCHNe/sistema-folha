@@ -148,6 +148,16 @@ class RelatorioFolhaControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "gestor@teste.com", roles = "USER")
+    void gerar_anoInvalido_retorna400BeanValidation() throws Exception {
+        mockMvc.perform(post("/relatorios/folha")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"mes\":1,\"ano\":1999}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser(username = "gestor@teste.com", roles = "USER")
     void gerar_mesInvalido_retorna400BeanValidation() throws Exception {
         mockMvc.perform(post("/relatorios/folha")
                 .contentType(MediaType.APPLICATION_JSON)

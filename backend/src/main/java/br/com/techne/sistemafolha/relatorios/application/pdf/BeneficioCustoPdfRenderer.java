@@ -72,10 +72,10 @@ public class BeneficioCustoPdfRenderer {
 
         PdfPTable kpis = new PdfPTable(4);
         kpis.setWidthPercentage(100);
-        addKpi(kpis, "Benefícios", layoutHelper.formatCurrency(model.totalBeneficios()), theme);
-        addKpi(kpis, "Lançamentos", String.valueOf(model.qtdLancamentos()), theme);
-        addKpi(kpis, "Custo Folha", layoutHelper.formatCurrency(model.totalCustoFolha()), theme);
-        addKpi(kpis, "Consolidado", layoutHelper.formatCurrency(model.custoConsolidado()), theme);
+        addKpi(kpis, "Total Benefícios", layoutHelper.formatCurrency(model.totalBeneficios()), theme);
+        addKpi(kpis, "Qtd. Lançamentos", String.valueOf(model.qtdLancamentos()), theme);
+        addKpi(kpis, "Total Custo Folha", layoutHelper.formatCurrency(model.totalCustoFolha()), theme);
+        addKpi(kpis, "Custo Empresa Consolidado", layoutHelper.formatCurrency(model.custoConsolidado()), theme);
         document.add(kpis);
 
         document.add(new Paragraph("Gerado por: " + model.geradoPor(), layoutHelper.bodyFont(theme)));

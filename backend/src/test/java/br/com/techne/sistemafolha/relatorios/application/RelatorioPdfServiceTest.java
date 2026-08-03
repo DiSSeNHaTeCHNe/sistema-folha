@@ -81,6 +81,41 @@ class RelatorioPdfServiceTest {
     }
 
     @Test
+    void renderFolhaExecutivo_statsScoped_aparecemNoModel() {
+        DashboardStatsDTO scoped = new DashboardStatsDTO(
+            50L,
+            new BigDecimal("3000.00"),
+            5L,
+            List.of(),
+            List.of(new br.com.techne.sistemafolha.dashboard.api.CentroCustoStatsDTO(
+                5L, "CC Operacional", 50L, new BigDecimal("3000"))),
+            List.of(),
+            new BigDecimal("3500.00"),
+            new BigDecimal("500.00"),
+            List.of(),
+            List.of(),
+            List.of());
+        when(dashboardConsultaPort.getStatsForCompetencia(
+            eq(LOGIN), eq(competenciaInicio), eq(competenciaFim), eq(false)))
+            .thenReturn(scoped);
+        when(dashboardConsultaPort.getEvolucaoMeses(
+            eq(LOGIN), eq(competenciaFim), eq(6), eq(false)))
+            .thenReturn(List.of(
+                new EvolucaoMensalDTO("Jun/2024", new BigDecimal("3000"), 50)));
+        when(folhaExecutivoPdfRenderer.render(any())).thenReturn("%PDF-folha".getBytes(StandardCharsets.UTF_8));
+
+        relatorioPdfService.renderFolhaExecutivo(LOGIN, USUARIO_ID, MES, ANO);
+
+        ArgumentCaptor<RelatorioFolhaModel> captor = ArgumentCaptor.forClass(RelatorioFolhaModel.class);
+        verify(folhaExecutivoPdfRenderer).render(captor.capture());
+        RelatorioFolhaModel model = captor.getValue();
+        assertEquals(50L, model.stats().totalFuncionarios());
+        assertEquals(new BigDecimal("3000.00"), model.stats().custoMensalFolha());
+        assertEquals(1, model.stats().porCentroCusto().size());
+        assertEquals("CC Operacional", model.stats().porCentroCusto().get(0).descricao());
+    }
+
+    @Test
     void renderFolhaExecutivo_montaModelViaPortsEDelegaRenderer() {
         DashboardStatsDTO stats = statsComDados();
         List<EvolucaoMensalDTO> evolucao = List.of(

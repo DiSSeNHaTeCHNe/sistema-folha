@@ -37,7 +37,7 @@ class FolhaExecutivoPdfRendererTest {
         byte[] pdf = renderer.render(model);
 
         assertTrue(new String(pdf, 0, 4, StandardCharsets.US_ASCII).startsWith("%PDF"));
-        String text = extractText(pdf);
+        String text = PdfTextTestHelper.extractAllText(pdf);
         assertTrue(text.contains("Relat") && text.contains("rio Executivo de Folha"));
         assertTrue(text.contains("06/2024"));
         assertTrue(text.contains("Gerado pelo Sistema de Folha"));
@@ -51,27 +51,90 @@ class FolhaExecutivoPdfRendererTest {
             statsVazios(), List.of(), true);
 
         byte[] pdf = renderer.render(model);
-        String text = extractText(pdf);
+        String text = PdfTextTestHelper.extractAllText(pdf);
 
         assertTrue(text.contains("Sem dados para a compet"));
         assertTrue(text.contains("Relat") && text.contains("rio Executivo"));
     }
 
     @Test
-    void render_refleteKpisFormatados() {
-        RelatorioFolhaModel model = modelCompleto(false);
-        byte[] pdf = renderer.render(model);
-        String text = extractText(pdf);
+    void render_kpisParidadeComDashboardStats() {
+        DashboardStatsDTO stats = statsComDados();
+        RelatorioFolhaModel model = new RelatorioFolhaModel(
+            theme, "06/2024", "gestor@teste.com", LocalDateTime.of(2024, 6, 15, 10, 0),
+            stats, evolucaoCompleta(), false);
+
+        String text = PdfTextTestHelper.extractAllText(renderer.render(model));
 
         assertTrue(text.contains("Total Funcion"));
         assertTrue(text.contains("Custo Empresa"));
         assertTrue(text.contains("Total Proventos"));
         assertTrue(text.contains("Total Descontos"));
-        assertTrue(text.contains("150"));
-        assertTrue(text.contains("8.000") || text.contains("8000"));
-        assertTrue(text.contains("1.000") || text.contains("1000"));
-        assertTrue(text.contains("9.000") || text.contains("9000"));
+        assertTrue(text.contains(String.valueOf(stats.totalFuncionarios())));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, stats.custoMensalFolha()));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, stats.totalProventos()));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, stats.totalDescontos()));
         assertTrue(text.contains("Gerado em: 15/06/2024 10:00"));
+    }
+
+    @Test
+    void render_secoesBreakdownContemTitulosETabelas() {
+        RelatorioFolhaModel model = modelCompleto(false);
+        String text = PdfTextTestHelper.extractAllText(renderer.render(model));
+
+        assertTrue(text.contains("Centros de Custo"));
+        assertTrue(text.contains("CC Admin"));
+        assertTrue(text.contains("Linhas de Neg"));
+        assertTrue(text.contains("Educacional"));
+        assertTrue(text.contains("Top 5 Proventos"));
+        assertTrue(text.contains("Sal") && text.contains("rio"));
+        assertTrue(text.contains("Top 5 Descontos"));
+        assertTrue(text.contains("INSS"));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("7000.00")));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("800.00")));
+    }
+
+    @Test
+    void render_evolucaoContemSecaoEChartEmbutido() {
+        RelatorioFolhaModel model = modelCompleto(false);
+        byte[] pdf = renderer.render(model);
+        String text = PdfTextTestHelper.extractAllText(pdf);
+
+        assertTrue(text.contains("Evolu") && text.contains("ltimos 6 meses"));
+        assertTrue(PdfTextTestHelper.containsEmbeddedImage(pdf));
+        assertTrue(model.evolucao6Meses().stream()
+            .anyMatch(e -> e.mesAno().equals("Jan/2024")));
+        assertTrue(model.evolucao6Meses().stream()
+            .anyMatch(e -> e.mesAno().equals("Jun/2024")));
+    }
+
+    @Test
+    void render_escopoRestrito_refleteStatsFiltrados() {
+        DashboardStatsDTO scoped = new DashboardStatsDTO(
+            50L,
+            new BigDecimal("3000.00"),
+            5L,
+            List.of(new LinhaNegocioStatsDTO(2L, "Operações", 50L, new BigDecimal("3000"))),
+            List.of(new CentroCustoStatsDTO(5L, "CC Operacional", 50L, new BigDecimal("3000"))),
+            List.of(),
+            new BigDecimal("3500.00"),
+            new BigDecimal("500.00"),
+            List.of(new RubricaStatsDTO(3L, "010", "Horas Extras", new BigDecimal("500"), 50L)),
+            List.of(new RubricaStatsDTO(4L, "020", "Vale", new BigDecimal("200"), 50L)),
+            List.of());
+
+        RelatorioFolhaModel model = new RelatorioFolhaModel(
+            theme, "06/2024", "scoped@teste.com", LocalDateTime.of(2024, 6, 15, 10, 0),
+            scoped, List.of(new EvolucaoMensalDTO("Jun/2024", new BigDecimal("3000"), 50)), false);
+
+        String text = PdfTextTestHelper.extractAllText(renderer.render(model));
+
+        assertTrue(text.contains("50"));
+        assertTrue(text.contains("CC Operacional"));
+        assertTrue(text.contains("Opera"));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("3000.00")));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("3500.00")));
+        assertTrue(PdfTextTestHelper.containsCurrencyValue(text, new BigDecimal("500.00")));
     }
 
     private RelatorioFolhaModel modelCompleto(boolean semDados) {
@@ -81,10 +144,14 @@ class FolhaExecutivoPdfRendererTest {
             "gestor@teste.com",
             LocalDateTime.of(2024, 6, 15, 10, 0),
             statsComDados(),
-            List.of(
-                new EvolucaoMensalDTO("Jan/2024", new BigDecimal("7000"), 140),
-                new EvolucaoMensalDTO("Jun/2024", new BigDecimal("9000"), 150)),
+            evolucaoCompleta(),
             semDados);
+    }
+
+    private List<EvolucaoMensalDTO> evolucaoCompleta() {
+        return List.of(
+            new EvolucaoMensalDTO("Jan/2024", new BigDecimal("7000"), 140),
+            new EvolucaoMensalDTO("Jun/2024", new BigDecimal("9000"), 150));
     }
 
     private DashboardStatsDTO statsComDados() {
@@ -108,9 +175,5 @@ class FolhaExecutivoPdfRendererTest {
             List.of(), List.of(), List.of(),
             BigDecimal.ZERO, BigDecimal.ZERO,
             List.of(), List.of(), List.of());
-    }
-
-    private String extractText(byte[] pdf) {
-        return new String(pdf, StandardCharsets.ISO_8859_1);
     }
 }
