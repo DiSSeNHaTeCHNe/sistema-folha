@@ -1,8 +1,36 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import { fireEvent, screen, waitFor, act } from '@testing-library/react';
-import { Relatorios } from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { relatorioService } from '../../services/relatorioService';
+
+vi.mock('./CompetenciaPicker', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./CompetenciaPicker')>();
+  return {
+    ...actual,
+    CompetenciaPicker: ({
+      value,
+      onChange,
+    }: {
+      value: { mes: number; ano: number };
+      onChange: (competencia: { mes: number; ano: number }) => void;
+    }) => (
+      <div>
+        <span aria-label="Selecionar competência mês e ano">
+          {value.mes}/{value.ano}
+        </span>
+        <button
+          type="button"
+          aria-label="Definir competência março de 2025"
+          onClick={() => onChange({ mes: 3, ano: 2025 })}
+        >
+          Mar/2025
+        </button>
+      </div>
+    ),
+  };
+});
+
+import { Relatorios } from './index';
 
 const showNotification = vi.fn();
 const hideNotification = vi.fn();
@@ -96,7 +124,28 @@ describe('Relatorios page', () => {
     await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Erro ao carregar relatórios', 'error'));
   });
 
-  it('generates folha report using selected competencia from list match', async () => {
+  it('generates folha report using selected competencia from picker', async () => {
+    vi.mocked(relatorioService.listarRelatoriosFolha).mockResolvedValue([]);
+    vi.mocked(relatorioService.gerarRelatorioFolha).mockResolvedValue({
+      ...folhaReport,
+      mes: 3,
+      ano: 2025,
+    });
+    renderWithProviders(<Relatorios />);
+    await screen.findByRole('button', { name: 'Gerar Executivo de Folha' });
+
+    const picker = screen.getByLabelText('Selecionar competência mês e ano');
+    expect(picker).toHaveTextContent('6/2026');
+    fireEvent.click(screen.getByRole('button', { name: 'Definir competência março de 2025' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar Executivo de Folha' }));
+
+    await waitFor(() => {
+      expect(relatorioService.gerarRelatorioFolha).toHaveBeenCalledWith(3, 2025);
+      expect(showNotification).toHaveBeenCalledWith('Relatório de folha em geração', 'success');
+    });
+  });
+
+  it('generates folha report using default competencia when list has match', async () => {
     vi.mocked(relatorioService.gerarRelatorioFolha).mockResolvedValue(folhaReport);
     renderWithProviders(<Relatorios />);
     await screen.findByRole('heading', { name: 'Executivo de Folha' });

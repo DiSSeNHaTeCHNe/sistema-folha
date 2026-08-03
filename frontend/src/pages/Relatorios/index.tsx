@@ -199,7 +199,7 @@ export function Relatorios() {
             icon={<CardGiftcardIcon />}
             status={relatorioBeneficio?.status}
             erro={relatorioBeneficio?.erro ?? 'Erro ao gerar relatório. Tente novamente.'}
-            totalLabel="Total benefícios"
+            totalLabel="Custo consolidado"
             totalValue={relatorioBeneficio?.totalValor}
             onGenerate={gerarRelatorioBeneficio}
             onDownload={downloadRelatorioBeneficio}
