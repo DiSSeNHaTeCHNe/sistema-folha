@@ -215,4 +215,19 @@ class ModularArchitectureTest {
                 "..auth.infrastructure.."
             )
             .because("importacao.application must not depend on foreign infrastructure (same-domain OK)");
+
+    @ArchTest
+    static final ArchRule relatorios_application_must_not_access_foreign_infrastructure =
+        noClasses()
+            .that().resideInAnyPackage("..relatorios..application..")
+            .should().dependOnClassesThat()
+            .resideInAnyPackage(
+                "..beneficios.infrastructure..",
+                "..folha.infrastructure..",
+                "..cadastros.infrastructure..",
+                "..organograma.infrastructure..",
+                "..auth.infrastructure..",
+                "..dashboard.infrastructure.."
+            )
+            .because("relatorios.application must not depend on foreign infrastructure (same-domain OK)");
 }
