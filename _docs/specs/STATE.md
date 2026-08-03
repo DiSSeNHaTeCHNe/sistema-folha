@@ -2,8 +2,8 @@
 
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
-**Last Updated:** 2026-07-30  
-**Current Work:** `auth-api-keys-fix2` — Execute T1–T8 complete on `feat/auth-api-keys` (2026-07-30); full gate PASS; pending Verifier fix2
+**Last Updated:** 2026-08-03  
+**Current Work:** `relatorios-executivos` — Execute T1–T15 complete on `feat/relatorios-executivos` (2026-08-03); full gate pending; pending Verifier
 
 ---
 
@@ -113,10 +113,19 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 **Scope:** Backend auth/security + FE página ApiKeys + chip Usuários.  
 **Status:** active
 
+### AD-015: Relatórios PDF server-side + DashboardConsultaPort (2026-08-03)
+
+**Decision:** Relatórios executivos PDF gerados no backend com **OpenPDF 2.0.3** (Java 17); agregados gerenciais cross-feature via **`DashboardConsultaPort`** — domínio `relatorios` não duplica lógica de dashboard. Geração assíncrona (`PENDENTE` → `PROCESSADO`/`ERRO`); blob PDF em PostgreSQL BYTEA; frontend hub com polling 2s.  
+**Reason:** Feature `relatorios-executivos` — Approach A do design; ACL server-side; paridade KPIs REL-08; fecha L-001.  
+**Trade-off:** Layout PDF verbose (OpenPDF programático); thumbnail MVP = ícone PDF (sem PDFBox page-1 render).  
+**Scope:** Domínio `relatorios.{api,application,infrastructure}`; extensão `BeneficioConsultaPort`; FE `pages/Relatorios/` hub cards.  
+**Status:** active
+
 ---
 
 ## Handoff
 
+- **Feature (execute done, pending Verifier)**: `relatorios-executivos` → branch `feat/relatorios-executivos`; T1–T15 executed (2026-08-03); full gate PASS; AD-015 active; commits `feat(relatorios):` + `docs(relatorios):`; pending Verifier
 - **Feature (execute done, pending Verifier)**: `auth-api-keys-fix2` → branch `feat/auth-api-keys`; T1–T8 executed (2026-07-30); full gate PASS (BE: FuncionarioServiceTest + FuncionarioAclWebMvcTest + UsuarioServiceTest + UsuarioAclWebMvcTest + GlobalExceptionHandlerTest + BeneficioMensalControllerWebMvcTest + ModularArchitectureTest = 101; FE: api.test + ApiKeys = 24; `npm run build` OK); commits `fix2:` prefix; pending Verifier fix2
 - **Feature (execute done, pending Verifier)**: `auth-api-keys-fix1` → branch `feat/auth-api-keys`; T1–T7 executed (2026-07-30); full gate PASS (BE: ApiKeyServiceTest + ApiKeyWriteGuardFilterTest + ApiKeyControllerWebMvcTest + ApiKeyAclWebMvcTest + JwtAuthenticationFilterTest + SecurityConfigAuthRefreshTest + ModularArchitectureTest; FE: ApiKeyRoute + Usuarios Vitest + `npm run build`); pending Verifier fix1
 - **Feature (execute done)**: `auth-api-keys` → branch `feat/auth-api-keys`; T1–T16 executed (2026-07-30); full gate PASS (`ApiKeyServiceTest` + `JwtAuthenticationFilterTest` + `ApiKeyWriteGuardFilterTest` = 32 tests; `npm run build` OK); pending merge to `main` + Verifier
@@ -126,7 +135,7 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 - **Feature (done)**: `adequacao-analise-projeto-r2` → `main` @ `cb6e04a`
 - **Feature (done)**: `acl-cc-competencia` → @ `7e0421d`; squash merge pendente
 - **Feature (done)**: `organograma-linhas-hierarquia` → merged `main`
-- **Decisions**: AD-001…AD-014 active
+- **Decisions**: AD-001…AD-015 active
 ---
 
 ## Blockers
