@@ -165,4 +165,106 @@ public interface BeneficioMensalRepository extends JpaRepository<BeneficioMensal
         @Param("competenciaInicio") LocalDate competenciaInicio,
         @Param("competenciaFim") LocalDate competenciaFim,
         @Param("centroCustoIds") Collection<Long> centroCustoIds);
+
+    @Query("""
+        SELECT tb.id AS tipoBeneficioId, tb.codigo AS codigo, tb.descricao AS descricao,
+               SUM(bm.valor) AS total, COUNT(bm) AS qtdLancamentos
+        FROM BeneficioMensal bm
+        JOIN bm.tipoBeneficio tb
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+        GROUP BY tb.id, tb.codigo, tb.descricao
+        ORDER BY tb.codigo
+        """)
+    List<BeneficioMensalTipoResumoProjection> resumoPorTipoGlobal(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim);
+
+    @Query("""
+        SELECT tb.id AS tipoBeneficioId, tb.codigo AS codigo, tb.descricao AS descricao,
+               SUM(bm.valor) AS total, COUNT(bm) AS qtdLancamentos
+        FROM BeneficioMensal bm
+        JOIN bm.tipoBeneficio tb
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
+        GROUP BY tb.id, tb.codigo, tb.descricao
+        ORDER BY tb.codigo
+        """)
+    List<BeneficioMensalTipoResumoProjection> resumoPorTipoCentros(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
+
+    @Query("""
+        SELECT f.id AS funcionarioId, f.nome AS funcionarioNome, SUM(bm.valor) AS valor
+        FROM BeneficioMensal bm
+        JOIN bm.funcionario f
+        WHERE bm.ativo = true
+          AND bm.tipoBeneficio.id = :tipoBeneficioId
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+        GROUP BY f.id, f.nome
+        ORDER BY SUM(bm.valor) DESC
+        """)
+    List<BeneficioFuncionarioValorProjection> topFuncionariosPorTipoGlobal(
+        @Param("tipoBeneficioId") Long tipoBeneficioId,
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim);
+
+    @Query("""
+        SELECT f.id AS funcionarioId, f.nome AS funcionarioNome, SUM(bm.valor) AS valor
+        FROM BeneficioMensal bm
+        JOIN bm.funcionario f
+        WHERE bm.ativo = true
+          AND bm.tipoBeneficio.id = :tipoBeneficioId
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
+        GROUP BY f.id, f.nome
+        ORDER BY SUM(bm.valor) DESC
+        """)
+    List<BeneficioFuncionarioValorProjection> topFuncionariosPorTipoCentros(
+        @Param("tipoBeneficioId") Long tipoBeneficioId,
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
+
+    @Query("""
+        SELECT cc.id AS centroCustoId, cc.descricao AS centroCustoDescricao,
+               tb.id AS tipoBeneficioId, tb.codigo AS tipoCodigo, tb.descricao AS tipoDescricao,
+               SUM(bm.valor) AS total
+        FROM BeneficioMensal bm
+        JOIN bm.tipoBeneficio tb
+        JOIN bm.funcionario f
+        JOIN f.centroCusto cc
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+        GROUP BY cc.id, cc.descricao, tb.id, tb.codigo, tb.descricao
+        """)
+    List<BeneficioCcTipoProjection> matrizCcTipoGlobal(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim);
+
+    @Query("""
+        SELECT cc.id AS centroCustoId, cc.descricao AS centroCustoDescricao,
+               tb.id AS tipoBeneficioId, tb.codigo AS tipoCodigo, tb.descricao AS tipoDescricao,
+               SUM(bm.valor) AS total
+        FROM BeneficioMensal bm
+        JOIN bm.tipoBeneficio tb
+        JOIN bm.funcionario f
+        JOIN f.centroCusto cc
+        WHERE bm.ativo = true
+          AND bm.competenciaInicio = :competenciaInicio
+          AND bm.competenciaFim = :competenciaFim
+          AND COALESCE(bm.centroCusto.id, bm.funcionario.centroCusto.id) IN :centroCustoIds
+        GROUP BY cc.id, cc.descricao, tb.id, tb.codigo, tb.descricao
+        """)
+    List<BeneficioCcTipoProjection> matrizCcTipoCentros(
+        @Param("competenciaInicio") LocalDate competenciaInicio,
+        @Param("competenciaFim") LocalDate competenciaFim,
+        @Param("centroCustoIds") Collection<Long> centroCustoIds);
 }

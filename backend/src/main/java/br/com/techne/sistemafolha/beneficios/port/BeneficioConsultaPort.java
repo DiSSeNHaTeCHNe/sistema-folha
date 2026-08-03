@@ -29,4 +29,21 @@ public interface BeneficioConsultaPort {
 
     List<BeneficioLinhaSnapshot> findLinhasPorFuncionarioECompetencia(
         Long funcionarioId, LocalDate competenciaInicio, LocalDate competenciaFim);
+
+    List<BeneficioTipoResumoSnapshot> resumoPorTipo(
+        LocalDate competenciaInicio, LocalDate competenciaFim, Set<Long> centrosCustoIds);
+
+    List<BeneficioFuncionarioValorSnapshot> topFuncionariosPorTipo(
+        Long tipoBeneficioId,
+        LocalDate competenciaInicio,
+        LocalDate competenciaFim,
+        Set<Long> centrosCustoIds,
+        int limit);
+
+    List<BeneficioCcTipoSnapshot> matrizCentroCustoPorTipo(
+        LocalDate competenciaInicio,
+        LocalDate competenciaFim,
+        Set<Long> centrosCustoIds,
+        int topCc,
+        int topTipos);
 }

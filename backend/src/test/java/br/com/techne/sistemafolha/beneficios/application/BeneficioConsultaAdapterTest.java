@@ -4,7 +4,13 @@ import br.com.techne.sistemafolha.beneficios.domain.BeneficioMensal;
 import br.com.techne.sistemafolha.beneficios.domain.TipoBeneficio;
 import br.com.techne.sistemafolha.cadastros.domain.CentroCusto;
 import br.com.techne.sistemafolha.cadastros.domain.Funcionario;
+import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioCcTipoProjection;
+import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioFuncionarioValorProjection;
 import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalRepository;
+import br.com.techne.sistemafolha.beneficios.infrastructure.BeneficioMensalTipoResumoProjection;
+import br.com.techne.sistemafolha.beneficios.port.BeneficioCcTipoSnapshot;
+import br.com.techne.sistemafolha.beneficios.port.BeneficioFuncionarioValorSnapshot;
+import br.com.techne.sistemafolha.beneficios.port.BeneficioTipoResumoSnapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -307,6 +313,119 @@ class BeneficioConsultaAdapterTest {
     void somarValorPorCompetenciaECentros_centrosNull_retornaZero() {
         assertEquals(BigDecimal.ZERO, adapter.somarValorPorCompetenciaECentros(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, null));
+    }
+
+    @Test
+    void resumoPorTipo_global_retornaSnapshotsOrdenadosPorCodigo() {
+        when(beneficioMensalRepository.resumoPorTipoGlobal(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(
+                tipoResumoProjection(1L, "4000", "VR", new BigDecimal("1000"), 5L),
+                tipoResumoProjection(2L, "5322", "VT", new BigDecimal("500"), 2L)));
+
+        List<BeneficioTipoResumoSnapshot> result = adapter.resumoPorTipo(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, null);
+
+        assertEquals(2, result.size());
+        assertEquals("4000", result.get(0).codigo());
+        assertEquals(new BigDecimal("1000"), result.get(0).total());
+        assertEquals(5L, result.get(0).qtdLancamentos());
+        verify(beneficioMensalRepository).resumoPorTipoGlobal(COMPETENCIA_INICIO, COMPETENCIA_FIM);
+    }
+
+    @Test
+    void resumoPorTipo_centrosVazios_retornaVazio() {
+        assertTrue(adapter.resumoPorTipo(COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of()).isEmpty());
+        verify(beneficioMensalRepository, never()).resumoPorTipoGlobal(any(), any());
+    }
+
+    @Test
+    void resumoPorTipo_scoped_delegaQueryComCentros() {
+        when(beneficioMensalRepository.resumoPorTipoCentros(
+                COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L)))
+            .thenReturn(List.of(tipoResumoProjection(1L, "4000", "VR", new BigDecimal("300"), 1L)));
+
+        List<BeneficioTipoResumoSnapshot> result = adapter.resumoPorTipo(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+
+        assertEquals(1, result.size());
+        verify(beneficioMensalRepository).resumoPorTipoCentros(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(100L));
+    }
+
+    @Test
+    void topFuncionariosPorTipo_ordenadoValorDesc_limitaDez() {
+        when(beneficioMensalRepository.topFuncionariosPorTipoGlobal(1L, COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(
+                funcionarioProjection(10L, "Ana", new BigDecimal("900")),
+                funcionarioProjection(11L, "Bob", new BigDecimal("800")),
+                funcionarioProjection(12L, "Cal", new BigDecimal("700"))));
+
+        List<BeneficioFuncionarioValorSnapshot> result = adapter.topFuncionariosPorTipo(
+            1L, COMPETENCIA_INICIO, COMPETENCIA_FIM, null, 2);
+
+        assertEquals(2, result.size());
+        assertEquals("Ana", result.get(0).funcionarioNome());
+        assertEquals(new BigDecimal("900"), result.get(0).valor());
+    }
+
+    @Test
+    void topFuncionariosPorTipo_centrosVazios_retornaVazio() {
+        assertTrue(adapter.topFuncionariosPorTipo(
+            1L, COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(), 10).isEmpty());
+    }
+
+    @Test
+    void matrizCentroCustoPorTipo_top5x5_filtraMatriz() {
+        when(beneficioMensalRepository.matrizCcTipoGlobal(COMPETENCIA_INICIO, COMPETENCIA_FIM))
+            .thenReturn(List.of(
+                ccTipoProjection(1L, "CC A", 10L, "4000", "VR", new BigDecimal("1000")),
+                ccTipoProjection(1L, "CC A", 11L, "5322", "VT", new BigDecimal("200")),
+                ccTipoProjection(2L, "CC B", 10L, "4000", "VR", new BigDecimal("800")),
+                ccTipoProjection(3L, "CC C", 12L, "6000", "PS", new BigDecimal("50"))));
+
+        List<BeneficioCcTipoSnapshot> result = adapter.matrizCentroCustoPorTipo(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, null, 2, 2);
+
+        assertFalse(result.isEmpty());
+        assertTrue(result.stream().allMatch(s -> s.centroCustoId() <= 2 || s.total().compareTo(new BigDecimal("50")) >= 0));
+    }
+
+    @Test
+    void matrizCentroCustoPorTipo_centrosVazios_retornaVazio() {
+        assertTrue(adapter.matrizCentroCustoPorTipo(
+            COMPETENCIA_INICIO, COMPETENCIA_FIM, Set.of(), 5, 5).isEmpty());
+    }
+
+    private BeneficioMensalTipoResumoProjection tipoResumoProjection(
+            Long tipoId, String codigo, String descricao, BigDecimal total, Long qtd) {
+        return new BeneficioMensalTipoResumoProjection() {
+            @Override public Long getTipoBeneficioId() { return tipoId; }
+            @Override public String getCodigo() { return codigo; }
+            @Override public String getDescricao() { return descricao; }
+            @Override public BigDecimal getTotal() { return total; }
+            @Override public Long getQtdLancamentos() { return qtd; }
+        };
+    }
+
+    private BeneficioFuncionarioValorProjection funcionarioProjection(
+            Long id, String nome, BigDecimal valor) {
+        return new BeneficioFuncionarioValorProjection() {
+            @Override public Long getFuncionarioId() { return id; }
+            @Override public String getFuncionarioNome() { return nome; }
+            @Override public BigDecimal getValor() { return valor; }
+        };
+    }
+
+    private BeneficioCcTipoProjection ccTipoProjection(
+            Long ccId, String ccDesc, Long tipoId, String tipoCodigo, String tipoDesc, BigDecimal total) {
+        return new BeneficioCcTipoProjection() {
+            @Override public Long getCentroCustoId() { return ccId; }
+            @Override public String getCentroCustoDescricao() { return ccDesc; }
+            @Override public Long getTipoBeneficioId() { return tipoId; }
+            @Override public String getTipoCodigo() { return tipoCodigo; }
+            @Override public String getTipoDescricao() { return tipoDesc; }
+            @Override public BigDecimal getTotal() { return total; }
+        };
     }
 
     private Funcionario funcionario(Long id) {
