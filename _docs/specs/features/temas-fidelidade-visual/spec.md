@@ -47,8 +47,8 @@ fica registrada como decisão adiada.
 
 | # | Questão | Origem | Status |
 | --- | --- | --- | --- |
-| QA-1 | `classico` + `warning.main` (`#f57c00`) rende **2,70:1** contra `background.paper` — abaixo do AA de 4.5:1 exigido por AC3/AC4. O próprio default de fábrica do MUI (`#ed6c02`) renderia 3,11:1. AC4 e DD-4 ("`classico` não muda") são inconciliáveis como escritos. Batch 1 excluiu **esse único par (1 de 20)** da varredura, com `SPEC_DEVIATION` em `frontend/src/theme/contraste.test.ts`. Opções: (a) aceitar o `classico` fora do AA nesse papel; (b) autorizar alterar `warning.main` do `classico` (muda asserção existente e contraria DD-4). | Batch 1 / T2 | **Aberta — aguarda usuário** |
-| QA-2 | `techne.info` foi escurecido de `#0C8DCE` (tabela do design) para `#0A7AB0`. O valor original rende 3,67:1 contra `#FFFFFF`, abaixo do AA de AC4; `#0A7AB0` é a variante mais próxima em matiz que atinge 4,75:1. `SPEC_DEVIATION` em `frontend/src/theme/themes.ts`. Coerente com `context.md` D1, mas diverge do valor literal da tabela do design. | Batch 1 / T2 | **Aberta — aguarda usuário** |
+| QA-1 | `classico` + `warning.main` (`#f57c00`) rende **2,70:1** contra `background.paper` — abaixo do AA de 4.5:1 exigido por AC3/AC4. O próprio default de fábrica do MUI (`#ed6c02`) renderia 3,11:1. AC4 e DD-4 ("`classico` não muda") são inconciliáveis como escritos. Batch 1 excluiu **esse único par (1 de 20)** da varredura, com `SPEC_DEVIATION` em `frontend/src/theme/contraste.test.ts`. Opções: (a) aceitar o `classico` fora do AA nesse papel; (b) autorizar alterar `warning.main` do `classico` (muda asserção existente e contraria DD-4). | Batch 1 / T2 | **Resolvida (usuário, 2026-08-04): aceitar o `classico` fora do AA.** AC4 estreitado para "todos os temas exceto `classico`". O par segue excluído da varredura com `SPEC_DEVIATION`. Nenhuma cor do `classico` alterada. |
+| QA-2 | `techne.info` foi escurecido de `#0C8DCE` (tabela do design) para `#0A7AB0`. O valor original rende 3,67:1 contra `#FFFFFF`, abaixo do AA de AC4; `#0A7AB0` é a variante mais próxima em matiz que atinge 4,75:1. `SPEC_DEVIATION` em `frontend/src/theme/themes.ts`. Coerente com `context.md` D1, mas diverge do valor literal da tabela do design. | Batch 1 / T2 | **Resolvida (usuário, 2026-08-04): manter `#0A7AB0`.** Tabela do `design.md` atualizada; deixa de ser desvio. |
 | QA-3 | Campos semânticos declarados **opcionais** em `TokensTema` (o design mostra obrigatórios), para não quebrar o build entre os commits de T1 e T2. Nenhum AC afetado; T2 comprova que os cinco temas declaram os quatro papéis. | Batch 1 / T1 | Resolvida — decisão técnica do agente |
 
 ---
@@ -111,7 +111,7 @@ só no tema, sem tocar componente.
 1. WHEN um tema qualquer está ativo THEN `theme.palette.success.main` SHALL ser um valor declarado nos tokens desse tema, e não o default `#4caf50` do MUI
 2. WHEN um tema qualquer está ativo THEN o mesmo SHALL valer para `warning.main`, `error.main` e `info.main`
 3. WHEN o tema `indigo` está ativo THEN as quatro cores semânticas SHALL ter contraste mínimo 4.5:1 contra `background.paper`
-4. WHEN qualquer tema está ativo THEN as quatro cores semânticas SHALL ter contraste mínimo 4.5:1 contra `background.paper`
+4. WHEN qualquer tema **exceto `classico`** está ativo THEN as quatro cores semânticas SHALL ter contraste mínimo 4.5:1 contra `background.paper` — o `classico` reproduz o default do MUI por DD-4 e fica isento (ver QA-1)
 5. WHEN um avatar de KPI do Dashboard renderiza THEN a cor de fundo e a cor do ícone SHALL derivar dos tokens do tema ativo
 
 **Independent Test**: alternar entre os cinco temas no Dashboard e confirmar que os quatro avatares mudam de cor junto; rodar o teste de contraste parametrizado.
@@ -183,7 +183,7 @@ ele; as cores permanecem. Se a decisão for preservar também a escala do
 | --- | --- | --- | --- | --- |
 | TEMAF-01 | P1: Semânticas — tokens no tipo e na fábrica | A | 1 | Done |
 | TEMAF-02 | P1: Semânticas — declaradas nos cinco temas | A | 1 | Done |
-| TEMAF-03 | P1: Semânticas — contraste 4.5:1 contra `background.paper` | A | 1 | Done ⚠️ (1/20 pares excluído — ver Questões abertas) |
+| TEMAF-03 | P1: Semânticas — contraste 4.5:1 contra `background.paper` (exceto `classico`, QA-1) | A | 1 | Done |
 | TEMAF-04 | P1: Escala — `h3`, `h4`, `h6` em `montarTema` | B | 2 | Done |
 | TEMAF-05 | P1: Escala — `fontWeight` 600 nas três variantes | B | 2 | Done |
 | TEMAF-06 | P1: Escala — demais variantes preservadas | B | 2 | Done |

@@ -59,10 +59,21 @@ os tons que aparecem nos mockups aprovados, não escolhas novas.
 | `corporate` | `#0F6E56` | `#854F0B` | `#A32D2D` | `#185FA5` |
 | `soft` | `#0F6E56` | `#854F0B` | `#993C1D` | `#5F5E5A` |
 | `indigo` | `#5DCAA5` | `#EF9F27` | `#F09595` | `#AFA9EC` |
-| `techne` | `#0F6E56` | `#8A5200` | `#A32D2D` | `#0C8DCE` |
+| `techne` | `#0F6E56` | `#8A5200` | `#A32D2D` | `#0A7AB0` |
 
 O `classico` reproduz o default do MUI de propósito (DD-3 da spec anterior: o
 tema "sem mudança" não pode mudar).
+
+**Correção de valor (QA-2, aprovada pelo usuário):** o `info` do `techne` era
+`#0C8DCE` na tabela original do estudo, que rende 3,67:1 contra `#FFFFFF` —
+abaixo do AA exigido por AC4. Substituído por `#0A7AB0`, a variante mais próxima
+em matiz que atinge 4,75:1.
+
+**Isenção do `classico` (QA-1, aprovada pelo usuário):** o `warning.main` do
+`classico` (`#f57c00`) rende 2,70:1 e o próprio default do MUI (`#ed6c02`) rende
+3,11:1 — nenhum passa em 4.5:1. Como DD-4 manda o `classico` não mudar, AC4 foi
+estreitado para excluí-lo. Esse par (1 de 20) fica fora da varredura de
+contraste, com `SPEC_DEVIATION` em `contraste.test.ts`.
 
 ### Contraste
 
