@@ -188,6 +188,7 @@ _None currently._
 | 010 | Sonar gate new_violations                    | 2026-08-02 | pending | ✅ Done |
 | 011 | Repo limpo e docs alinhados                  | 2026-08-03 | bf669dd | ✅ Done |
 | 012 | Contraste dos temas: avatar de KPI + texto   | 2026-08-04 | d55132d, 649041a | ⚠️ Parcial (D-5 bloqueado: 4º arquivo) |
+| 013 | D-5: `primary.main` como cor de texto (AA)   | 2026-08-04 | 641fb2e, 5a92326 | ✅ Done (teto de arquivos estendido pelo usuário) |
 
 ---
 
@@ -211,7 +212,7 @@ _None currently._
 - Adequação do código ao harness (fase 2) — ROADMAP Deferred
 - Mover relatório de conformidade para `diversos/relatorios/` se precisar versionar
 - **Orçamento e Planejamento de Custo de Pessoal** — spec draft criado 2026-08-04 (`_docs/specs/features/orcamento-custo-pessoal/spec.md`); orçado x realizado por centro de custo com consolidação hierárquica via organograma; ADP não cobre isso, é a motivação original da feature; torna-se o primeiro template de `workspace-usuario` (abaixo); aguardando priorização (Design pendente)
-- **Workspace do Usuário — Dados, Widgets e Templates** — spec + context criados 2026-08-04 (`_docs/specs/features/workspace-usuario/`); plataforma para o usuário criar datasets próprios (esquema tipado), montar widgets com fórmula restrita, organizar em múltiplos workspaces, e publicar estrutura (nunca dado) num catálogo interno escopado à hierarquia; inclui camada de IA via MCP (propor-e-confirmar, permissão dedicada, sob demanda) construída sobre `mcp-agent-tools`; orçamento é o primeiro template nativo; Complex — Design pendente
+- **Workspace do Usuário — Dados, Widgets e Templates** — spec + context criados 2026-08-04 (`_docs/specs/features/workspace-usuario/`), consolidados no mesmo dia numa plataforma de **dois níveis**: Nível 1 = Dashboard Customizável (`estudo-dashboard-customizavel.md`, movido para dentro desta pasta; catálogo fixo de widgets, sem dataset próprio, para quem não quer complexidade — Fase 1/2 entregue antes) e Nível 2 = Workspace (esta spec; datasets próprios com esquema tipado, widgets com fórmula restrita, múltiplos workspaces, catálogo interno de templates escopado à hierarquia, para quem quer algo mais avançado), com o Nível 2 reaproveitando o registry de widgets e o modelo de layout do Nível 1 em vez de recriá-los; inclui camada de IA via MCP (propor-e-confirmar, permissão dedicada, sob demanda) construída sobre `mcp-agent-tools`; orçamento é o primeiro template nativo; `estudo-dashboard-query-builder.md` (Fase 3 do Nível 1, condicionada a gatilhos) também movido para a mesma pasta; Complex — Design pendente
 - **Preferência de tema por usuário no backend** — hoje a escolha de tema persiste só em `localStorage`; sync server-side permitiria mesma aparência em múltiplos dispositivos e política corporativa de tema padrão
 
 ---

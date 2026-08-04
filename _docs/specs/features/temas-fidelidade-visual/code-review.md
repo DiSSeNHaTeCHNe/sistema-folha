@@ -131,3 +131,27 @@ depender do binário `git` e de um checkout `.git` presente.
 - `escalaRenderizada.test.tsx` com o caso de controle "prop vence variante" é a
   prova certa para justificar a Fase 3 — e falha se alguém reintroduzir o padrão.
 - Os marcadores `SPEC_DEVIATION` estão no ponto exato do código, não só na spec.
+
+---
+
+## Follow-up — R-1 e R-2 fechados (2026-08-04)
+
+Acrescentado após o review; nada acima foi reescrito.
+
+- **R-1 — resolvido pela quick task 012** (`d55132d`, `649041a`). `light` explícito
+  nas quatro semânticas de `corporate`, `soft` e `techne` (tint = `main` misturado a
+  88% de branco), e `warning.main` do `classico` corrigido de `#f57c00` para
+  `#b05900`. DD-4 foi revisado e a isenção QA-1 encerrada por decisão do usuário:
+  nenhum tema fica isento por acessibilidade.
+- **R-2 — resolvido em duas etapas.** A 012 acrescentou o par `X.main × X.light`
+  (piso 3:1, WCAG 1.4.11) à varredura de `contraste.test.ts` — o par de fato
+  renderizado no avatar de KPI. A **quick task 013** (`641fb2e`, `5a92326`) fechou a
+  outra metade, o **D-5** da `varredura-visual.md`: `primary.main` como cor de
+  **texto** sobre `background.paper` (piso 4,5:1). `primary.main` foi escurecido na
+  origem em `classico`, `corporate` e `soft`, e clareado no `indigo` (tema escuro);
+  `primary.contrastText` de `corporate` e `soft` passou a `#FFFFFF`; `primary.light`
+  passou a ser declarado nos cinco temas. Números em
+  `_docs/specs/quick/013-contraste-primary-texto/TASK.md`.
+
+Como as duas varreduras percorrem `TEMAS`, nenhum tema futuro escapa dos pares —
+que era a preocupação de fundo da R-2.

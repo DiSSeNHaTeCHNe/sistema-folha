@@ -346,3 +346,23 @@ Arquivos:
    Organograma.
 7. **D-7** — `h5` sem override na escala fica em 24px/400, mesmo tamanho do
    título de página; `/api-keys` não tem `h4` algum.
+
+---
+
+## Follow-up — D-3 e D-5 fechados (2026-08-04)
+
+Acrescentado após a varredura; os achados acima ficam como registrados.
+
+- **D-3** — fechado pela quick task 012 (`d55132d`, `649041a`): tints explícitos nas
+  semânticas de `corporate`, `soft` e `techne`, e `warning.main` do `classico`.
+- **D-5** — fechado pela quick task 013 (`641fb2e`, `5a92326`). `primary.main` foi
+  ajustado na origem, sem token de acento novo, por decisão do usuário: `classico`
+  `#1976d2` → `#1873cd` (4,37 → 4,56 vs default; 4,60 → 4,80 vs paper), `corporate`
+  `#3B82F6` → `#1167F4` (3,68 → 4,92), `soft` `#1D9E75` → `#188361` (3,39 → 4,71),
+  `indigo` `#7F77DD` → `#8078DD` (4,48 → 4,53; tema escuro, então clareia).
+  `techne` já passava (5,63) e não mudou. `contrastText` de `corporate` e `soft`
+  passou a `#FFFFFF`. O par `primary.main × background.paper` entrou na varredura de
+  `contraste.test.ts` com piso 4,5:1, junto com `primary.main × primary.light` a
+  3:1 — fecha também a R-2 do `code-review.md`.
+
+D-1, D-2, D-4, D-6 e D-7 seguem abertos.
