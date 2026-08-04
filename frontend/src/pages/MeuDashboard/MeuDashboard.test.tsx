@@ -6,6 +6,8 @@ import { getDashboardStats } from '../../services/dashboardService';
 import {
   getDashboardLayout,
   getWidgetCatalog,
+  resetDashboardLayout,
+  saveDashboardLayout,
 } from '../../services/dashboardLayoutService';
 import type { DashboardStats } from '../../services/dashboardService';
 import type { DashboardLayout } from './types';
@@ -71,6 +73,8 @@ describe('MeuDashboard shell', () => {
     vi.mocked(getDashboardLayout).mockResolvedValue(defaultLayout);
     vi.mocked(getWidgetCatalog).mockResolvedValue([]);
     vi.mocked(getDashboardStats).mockResolvedValue(mockStats);
+    vi.mocked(saveDashboardLayout).mockImplementation(async (layout) => layout);
+    vi.mocked(resetDashboardLayout).mockResolvedValue(undefined);
   });
 
   it('renders page title and default layout widgets', async () => {
@@ -92,5 +96,79 @@ describe('MeuDashboard shell', () => {
     });
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Restaurar padrão' })).toBeInTheDocument();
+  });
+
+  it('renders 11 default widgets with stats parity (DASHC-01, DASHC-02)', async () => {
+    renderWithProviders(<MeuDashboard />);
+    await waitFor(() => expect(screen.getByText('42')).toBeInTheDocument());
+    expect(defaultLayout.widgets).toHaveLength(11);
+    expect(screen.getByLabelText('Total de Funcionários')).toBeInTheDocument();
+    expect(screen.getByLabelText('Custo Empresa')).toBeInTheDocument();
+    expect(screen.getByLabelText('Benefícios Ativos')).toBeInTheDocument();
+    expect(screen.getByLabelText('Relação P/D')).toBeInTheDocument();
+    expect(screen.getByText('R$ 125.000,50')).toBeInTheDocument();
+    expect(screen.getByText('80.0%')).toBeInTheDocument();
+  });
+
+  it('hides drag, resize and remove controls outside edit mode (DASHC-11)', async () => {
+    renderWithProviders(<MeuDashboard />);
+    await waitFor(() => expect(screen.getByText('42')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /Reordenar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remover/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: /Largura do widget/i })).not.toBeInTheDocument();
+  });
+
+  it('removes widget in edit mode (DASHC-10)', async () => {
+    renderWithProviders(<MeuDashboard />);
+    await waitFor(() => expect(screen.getByText('001 - Salário')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Editar layout' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remover Top Proventos' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Remover Top Proventos' }));
+    expect(screen.queryByText('001 - Salário')).not.toBeInTheDocument();
+  });
+
+  it('cancel discards draft and restores saved layout (DASHC-21)', async () => {
+    renderWithProviders(<MeuDashboard />);
+    await waitFor(() => expect(screen.getByText('001 - Salário')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Editar layout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remover Top Proventos' }));
+    expect(screen.queryByText('001 - Salário')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    await waitFor(() => expect(screen.getByText('001 - Salário')).toBeInTheDocument());
+    expect(saveDashboardLayout).not.toHaveBeenCalled();
+  });
+
+  it('save persists layout changes (DASHC-19, DASHC-20)', async () => {
+    renderWithProviders(<MeuDashboard />);
+    await waitFor(() => expect(screen.getByText('001 - Salário')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Editar layout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remover Top Proventos' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(saveDashboardLayout).toHaveBeenCalled());
+    expect(screen.queryByText('001 - Salário')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar layout' })).toBeInTheDocument();
+  });
+
+  it('restore default after confirmation (DASHC-22)', async () => {
+    renderWithProviders(<MeuDashboard />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Editar layout' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Editar layout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrão' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar' }));
+    await waitFor(() => expect(resetDashboardLayout).toHaveBeenCalled());
+  });
+
+  it('ignores unknown widget ids from saved layout (DASHC-27)', async () => {
+    vi.mocked(getDashboardLayout).mockResolvedValue({
+      ...defaultLayout,
+      widgets: [
+        ...defaultLayout.widgets,
+        { widgetId: 'widget-removido-do-catalogo', instanceId: 'ghost', ordem: 99, colSpan: 3, rowSpan: 1 },
+      ],
+    });
+    renderWithProviders(<MeuDashboard />);
+    await waitFor(() => expect(screen.getByText('42')).toBeInTheDocument());
+    expect(screen.queryByLabelText('widget-removido-do-catalogo')).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText(/Total de Funcionários|Custo Empresa|Benefícios Ativos|Relação P\/D/i)).toHaveLength(4);
   });
 });
