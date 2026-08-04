@@ -202,7 +202,10 @@ ele; as cores permanecem. Se a decisão for preservar também a escala do
 
 ## Success Criteria
 
-- [ ] `git grep -c 'fontWeight=' -- 'frontend/src/**/*.tsx'` retorna 0
+- [ ] `git grep -c 'fontWeight=' -- 'frontend/src/pages/**/*.tsx' 'frontend/src/components/**/*.tsx'`
+  retorna 0 — mesmo escopo do AC1 de P1-Props. Fora dele resta **1** ocorrência
+  deliberada: o caso de controle de `frontend/src/theme/escalaRenderizada.test.tsx`,
+  que existe para provar que a guarda detecta a prop e por isso não conta como violação.
 - [ ] `git grep -cE '<Typography[^>]*color="textSecondary"' -- 'frontend/src/**/*.tsx'` retorna 0
 - [ ] Nos cinco temas, `theme.palette.{success,warning,error,info}.main` difere do default do MUI
 - [ ] Título de página mede 24px e maior valor de KPI mede 27px, medidos por `getComputedStyle`
