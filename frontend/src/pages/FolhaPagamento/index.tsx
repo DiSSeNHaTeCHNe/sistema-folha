@@ -373,11 +373,11 @@ export function FolhaPagamento() {
     if (linhas.length === 0) {
       return (
         <Box>
-          <Typography color="textSecondary" sx={{ py: 2 }}>
+          <Typography color="text.secondary" sx={{ py: 2 }}>
             Nenhuma rubrica encontrada para este totalizador.
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Typography variant="subtitle1" fontWeight="bold">
+            <Typography variant="subtitle1">
               Total: {formatMoneyDisplay(0)}
             </Typography>
           </Box>
@@ -431,7 +431,7 @@ export function FolhaPagamento() {
           );
         })}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography variant="subtitle1">
             Total: {formatMoneyDisplay(cardTotal)}
           </Typography>
         </Box>
@@ -612,26 +612,26 @@ export function FolhaPagamento() {
                   <Typography variant="h6" gutterBottom>
                     {funcionario.funcionarioNome}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Cargo: {funcionario.cargoDescricao || '-'}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Centro de Custo: {funcionario.centroCustoDescricao || '-'}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Linha de Negócio: {funcionario.linhaNegocioDescricao || '-'}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Bruto: {formatMoneyDisplay(funcionario.salBruto)}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Líquido: {formatMoneyDisplay(funcionario.salLiquido)}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Custo Empresa: {formatMoneyDisplay(funcionario.custoEmpresa)}
                   </Typography>
                   {(funcionario.salCustoFolha != null || funcionario.salCustoBeneficios != null) && (
-                    <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: -1, mb: 1 }}>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: -1, mb: 1 }}>
                       Folha: {formatMoneyDisplay(funcionario.salCustoFolha ?? 0)}
                       {' · '}
                       Benefícios: {formatMoneyDisplay(funcionario.salCustoBeneficios ?? 0)}
@@ -653,7 +653,7 @@ export function FolhaPagamento() {
           </Box>
           
           {filteredFuncionarios.length === 0 && (
-            <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
+            <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
               Nenhum funcionário encontrado para este período.
             </Typography>
           )}
@@ -772,7 +772,7 @@ export function FolhaPagamento() {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography color="success.main" variant="body1" fontWeight="medium">
+                      <Typography color="success.main" variant="body1">
                         {formatMoneyDisplay(resumo.totalCustoEmpresa)}
                       </Typography>
                     </TableCell>
@@ -793,7 +793,7 @@ export function FolhaPagamento() {
           </TableContainer>
           
           {resumosFolha.length === 0 && (
-            <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
+            <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
               Nenhum resumo de folha de pagamento encontrado.
             </Typography>
           )}

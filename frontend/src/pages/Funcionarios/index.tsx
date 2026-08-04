@@ -532,7 +532,11 @@ export default function Funcionarios() {
                             color: 'primary.main',
                             '&:hover': {
                               backgroundColor: 'primary.light',
-                              color: 'white',
+                              // Quick 013: `primary.light` virou tint claro (era o
+                              // meio-tom derivado pelo MUI), então o ícone branco
+                              // sumiria no hover. `primary.main` sobre o próprio tint
+                              // é o par varrido em contraste.test.ts (≥ 3:1).
+                              color: 'primary.main',
                             },
                           }}
                         >
@@ -550,7 +554,13 @@ export default function Funcionarios() {
                             color: 'error.main',
                             '&:hover': {
                               backgroundColor: 'error.light',
-                              color: 'white',
+                              // Quick 014: mesmo defeito que a 013 corrigiu no botão
+                              // Editar acima. A quick 012 tornou `error.light` um tint
+                              // claro, e o branco literal virou branco sobre
+                              // quase-branco (1,14–1,21:1 em classico/corporate/soft/
+                              // techne). `error.main` sobre o próprio tint é o par
+                              // varrido em contraste.test.ts (≥ 3:1).
+                              color: 'error.main',
                             },
                           }}
                         >
@@ -582,42 +592,42 @@ export default function Funcionarios() {
                       }}
                     >
                       <Typography 
-                        color="textSecondary" 
+                        color="text.secondary" 
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>CPF:</strong> {funcionario.cpf}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>Data de Admissão:</strong> {formatarDataCompetencia(funcionario.dataAdmissao)}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>Cargo:</strong> {funcionario.cargoDescricao || 'N/A'}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>Centro de Custo:</strong> {funcionario.centroCustoDescricao || 'N/A'}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>Linha de Negócio:</strong> {funcionario.linhaNegocioDescricao || 'N/A'}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                       >
                         <strong>ID Externo:</strong> {funcionario.idExterno || 'N/A'}

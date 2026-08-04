@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { montarTema, type TokensTema } from './tokens';
+import { ESCALA_TIPOGRAFICA, montarTema, type TokensTema } from './tokens';
 
 /** Paleta de gráficos em uso no Dashboard (pieColors). */
 export const CLASSICO_CHARTS = [
@@ -25,8 +25,19 @@ const CORPORATE_CHARTS = [
 ] as const;
 
 const TOKENS_CORPORATE: TokensTema = {
-  primary: { main: '#3B82F6', contrastText: '#0F172A' },
+  // Quick 013 / D-5: era #3B82F6, que rende 3.68:1 como cor de texto sobre
+  // background.paper (valores monetários, Button variant="text", chips). #1167F4
+  // preserva a matiz azul e sobe para 4.92:1. `contrastText` deixou de ser #0F172A
+  // (3.63:1 sobre o novo main) e passou a #FFFFFF (4.92:1).
+  primary: { main: '#1167F4', light: '#E2EDFE', contrastText: '#FFFFFF' },
   secondary: { main: '#0F6E56' },
+  // Quick 012 / DD-3: `light` explícito como tint (main misturado a 88% de branco).
+  // A derivação do MUI (`lighten(main, 0.2)`) produz um meio-tom e deixa o par
+  // ícone × fundo do avatar de KPI em ~1.5:1, abaixo dos 3:1 do WCAG 1.4.11.
+  success: { main: '#0F6E56', light: '#E2EEEB' },
+  warning: { main: '#854F0B', light: '#F0EAE2' },
+  error: { main: '#A32D2D', light: '#F4E6E6' },
+  info: { main: '#185FA5', light: '#E3ECF4' },
   background: { default: '#F4F6F8', paper: '#FFFFFF' },
   divider: '#DDE3EA',
   charts: [...CORPORATE_CHARTS],
@@ -50,8 +61,16 @@ const SOFT_CHARTS = [
 ] as const;
 
 const TOKENS_SOFT: TokensTema = {
-  primary: { main: '#1D9E75', contrastText: '#0F172A' },
+  // Quick 013 / D-5: era #1D9E75 (3.39:1 como texto sobre background.paper).
+  // #188361 preserva a matiz verde e sobe para 4.71:1; `contrastText` deixou de ser
+  // #0F172A (3.79:1 sobre o novo main) e passou a #FFFFFF (4.71:1).
+  primary: { main: '#188361', light: '#E3F0EC', contrastText: '#FFFFFF' },
   secondary: { main: '#D85A30' },
+  // Quick 012 / DD-3: tints explícitos — ver nota em TOKENS_CORPORATE.
+  success: { main: '#0F6E56', light: '#E2EEEB' },
+  warning: { main: '#854F0B', light: '#F0EAE2' },
+  error: { main: '#993C1D', light: '#F3E8E4' },
+  info: { main: '#5F5E5A', light: '#ECECEB' },
   background: { default: '#FBFAF7', paper: '#FFFFFF' },
   divider: '#E3E0D6',
   charts: [...SOFT_CHARTS],
@@ -76,8 +95,18 @@ const INDIGO_CHARTS = [
 
 const TOKENS_INDIGO: TokensTema = {
   mode: 'dark',
-  primary: { main: '#7F77DD', contrastText: '#12121A' },
+  // Quick 013 / D-5: tema escuro, então o ajuste é clarear, não escurecer. #7F77DD
+  // rendia 4.48:1 sobre background.paper (#1C1C28); #8078DD é o menor clareamento
+  // (L+0,2% em HSL, matiz e saturação intactas) que fecha o piso, em 4.53:1.
+  // `light` segue DD-3: mais escuro que `main`, não um tint claro.
+  primary: { main: '#8078DD', light: '#2E2B50', contrastText: '#12121A' },
   secondary: { main: '#5DCAA5' },
+  // DD-3: `light` explícito no tema escuro — a derivação do MUI clareia `main` e
+  // produziria fundo de avatar quase branco sobre o paper #1C1C28.
+  success: { main: '#5DCAA5', light: '#23473C' },
+  warning: { main: '#EF9F27', light: '#4A3616' },
+  error: { main: '#F09595', light: '#4A2C2C' },
+  info: { main: '#AFA9EC', light: '#2E2C4A' },
   background: { default: '#12121A', paper: '#1C1C28' },
   divider: '#2A2A38',
   charts: [...INDIGO_CHARTS],
@@ -112,8 +141,20 @@ const POPPINS_FONT_FAMILY = [
 ].join(',');
 
 const TOKENS_TECHNE: TokensTema = {
-  primary: { main: '#7836FC', contrastText: '#FFFFFF' },
+  // Quick 013: `main` já passava no par do D-5 (5.63:1 sobre paper) e não muda —
+  // segue casado com relatorios.branding.primary-color. Só `light` é declarado,
+  // pelo par novo `primary.main × primary.light` (tint a 88% de branco, 4.70:1).
+  primary: { main: '#7836FC', light: '#EFE7FF', contrastText: '#FFFFFF' },
   secondary: { main: '#3661FC' },
+  // Quick 012 / DD-3: tints explícitos — ver nota em TOKENS_CORPORATE.
+  success: { main: '#0F6E56', light: '#E2EEEB' },
+  warning: { main: '#8A5200', light: '#F1EAE0' },
+  error: { main: '#A32D2D', light: '#F4E6E6' },
+  // `info` é #0A7AB0, e não o azul institucional #0C8DCE: este rende 3.67:1 contra
+  // background.paper (#FFFFFF), abaixo do mínimo AA de 4.5:1 exigido por spec.md AC4
+  // (TEMAF-03). #0A7AB0 é a variante mais próxima em matiz e atinge 4.75:1.
+  // Não é desvio: design.md já traz #0A7AB0 na tabela de valores por tema (QA-2).
+  info: { main: '#0A7AB0', light: '#E2EFF6' },
   background: { default: '#EFF2F7', paper: '#FFFFFF' },
   divider: '#D8DCE6',
   charts: [...TECHNE_CHARTS],
@@ -144,7 +185,13 @@ function criarClassico(): Theme {
   return createTheme({
     palette: {
       primary: {
-        main: '#1976d2',
+        // Quick 013 / D-5: era #1976d2, que rende 4.37:1 sobre background.default e
+        // 4.60:1 sobre paper — reprova por 0,13 no par em que `primary.main` é cor de
+        // texto. Por decisão do usuário (2026-08-04) o `classico` também é ajustado
+        // por acessibilidade (DD-4 revisado na quick 012): nenhum tema fica isento.
+        // #1873cd é o menor escurecimento que fecha o piso: 4.56:1 / 4.80:1.
+        light: '#e3eef9',
+        main: '#1873cd',
       },
       secondary: {
         main: '#dc004e',
@@ -159,7 +206,11 @@ function criarClassico(): Theme {
       },
       warning: {
         light: '#fff3e0',
-        main: '#f57c00',
+        // Quick 012: era #f57c00, que rende 2.70:1 contra background.paper e 2.47:1
+        // contra o próprio tint do avatar. Por decisão do usuário (2026-08-04) o
+        // `classico` também é ajustado por acessibilidade — DD-4 revisado, QA-1
+        // encerrada. #b05900 mantém a matiz laranja e rende 4.91:1 / 4.48:1.
+        main: '#b05900',
       },
       error: {
         light: '#ffebee',
@@ -190,6 +241,8 @@ function criarClassico(): Theme {
         '"Segoe UI Emoji"',
         '"Segoe UI Symbol"',
       ].join(','),
+      // TEMAF-08: a escala é idêntica nos cinco temas; o `classico` preserva as cores, não a escala.
+      ...ESCALA_TIPOGRAFICA,
     },
     components: {
       MuiButton: {
@@ -224,28 +277,28 @@ export const TEMAS: readonly TemaDefinicao[] = [
     id: 'classico',
     nome: 'Clássico',
     descricao: 'Tema azul MUI padrão, idêntico à aparência original do sistema.',
-    amostras: ['#1976d2', '#dc004e', '#f8f9fa'],
+    amostras: ['#1873cd', '#dc004e', '#f8f9fa'],
     criar: criarClassico,
   },
   {
     id: 'corporate',
     nome: 'Corporate slate',
     descricao: 'Sidebar grafite, conteúdo claro e azul institucional. Denso e sóbrio.',
-    amostras: ['#0F172A', '#3B82F6', '#0F6E56'],
+    amostras: ['#0F172A', '#1167F4', '#0F6E56'],
     criar: criarCorporate,
   },
   {
     id: 'soft',
     nome: 'Soft neutral',
     descricao: 'Fundo quente off-white, verde como acento. Arejado e confortável para leitura.',
-    amostras: ['#2C2C2A', '#1D9E75', '#D85A30'],
+    amostras: ['#2C2C2A', '#188361', '#D85A30'],
     criar: criarSoft,
   },
   {
     id: 'indigo',
     nome: 'Indigo dark',
     descricao: 'Tema escuro com acento índigo. Alto contraste, ideal para dashboards.',
-    amostras: ['#12121A', '#7F77DD', '#5DCAA5'],
+    amostras: ['#12121A', '#8078DD', '#5DCAA5'],
     criar: criarIndigo,
   },
   {

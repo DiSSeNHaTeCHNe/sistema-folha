@@ -120,7 +120,7 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
         >
           {!showDetails ? (
             <Box display="flex" alignItems="center" justifyContent="space-between" gap={0.5}>
-              <Typography variant="body2" fontWeight="bold" flex={1} noWrap>
+              <Typography variant="body2" flex={1} noWrap>
                 {no.nome}
               </Typography>
               <Box display="flex" gap={0.25}>
@@ -152,7 +152,7 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
             </Box>
           ) : (
             <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Typography variant="subtitle1" fontWeight="bold" noWrap flex={1}>
+              <Typography variant="subtitle1" noWrap flex={1}>
                 {no.nome}
               </Typography>
               <Box>
@@ -200,7 +200,7 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
             {no.descricao && (
               <Typography
                 variant="body2"
-                color="textSecondary"
+                color="text.secondary"
                 mb={1.5}
                 sx={{
                   fontSize: '0.75rem',

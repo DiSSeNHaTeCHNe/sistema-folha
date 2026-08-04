@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 17,
+  "next_id": 21,
   "lessons": [
     {
       "id": "L-001",
@@ -292,6 +292,78 @@
       ],
       "created": "2026-08-04T01:42:03Z",
       "last_seen": "2026-08-04T01:42:03Z"
+    },
+    {
+      "id": "L-017",
+      "key": "surviving_mutant::quando uma variante de configuracao e construida fora da fabrica compartilhada replique para ela o mesmo teste parametrizado que cobre a fabrica",
+      "text": "Quando uma variante de configuracao e construida fora da fabrica compartilhada, replique para ela o mesmo teste parametrizado que cobre a fabrica",
+      "signal": "surviving_mutant",
+      "scope": "theme",
+      "status": "candidate",
+      "features": [
+        "temas-fidelidade-visual"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M7 — frontend/src/theme/themes.ts:215 (validation.md, Discrimination Sensor) (theme)"
+      ],
+      "created": "2026-08-04T14:25:01Z",
+      "last_seen": "2026-08-04T14:25:01Z"
+    },
+    {
+      "id": "L-018",
+      "key": "spec_precision_gap::quando o ambiente de teste nao resolve o valor final asserte o valor esperado e registre a limitacao nao apenas um proxy de heran a",
+      "text": "Quando o ambiente de teste nao resolve o valor final, asserte o valor esperado e registre a limitacao, nao apenas um proxy de herança",
+      "signal": "spec_precision_gap",
+      "scope": "frontend-tests",
+      "status": "candidate",
+      "features": [
+        "temas-fidelidade-visual"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "P1-Props AC4 — frontend/src/pages/Dashboard/Dashboard.test.tsx:217 (frontend-tests)"
+      ],
+      "created": "2026-08-04T14:25:10Z",
+      "last_seen": "2026-08-04T14:25:10Z"
+    },
+    {
+      "id": "L-019",
+      "key": "ac_gap::criterio de sucesso expresso como comando de grep deve repetir o mesmo escopo de diretorios do ac correspondente",
+      "text": "Criterio de sucesso expresso como comando de grep deve repetir o mesmo escopo de diretorios do AC correspondente",
+      "signal": "ac_gap",
+      "scope": "spec",
+      "status": "candidate",
+      "features": [
+        "temas-fidelidade-visual"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "Success Criteria da spec vs P1-Props AC1 — frontend/src/theme/escalaRenderizada.test.tsx:38 (spec)"
+      ],
+      "created": "2026-08-04T14:25:10Z",
+      "last_seen": "2026-08-04T14:25:10Z"
+    },
+    {
+      "id": "L-020",
+      "key": "spec_deviation::quando o usuario ratifica um desvio e o documento de origem e atualizado rebaixe o marcador spec deviation a nota explicativa no mesmo commit",
+      "text": "Quando o usuario ratifica um desvio e o documento de origem e atualizado, rebaixe o marcador SPEC_DEVIATION a nota explicativa no mesmo commit",
+      "signal": "spec_deviation",
+      "scope": "docs",
+      "status": "candidate",
+      "features": [
+        "temas-fidelidade-visual"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "SPEC_DEVIATION em frontend/src/theme/themes.ts:134 (docs)"
+      ],
+      "created": "2026-08-04T14:25:10Z",
+      "last_seen": "2026-08-04T14:25:10Z"
     }
   ]
 }

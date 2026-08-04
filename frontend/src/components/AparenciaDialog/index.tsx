@@ -51,7 +51,13 @@ export function AparenciaDialog({ open, onClose }: AparenciaDialogProps) {
                   border: 1,
                   borderColor: isActive ? 'primary.main' : 'divider',
                   cursor: 'pointer',
-                  bgcolor: isActive ? 'action.selected' : 'background.paper',
+                  // Quick 014: era `action.selected`, um branco translúcido (16% no
+                  // modo escuro) que clareava a superfície e deixava o CheckIcon
+                  // `primary.main` em 1,68:1 no `indigo` — 2,76:1 mesmo depois de
+                  // desligar o overlay de elevação. `primary.light` é opaco (nada a
+                  // compor) e forma com `primary.main` o par já varrido a 3:1 em
+                  // contraste.test.ts (3,58–4,70 nos cinco temas).
+                  bgcolor: isActive ? 'primary.light' : 'background.paper',
                   '&:focus-visible': {
                     outline: 2,
                     outlineColor: 'primary.main',
@@ -63,7 +69,7 @@ export function AparenciaDialog({ open, onClose }: AparenciaDialogProps) {
                 }}
               >
                 <Box flex={1}>
-                  <Typography variant="subtitle1" fontWeight="bold">
+                  <Typography variant="subtitle1">
                     {tema.nome}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

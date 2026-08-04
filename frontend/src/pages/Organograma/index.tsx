@@ -629,7 +629,7 @@ const NoOrganogramaCard: React.FC<{
             // MODO COMPACTO - Só título e badges
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Box display="flex" alignItems="center" gap={1} flex={1}>
-                <Typography variant="subtitle1" fontWeight="bold">
+                <Typography variant="subtitle1">
                   {no.nome}
                 </Typography>
                 {funcionariosCount > 0 && (
@@ -708,7 +708,7 @@ const NoOrganogramaCard: React.FC<{
               </Box>
 
               {no.descricao && (
-                <Typography variant="body2" color="textSecondary" mb={2}>
+                <Typography variant="body2" color="text.secondary" mb={2}>
                   {no.descricao}
                 </Typography>
               )}
@@ -1327,7 +1327,7 @@ export default function Organograma() {
                 rows={3}
               />
               {parentIdForNew && (
-                <Typography variant="body2" color="textSecondary" mt={1}>
+                <Typography variant="body2" color="text.secondary" mt={1}>
                   Este nó será criado como filho do nó selecionado.
                 </Typography>
               )}

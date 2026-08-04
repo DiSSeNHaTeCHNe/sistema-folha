@@ -4,7 +4,9 @@ import Dashboard from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { getDashboardStats } from '../../services/dashboardService';
 import type { DashboardStats } from '../../services/dashboardService';
-import { criarTema, TEMA_PADRAO } from '../../theme/themes';
+import { createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { criarTema, TEMA_IDS, TEMA_PADRAO, type TemaId } from '../../theme/themes';
 
 const cellFills: string[] = [];
 
@@ -76,14 +78,79 @@ const fullStats: DashboardStats = {
   ],
 };
 
-function renderDashboard(state?: object) {
+function renderDashboard(state?: object, temaId?: TemaId) {
   return renderWithProviders(<Dashboard />, {
     route: '/dashboard',
+    temaId,
     routerProps: state
       ? { initialEntries: [{ pathname: '/dashboard', state }] }
       : { initialEntries: ['/dashboard'] },
   });
 }
+
+/**
+ * Igual a `renderDashboard`, mas com o `CssBaseline` que a aplicação monta em volta
+ * das páginas — é ele que aplica `color: theme.palette.text.primary` no `body`, do
+ * qual o título herda. Isolado num render próprio para não alterar as demais asserções.
+ */
+function renderDashboardComBaseline(temaId: TemaId) {
+  return renderWithProviders(
+    <>
+      <CssBaseline />
+      <Dashboard />
+    </>,
+    { route: '/dashboard', temaId, routerProps: { initialEntries: ['/dashboard'] } },
+  );
+}
+
+/**
+ * Normaliza um token de cor (hex curto, hex longo, rgb ou rgba) pela CSSOM, na mesma
+ * forma que `getComputedStyle` devolve — preservando o canal alfa, que distingue
+ * `text.primary` do preto puro herdado por default.
+ */
+function corNormalizada(valor: string): string {
+  const sonda = document.createElement('div');
+  sonda.style.color = valor;
+  return sonda.style.color;
+}
+
+/**
+ * Canais R/G/B de uma cor, aceitando tanto a forma hexadecimal dos tokens quanto a
+ * forma funcional devolvida por getComputedStyle. Sem literal de cor no fonte,
+ * para não violar a guarda de src/theme/noColorLiterals.test.ts.
+ */
+/** jsdom devolve o valor especificado; rem é resolvido contra o root de 16px. */
+function paraPx(fontSize: string): number {
+  if (fontSize.endsWith('rem')) {
+    return Number.parseFloat(fontSize) * 16;
+  }
+  return Number.parseFloat(fontSize);
+}
+
+function canaisDaCor(cor: string): number[] {
+  if (cor.startsWith('#')) {
+    const hex = cor.slice(1);
+    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  }
+  return (cor.match(/\d+(?:\.\d+)?/g) ?? []).slice(0, 3).map(Number);
+}
+
+/** O avatar é o último filho do cabeçalho do card, ao lado do bloco de textos. */
+function avatarDoCardKpi(rotulo: string): HTMLElement {
+  const cabecalho = screen.getByText(rotulo).parentElement?.parentElement;
+  const avatar = cabecalho?.lastElementChild;
+  if (!(avatar instanceof HTMLElement)) {
+    throw new Error(`Avatar do card "${rotulo}" não encontrado`);
+  }
+  return avatar;
+}
+
+const AVATARES_KPI = [
+  { rotulo: 'Total de Funcionários', papel: 'info', tomDoIcone: 'main' },
+  { rotulo: 'Custo Empresa', papel: 'success', tomDoIcone: 'main' },
+  { rotulo: 'Benefícios Ativos', papel: 'warning', tomDoIcone: 'main' },
+  { rotulo: 'Relação P/D', papel: 'info', tomDoIcone: 'dark' },
+] as const;
 
 describe('Dashboard page', () => {
   beforeEach(() => {
@@ -144,5 +211,87 @@ describe('Dashboard page', () => {
     await waitFor(() =>
       expect(showNotification).toHaveBeenCalledWith('Acesso negado. Apenas administradores.', 'warning'),
     );
+  });
+
+  it.each(TEMA_IDS)('avatares de KPI derivam do tema %s', async (temaId) => {
+    const palette = criarTema(temaId).palette;
+    const paletteDeFabrica = createTheme().palette;
+    renderDashboard(undefined, temaId);
+    await waitFor(() => expect(screen.getByText('Total de Funcionários')).toBeInTheDocument());
+
+    for (const { rotulo, papel, tomDoIcone } of AVATARES_KPI) {
+      const estilo = getComputedStyle(avatarDoCardKpi(rotulo));
+      expect(canaisDaCor(estilo.backgroundColor), `${temaId}: ${rotulo} fundo`).toEqual(
+        canaisDaCor(palette[papel].light),
+      );
+      expect(canaisDaCor(estilo.color), `${temaId}: ${rotulo} ícone`).toEqual(
+        canaisDaCor(palette[papel][tomDoIcone]),
+      );
+      expect(canaisDaCor(estilo.backgroundColor), `${temaId}: ${rotulo} fundo de fábrica`).not.toEqual(
+        canaisDaCor(paletteDeFabrica[papel].light),
+      );
+    }
+  });
+
+  /**
+   * TEMAF-10 / P1-Props AC4: o título de página não declara cor própria — herda
+   * `text.primary` do documento. O jsdom não resolve a herança vinda do CssBaseline,
+   * então o que se asserta aqui é o equivalente verificável: o título não pinta a cor
+   * de acento e sua cor computada é a mesma do contêiner (herança). Reintroduzir
+   * `color="primary"` quebra as duas asserções. O valor absoluto de `text.primary`
+   * é fixado no teste seguinte.
+   */
+  it.each(TEMA_IDS)('título da página herda a cor do texto no tema %s', async (temaId) => {
+    const palette = criarTema(temaId).palette;
+    renderDashboard(undefined, temaId);
+    const titulo = await screen.findByRole('heading', { name: 'Dashboard Gerencial' });
+    const conteiner = titulo.parentElement as HTMLElement;
+
+    expect(canaisDaCor(getComputedStyle(titulo).color), `${temaId}: título não usa acento`).not.toEqual(
+      canaisDaCor(palette.primary.main),
+    );
+    expect(getComputedStyle(titulo).color, `${temaId}: título herda a cor do contêiner`).toBe(
+      getComputedStyle(conteiner).color,
+    );
+  });
+
+  /**
+   * TEMAF-10 / P1-Props AC4: "a cor do título de página SHALL ser
+   * `theme.palette.text.primary`" — valor da spec, não proxy. Com o `CssBaseline`
+   * montado, o valor computado do título é comparado ao token do tema ativo,
+   * canal alfa incluído.
+   */
+  it.each(TEMA_IDS)('título da página tem a cor text.primary do tema %s', async (temaId) => {
+    const palette = criarTema(temaId).palette;
+    renderDashboardComBaseline(temaId);
+    const titulo = await screen.findByRole('heading', { name: 'Dashboard Gerencial' });
+
+    expect(getComputedStyle(titulo).color, `${temaId}: título em text.primary`).toBe(
+      corNormalizada(palette.text.primary),
+    );
+  });
+
+  /**
+   * TEMAF-07 / P1-Escala AC5: no Dashboard renderizado, o título de página mede 24px
+   * e o maior valor de KPI mede 27px, medidos por getComputedStyle. Cobertura parcial —
+   * a medição no navegador está bloqueada (ver `_docs/estudo-visual/varredura-pos-fidelidade.md`).
+   * O valor a 27px é o do card "Total de Funcionários" (h3), o maior da linha de KPI.
+   */
+  it.each(TEMA_IDS)('título mede 24px e o maior valor de KPI mede 27px no tema %s', async (temaId) => {
+    renderDashboard(undefined, temaId);
+    const titulo = await screen.findByRole('heading', { name: 'Dashboard Gerencial' });
+    const valorKpi = screen.getByText(String(fullStats.totalFuncionarios));
+
+    expect(paraPx(getComputedStyle(titulo).fontSize), `${temaId}: título de página`).toBeCloseTo(24, 1);
+    expect(paraPx(getComputedStyle(valorKpi).fontSize), `${temaId}: maior valor de KPI`).toBeCloseTo(27, 1);
+  });
+
+  // TEMAF-12 / P1-Props AC5: props color semânticas sobrevivem à remoção das props de estilo.
+  it('valor de KPI com prop semântica mantém a cor success.main do tema', async () => {
+    const palette = criarTema(TEMA_PADRAO).palette;
+    renderDashboard();
+    const valor = await screen.findByText(/125\.000,50/);
+
+    expect(canaisDaCor(getComputedStyle(valor).color)).toEqual(canaisDaCor(palette.success.main));
   });
 });
