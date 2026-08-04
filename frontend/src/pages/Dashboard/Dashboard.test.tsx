@@ -197,4 +197,35 @@ describe('Dashboard page', () => {
       );
     }
   });
+
+  /**
+   * TEMAF-10 / P1-Props AC4: o título de página não declara cor própria — herda
+   * `text.primary` do documento. O jsdom não resolve a herança vinda do CssBaseline,
+   * então o que se asserta aqui é o equivalente verificável: o título não pinta a cor
+   * de acento e sua cor computada é a mesma do contêiner (herança). Reintroduzir
+   * `color="primary"` quebra as duas asserções. A medição do valor absoluto de
+   * `text.primary` é feita no navegador (T10).
+   */
+  it.each(TEMA_IDS)('título da página herda a cor do texto no tema %s', async (temaId) => {
+    const palette = criarTema(temaId).palette;
+    renderDashboard(undefined, temaId);
+    const titulo = await screen.findByRole('heading', { name: 'Dashboard Gerencial' });
+    const conteiner = titulo.parentElement as HTMLElement;
+
+    expect(canaisDaCor(getComputedStyle(titulo).color), `${temaId}: título não usa acento`).not.toEqual(
+      canaisDaCor(palette.primary.main),
+    );
+    expect(getComputedStyle(titulo).color, `${temaId}: título herda a cor do contêiner`).toBe(
+      getComputedStyle(conteiner).color,
+    );
+  });
+
+  // TEMAF-12 / P1-Props AC5: props color semânticas sobrevivem à remoção das props de estilo.
+  it('valor de KPI com prop semântica mantém a cor success.main do tema', async () => {
+    const palette = criarTema(TEMA_PADRAO).palette;
+    renderDashboard();
+    const valor = await screen.findByText(/125\.000,50/);
+
+    expect(canaisDaCor(getComputedStyle(valor).color)).toEqual(canaisDaCor(palette.success.main));
+  });
 });

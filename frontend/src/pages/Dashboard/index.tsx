@@ -173,7 +173,7 @@ export default function Dashboard() {
     <Box sx={{ p: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
       {/* Header */}
       <Box mb={4}>
-        <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
+        <Typography variant="h4" gutterBottom>
           Dashboard Gerencial
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
@@ -192,7 +192,7 @@ export default function Dashboard() {
                   <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                     Total de Funcionários
                   </Typography>
-                  <Typography variant="h3" fontWeight="bold" color="primary">
+                  <Typography variant="h3">
                     {stats.totalFuncionarios}
                   </Typography>
                   <Chip 
@@ -220,7 +220,7 @@ export default function Dashboard() {
                   <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                     Custo Empresa
                   </Typography>
-                  <Typography variant="h4" fontWeight="bold" color="success.main">
+                  <Typography variant="h4" color="success.main">
                     {formatMoneyDisplay(stats.custoMensalFolha)}
                   </Typography>
                   <Chip 
@@ -248,7 +248,7 @@ export default function Dashboard() {
                   <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                     Benefícios Ativos
                   </Typography>
-                  <Typography variant="h3" fontWeight="bold" color="warning.main">
+                  <Typography variant="h3" color="warning.main">
                     {stats.totalBeneficiosAtivos}
                   </Typography>
                   <Chip 
@@ -276,7 +276,7 @@ export default function Dashboard() {
                   <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                     Relação P/D
                   </Typography>
-                  <Typography variant="h3" fontWeight="bold" color="info.main">
+                  <Typography variant="h3" color="info.main">
                     {percentualProventos.toFixed(1)}%
                   </Typography>
                   <Chip 
@@ -301,7 +301,7 @@ export default function Dashboard() {
         <Card sx={cardSx}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6" fontWeight="bold" color="primary">
+              <Typography variant="h6">
                 Evolução da Folha de Pagamento
               </Typography>
               <Chip label="Últimos 12 meses" variant="outlined" size="small" />
@@ -355,7 +355,7 @@ export default function Dashboard() {
         <Box flex="1" minWidth={{ xs: 350, xl: 0 }}>
           <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
+              <Typography variant="h6" gutterBottom>
                 Funcionários por Centro de Custo
               </Typography>
               <Box flex={1} display="flex" flexDirection="column">
@@ -387,7 +387,7 @@ export default function Dashboard() {
         <Box flex="1" minWidth={{ xs: 350, xl: 0 }}>
           <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
+              <Typography variant="h6" gutterBottom>
                 Funcionários por Linha de Negócio
               </Typography>
               <Box flex={1} display="flex" flexDirection="column">
@@ -419,7 +419,7 @@ export default function Dashboard() {
         <Box flex="1" minWidth={{ xs: 350, xl: 0 }}>
           <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
+              <Typography variant="h6" gutterBottom>
                 Custo Folha por Centro de Custo
               </Typography>
               <Box flex={1} display="flex" flexDirection="column">
@@ -456,7 +456,7 @@ export default function Dashboard() {
         <Box flex="1" minWidth={{ xs: 350, xl: 0 }}>
           <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
+              <Typography variant="h6" gutterBottom>
                 Custo Folha por Linha de Negócio
       </Typography>
               <Box flex={1} display="flex" flexDirection="column">
@@ -500,7 +500,7 @@ export default function Dashboard() {
                 <Avatar sx={{ backgroundColor: 'success.light', color: 'success.main', mr: 2 }}>
                   <TrendingUp />
                 </Avatar>
-                <Typography variant="h6" fontWeight="bold" color="primary">
+                <Typography variant="h6">
                   Top 5 Proventos
                 </Typography>
               </Box>
@@ -520,13 +520,13 @@ export default function Dashboard() {
                     </ListItemAvatar>
                     <ListItemText
                       primary={
-                        <Typography variant="subtitle2" fontWeight="bold">
+                        <Typography variant="subtitle2">
                           {item.codigo} - {item.descricao}
                         </Typography>
                       }
                       secondary={
                         <Box>
-                          <Typography variant="body2" color="success.main" fontWeight="bold">
+                          <Typography variant="body2" color="success.main">
                             {item.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
@@ -550,7 +550,7 @@ export default function Dashboard() {
                 <Avatar sx={{ backgroundColor: 'error.light', color: 'error.main', mr: 2 }}>
                   <TrendingDown />
                 </Avatar>
-                <Typography variant="h6" fontWeight="bold" color="primary">
+                <Typography variant="h6">
                   Top 5 Descontos
                 </Typography>
               </Box>
@@ -570,13 +570,13 @@ export default function Dashboard() {
                     </ListItemAvatar>
                     <ListItemText
                       primary={
-                        <Typography variant="subtitle2" fontWeight="bold">
+                        <Typography variant="subtitle2">
                           {item.codigo} - {item.descricao}
                         </Typography>
                       }
                       secondary={
                         <Box>
-                          <Typography variant="body2" color="error.main" fontWeight="bold">
+                          <Typography variant="body2" color="error.main">
                             {item.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
