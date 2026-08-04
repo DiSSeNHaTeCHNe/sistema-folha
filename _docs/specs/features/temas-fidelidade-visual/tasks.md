@@ -14,7 +14,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Estudo de origem**: `_docs/estudo-visual/aproximacao-mockups.md` (+ `.pdf` com as capturas lado a lado)
 **Referência visual**: `_docs/estudo-visual/propostas-visual-sistema-folha.pdf`, `capturas-implementado/`
 **Feature anterior**: `_docs/specs/features/temas-visuais/` (PASS @ `ab2cf01`)
-**Status**: Em execução — Fases 1–2 concluídas (batch 1). Branch `feat/temas-fidelidade-visual`, base `0a0eac7`.
+**Status**: Em execução — Fases 1–3 concluídas (batches 1 e 2); Fase 4 (T10) bloqueada por indisponibilidade de captura. Branch `feat/temas-fidelidade-visual`, base `0a0eac7`.
 **User preference (project):** commits atômicos por task autorizados nesta execução.
 
 ---
@@ -202,7 +202,7 @@ T10
 
 ---
 
-### T6: Remover as props de estilo do Dashboard
+### T6: [x] Remover as props de estilo do Dashboard
 
 **What**: Remover as 16 props `fontWeight` e as 9 props `color="primary"` de títulos do Dashboard, deixando peso e cor virem do tema.
 **Where**: `frontend/src/pages/Dashboard/index.tsx`, `Dashboard.test.tsx`
@@ -221,11 +221,11 @@ T10
 - [ ] Gate: `npm run test -- src/pages/Dashboard`
 
 **Tests**: unit · **Gate**: quick
-**Commit**: `refactor(dashboard): peso e cor de texto vindos do tema`
+**Commit**: `refactor(dashboard): peso e cor de texto vindos do tema` → **feito** `341c3b5`
 
 ---
 
-### T7: Remover as props de estilo das demais telas
+### T7: [x] Remover as props de estilo das demais telas
 
 **What**: Remover as 8 props `fontWeight` restantes e 1 `color="primary"` de título nos sete arquivos que sobram.
 **Where**: `pages/FolhaPagamento/index.tsx` (3), `components/OrganogramaGrafico/index.tsx` (2), `pages/Usuarios/index.tsx` (1+1), `pages/Relatorios/index.tsx` (1), `pages/Relatorios/RelatorioCatalogCard.tsx` (1), `pages/Organograma/index.tsx` (1), `components/AparenciaDialog/index.tsx` (1)
@@ -244,11 +244,11 @@ T10
 - [ ] Gate: `npm run test -- src/pages src/components`
 
 **Tests**: unit · **Gate**: quick
-**Commit**: `refactor(telas): remove props de peso e cor de texto`
+**Commit**: `refactor(telas): remove props de peso e cor de texto` → **feito** `a54967d`
 
 ---
 
-### T8: Normalizar `color="textSecondary"`
+### T8: [x] Normalizar `color="textSecondary"`
 
 **What**: Substituir as 18 ocorrências da forma depreciada do MUI v4 pela forma atual `color="text.secondary"`.
 **Where**: arquivos `.tsx` rastreados em `src/pages/` e `src/components/`
@@ -266,11 +266,11 @@ T10
 - [ ] Gate: `npm run test -- src/pages src/components`
 
 **Tests**: unit · **Gate**: quick
-**Commit**: `refactor(telas): normaliza textSecondary para text.secondary`
+**Commit**: `refactor(telas): normaliza textSecondary para text.secondary` → **feito** `c684967`
 
 ---
 
-### T9: Ativar o lint e a guarda contra props de estilo
+### T9: [x] Ativar o lint e a guarda contra props de estilo
 
 **What**: Adicionar a regra `no-restricted-syntax` contra `fontWeight` em prop e criar o teste que varre os `.tsx` rastreados.
 **Where**: `frontend/eslint.config.js`, `frontend/src/theme/noStyleProps.test.ts` (novo)
@@ -290,11 +290,11 @@ T10
 - [ ] Test count: +3
 
 **Tests**: unit · **Gate**: full
-**Commit**: `chore(lint): proibe prop de peso de fonte fora do tema`
+**Commit**: `chore(lint): proibe prop de peso de fonte fora do tema` → **feito** `99653cf`
 
 ---
 
-### T10: Varredura visual das 20 telas nos cinco temas
+### T10: [!] Varredura visual das 20 telas nos cinco temas — BLOQUEADA
 
 **What**: Capturar as 20 telas sob cada tema, comparar com `_docs/estudo-visual/capturas-implementado/` e com os mockups, e registrar o resultado.
 **Where**: `_docs/specs/features/temas-fidelidade-visual/validation.md`, capturas em `_docs/estudo-visual/`
@@ -314,7 +314,7 @@ T10
 - [ ] Test count final ≥ 559 + soma das tasks anteriores
 
 **Tests**: unit (suíte completa como gate) · **Gate**: full
-**Commit**: `docs(tema): varredura visual pos-fidelidade`
+**Commit**: `docs(tema): varredura visual pos-fidelidade` → **nao aplicado** — a varredura nao aconteceu. Entregue no lugar `test(dashboard): mede escala renderizada do titulo e do maior KPI` `fe3975f`, com o bloqueio registrado em `_docs/estudo-visual/varredura-pos-fidelidade.md`.
 
 ---
 

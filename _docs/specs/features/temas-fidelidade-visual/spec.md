@@ -187,14 +187,14 @@ ele; as cores permanecem. Se a decisão for preservar também a escala do
 | TEMAF-04 | P1: Escala — `h3`, `h4`, `h6` em `montarTema` | B | 2 | Done |
 | TEMAF-05 | P1: Escala — `fontWeight` 600 nas três variantes | B | 2 | Done |
 | TEMAF-06 | P1: Escala — demais variantes preservadas | B | 2 | Done |
-| TEMAF-07 | P1: Escala — verificação medida no navegador | B | 2 | Pending |
+| TEMAF-07 | P1: Escala — verificação medida no navegador | B | 2 | Parcial — medida em jsdom; captura no navegador bloqueada (T10) |
 | TEMAF-08 | P1: Escala — idêntica entre os cinco temas | B | 2 | Done |
-| TEMAF-09 | P1: Props — remover 24 `fontWeight=` | B' | 3 | Pending |
-| TEMAF-10 | P1: Props — remover 10 `color="primary"` em títulos | B' | 3 | Pending |
-| TEMAF-11 | P1: Props — normalizar 18 `color="textSecondary"` | B' | 3 | Pending |
-| TEMAF-12 | P1: Props — preservar props semânticas | B' | 3 | Pending |
-| TEMAF-13 | P1: Props — lint barra reintrodução de `fontWeight=` | B' | 3 | Pending |
-| TEMAF-14 | P1: Props — suítes existentes sem alteração de asserção | B' | 3 | Pending |
+| TEMAF-09 | P1: Props — remover 24 `fontWeight=` | B' | 3 | Done |
+| TEMAF-10 | P1: Props — remover 10 `color="primary"` em títulos | B' | 3 | Done |
+| TEMAF-11 | P1: Props — normalizar 18 `color="textSecondary"` | B' | 3 | Done |
+| TEMAF-12 | P1: Props — preservar props semânticas | B' | 3 | Done |
+| TEMAF-13 | P1: Props — lint barra reintrodução de `fontWeight=` | B' | 3 | Done |
+| TEMAF-14 | P1: Props — suítes existentes sem alteração de asserção | B' | 3 | Done |
 
 **Coverage:** 14 requisitos, 14 mapeados para tasks, 0 sem mapeamento.
 
