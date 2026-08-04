@@ -166,6 +166,7 @@ _None currently._
 - [x] Execute `modular-acl-security-fix` T1–T4 + Verifier PASS + code-review (uncommitted)
 - [x] Commits do usuário (`ajuste-harness` / `modular-monolith` / fix batch) — conteúdo em `main`
 - [x] Feature `modular-boundary-hardening` — Execute T1–T12 done; AD-010 active; ready for Verifier
+- [ ] **Débito técnico `temas-fidelidade-visual`** — 11 itens registrados em `_docs/specs/features/temas-fidelidade-visual/debito-tecnico.md` (2026-08-04). Nenhum quebra funcionalidade. Prioridade: DT-1 foco sem indicador visível (WCAG 2.4.7 AA, pré-existente) · DT-2 rota ativa não indicada no Drawer (`chrome.selecionado` é código morto) · DT-3 `MuiPickersPopper` sem borda no escuro (regressão da quick 014, fix de 1 linha) · DT-4 Alerts perdem cor semântica sob os tints (R-3 materializada, decisão de design)
 - [ ] Deferred concerns (not this fix): `/usuarios` ADMIN privilege escalation; password logging hygiene; N+1 import loops
 - [ ] Feature futura: adequação do código às skills FE target / gaps de segurança do relatório
 - [x] Migrar ou descartar artefatos legados em `.specs/codebase/`
