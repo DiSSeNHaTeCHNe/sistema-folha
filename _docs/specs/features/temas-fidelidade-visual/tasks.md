@@ -14,8 +14,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Estudo de origem**: `_docs/estudo-visual/aproximacao-mockups.md` (+ `.pdf` com as capturas lado a lado)
 **Referência visual**: `_docs/estudo-visual/propostas-visual-sistema-folha.pdf`, `capturas-implementado/`
 **Feature anterior**: `_docs/specs/features/temas-visuais/` (PASS @ `ab2cf01`)
-**Status**: Draft — aguardando aprovação antes de Execute
-**User preference (project):** sem commits automáticos salvo pedido explícito.
+**Status**: Em execução — Fases 1–2 concluídas (batch 1). Branch `feat/temas-fidelidade-visual`, base `0a0eac7`.
+**User preference (project):** commits atômicos por task autorizados nesta execução.
 
 ---
 
@@ -82,7 +82,7 @@ T10
 
 ## Task Breakdown
 
-### T1: Estender `TokensTema` com os papéis semânticos
+### T1: [x] Estender `TokensTema` com os papéis semânticos
 
 **What**: Adicionar `success`, `warning`, `error` e `info` ao tipo `TokensTema` e repassá-los à `palette` em `montarTema`.
 **Where**: `frontend/src/theme/tokens.ts`
@@ -103,11 +103,11 @@ T10
 - [ ] Test count: +6 testes
 
 **Tests**: unit · **Gate**: quick
-**Commit**: `feat(tema): tokens semanticos na fabrica de temas`
+**Commit**: `feat(tema): tokens semanticos na fabrica de temas` → **feito** `8b7963c`
 
 ---
 
-### T2: Declarar as semânticas nos cinco temas e cobrir contraste
+### T2: [x] Declarar as semânticas nos cinco temas e cobrir contraste
 
 **What**: Preencher `success`, `warning`, `error` e `info` em `corporate`, `soft`, `indigo` e `techne` com os valores da tabela do design, manter o `classico` no default do MUI, e adicionar os quatro pares novos à varredura de contraste.
 **Where**: `frontend/src/theme/themes.ts`, `frontend/src/theme/contraste.test.ts`
@@ -129,11 +129,11 @@ T10
 - [ ] Test count: +10 asserções de tema +20 de contraste (4 pares × 5 temas)
 
 **Tests**: unit · **Gate**: quick
-**Commit**: `feat(tema): cores semanticas por tema nos cinco temas`
+**Commit**: `feat(tema): cores semanticas por tema nos cinco temas` → **feito** `3143838`
 
 ---
 
-### T3: Verificar os avatares do Dashboard sob os cinco temas
+### T3: [x] Verificar os avatares do Dashboard sob os cinco temas
 
 **What**: Confirmar que os quatro avatares de KPI e os dois de lista do Dashboard derivam do tema ativo, corrigindo qualquer token que ainda escape.
 **Where**: `frontend/src/pages/Dashboard/index.tsx`, `frontend/src/pages/Dashboard/Dashboard.test.tsx`
@@ -152,11 +152,11 @@ T10
 - [ ] Test count: +5 (um por tema); total acumulado ≥ 559 + 41
 
 **Tests**: unit · **Gate**: full
-**Commit**: `test(dashboard): avatares derivam do tema em todos os temas`
+**Commit**: `test(dashboard): avatares derivam do tema em todos os temas` → **feito** `8f4b308 (+ 6a8fe17)`
 
 ---
 
-### T4: Aplicar a escala tipográfica em `montarTema`
+### T4: [x] Aplicar a escala tipográfica em `montarTema`
 
 **What**: Definir `h3`, `h4` e `h6` com os tamanhos e peso da Nota de escala, preservando as demais variantes.
 **Where**: `frontend/src/theme/tokens.ts`
@@ -176,11 +176,11 @@ T10
 - [ ] Test count: +8
 
 **Tests**: unit · **Gate**: quick
-**Commit**: `feat(tema): escala tipografica dos mockups em montarTema`
+**Commit**: `feat(tema): escala tipografica dos mockups em montarTema` → **feito** `5af7e26`
 
 ---
 
-### T5: Testar a escala renderizada sob cada tema
+### T5: [x] Testar a escala renderizada sob cada tema
 
 **What**: Criar o teste que monta `Typography` de cada variante sob cada tema e asserta o `fontSize` computado — a rede que detecta prop vencendo o tema.
 **Where**: `frontend/src/theme/escalaRenderizada.test.tsx` (novo)
@@ -198,7 +198,7 @@ T10
 - [ ] Test count: +16 (3 variantes × 5 temas + 1 controle)
 
 **Tests**: unit · **Gate**: quick
-**Commit**: `test(tema): escala renderizada verificada por tema`
+**Commit**: `test(tema): escala renderizada verificada por tema` → **feito** `9007dff`
 
 ---
 

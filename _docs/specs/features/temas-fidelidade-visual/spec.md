@@ -43,7 +43,13 @@ fica registrada como decisão adiada.
 | Props `color` semânticas (`success.main`, `error`, `warning.main`, `info.main`) | Manter | São tokens legítimos e passam a resolver corretamente após TEMAF-01 | n — decisão técnica do agente |
 | Valor de `fontWeight` no tema | 600 para h3/h4/h6, conforme mockup | O mockup usa 600; o código usa `bold` (700) | n — decisão técnica do agente |
 
-**Open questions:** nenhuma — todas resolvidas ou registradas acima.
+**Open questions:**
+
+| # | Questão | Origem | Status |
+| --- | --- | --- | --- |
+| QA-1 | `classico` + `warning.main` (`#f57c00`) rende **2,70:1** contra `background.paper` — abaixo do AA de 4.5:1 exigido por AC3/AC4. O próprio default de fábrica do MUI (`#ed6c02`) renderia 3,11:1. AC4 e DD-4 ("`classico` não muda") são inconciliáveis como escritos. Batch 1 excluiu **esse único par (1 de 20)** da varredura, com `SPEC_DEVIATION` em `frontend/src/theme/contraste.test.ts`. Opções: (a) aceitar o `classico` fora do AA nesse papel; (b) autorizar alterar `warning.main` do `classico` (muda asserção existente e contraria DD-4). | Batch 1 / T2 | **Aberta — aguarda usuário** |
+| QA-2 | `techne.info` foi escurecido de `#0C8DCE` (tabela do design) para `#0A7AB0`. O valor original rende 3,67:1 contra `#FFFFFF`, abaixo do AA de AC4; `#0A7AB0` é a variante mais próxima em matiz que atinge 4,75:1. `SPEC_DEVIATION` em `frontend/src/theme/themes.ts`. Coerente com `context.md` D1, mas diverge do valor literal da tabela do design. | Batch 1 / T2 | **Aberta — aguarda usuário** |
+| QA-3 | Campos semânticos declarados **opcionais** em `TokensTema` (o design mostra obrigatórios), para não quebrar o build entre os commits de T1 e T2. Nenhum AC afetado; T2 comprova que os cinco temas declaram os quatro papéis. | Batch 1 / T1 | Resolvida — decisão técnica do agente |
 
 ---
 
@@ -175,14 +181,14 @@ ele; as cores permanecem. Se a decisão for preservar também a escala do
 
 | ID | Story | Camada | Fase | Status |
 | --- | --- | --- | --- | --- |
-| TEMAF-01 | P1: Semânticas — tokens no tipo e na fábrica | A | 1 | Pending |
-| TEMAF-02 | P1: Semânticas — declaradas nos cinco temas | A | 1 | Pending |
-| TEMAF-03 | P1: Semânticas — contraste 4.5:1 contra `background.paper` | A | 1 | Pending |
-| TEMAF-04 | P1: Escala — `h3`, `h4`, `h6` em `montarTema` | B | 2 | Pending |
-| TEMAF-05 | P1: Escala — `fontWeight` 600 nas três variantes | B | 2 | Pending |
-| TEMAF-06 | P1: Escala — demais variantes preservadas | B | 2 | Pending |
+| TEMAF-01 | P1: Semânticas — tokens no tipo e na fábrica | A | 1 | Done |
+| TEMAF-02 | P1: Semânticas — declaradas nos cinco temas | A | 1 | Done |
+| TEMAF-03 | P1: Semânticas — contraste 4.5:1 contra `background.paper` | A | 1 | Done ⚠️ (1/20 pares excluído — ver Questões abertas) |
+| TEMAF-04 | P1: Escala — `h3`, `h4`, `h6` em `montarTema` | B | 2 | Done |
+| TEMAF-05 | P1: Escala — `fontWeight` 600 nas três variantes | B | 2 | Done |
+| TEMAF-06 | P1: Escala — demais variantes preservadas | B | 2 | Done |
 | TEMAF-07 | P1: Escala — verificação medida no navegador | B | 2 | Pending |
-| TEMAF-08 | P1: Escala — idêntica entre os cinco temas | B | 2 | Pending |
+| TEMAF-08 | P1: Escala — idêntica entre os cinco temas | B | 2 | Done |
 | TEMAF-09 | P1: Props — remover 24 `fontWeight=` | B' | 3 | Pending |
 | TEMAF-10 | P1: Props — remover 10 `color="primary"` em títulos | B' | 3 | Pending |
 | TEMAF-11 | P1: Props — normalizar 18 `color="textSecondary"` | B' | 3 | Pending |
