@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CLASSICO_CHARTS,
+  TEMA_IDS,
   TEMA_PADRAO,
   criarTema,
   isTemaId,
@@ -121,6 +122,16 @@ describe('themes', () => {
   it('keeps techne primary.main aligned with relatorios branding in application.yml', () => {
     const theme = criarTema('techne');
     expect(theme.palette.primary.main.toLowerCase()).toBe(lerPrimaryColorRelatorios());
+  });
+
+  it.each(TEMA_IDS)('tema %s aplica a escala tipográfica dos mockups (TEMAF-08)', (temaId) => {
+    const typography = criarTema(temaId).typography;
+    expect(typography.h3.fontSize).toBe('1.6875rem');
+    expect(typography.h3.fontWeight).toBe(600);
+    expect(typography.h4.fontSize).toBe('1.5rem');
+    expect(typography.h4.fontWeight).toBe(600);
+    expect(typography.h6.fontSize).toBe('1rem');
+    expect(typography.h6.fontWeight).toBe(600);
   });
 
   it.each(['corporate', 'soft', 'indigo', 'techne'] as const)(

@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { montarTema, type TokensTema } from './tokens';
+import { ESCALA_TIPOGRAFICA, montarTema, type TokensTema } from './tokens';
 
 /** Paleta de gráficos em uso no Dashboard (pieColors). */
 export const CLASSICO_CHARTS = [
@@ -212,6 +212,8 @@ function criarClassico(): Theme {
         '"Segoe UI Emoji"',
         '"Segoe UI Symbol"',
       ].join(','),
+      // TEMAF-08: a escala é idêntica nos cinco temas; o `classico` preserva as cores, não a escala.
+      ...ESCALA_TIPOGRAFICA,
     },
     components: {
       MuiButton: {

@@ -30,6 +30,17 @@ export interface TokensTema {
   typography?: { fontFamily?: string };
 }
 
+/**
+ * Escala tipográfica dos mockups (spec.md, Nota de escala: mockup × 1,415).
+ * Compartilhada por todos os temas (DD-1): um tema muda cor e fonte, não hierarquia.
+ * Demais variantes ficam no default do MUI (DD-5).
+ */
+export const ESCALA_TIPOGRAFICA = {
+  h3: { fontSize: '1.6875rem', fontWeight: 600 },
+  h4: { fontSize: '1.5rem', fontWeight: 600 },
+  h6: { fontSize: '1rem', fontWeight: 600 },
+} as const;
+
 export function montarTema(tokens: TokensTema): Theme {
   return createTheme({
     palette: {
@@ -49,7 +60,7 @@ export function montarTema(tokens: TokensTema): Theme {
       charts: tokens.charts,
       chrome: tokens.chrome,
     },
-    typography: tokens.typography,
+    typography: { ...tokens.typography, ...ESCALA_TIPOGRAFICA },
     components: {
       MuiButton: {
         styleOverrides: {
