@@ -194,6 +194,10 @@ describe('Relatorios page', () => {
     renderWithProviders(<Relatorios />);
     await screen.findByRole('status');
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     const callsBefore = vi.mocked(relatorioService.listarRelatoriosFolha).mock.calls.length;
 
     await act(async () => {

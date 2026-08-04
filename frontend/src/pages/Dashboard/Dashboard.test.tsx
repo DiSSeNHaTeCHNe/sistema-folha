@@ -4,6 +4,9 @@ import Dashboard from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { getDashboardStats } from '../../services/dashboardService';
 import type { DashboardStats } from '../../services/dashboardService';
+import { criarTema, TEMA_PADRAO } from '../../theme/themes';
+
+const cellFills: string[] = [];
 
 const showNotification = vi.fn();
 const hideNotification = vi.fn();
@@ -26,7 +29,12 @@ vi.mock('recharts', () => ({
   },
   PieChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Pie: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Cell: () => null,
+  Cell: ({ fill }: { fill?: string }) => {
+    if (fill) {
+      cellFills.push(fill);
+    }
+    return null;
+  },
 }));
 
 vi.mock('../../services/dashboardService', () => ({
@@ -80,6 +88,7 @@ function renderDashboard(state?: object) {
 describe('Dashboard page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    cellFills.length = 0;
     vi.mocked(getDashboardStats).mockResolvedValue(fullStats);
   });
 
@@ -98,6 +107,16 @@ describe('Dashboard page', () => {
     expect(screen.getByText('Funcionários por Centro de Custo')).toBeInTheDocument();
     expect(screen.getByText('Top 5 Proventos')).toBeInTheDocument();
     expect(screen.getByText('001 - Salário')).toBeInTheDocument();
+  });
+
+  it('uses theme.palette.charts for pie chart segment colors', async () => {
+    const chartPalette = criarTema(TEMA_PADRAO).palette.charts;
+    renderDashboard();
+    await waitFor(() => expect(screen.getByText('42')).toBeInTheDocument());
+    expect(cellFills.length).toBeGreaterThan(0);
+    for (const fill of cellFills) {
+      expect(chartPalette).toContain(fill);
+    }
   });
 
   it('shows error alert when load fails', async () => {

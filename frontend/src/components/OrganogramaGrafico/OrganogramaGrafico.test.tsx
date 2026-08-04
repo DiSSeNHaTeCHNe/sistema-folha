@@ -235,4 +235,24 @@ describe('OrganogramaGrafico', () => {
     fireEvent.click(screen.getAllByRole('button').find((b) => b.querySelector('[data-testid="EditIcon"]'))!);
     expect(onEdit).toHaveBeenCalled();
   });
+
+  it('renders under indigo dark theme', () => {
+    renderWithProviders(
+      <OrganogramaGrafico
+        nos={[sampleNo]}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onAddChild={onAddChild}
+        onRemoveFuncionario={onRemoveFuncionario}
+        onRemoveCentroCusto={onRemoveCentroCusto}
+        expandedNodeId={null}
+        hoveredNodeId={null}
+        onToggleExpand={onToggleExpand}
+        onHover={onHover}
+      />,
+      { temaId: 'indigo' },
+    );
+    expect(screen.getByRole('region', { name: 'organograma-grafico' })).toBeInTheDocument();
+    expect(screen.getByText('Diretoria')).toBeInTheDocument();
+  });
 });

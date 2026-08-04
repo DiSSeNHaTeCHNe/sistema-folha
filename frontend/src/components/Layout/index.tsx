@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AlterarSenhaDialog } from '../AlterarSenhaDialog';
+import { AparenciaDialog } from '../AparenciaDialog';
 import { isAdmin, canAccessApiKeysPage } from '../../utils/permissions';
 import {
   AppBar,
@@ -52,6 +53,7 @@ export function Layout() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [cadastroOpen, setCadastroOpen] = useState(false);
   const [alterarSenhaOpen, setAlterarSenhaOpen] = useState(false);
+  const [aparenciaOpen, setAparenciaOpen] = useState(false);
   const userIsAdmin = isAdmin(user);
   const showApiKeysMenu = canAccessApiKeysPage(user);
 
@@ -70,6 +72,11 @@ export function Layout() {
   const handleLogout = () => {
     handleClose();
     logout();
+  };
+
+  const handleAparencia = () => {
+    handleClose();
+    setAparenciaOpen(true);
   };
 
   const handleAlterarSenha = () => {
@@ -206,6 +213,7 @@ export function Layout() {
               <MenuItem disabled>
                 <Typography variant="body2">{user?.nome}</Typography>
               </MenuItem>
+              <MenuItem onClick={handleAparencia}>Aparência</MenuItem>
               <MenuItem onClick={handleAlterarSenha}>Alterar senha</MenuItem>
               <Divider />
               <MenuItem onClick={handleLogout}>Sair</MenuItem>
@@ -260,11 +268,17 @@ export function Layout() {
         <Outlet />
       </Box>
       {user && (
-        <AlterarSenhaDialog
-          open={alterarSenhaOpen}
-          onClose={() => setAlterarSenhaOpen(false)}
-          userId={user.id}
-        />
+        <>
+          <AparenciaDialog
+            open={aparenciaOpen}
+            onClose={() => setAparenciaOpen(false)}
+          />
+          <AlterarSenhaDialog
+            open={alterarSenhaOpen}
+            onClose={() => setAlterarSenhaOpen(false)}
+            userId={user.id}
+          />
+        </>
       )}
     </Box>
   );

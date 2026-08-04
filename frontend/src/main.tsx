@@ -1,24 +1,16 @@
+import '@fontsource/poppins/latin-400.css';
+import '@fontsource/poppins/latin-500.css';
+import '@fontsource/poppins/latin-600.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterWithAuth } from './routes';
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+import { AppThemeProvider } from './contexts/ThemeContext';
+import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <AppThemeProvider>
       <RouterWithAuth />
-    </ThemeProvider>
+    </AppThemeProvider>
   </React.StrictMode>
 );

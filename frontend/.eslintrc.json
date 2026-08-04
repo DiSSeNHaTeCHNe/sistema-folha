@@ -30,5 +30,19 @@
     "react": {
       "version": "detect"
     }
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/pages/**/*.tsx", "src/components/**/*.tsx"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b|rgba?\\(|hsla?\\(/]",
+            "message": "Cor fixa proibida fora de src/theme/. Use o token do tema (palette.*) ou useTheme()."
+          }
+        ]
+      }
+    }
+  ]
 } 

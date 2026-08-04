@@ -17,6 +17,7 @@ import {
   Typography,
   FormHelperText,
   Chip,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -113,6 +114,7 @@ const formatarDataCompetencia = (dataString: string): string => {
 };
 
 export default function Funcionarios() {
+  const theme = useTheme();
   const [funcionarios, setFuncionarios] = useState<FuncionarioLocal[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
   const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([]);
@@ -473,11 +475,11 @@ export default function Funcionarios() {
                   bgcolor: inativo ? 'grey.100' : undefined,
                   opacity: inativo ? 0.85 : 1,
                   color: inativo ? 'text.disabled' : undefined,
-                  boxShadow: showDetails 
-                    ? '0 8px 24px rgba(0,0,0,0.15)' 
-                    : '0 2px 4px rgba(0,0,0,0.1)',
+                  boxShadow: showDetails
+                    ? theme.shadows[8]
+                    : theme.shadows[1],
                   '&:hover': {
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                    boxShadow: theme.shadows[8],
                   },
                 }}
               >
@@ -564,7 +566,8 @@ export default function Funcionarios() {
                       sx={{ 
                         mt: 2,
                         pt: 2,
-                        borderTop: '1px solid #e0e0e0',
+                        borderTop: 1,
+                        borderColor: 'divider',
                         animation: 'fadeIn 0.3s ease-in-out',
                         '@keyframes fadeIn': {
                           '0%': {

@@ -14,7 +14,9 @@ import {
   ListItemText,
   Chip,
   Divider,
+  useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   TrendingUp, 
   TrendingDown, 
@@ -40,9 +42,17 @@ import { useNotification } from '../../hooks/useNotification';
 import { Notification } from '../../components/Notification';
 import { formatMoneyDisplay } from '../../utils/money';
 
-const pieColors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'];
-
 export default function Dashboard() {
+  const theme = useTheme();
+  const chartColors = theme.palette.charts;
+  const areaChartColor = chartColors[0];
+  const cardSx = {
+    borderRadius: 3,
+    boxShadow: theme.shadows[2],
+    border: 1,
+    borderColor: 'divider' as const,
+  };
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +89,7 @@ export default function Dashboard() {
         justifyContent="center" 
         alignItems="center" 
         minHeight="400px"
-        sx={{ backgroundColor: '#f8f9fa' }}
+        sx={{ backgroundColor: 'background.default' }}
       >
         <CircularProgress size={60} />
       </Box>
@@ -99,7 +109,7 @@ export default function Dashboard() {
   const funcionariosPorLinhaPieData = stats.porLinhaNegocio.slice(0, 6).map((item, index) => ({
     name: item.descricao.length > 12 ? item.descricao.substring(0, 12) + '...' : item.descricao,
     value: item.quantidadeFuncionarios,
-    color: pieColors[index % pieColors.length],
+    color: chartColors[index % chartColors.length],
     fullName: item.descricao
   }));
 
@@ -107,7 +117,7 @@ export default function Dashboard() {
   const custoPorCentroPieData = stats.porCentroCusto.slice(0, 6).map((item, index) => ({
     name: item.descricao.length > 12 ? item.descricao.substring(0, 12) + '...' : item.descricao,
     value: item.valorTotal,
-    color: pieColors[index % pieColors.length],
+    color: chartColors[index % chartColors.length],
     fullName: item.descricao
   }));
 
@@ -115,7 +125,7 @@ export default function Dashboard() {
   const custoPorLinhaPieData = stats.porLinhaNegocio.slice(0, 6).map((item, index) => ({
     name: item.descricao.length > 12 ? item.descricao.substring(0, 12) + '...' : item.descricao,
     value: item.valorTotal,
-    color: pieColors[index % pieColors.length],
+    color: chartColors[index % chartColors.length],
     fullName: item.descricao
   }));
 
@@ -123,7 +133,7 @@ export default function Dashboard() {
   const funcionariosPorCentroPieData = stats.porCentroCusto.slice(0, 5).map((item, index) => ({
     name: item.descricao.length > 15 ? item.descricao.substring(0, 15) + '...' : item.descricao,
     value: item.quantidadeFuncionarios,
-    color: pieColors[index % pieColors.length]
+    color: chartColors[index % chartColors.length]
   }));
 
   const percentualProventos = ((stats.totalProventos / (stats.totalProventos + stats.totalDescontos)) * 100);
@@ -160,7 +170,7 @@ export default function Dashboard() {
 
   return (
     <>
-    <Box sx={{ p: 3, backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+    <Box sx={{ p: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
       {/* Header */}
       <Box mb={4}>
         <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
@@ -175,12 +185,7 @@ export default function Dashboard() {
       <Box display="flex" gap={3} mb={4} sx={{ flexWrap: { xs: 'wrap', lg: 'nowrap' } }}>
         {/* Card Funcionários */}
         <Box flex="1" minWidth={{ xs: 280, lg: 0 }}>
-          <Card sx={{ 
-            borderRadius: 3,
-            height: '100%',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            border: '1px solid #e9ecef'
-          }}>
+          <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                 <Box>
@@ -198,7 +203,7 @@ export default function Dashboard() {
                     sx={{ mt: 1 }} 
                   />
                 </Box>
-                <Avatar sx={{ backgroundColor: '#e3f2fd', color: '#1976d2', width: 56, height: 56 }}>
+                <Avatar sx={{ backgroundColor: 'info.light', color: 'info.main', width: 56, height: 56 }}>
                   <People fontSize="large" />
                 </Avatar>
               </Box>
@@ -208,12 +213,7 @@ export default function Dashboard() {
 
         {/* Card Custo Mensal */}
         <Box flex="1" minWidth={{ xs: 280, lg: 0 }}>
-          <Card sx={{ 
-            borderRadius: 3,
-            height: '100%',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            border: '1px solid #e9ecef'
-          }}>
+          <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                 <Box>
@@ -231,7 +231,7 @@ export default function Dashboard() {
                     sx={{ mt: 1 }} 
                   />
                 </Box>
-                <Avatar sx={{ backgroundColor: '#e8f5e8', color: '#2e7d32', width: 56, height: 56 }}>
+                <Avatar sx={{ backgroundColor: 'success.light', color: 'success.main', width: 56, height: 56 }}>
                   <AttachMoney fontSize="large" />
                 </Avatar>
               </Box>
@@ -241,12 +241,7 @@ export default function Dashboard() {
 
         {/* Card Benefícios */}
         <Box flex="1" minWidth={{ xs: 280, lg: 0 }}>
-          <Card sx={{ 
-            borderRadius: 3,
-            height: '100%',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            border: '1px solid #e9ecef'
-          }}>
+          <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                 <Box>
@@ -264,7 +259,7 @@ export default function Dashboard() {
                     sx={{ mt: 1 }} 
                   />
                 </Box>
-                <Avatar sx={{ backgroundColor: '#fff3e0', color: '#f57c00', width: 56, height: 56 }}>
+                <Avatar sx={{ backgroundColor: 'warning.light', color: 'warning.main', width: 56, height: 56 }}>
                   <CardGiftcard fontSize="large" />
                 </Avatar>
               </Box>
@@ -274,12 +269,7 @@ export default function Dashboard() {
 
         {/* Card Relação Proventos/Descontos */}
         <Box flex="1" minWidth={{ xs: 280, lg: 0 }}>
-          <Card sx={{ 
-            borderRadius: 3,
-            height: '100%',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            border: '1px solid #e9ecef'
-          }}>
+          <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                 <Box>
@@ -297,7 +287,7 @@ export default function Dashboard() {
                     sx={{ mt: 1 }} 
                   />
                 </Box>
-                <Avatar sx={{ backgroundColor: '#e1f5fe', color: '#0277bd', width: 56, height: 56 }}>
+                <Avatar sx={{ backgroundColor: 'info.light', color: 'info.dark', width: 56, height: 56 }}>
                   <Assessment fontSize="large" />
                 </Avatar>
               </Box>
@@ -308,7 +298,7 @@ export default function Dashboard() {
 
       {/* Gráfico de Evolução da Folha - Linha completa */}
       <Box mb={4}>
-        <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '1px solid #e9ecef' }}>
+        <Card sx={cardSx}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h6" fontWeight="bold" color="primary">
@@ -321,8 +311,8 @@ export default function Dashboard() {
                 <AreaChart data={areaData}>
                   <defs>
                     <linearGradient id="colorFolha" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={areaChartColor} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={areaChartColor} stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="mes" />
@@ -336,7 +326,7 @@ export default function Dashboard() {
                   <Area 
                     type="monotone" 
                     dataKey="folha" 
-                    stroke="#4F46E5" 
+                    stroke={areaChartColor} 
                     fillOpacity={1} 
                     fill="url(#colorFolha)" 
                     strokeWidth={3}
@@ -363,7 +353,7 @@ export default function Dashboard() {
       <Box display="flex" gap={3} mb={4} sx={{ flexWrap: { xs: 'wrap', xl: 'nowrap' } }}>
         {/* Funcionários por Centro de Custo */}
         <Box flex="1" minWidth={{ xs: 350, xl: 0 }}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '1px solid #e9ecef', height: '100%' }}>
+          <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
                 Funcionários por Centro de Custo
@@ -395,7 +385,7 @@ export default function Dashboard() {
 
         {/* Funcionários por Linha de Negócio */}
         <Box flex="1" minWidth={{ xs: 350, xl: 0 }}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '1px solid #e9ecef', height: '100%' }}>
+          <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
                 Funcionários por Linha de Negócio
@@ -427,7 +417,7 @@ export default function Dashboard() {
 
         {/* Custo por Centro de Custo */}
         <Box flex="1" minWidth={{ xs: 350, xl: 0 }}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '1px solid #e9ecef', height: '100%' }}>
+          <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
                 Custo Folha por Centro de Custo
@@ -464,7 +454,7 @@ export default function Dashboard() {
 
         {/* Custo por Linha de Negócio */}
         <Box flex="1" minWidth={{ xs: 350, xl: 0 }}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '1px solid #e9ecef', height: '100%' }}>
+          <Card sx={{ ...cardSx, height: '100%' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
                 Custo Folha por Linha de Negócio
@@ -504,10 +494,10 @@ export default function Dashboard() {
       <Box display="flex" flexWrap="wrap" gap={3}>
         {/* Top Proventos */}
         <Box flex="1 1 400px" minWidth={400}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '1px solid #e9ecef' }}>
+          <Card sx={cardSx}>
             <CardContent>
               <Box display="flex" alignItems="center" mb={2}>
-                <Avatar sx={{ background: '#e8f5e8', color: '#2e7d32', mr: 2 }}>
+                <Avatar sx={{ backgroundColor: 'success.light', color: 'success.main', mr: 2 }}>
                   <TrendingUp />
                 </Avatar>
                 <Typography variant="h6" fontWeight="bold" color="primary">
@@ -517,11 +507,11 @@ export default function Dashboard() {
               <Divider sx={{ mb: 2 }} />
               <List dense>
                 {stats.topProventos.map((item, index) => (
-                  <ListItem key={item.id} sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: '#f5f5f5' } }}>
+                  <ListItem key={item.id} sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: 'action.hover' } }}>
                     <ListItemAvatar>
                       <Avatar sx={{ 
-                        background: `linear-gradient(135deg, ${pieColors[index]} 0%, ${pieColors[index]}80 100%)`,
-                        color: 'white',
+                        background: `linear-gradient(135deg, ${chartColors[index % chartColors.length]} 0%, ${alpha(chartColors[index % chartColors.length], 0.5)} 100%)`,
+                        color: 'common.white',
                         fontWeight: 'bold',
                         fontSize: '0.8rem'
                       }}>
@@ -554,10 +544,10 @@ export default function Dashboard() {
 
         {/* Top Descontos */}
         <Box flex="1 1 400px" minWidth={400}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: '1px solid #e9ecef' }}>
+          <Card sx={cardSx}>
             <CardContent>
               <Box display="flex" alignItems="center" mb={2}>
-                <Avatar sx={{ background: '#ffebee', color: '#c62828', mr: 2 }}>
+                <Avatar sx={{ backgroundColor: 'error.light', color: 'error.main', mr: 2 }}>
                   <TrendingDown />
                 </Avatar>
                 <Typography variant="h6" fontWeight="bold" color="primary">
@@ -567,11 +557,11 @@ export default function Dashboard() {
               <Divider sx={{ mb: 2 }} />
               <List dense>
                 {stats.topDescontos.map((item, index) => (
-                  <ListItem key={item.id} sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: '#f5f5f5' } }}>
+                  <ListItem key={item.id} sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: 'action.hover' } }}>
                     <ListItemAvatar>
                       <Avatar sx={{ 
-                        background: `linear-gradient(135deg, ${pieColors[index]} 0%, ${pieColors[index]}80 100%)`,
-                        color: 'white',
+                        background: `linear-gradient(135deg, ${chartColors[index % chartColors.length]} 0%, ${alpha(chartColors[index % chartColors.length], 0.5)} 100%)`,
+                        color: 'common.white',
                         fontWeight: 'bold',
                         fontSize: '0.8rem'
                       }}>

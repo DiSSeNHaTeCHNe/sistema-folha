@@ -1214,8 +1214,8 @@ export default function Organograma() {
     <>
       {/* Backdrop com spinner durante operações */}
       <Backdrop
-        sx={{ 
-          color: '#fff', 
+        sx={{
+          color: 'common.white',
           zIndex: (theme) => theme.zIndex.drawer + 1,
           backdropFilter: 'blur(2px)',
         }}

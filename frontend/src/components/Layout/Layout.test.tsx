@@ -20,6 +20,11 @@ vi.mock('../AlterarSenhaDialog', () => ({
     open ? <div role="dialog" aria-label="alterar-senha">Alterar Senha</div> : null,
 }));
 
+vi.mock('../AparenciaDialog', () => ({
+  AparenciaDialog: ({ open }: { open: boolean }) =>
+    open ? <div role="dialog" aria-label="aparencia">Aparência</div> : null,
+}));
+
 function renderLayout() {
   return renderWithProviders(
     <Routes>
@@ -62,6 +67,28 @@ describe('Layout', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Alterar senha' }));
 
     expect(screen.getByRole('dialog', { name: 'alterar-senha' })).toBeInTheDocument();
+  });
+
+  it('shows Aparencia menu item above Alterar senha', () => {
+    renderLayout();
+
+    fireEvent.click(screen.getByRole('button', { name: 'account of current user' }));
+
+    const menuItems = screen.getAllByRole('menuitem').map((item) => item.textContent);
+    const aparenciaIndex = menuItems.indexOf('Aparência');
+    const alterarSenhaIndex = menuItems.indexOf('Alterar senha');
+
+    expect(aparenciaIndex).toBeGreaterThan(-1);
+    expect(alterarSenhaIndex).toBeGreaterThan(aparenciaIndex);
+  });
+
+  it('opens aparencia dialog from avatar menu', () => {
+    renderLayout();
+
+    fireEvent.click(screen.getByRole('button', { name: 'account of current user' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Aparência' }));
+
+    expect(screen.getByRole('dialog', { name: 'aparencia' })).toBeInTheDocument();
   });
 
   it('renders outlet content', () => {
