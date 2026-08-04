@@ -20,6 +20,7 @@ import {
   Typography,
   Chip,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -62,6 +63,15 @@ interface NoOrganogramaNodeData {
 
 // Componente customizado para cada nó do organograma
 const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
+  const theme = useTheme();
+  const primaryMain = theme.palette.primary.main;
+  const handleStyle = {
+    background: primaryMain,
+    width: 12,
+    height: 12,
+    border: `2px solid ${theme.palette.common.white}`,
+  };
+
   const no = data.no as NoOrganogramaWithChildren;
   const isExpanded = data.expandedNodeId === no.id;
   const isHovered = data.hoveredNodeId === no.id;
@@ -76,12 +86,7 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
         type="target"
         position={Position.Top}
         id="target"
-        style={{
-          background: '#1976d2',
-          width: 12,
-          height: 12,
-          border: '2px solid white',
-        }}
+        style={handleStyle}
       />
       
       <Card
@@ -279,12 +284,7 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
       type="source"
       position={Position.Bottom}
       id="source"
-      style={{
-        background: '#1976d2',
-        width: 12,
-        height: 12,
-        border: '2px solid white',
-      }}
+      style={handleStyle}
     />
   </>
   );
@@ -307,6 +307,9 @@ export default function OrganogramaGrafico({
   onToggleExpand,
   onHover,
 }: OrganogramaGraficoProps) {
+  const theme = useTheme();
+  const primaryMain = theme.palette.primary.main;
+
   // Converter a estrutura hierárquica em nós e arestas para o ReactFlow
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
     const nodes: Node[] = [];
@@ -363,12 +366,12 @@ export default function OrganogramaGrafico({
           type: 'step',
           animated: false,
           style: {
-            stroke: '#1976d2',
+            stroke: primaryMain,
             strokeWidth: 3,
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: '#1976d2',
+            color: primaryMain,
             width: 20,
             height: 20,
           },
@@ -406,7 +409,7 @@ export default function OrganogramaGrafico({
     }
 
     return { nodes, edges };
-  }, [nos, onEdit, onDelete, onAddChild, onRemoveFuncionario, onRemoveCentroCusto]);
+  }, [nos, onEdit, onDelete, onAddChild, onRemoveFuncionario, onRemoveCentroCusto, primaryMain]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -434,13 +437,13 @@ export default function OrganogramaGrafico({
         defaultEdgeOptions={{
           type: 'step',
           animated: false,
-          style: { strokeWidth: 3, stroke: '#1976d2' },
+          style: { strokeWidth: 3, stroke: primaryMain },
         }}
       >
         <Background />
         <Controls />
         <MiniMap
-          nodeColor={() => '#1976d2'}
+          nodeColor={() => primaryMain}
           nodeStrokeWidth={3}
           zoomable
           pannable
