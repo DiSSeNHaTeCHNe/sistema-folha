@@ -6,10 +6,11 @@ import { widgetCardSx } from './widgets/cardStyles';
 interface WidgetFrameProps {
   title: string;
   editMode?: boolean;
+  toolbar?: ReactNode;
   children: ReactNode;
 }
 
-export function WidgetFrame({ title, editMode = false, children }: WidgetFrameProps) {
+export function WidgetFrame({ title, editMode = false, toolbar, children }: WidgetFrameProps) {
   const theme = useTheme();
 
   if (editMode) {
@@ -19,6 +20,7 @@ export function WidgetFrame({ title, editMode = false, children }: WidgetFramePr
           <Typography variant="subtitle1" gutterBottom>
             {title}
           </Typography>
+          {toolbar}
           {children}
         </CardContent>
       </Card>

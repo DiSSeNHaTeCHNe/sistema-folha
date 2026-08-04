@@ -1,0 +1,179 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  type DragEndEvent,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { Box, IconButton, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import type { DashboardStats } from '../../services/dashboardService';
+import type { WidgetInstance } from './types';
+import { COL_SPAN_PRESETS, type ColSpanPreset } from './types';
+import { WidgetFrame } from './WidgetFrame';
+import { getWidgetDefinition } from './widgets/registry';
+
+interface DashboardGridProps {
+  widgets: WidgetInstance[];
+  stats: DashboardStats;
+  editMode: boolean;
+  onWidgetsChange?: (widgets: WidgetInstance[]) => void;
+}
+
+function normalizeOrder(widgets: WidgetInstance[]): WidgetInstance[] {
+  return widgets.map((widget, index) => ({ ...widget, ordem: index }));
+}
+
+function SortableWidgetItem({
+  instance,
+  stats,
+  editMode,
+  onColSpanChange,
+}: {
+  instance: WidgetInstance;
+  stats: DashboardStats;
+  editMode: boolean;
+  onColSpanChange: (instanceId: string, colSpan: number) => void;
+}) {
+  const definition = getWidgetDefinition(instance.widgetId);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: instance.instanceId,
+    disabled: !editMode,
+  });
+
+  if (!definition) {
+    return null;
+  }
+
+  const { Component } = definition;
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.85 : 1,
+  };
+
+  const presetValue = (Object.entries(COL_SPAN_PRESETS).find(([, span]) => span === instance.colSpan)?.[0] ??
+    'M') as ColSpanPreset;
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      sx={{
+        gridColumn: { xs: 'span 12', md: `span ${instance.colSpan}` },
+        gridRow: { md: `span ${instance.rowSpan}` },
+      }}
+    >
+      <WidgetFrame
+        title={definition.titulo}
+        editMode={editMode}
+        toolbar={
+          editMode ? (
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <IconButton aria-label={`Reordenar ${definition.titulo}`} size="small" {...attributes} {...listeners}>
+                <DragIndicatorIcon fontSize="small" />
+              </IconButton>
+              <ToggleButtonGroup
+                exclusive
+                size="small"
+                value={presetValue}
+                aria-label={`Largura do widget ${definition.titulo}`}
+                onChange={(_event, value: ColSpanPreset | null) => {
+                  if (value) {
+                    onColSpanChange(instance.instanceId, COL_SPAN_PRESETS[value]);
+                  }
+                }}
+              >
+                {(Object.keys(COL_SPAN_PRESETS) as ColSpanPreset[]).map((preset) => (
+                  <ToggleButton key={preset} value={preset} aria-label={`Largura ${preset}`}>
+                    {preset}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Box>
+          ) : undefined
+        }
+      >
+        <Component instance={instance} stats={stats} editMode={editMode} />
+      </WidgetFrame>
+    </Box>
+  );
+}
+
+export function DashboardGrid({ widgets, stats, editMode, onWidgetsChange }: DashboardGridProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const sorted = [...widgets].sort((a, b) => a.ordem - b.ordem);
+  const ids = sorted.map((widget) => widget.instanceId);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !onWidgetsChange) {
+      return;
+    }
+    const oldIndex = sorted.findIndex((widget) => widget.instanceId === active.id);
+    const newIndex = sorted.findIndex((widget) => widget.instanceId === over.id);
+    if (oldIndex < 0 || newIndex < 0) {
+      return;
+    }
+    onWidgetsChange(normalizeOrder(arrayMove(sorted, oldIndex, newIndex)));
+  };
+
+  const handleColSpanChange = (instanceId: string, colSpan: number) => {
+    if (!onWidgetsChange) {
+      return;
+    }
+    onWidgetsChange(
+      sorted.map((widget) => (widget.instanceId === instanceId ? { ...widget, colSpan } : widget)),
+    );
+  };
+
+  const grid = (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(12, 1fr)',
+        gap: 3,
+      }}
+    >
+      {sorted.map((instance) => (
+        <SortableWidgetItem
+          key={instance.instanceId}
+          instance={instance}
+          stats={stats}
+          editMode={editMode}
+          onColSpanChange={handleColSpanChange}
+        />
+      ))}
+    </Box>
+  );
+
+  if (!editMode) {
+    return grid;
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={ids} strategy={rectSortingStrategy}>
+        {grid}
+      </SortableContext>
+    </DndContext>
+  );
+}
