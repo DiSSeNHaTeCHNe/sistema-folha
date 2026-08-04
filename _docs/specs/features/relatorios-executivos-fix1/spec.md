@@ -205,8 +205,8 @@ Após o MVP, operadores ficam **presos** na tela de Relatórios: ao abrir, a com
 | FIX1-19 | P1: Card usuário | Tasks | T4 ✅ |
 | FIX1-20 | P1: Card usuário | Tasks | T4 ✅ |
 | FIX1-21 | P1: Card usuário | Tasks | T4, T5 ✅ |
-| FIX1-22 | P2: BYTEA dev | Tasks | T6 |
-| FIX1-23 | P2: BYTEA dev | Tasks | T6 |
+| FIX1-22 | P2: BYTEA dev | Tasks | T6 ✅ |
+| FIX1-23 | P2: BYTEA dev | Tasks | T6 ✅ |
 
 **Parent refinement map:**
 

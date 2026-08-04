@@ -11,7 +11,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Design**: `_docs/specs/features/relatorios-executivos-fix1/design.md`  
 **Spec**: `_docs/specs/features/relatorios-executivos-fix1/spec.md`  
 **Branch**: `feat/relatorios-executivos` · **Commit prefix**: `fix1:`  
-**Status**: Draft — aguardando aprovação antes de Execute
+**Status**: ✅ Execute complete — T1–T6 done · Verifier PASS (fix cycle 1) · HEAD `7f13eeb`
 
 ---
 
@@ -270,10 +270,10 @@ T6
 - Skill: `jpa-performance`
 
 **Done when**:
-- [ ] Entity sem `@Lob`; mapping compatível PostgreSQL BYTEA + dev `ddl-auto: update`
-- [ ] Worker test confirma `relatorioArquivoRepository.save` com bytes PDF (FIX1-23)
-- [ ] Gate full fix1: comando **Full fix1** da tabela Gate Check Commands
-- [ ] Backend + frontend suites relatorios verdes
+- [x] Entity sem `@Lob`; mapping compatível PostgreSQL BYTEA + dev `ddl-auto: update`
+- [x] Worker test confirma `relatorioArquivoRepository.save` com bytes PDF (FIX1-23)
+- [x] Gate full fix1: comando **Full fix1** da tabela Gate Check Commands
+- [x] Backend + frontend suites relatorios verdes
 
 **Tests**: unit  
 **Gate**: full fix1

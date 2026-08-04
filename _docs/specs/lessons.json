@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 11,
+  "next_id": 17,
   "lessons": [
     {
       "id": "L-001",
@@ -184,6 +184,114 @@
       ],
       "created": "2026-07-29T20:52:14Z",
       "last_seen": "2026-07-29T20:52:14Z"
+    },
+    {
+      "id": "L-011",
+      "key": "ac_gap::pdf renderer tests must assert spec defined kpi labels and values extracted from bytes not only magic bytes and partial numeric substrings",
+      "text": "PDF renderer tests must assert spec-defined KPI labels and values extracted from bytes, not only magic bytes and partial numeric substrings.",
+      "signal": "ac_gap",
+      "scope": "relatorios/pdf",
+      "status": "candidate",
+      "features": [
+        "relatorios-executivos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "REL-07 FolhaExecutivoPdfRenderer.java:105-108 (relatorios/pdf)"
+      ],
+      "created": "2026-08-03T21:42:54Z",
+      "last_seen": "2026-08-03T21:42:54Z"
+    },
+    {
+      "id": "L-012",
+      "key": "surviving_mutant::list endpoints need an ordering assertion on returned dto sequence not only http 200",
+      "text": "List endpoints need an ordering assertion on returned DTO sequence, not only HTTP 200.",
+      "signal": "surviving_mutant",
+      "scope": "relatorios/api",
+      "status": "candidate",
+      "features": [
+        "relatorios-executivos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "sensor-probe: list OrderByAnoDescMesDesc (relatorios/api)"
+      ],
+      "created": "2026-08-03T21:42:54Z",
+      "last_seen": "2026-08-03T21:42:54Z"
+    },
+    {
+      "id": "L-013",
+      "key": "ac_gap::cover every relatoriostatus branch in download tests including erro returning 409 not only pendente",
+      "text": "Cover every RelatorioStatus branch in download tests, including ERRO returning 409, not only PENDENTE.",
+      "signal": "ac_gap",
+      "scope": "relatorios/api",
+      "status": "candidate",
+      "features": [
+        "relatorios-executivos"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "REL-05 ERRO download (relatorios/api)"
+      ],
+      "created": "2026-08-03T21:42:54Z",
+      "last_seen": "2026-08-03T21:42:54Z"
+    },
+    {
+      "id": "L-014",
+      "key": "ac_gap::assert structured log lines with logback listappender for async workers implementation only logs fail evidence or zero",
+      "text": "Assert structured log lines with Logback ListAppender for async workers — implementation-only logs fail evidence-or-zero.",
+      "signal": "ac_gap",
+      "scope": "backend/relatorios/worker",
+      "status": "candidate",
+      "features": [
+        "relatorios-executivos-fix1"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "FIX1-04 (backend/relatorios/worker)"
+      ],
+      "created": "2026-08-04T01:42:03Z",
+      "last_seen": "2026-08-04T01:42:03Z"
+    },
+    {
+      "id": "L-015",
+      "key": "ac_gap::entity mapping acs need a reflection or datajpatest asserting column type mapping not compile only",
+      "text": "Entity mapping ACs need a reflection or DataJpaTest asserting column type/mapping, not compile-only.",
+      "signal": "ac_gap",
+      "scope": "backend/jpa/entity",
+      "status": "candidate",
+      "features": [
+        "relatorios-executivos-fix1"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "FIX1-22 (backend/jpa/entity)"
+      ],
+      "created": "2026-08-04T01:42:03Z",
+      "last_seen": "2026-08-04T01:42:03Z"
+    },
+    {
+      "id": "L-016",
+      "key": "spec_precision_gap::when spec requires dataprocessamento on erro assert it explicitly in failure path worker tests",
+      "text": "When spec requires dataProcessamento on ERRO, assert it explicitly in failure-path worker tests.",
+      "signal": "spec_precision_gap",
+      "scope": "backend/relatorios/worker",
+      "status": "candidate",
+      "features": [
+        "relatorios-executivos-fix1"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "FIX1-02 (backend/relatorios/worker)"
+      ],
+      "created": "2026-08-04T01:42:03Z",
+      "last_seen": "2026-08-04T01:42:03Z"
     }
   ]
 }

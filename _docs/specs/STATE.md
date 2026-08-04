@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-08-03  
-**Current Work:** `relatorios-executivos` — Execute T1–T15 complete on `feat/relatorios-executivos` (2026-08-03); full gate pending; pending Verifier
+**Current Work:** `relatorios-executivos-fix1` — Tasks T1–T6 ready (2026-08-03); pending approval → Execute on `feat/relatorios-executivos`
 
 ---
 
@@ -125,6 +125,7 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
+- **Feature (tasks ready)**: `relatorios-executivos-fix1` → tasks.md T1–T6 (6 tasks, 1 batch inline); design complete; branch `feat/relatorios-executivos`; prefix `fix1:`; pending Execute approval
 - **Feature (execute done, pending Verifier)**: `relatorios-executivos` → branch `feat/relatorios-executivos`; T1–T15 executed (2026-08-03); full gate PASS; AD-015 active; commits `feat(relatorios):` + `docs(relatorios):`; pending Verifier
 - **Feature (execute done, pending Verifier)**: `auth-api-keys-fix2` → branch `feat/auth-api-keys`; T1–T8 executed (2026-07-30); full gate PASS (BE: FuncionarioServiceTest + FuncionarioAclWebMvcTest + UsuarioServiceTest + UsuarioAclWebMvcTest + GlobalExceptionHandlerTest + BeneficioMensalControllerWebMvcTest + ModularArchitectureTest = 101; FE: api.test + ApiKeys = 24; `npm run build` OK); commits `fix2:` prefix; pending Verifier fix2
 - **Feature (execute done, pending Verifier)**: `auth-api-keys-fix1` → branch `feat/auth-api-keys`; T1–T7 executed (2026-07-30); full gate PASS (BE: ApiKeyServiceTest + ApiKeyWriteGuardFilterTest + ApiKeyControllerWebMvcTest + ApiKeyAclWebMvcTest + JwtAuthenticationFilterTest + SecurityConfigAuthRefreshTest + ModularArchitectureTest; FE: ApiKeyRoute + Usuarios Vitest + `npm run build`); pending Verifier fix1

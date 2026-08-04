@@ -74,6 +74,42 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: AAP2-10 (coverage)
 - last seen: 2026-07-29T20:52:14Z
 
+### L-011 — PDF renderer tests must assert spec-defined KPI labels and values extracted from bytes, not only magic bytes and partial numeric substrings.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `relatorios/pdf` · harmful: 0
+- features: relatorios-executivos
+- evidence: REL-07 FolhaExecutivoPdfRenderer.java:105-108 (relatorios/pdf)
+- last seen: 2026-08-03T21:42:54Z
+
+### L-012 — List endpoints need an ordering assertion on returned DTO sequence, not only HTTP 200.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `relatorios/api` · harmful: 0
+- features: relatorios-executivos
+- evidence: sensor-probe: list OrderByAnoDescMesDesc (relatorios/api)
+- last seen: 2026-08-03T21:42:54Z
+
+### L-013 — Cover every RelatorioStatus branch in download tests, including ERRO returning 409, not only PENDENTE.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `relatorios/api` · harmful: 0
+- features: relatorios-executivos
+- evidence: REL-05 ERRO download (relatorios/api)
+- last seen: 2026-08-03T21:42:54Z
+
+### L-014 — Assert structured log lines with Logback ListAppender for async workers — implementation-only logs fail evidence-or-zero.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `backend/relatorios/worker` · harmful: 0
+- features: relatorios-executivos-fix1
+- evidence: FIX1-04 (backend/relatorios/worker)
+- last seen: 2026-08-04T01:42:03Z
+
+### L-015 — Entity mapping ACs need a reflection or DataJpaTest asserting column type/mapping, not compile-only.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `backend/jpa/entity` · harmful: 0
+- features: relatorios-executivos-fix1
+- evidence: FIX1-22 (backend/jpa/entity)
+- last seen: 2026-08-04T01:42:03Z
+
+### L-016 — When spec requires dataProcessamento on ERRO, assert it explicitly in failure-path worker tests.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `backend/relatorios/worker` · harmful: 0
+- features: relatorios-executivos-fix1
+- evidence: FIX1-02 (backend/relatorios/worker)
+- last seen: 2026-08-04T01:42:03Z
+
 ## Quarantined (failed when applied — ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
