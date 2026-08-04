@@ -119,6 +119,27 @@ _docs/*
 !_docs/specs/
 !_docs/specs/**
 
+# Local scratch / agent experiments (never version)
+.scratch/
+
+# Apresentações locais (não versionar)
+/apresentacao_*.pdf
+
+# Playwright / test artifacts
+frontend/test-results/
+
+# PoC experimental (não roteado — ver DashboardCustomizavel)
+frontend/src/pages/DashboardCustomizavel/
+frontend/src/services/dashboardLayoutService.ts
+
+# Backups locais
+*.bak
+
+# IDE / tooling local
+.cursor/settings.json
+.sonarlint/
+.agents/.skill-lock.json.backup
+
 # Keep local-only / legacy
 .antigravitycli/   # until real config; optional later
 _old/

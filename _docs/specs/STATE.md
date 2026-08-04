@@ -178,7 +178,7 @@ _None currently._
 | 008 | 13º na linha da folha                        | 2026-07-28 | —       | ✅ Done |
 | 009 | Folha detalhe separar 13º                    | 2026-07-28 | —       | ✅ Done |
 | 010 | Sonar gate new_violations                    | 2026-08-02 | pending | ✅ Done |
-| 011 | Repo limpo e docs alinhados                  | 2026-08-03 | pending | 🔄 In Progress |
+| 011 | Repo limpo e docs alinhados                  | 2026-08-03 | 1cc2e5e | ✅ Done |
 
 ---
 
