@@ -87,14 +87,17 @@ function renderDashboard(state?: object, temaId?: TemaId) {
   });
 }
 
-/** Converte `#rrggbb` para a forma `rgb(r, g, b)` devolvida por getComputedStyle. */
-function paraRgb(cor: string): string {
-  if (!cor.startsWith('#')) {
-    return cor;
+/**
+ * Canais R/G/B de uma cor, aceitando tanto a forma hexadecimal dos tokens quanto a
+ * forma funcional devolvida por getComputedStyle. Sem literal de cor no fonte,
+ * para não violar a guarda de src/theme/noColorLiterals.test.ts.
+ */
+function canaisDaCor(cor: string): number[] {
+  if (cor.startsWith('#')) {
+    const hex = cor.slice(1);
+    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
   }
-  const hex = cor.slice(1);
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
-  return `rgb(${r}, ${g}, ${b})`;
+  return (cor.match(/\d+(?:\.\d+)?/g) ?? []).slice(0, 3).map(Number);
 }
 
 /** O avatar é o último filho do cabeçalho do card, ao lado do bloco de textos. */
@@ -183,14 +186,14 @@ describe('Dashboard page', () => {
 
     for (const { rotulo, papel, tomDoIcone } of AVATARES_KPI) {
       const estilo = getComputedStyle(avatarDoCardKpi(rotulo));
-      expect(estilo.backgroundColor, `${temaId}: ${rotulo} fundo`).toBe(
-        paraRgb(palette[papel].light),
+      expect(canaisDaCor(estilo.backgroundColor), `${temaId}: ${rotulo} fundo`).toEqual(
+        canaisDaCor(palette[papel].light),
       );
-      expect(estilo.color, `${temaId}: ${rotulo} ícone`).toBe(
-        paraRgb(palette[papel][tomDoIcone]),
+      expect(canaisDaCor(estilo.color), `${temaId}: ${rotulo} ícone`).toEqual(
+        canaisDaCor(palette[papel][tomDoIcone]),
       );
-      expect(estilo.backgroundColor, `${temaId}: ${rotulo} fundo de fábrica`).not.toBe(
-        paraRgb(paletteDeFabrica[papel].light),
+      expect(canaisDaCor(estilo.backgroundColor), `${temaId}: ${rotulo} fundo de fábrica`).not.toEqual(
+        canaisDaCor(paletteDeFabrica[papel].light),
       );
     }
   });
