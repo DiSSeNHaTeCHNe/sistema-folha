@@ -32,6 +32,8 @@ public class RelatorioGeracaoWorker {
 
     private static final String ERRO_TAMANHO =
         "PDF excede o tamanho máximo permitido (%d MB)";
+    private static final String ERRO_INDISPONIVEL = "Relatório indisponível";
+    private static final String ERRO_GENERICO = "Erro ao gerar relatório";
 
     private final RelatorioRepository relatorioRepository;
     private final RelatorioArquivoRepository relatorioArquivoRepository;
@@ -40,13 +42,24 @@ public class RelatorioGeracaoWorker {
     private final DashboardConsultaPort dashboardConsultaPort;
     private final BeneficioConsultaPort beneficioConsultaPort;
     private final OrganogramaAcessoPort organogramaAcessoPort;
+    private final RelatorioRecoveryTracker recoveryTracker;
 
     @Async("relatorioExecutor")
     @Transactional
     public CompletableFuture<Void> processar(Long relatorioId) {
         Relatorio relatorio = relatorioRepository.findById(relatorioId).orElse(null);
-        if (relatorio == null || !Boolean.TRUE.equals(relatorio.getAtivo())) {
-            log.warn("Relatório {} não encontrado ou inativo", relatorioId);
+        if (relatorio == null) {
+            log.warn("Relatório {} não encontrado — nada a processar", relatorioId);
+            return CompletableFuture.completedFuture(null);
+        }
+
+        if (!Boolean.TRUE.equals(relatorio.getAtivo())) {
+            if (relatorio.getStatus() == RelatorioStatus.PENDENTE) {
+                log.warn("Relatório {} inativo com status PENDENTE — marcando ERRO", relatorioId);
+                marcarErro(relatorio, ERRO_INDISPONIVEL);
+            } else {
+                log.warn("Relatório {} inativo — ignorando processamento", relatorioId);
+            }
             return CompletableFuture.completedFuture(null);
         }
 
@@ -56,11 +69,16 @@ public class RelatorioGeracaoWorker {
         int mes = relatorio.getMes();
         int ano = relatorio.getAno();
 
+        log.info("Iniciando processamento relatório id={} login={} tipo={} competencia={}/{}",
+            relatorioId, login, relatorio.getTipo(), mes, ano);
+
         try {
             byte[] pdf = renderPdf(relatorio.getTipo(), login, usuarioId, mes, ano);
             long maxBytes = (long) properties.getMaxTamanhoMb() * 1024 * 1024;
             if (pdf.length > maxBytes) {
                 marcarErro(relatorio, ERRO_TAMANHO.formatted(properties.getMaxTamanhoMb()));
+                log.info("Relatório {} finalizado com ERRO (tamanho) login={} competencia={}/{}",
+                    relatorioId, login, mes, ano);
                 return CompletableFuture.completedFuture(null);
             }
 
@@ -70,11 +88,20 @@ public class RelatorioGeracaoWorker {
             relatorio.setDataProcessamento(LocalDateTime.now());
             relatorio.setErro(null);
             relatorioRepository.save(relatorio);
+            recoveryTracker.clear(relatorioId);
             log.info("Relatório {} processado com sucesso login={} competencia={}/{}",
                 relatorioId, login, mes, ano);
         } catch (Exception e) {
             log.error("Erro ao processar relatório {} login={}", relatorioId, login, e);
-            marcarErro(relatorio, "Erro ao gerar relatório");
+            marcarErro(relatorio, ERRO_GENERICO);
+            log.info("Relatório {} finalizado com ERRO login={} competencia={}/{}",
+                relatorioId, login, mes, ano);
+        } finally {
+            if (relatorio.getStatus() == RelatorioStatus.PENDENTE) {
+                log.warn("Safety-net: relatório {} ainda PENDENTE após processamento — marcando ERRO",
+                    relatorioId);
+                marcarErro(relatorio, ERRO_GENERICO);
+            }
         }
 
         return CompletableFuture.completedFuture(null);
@@ -134,11 +161,12 @@ public class RelatorioGeracaoWorker {
         relatorio.setDataProcessamento(LocalDateTime.now());
         relatorio.setErro(truncarErro(mensagem));
         relatorioRepository.save(relatorio);
+        recoveryTracker.clear(relatorio.getId());
     }
 
     static String truncarErro(String mensagem) {
         if (mensagem == null) {
-            return "Erro ao gerar relatório";
+            return ERRO_GENERICO;
         }
         return mensagem.length() <= 500 ? mensagem : mensagem.substring(0, 500);
     }

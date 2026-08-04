@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -50,10 +49,11 @@ class RelatorioGeracaoWorkerTest {
     private BeneficioConsultaPort beneficioConsultaPort;
     @Mock
     private OrganogramaAcessoPort organogramaAcessoPort;
+    @Mock
+    private RelatorioRecoveryTracker recoveryTracker;
 
     private RelatorioGeracaoProperties properties;
 
-    @InjectMocks
     private RelatorioGeracaoWorker worker;
 
     private Relatorio relatorio;
@@ -70,7 +70,8 @@ class RelatorioGeracaoWorkerTest {
             properties,
             dashboardConsultaPort,
             beneficioConsultaPort,
-            organogramaAcessoPort);
+            organogramaAcessoPort,
+            recoveryTracker);
 
         usuario = new Usuario();
         usuario.setId(1L);
@@ -115,6 +116,8 @@ class RelatorioGeracaoWorkerTest {
         ArgumentCaptor<RelatorioArquivo> arquivoCaptor = ArgumentCaptor.forClass(RelatorioArquivo.class);
         verify(relatorioArquivoRepository).save(arquivoCaptor.capture());
         assertEquals(pdf.length, arquivoCaptor.getValue().getTamanhoBytes());
+        assertEquals(pdf, arquivoCaptor.getValue().getPdfBytes());
+        verify(recoveryTracker).clear(10L);
     }
 
     @Test
@@ -131,6 +134,7 @@ class RelatorioGeracaoWorkerTest {
         assertEquals(RelatorioStatus.ERRO, salvo.getStatus());
         assertEquals("Erro ao gerar relatório", salvo.getErro());
         verify(relatorioArquivoRepository, never()).save(any());
+        verify(recoveryTracker).clear(10L);
     }
 
     @Test
@@ -149,6 +153,30 @@ class RelatorioGeracaoWorkerTest {
         assertEquals(RelatorioStatus.ERRO, salvo.getStatus());
         assertTrue(salvo.getErro().contains("50 MB") || salvo.getErro().contains("1 MB"));
         verify(relatorioArquivoRepository, never()).save(any());
+    }
+
+    @Test
+    void processar_idInexistente_naoSalva() throws Exception {
+        when(relatorioRepository.findById(99L)).thenReturn(Optional.empty());
+
+        worker.processar(99L).get();
+
+        verify(relatorioRepository, never()).save(any());
+        verify(recoveryTracker, never()).clear(anyLong());
+    }
+
+    @Test
+    void processar_inativoPendente_marcaErro() throws Exception {
+        relatorio.setAtivo(false);
+        when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+
+        worker.processar(10L).get();
+
+        ArgumentCaptor<Relatorio> captor = ArgumentCaptor.forClass(Relatorio.class);
+        verify(relatorioRepository).save(captor.capture());
+        assertEquals(RelatorioStatus.ERRO, captor.getValue().getStatus());
+        assertEquals("Relatório indisponível", captor.getValue().getErro());
+        verify(recoveryTracker).clear(10L);
     }
 
     @Test
