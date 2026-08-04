@@ -1,11 +1,8 @@
 # Handoff
 
-- **Feature**: ajuste-harness (`_docs/specs/features/ajuste-harness/`)
-- **Phase / Task**: Execute T1–T13 + Verifier PASS (iter 2)
-- **Completed**: Specify, Design A, Tasks, Execute (2 batches), fix gate `rg '\.specs'`, validation.md PASS
-- **In-progress**: none
-- **Next step**: User commits harness diffs when ready (Execute ran with **no commits** by request)
-- **Blockers**: none
-- **Uncommitted files**: harness core (`.gitignore`, `AGENTS.md`, `.agents/**`, `_docs/specs/**`, `.claude/`, `.cursor/rules/`); deletes `_docs/AGENTS.md`, `.windsurf/`
-- **Branch**: local working tree
-- **Notes**: Do not mix concurrent BE/FE product diffs into harness commits; FE skills remain TARGET until ROADMAP adequacy feature
+- **Branch:** `main` @ HEAD (sync `origin/main`)
+- **Current work:** Quick task `011-repo-limpo-atualizado` — sync docs + specs + higiene git
+- **Next feature:** `temas-visuais` — spec/design/tasks/context prontos; aguardando aprovação → Execute
+- **Recently closed on main:** `relatorios-executivos` + fix1 (AD-015), `auth-api-keys` + fix1/fix2 (AD-013)
+- **Blockers:** none
+- **Notes:** Governança canônica em `_docs/specs/`; FE skills permanecem TARGET (AD-004) até feature de adequação

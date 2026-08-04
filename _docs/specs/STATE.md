@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-08-03  
-**Current Work:** `relatorios-executivos-fix1` — Tasks T1–T6 ready (2026-08-03); pending approval → Execute on `feat/relatorios-executivos`
+**Current Work:** `temas-visuais` — spec/design/tasks/context prontos; aguardando aprovação → Execute (próxima feature de produto)
 
 ---
 
@@ -125,17 +125,13 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Feature (tasks ready)**: `relatorios-executivos-fix1` → tasks.md T1–T6 (6 tasks, 1 batch inline); design complete; branch `feat/relatorios-executivos`; prefix `fix1:`; pending Execute approval
-- **Feature (execute done, pending Verifier)**: `relatorios-executivos` → branch `feat/relatorios-executivos`; T1–T15 executed (2026-08-03); full gate PASS; AD-015 active; commits `feat(relatorios):` + `docs(relatorios):`; pending Verifier
-- **Feature (execute done, pending Verifier)**: `auth-api-keys-fix2` → branch `feat/auth-api-keys`; T1–T8 executed (2026-07-30); full gate PASS (BE: FuncionarioServiceTest + FuncionarioAclWebMvcTest + UsuarioServiceTest + UsuarioAclWebMvcTest + GlobalExceptionHandlerTest + BeneficioMensalControllerWebMvcTest + ModularArchitectureTest = 101; FE: api.test + ApiKeys = 24; `npm run build` OK); commits `fix2:` prefix; pending Verifier fix2
-- **Feature (execute done, pending Verifier)**: `auth-api-keys-fix1` → branch `feat/auth-api-keys`; T1–T7 executed (2026-07-30); full gate PASS (BE: ApiKeyServiceTest + ApiKeyWriteGuardFilterTest + ApiKeyControllerWebMvcTest + ApiKeyAclWebMvcTest + JwtAuthenticationFilterTest + SecurityConfigAuthRefreshTest + ModularArchitectureTest; FE: ApiKeyRoute + Usuarios Vitest + `npm run build`); pending Verifier fix1
-- **Feature (execute done)**: `auth-api-keys` → branch `feat/auth-api-keys`; T1–T16 executed (2026-07-30); full gate PASS (`ApiKeyServiceTest` + `JwtAuthenticationFilterTest` + `ApiKeyWriteGuardFilterTest` = 32 tests; `npm run build` OK); pending merge to `main` + Verifier
-- **Feature (done)**: `adequacao-analise-projeto-r4` → squash merged to `main` @ `64acb93` (2026-07-30); QG OK @ `new_coverage` 80.0%; meta interna 85%/branch 70% = ressalva (leak period R3); Playwright PASS; ADP N/A Testcontainers
-- **Feature (done)**: `adequacao-analise-projeto-r3` → squash merged to `main` @ `bcff5f9`; Verifier PASS; Sonar QG OK @ 80.0%
-- **Feature (done)**: `adequacao-analise-projeto` (R1) → `main` @ `047e64d`
-- **Feature (done)**: `adequacao-analise-projeto-r2` → `main` @ `cb6e04a`
-- **Feature (done)**: `acl-cc-competencia` → @ `7e0421d`; squash merge pendente
-- **Feature (done)**: `organograma-linhas-hierarquia` → merged `main`
+- **Branch:** `main` (sincronizada com `origin/main`)
+- **Feature (closed on main)**: `relatorios-executivos` + `relatorios-executivos-fix1` → mergeados (2026-08-03); AD-015 active; validation PASS / PASS com ressalvas
+- **Feature (closed on main)**: `auth-api-keys` + fix1 + fix2 → mergeados; AD-013 active; PAT `sf_live_`, UI `/api-keys`
+- **Feature (next)**: `temas-visuais` → spec/design/tasks/context prontos (untracked até quick 011); aguardando aprovação Execute
+- **Quick task (in progress)**: `011-repo-limpo-atualizado` — sync governança, README, specs pendentes, higiene git
+- **Branches locais obsoletas (merged)**: `feat/relatorios-executivos`, `feat/auth-api-keys`, `feat/mcp-agent-tools`, `feat/acl-cc-competencia`, `feat/folha-custo-clt`, `feat/organograma-linhas-hierarquia` — candidatas a delete
+- **Branches locais ativas (não merged)**: `feat/cobertura-testes-95`, `feat/adequacao-analise-projeto`, `feat/qualidade-criticos-sonar`
 - **Decisions**: AD-001…AD-015 active
 ---
 
@@ -160,7 +156,7 @@ _None currently._
 - [x] Specificar feature `modular-acl-security-fix` (ACL empty-set + refresh permitAll + Folha delete ACL)
 - [x] Re-review spec `modular-acl-security-fix` vs tree pós sibling/parent PASS (2026-07-26)
 - [x] Execute `modular-acl-security-fix` T1–T4 + Verifier PASS + code-review (uncommitted)
-- [ ] Commits do usuário (`ajuste-harness` / `modular-monolith` / fix batch)
+- [x] Commits do usuário (`ajuste-harness` / `modular-monolith` / fix batch) — conteúdo em `main`
 - [x] Feature `modular-boundary-hardening` — Execute T1–T12 done; AD-010 active; ready for Verifier
 - [ ] Deferred concerns (not this fix): `/usuarios` ADMIN privilege escalation; password logging hygiene; N+1 import loops
 - [ ] Feature futura: adequação do código às skills FE target / gaps de segurança do relatório
@@ -176,17 +172,24 @@ _None currently._
 | 002 | Organizar pastas + diversos              | 2026-06-20 | pending | ✅ Done |
 | 003 | Renomear front/back → frontend/backend   | 2026-06-20 | pending | ✅ Done |
 | 004 | Fix TS build em Funcionarios/index.tsx     | 2026-06-20 | pending | ✅ Done |
+| 005 | Importação no menu Cadastros                 | 2026-06-20 | —       | ✅ Done |
+| 006 | Organograma no menu Cadastros                | 2026-06-20 | —       | ✅ Done |
+| 007 | Inativar funcionário                         | 2026-07-27 | —       | ✅ Done |
+| 008 | 13º na linha da folha                        | 2026-07-28 | —       | ✅ Done |
+| 009 | Folha detalhe separar 13º                    | 2026-07-28 | —       | ✅ Done |
+| 010 | Sonar gate new_violations                    | 2026-08-02 | pending | ✅ Done |
+| 011 | Repo limpo e docs alinhados                  | 2026-08-03 | pending | 🔄 In Progress |
 
 ---
 
 ## Lessons Learned
 
-### L-001: Relatórios frontend desconectado (2026-06-20)
+### L-001: Relatórios frontend desconectado (2026-06-20) — **Resolved 2026-08-03**
 
 **Context:** Brownfield mapping compared frontend services to backend controllers.  
-**Problem:** `relatorioService.ts` calls six `/relatorios/*` endpoints with no backend implementation.  
-**Solution:** Document in `CONCERNS.md`; prioritize backend relatórios or remove/disable UI until implemented.  
-**Prevents:** Agents assuming PDF reports work because README or UI exists.
+**Problem:** `relatorioService.ts` calls `/relatorios/*` endpoints with no backend implementation.  
+**Solution:** Feature `relatorios-executivos` + fix1 mergeados em `main`; domínio `relatorios.*` com PDF async (AD-015).  
+**Prevents:** Agents assuming PDF reports work because README or UI exists — verificar controllers antes de marcar Open.
 
 ---
 

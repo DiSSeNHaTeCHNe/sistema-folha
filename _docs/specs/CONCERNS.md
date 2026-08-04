@@ -7,12 +7,12 @@
 
 **Relatórios UI without backend:**
 
-- Symptoms: Página Relatórios falha em listar/gerar/download (API 404).
-- Trigger: Navegar para `/relatorios` e acionar qualquer ação.
-- Files: `frontend/src/services/relatorioService.ts`, `frontend/src/pages/Relatorios/index.tsx` — sem controller Java correspondente
-- Workaround: Usar resumo de folha / exports existentes; evitar menu Relatórios até backend existir.
-- Root cause: Frontend à frente do backend; README menciona PDF sem dependência PDF no `pom.xml`.
-- **Status:** Open (fora escopo adequação P2)
+- Symptoms: ~~Página Relatórios falha em listar/gerar/download (API 404).~~ Resolvido em `main`.
+- Trigger: Navegar para `/relatorios` e acionar listar/gerar/download.
+- Files: `relatorios/api/RelatorioFolhaController`, `RelatorioBeneficioController`; FE `pages/Relatorios/`
+- Workaround: n/a — backend async PDF operacional (AD-015).
+- Root cause: frontend implementado antes do backend (L-001).
+- **Status:** **Resolved** (2026-08-03 — `relatorios-executivos` + fix1 mergeados em `main`)
 
 ## Security Considerations
 
@@ -132,8 +132,8 @@
 
 **Backend de Relatórios / PDF:**
 
-- Problem: UI e service frontend existem sem API.
-- **Status:** Open
+- Problem: ~~UI e service frontend existem sem API.~~ Domínio `relatorios.*` com geração async OpenPDF mergeado em `main`.
+- **Status:** **Resolved** (2026-08-03)
 
 ## Test Coverage Gaps
 
@@ -184,4 +184,5 @@ _Concerns audit: 2026-07-25_
 _Sync adequação P2: 2026-07-29 (JaCoCo gate pass; Sonar bugs=0; vulns CRITICAL+MAJOR=4 documented in validation.md)_  
 _Sync adequação R3: 2026-07-29 (Sonar QG OK; new_coverage 80.0%; MSW/api.ts FE coverage; S2245 + BeneficioMensal tx resolved; ADP integration mitigated)_  
 _Sync adequação R4: 2026-07-29 (Playwright E2E smoke; 186 Vitest; gate-r4-local.sh; Sonar 80.0% QG OK — meta 85% informacional open; ver `_docs/specs/features/adequacao-analise-projeto-r4/validation.md`)_  
-_Sync cobertura AD-014: 2026-08-01 (gate 95% BE+FE verde; 1044 BE / 436 FE; `check-coverage-95.sh` canônico — ver `_docs/specs/features/cobertura-testes-95/validation.md`)_
+_Sync cobertura AD-014: 2026-08-01 (gate 95% BE+FE verde; 1044 BE / 436 FE; `check-coverage-95.sh` canônico — ver `_docs/specs/features/cobertura-testes-95/validation.md`)_  
+_Sync governança: 2026-08-03 (L-001 relatórios resolvido; ROADMAP M2 alinhado; quick 011)_

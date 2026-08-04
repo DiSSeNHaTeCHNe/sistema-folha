@@ -56,34 +56,44 @@
 - Documentação e objetos de importação em `_docs/IMPORTACAO_*.md`
 - Ajustes em `ImportacaoFolhaAdpService` e repositórios relacionados
 
-**Totalização bruto / líquido / custo (CLT)** — IN PROGRESS
+**Totalização bruto / líquido / custo (CLT)** — COMPLETE
 
-- Spec TLC: `_docs/specs/features/folha-custo-clt/` (Execute Done; Verifier PASS)
-- Fix1 Done: `_docs/specs/features/folha-custo-clt-fix1/` (processamento pós-import ADP)
-- **Fix2 (Execute Done):** `_docs/specs/features/folha-custo-clt-fix2/` — Custo Techne por `porcentagem`; remove rateio ADP; paridade card↔aba/resumo
-- **Fix3 (Specify draft):** `_docs/specs/features/folha-custo-clt-fix3/` — Fixa global (funcionário opcional); UX Rubricas Fixas + detalhe Bruto/Líquido/Custo padronizado
+- Spec TLC: `_docs/specs/features/folha-custo-clt/` (Verifier PASS)
+- Fix1–Fix3 Done: processamento pós-import, Custo Techne por `porcentagem`, rubrica fixa global
 
-**Benefícios mensais** — PLANNED
+**Benefícios mensais** — COMPLETE
 
-- Tela `BeneficiosMensais` (stub frontend criado)
-- Visão consolidada por competência alinhada ao fluxo de benefícios
+- Tela `BeneficiosMensais` operacional (resumo por competência + drill-down)
+- Backend `beneficio_mensal` + importação; legado `Beneficio` removido (modular-monolith)
+
+**Relatórios executivos PDF** — COMPLETE
+
+- Domínio `relatorios.*` async (OpenPDF); hub FE `/relatorios` com polling/download (AD-015)
 
 **Integridade de cadastro** — IN PROGRESS
 
 - Unicidade de CPF para funcionários ativos (migration `V1.11__funcionario_cpf_unique_ativo.sql`)
 - Testes em `FuncionarioServiceTest`
 
-**Controle de acesso hierárquico** — PLANNED
+**Controle de acesso hierárquico** — COMPLETE (MVP)
 
-- Evolução de permissões por escopo organizacional (centro de custo / linha de negócio)
-- Referência: `_docs/CONTROLE_ACESSO_HIERARQUICO.md`
+- `OrganogramaAcessoService` + permissão `ACESSO_TOTAL` (AD-011); enforcement em folha, benefícios, dashboard, relatórios
+- Evoluções futuras: admin UI granular, escopos finos — ver `_docs/CONTROLE_ACESSO_HIERARQUICO.md`
 
 ### Harness / agents
 
 **Ajuste do harness (P1)** — COMPLETE
 
-- Versionar núcleo (`AGENTS.md`, `.agents/`, `_docs/specs/`, ponteiros Cursor/Claude)
-- TLC paths → `_docs/specs/`; skills FE marcadas TARGET; Full harness gate PASS (commits do usuário pendentes)
+- Núcleo versionado (`AGENTS.md`, `.agents/`, `_docs/specs/`, ponteiros Cursor/Claude)
+- TLC paths → `_docs/specs/`; modular monolith + ACL entregues em `main`
+
+**API Keys (PAT integrações)** — COMPLETE
+
+- AD-013: Bearer `sf_live_`, UI `/api-keys`, permissão `API_KEY`
+
+**Temas visuais selecionáveis** — PLANNED (spec pronta)
+
+- Feature `_docs/specs/features/temas-visuais/` — aguardando aprovação Execute
 
 **Adequação código ↔ skills FE target** — DEFERRED
 
@@ -110,11 +120,11 @@
 - Ambientes dev, staging e prod
 - CI/CD automatizado
 
-**Qualidade ampliada** — PLANNED
+**Qualidade ampliada** — IN PROGRESS
 
-- Testes unitários frontend
-- Cobertura de integração para fluxos críticos de importação e totalização
-- Gate de QA alinhado a `_docs/specs/TESTING.md` (após `map codebase`)
+- Testes unitários frontend (Vitest 436+ casos, gate AD-014 ≥95%)
+- Gate canônico: `diversos/scripts/check-coverage-95.sh`
+- Pendente: CI/CD remoto, E2E além de login smoke
 
 **Performance e observabilidade** — PLANNED
 
