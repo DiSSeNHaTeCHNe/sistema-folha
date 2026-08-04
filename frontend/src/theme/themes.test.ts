@@ -8,6 +8,7 @@ import {
   criarTema,
   isTemaId,
 } from './themes';
+import { RAZAO_MINIMA_AA, razaoContraste } from './contraste';
 
 function lerPrimaryColorRelatorios(): string {
   const ymlPath = resolve(
@@ -21,6 +22,27 @@ function lerPrimaryColorRelatorios(): string {
   }
   return match[1].toLowerCase();
 }
+
+/** Defaults de fábrica do MUI para os quatro papéis semânticos. */
+const DEFAULTS_MUI = {
+  success: '#2e7d32',
+  warning: '#ed6c02',
+  error: '#d32f2f',
+  info: '#0288d1',
+} as const;
+
+/**
+ * Valores esperados por tema (design.md, tabela "Valores por tema").
+ * `techne.info` está escurecido em relação à tabela — ver SPEC_DEVIATION em themes.ts.
+ */
+const SEMANTICAS_ESPERADAS = {
+  corporate: { success: '#0F6E56', warning: '#854F0B', error: '#A32D2D', info: '#185FA5' },
+  soft: { success: '#0F6E56', warning: '#854F0B', error: '#993C1D', info: '#5F5E5A' },
+  indigo: { success: '#5DCAA5', warning: '#EF9F27', error: '#F09595', info: '#AFA9EC' },
+  techne: { success: '#0F6E56', warning: '#8A5200', error: '#A32D2D', info: '#0A7AB0' },
+} as const;
+
+const PAPEIS = ['success', 'warning', 'error', 'info'] as const;
 
 describe('themes', () => {
   it('preserves classico palette from main.tsx inline theme', () => {
@@ -99,5 +121,43 @@ describe('themes', () => {
   it('keeps techne primary.main aligned with relatorios branding in application.yml', () => {
     const theme = criarTema('techne');
     expect(theme.palette.primary.main.toLowerCase()).toBe(lerPrimaryColorRelatorios());
+  });
+
+  it.each(['corporate', 'soft', 'indigo', 'techne'] as const)(
+    'tema %s declara as quatro semânticas da tabela do design',
+    (temaId) => {
+      const palette = criarTema(temaId).palette;
+      const esperado = SEMANTICAS_ESPERADAS[temaId];
+      for (const papel of PAPEIS) {
+        expect(palette[papel].main, `${temaId}: ${papel}.main`).toBe(esperado[papel]);
+      }
+    },
+  );
+
+  it.each(['corporate', 'soft', 'indigo', 'techne'] as const)(
+    'tema %s não usa nenhuma semântica de fábrica do MUI',
+    (temaId) => {
+      const palette = criarTema(temaId).palette;
+      for (const papel of PAPEIS) {
+        expect(palette[papel].main, `${temaId}: ${papel}.main`).not.toBe(DEFAULTS_MUI[papel]);
+      }
+    },
+  );
+
+  it('declara light explícito nas quatro semânticas do indigo (DD-3)', () => {
+    const palette = criarTema('indigo').palette;
+    const esperado = {
+      success: '#23473C',
+      warning: '#4A3616',
+      error: '#4A2C2C',
+      info: '#2E2C4A',
+    } as const;
+    for (const papel of PAPEIS) {
+      expect(palette[papel].light, `indigo: ${papel}.light`).toBe(esperado[papel]);
+      // DD-3: fundo de avatar não pode ficar quase branco no tema escuro.
+      expect(razaoContraste(palette[papel].light, '#FFFFFF'), `indigo: ${papel}.light`).toBeGreaterThan(
+        RAZAO_MINIMA_AA,
+      );
+    }
   });
 });

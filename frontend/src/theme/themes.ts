@@ -27,6 +27,10 @@ const CORPORATE_CHARTS = [
 const TOKENS_CORPORATE: TokensTema = {
   primary: { main: '#3B82F6', contrastText: '#0F172A' },
   secondary: { main: '#0F6E56' },
+  success: { main: '#0F6E56' },
+  warning: { main: '#854F0B' },
+  error: { main: '#A32D2D' },
+  info: { main: '#185FA5' },
   background: { default: '#F4F6F8', paper: '#FFFFFF' },
   divider: '#DDE3EA',
   charts: [...CORPORATE_CHARTS],
@@ -52,6 +56,10 @@ const SOFT_CHARTS = [
 const TOKENS_SOFT: TokensTema = {
   primary: { main: '#1D9E75', contrastText: '#0F172A' },
   secondary: { main: '#D85A30' },
+  success: { main: '#0F6E56' },
+  warning: { main: '#854F0B' },
+  error: { main: '#993C1D' },
+  info: { main: '#5F5E5A' },
   background: { default: '#FBFAF7', paper: '#FFFFFF' },
   divider: '#E3E0D6',
   charts: [...SOFT_CHARTS],
@@ -78,6 +86,12 @@ const TOKENS_INDIGO: TokensTema = {
   mode: 'dark',
   primary: { main: '#7F77DD', contrastText: '#12121A' },
   secondary: { main: '#5DCAA5' },
+  // DD-3: `light` explícito no tema escuro — a derivação do MUI clareia `main` e
+  // produziria fundo de avatar quase branco sobre o paper #1C1C28.
+  success: { main: '#5DCAA5', light: '#23473C' },
+  warning: { main: '#EF9F27', light: '#4A3616' },
+  error: { main: '#F09595', light: '#4A2C2C' },
+  info: { main: '#AFA9EC', light: '#2E2C4A' },
   background: { default: '#12121A', paper: '#1C1C28' },
   divider: '#2A2A38',
   charts: [...INDIGO_CHARTS],
@@ -114,6 +128,14 @@ const POPPINS_FONT_FAMILY = [
 const TOKENS_TECHNE: TokensTema = {
   primary: { main: '#7836FC', contrastText: '#FFFFFF' },
   secondary: { main: '#3661FC' },
+  success: { main: '#0F6E56' },
+  warning: { main: '#8A5200' },
+  error: { main: '#A32D2D' },
+  // SPEC_DEVIATION: `info` escurecido de #0C8DCE (tabela do design.md) para #0A7AB0.
+  // Reason: o azul institucional #0C8DCE rende 3.67:1 contra background.paper
+  // (#FFFFFF), abaixo do mínimo AA de 4.5:1 exigido por spec.md AC4 (TEMAF-03).
+  // #0A7AB0 é a variante mais próxima em matiz que atinge 4.75:1.
+  info: { main: '#0A7AB0' },
   background: { default: '#EFF2F7', paper: '#FFFFFF' },
   divider: '#D8DCE6',
   charts: [...TECHNE_CHARTS],
