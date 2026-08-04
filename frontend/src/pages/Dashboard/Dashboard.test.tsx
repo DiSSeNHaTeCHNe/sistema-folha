@@ -4,7 +4,8 @@ import Dashboard from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { getDashboardStats } from '../../services/dashboardService';
 import type { DashboardStats } from '../../services/dashboardService';
-import { criarTema, TEMA_PADRAO } from '../../theme/themes';
+import { createTheme } from '@mui/material/styles';
+import { criarTema, TEMA_IDS, TEMA_PADRAO, type TemaId } from '../../theme/themes';
 
 const cellFills: string[] = [];
 
@@ -76,14 +77,42 @@ const fullStats: DashboardStats = {
   ],
 };
 
-function renderDashboard(state?: object) {
+function renderDashboard(state?: object, temaId?: TemaId) {
   return renderWithProviders(<Dashboard />, {
     route: '/dashboard',
+    temaId,
     routerProps: state
       ? { initialEntries: [{ pathname: '/dashboard', state }] }
       : { initialEntries: ['/dashboard'] },
   });
 }
+
+/** Converte `#rrggbb` para a forma `rgb(r, g, b)` devolvida por getComputedStyle. */
+function paraRgb(cor: string): string {
+  if (!cor.startsWith('#')) {
+    return cor;
+  }
+  const hex = cor.slice(1);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/** O avatar é o último filho do cabeçalho do card, ao lado do bloco de textos. */
+function avatarDoCardKpi(rotulo: string): HTMLElement {
+  const cabecalho = screen.getByText(rotulo).parentElement?.parentElement;
+  const avatar = cabecalho?.lastElementChild;
+  if (!(avatar instanceof HTMLElement)) {
+    throw new Error(`Avatar do card "${rotulo}" não encontrado`);
+  }
+  return avatar;
+}
+
+const AVATARES_KPI = [
+  { rotulo: 'Total de Funcionários', papel: 'info', tomDoIcone: 'main' },
+  { rotulo: 'Custo Empresa', papel: 'success', tomDoIcone: 'main' },
+  { rotulo: 'Benefícios Ativos', papel: 'warning', tomDoIcone: 'main' },
+  { rotulo: 'Relação P/D', papel: 'info', tomDoIcone: 'dark' },
+] as const;
 
 describe('Dashboard page', () => {
   beforeEach(() => {
@@ -144,5 +173,25 @@ describe('Dashboard page', () => {
     await waitFor(() =>
       expect(showNotification).toHaveBeenCalledWith('Acesso negado. Apenas administradores.', 'warning'),
     );
+  });
+
+  it.each(TEMA_IDS)('avatares de KPI derivam do tema %s', async (temaId) => {
+    const palette = criarTema(temaId).palette;
+    const paletteDeFabrica = createTheme().palette;
+    renderDashboard(undefined, temaId);
+    await waitFor(() => expect(screen.getByText('Total de Funcionários')).toBeInTheDocument());
+
+    for (const { rotulo, papel, tomDoIcone } of AVATARES_KPI) {
+      const estilo = getComputedStyle(avatarDoCardKpi(rotulo));
+      expect(estilo.backgroundColor, `${temaId}: ${rotulo} fundo`).toBe(
+        paraRgb(palette[papel].light),
+      );
+      expect(estilo.color, `${temaId}: ${rotulo} ícone`).toBe(
+        paraRgb(palette[papel][tomDoIcone]),
+      );
+      expect(estilo.backgroundColor, `${temaId}: ${rotulo} fundo de fábrica`).not.toBe(
+        paraRgb(paletteDeFabrica[papel].light),
+      );
+    }
   });
 });
