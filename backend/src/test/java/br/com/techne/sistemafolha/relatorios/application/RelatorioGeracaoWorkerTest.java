@@ -12,18 +12,23 @@ import br.com.techne.sistemafolha.relatorios.domain.RelatorioStatus;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioTipo;
 import br.com.techne.sistemafolha.relatorios.infrastructure.RelatorioArquivoRepository;
 import br.com.techne.sistemafolha.relatorios.infrastructure.RelatorioRepository;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -133,6 +138,7 @@ class RelatorioGeracaoWorkerTest {
         Relatorio salvo = captor.getValue();
         assertEquals(RelatorioStatus.ERRO, salvo.getStatus());
         assertEquals("Erro ao gerar relatório", salvo.getErro());
+        assertNotNull(salvo.getDataProcessamento());
         verify(relatorioArquivoRepository, never()).save(any());
         verify(recoveryTracker).clear(10L);
     }
@@ -152,6 +158,7 @@ class RelatorioGeracaoWorkerTest {
         Relatorio salvo = captor.getValue();
         assertEquals(RelatorioStatus.ERRO, salvo.getStatus());
         assertTrue(salvo.getErro().contains("50 MB") || salvo.getErro().contains("1 MB"));
+        assertNotNull(salvo.getDataProcessamento());
         verify(relatorioArquivoRepository, never()).save(any());
     }
 
@@ -166,6 +173,18 @@ class RelatorioGeracaoWorkerTest {
     }
 
     @Test
+    void processar_idInexistente_logaWarnNaoEncontrado() throws Exception {
+        when(relatorioRepository.findById(99L)).thenReturn(Optional.empty());
+        ListAppender<ILoggingEvent> appender = capturarLogsRelatorioGeracaoWorker();
+
+        worker.processar(99L).get();
+
+        assertTrue(appender.list.stream().anyMatch(e ->
+            e.getLevel().toString().equals("WARN")
+                && e.getFormattedMessage().contains("não encontrado")));
+    }
+
+    @Test
     void processar_inativoPendente_marcaErro() throws Exception {
         relatorio.setAtivo(false);
         when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
@@ -176,12 +195,67 @@ class RelatorioGeracaoWorkerTest {
         verify(relatorioRepository).save(captor.capture());
         assertEquals(RelatorioStatus.ERRO, captor.getValue().getStatus());
         assertEquals("Relatório indisponível", captor.getValue().getErro());
+        assertNotNull(captor.getValue().getDataProcessamento());
         verify(recoveryTracker).clear(10L);
+    }
+
+    @Test
+    void processar_sucesso_logaInicioEFinalizacao() throws Exception {
+        byte[] pdf = "%PDF-test".getBytes(StandardCharsets.UTF_8);
+        when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+        when(relatorioPdfService.renderFolhaExecutivo("gestor@teste.com", 1L, 6, 2024)).thenReturn(pdf);
+        when(relatorioArquivoRepository.findByRelatorioId(10L)).thenReturn(Optional.empty());
+        when(organogramaAcessoPort.obterContextoAcesso(1L)).thenReturn(
+            new AccessContextDTO(true, true, true, null, null, 1L, "Dir", 1));
+        when(dashboardConsultaPort.getStatsForCompetencia(any(), any(), any(), eq(false)))
+            .thenReturn(new DashboardStatsDTO(
+                100L, new BigDecimal("5000"), 5L,
+                java.util.List.of(), java.util.List.of(), java.util.List.of(),
+                BigDecimal.ZERO, BigDecimal.ZERO,
+                java.util.List.of(), java.util.List.of(), java.util.List.of()));
+        when(beneficioConsultaPort.somarValorPorCompetenciaECentros(any(), any(), any()))
+            .thenReturn(new BigDecimal("500"));
+        ListAppender<ILoggingEvent> appender = capturarLogsRelatorioGeracaoWorker();
+
+        worker.processar(10L).get();
+
+        assertTrue(appender.list.stream().anyMatch(e ->
+            e.getLevel().toString().equals("INFO")
+                && e.getFormattedMessage().contains("Iniciando processamento")
+                && e.getFormattedMessage().contains("id=10")
+                && e.getFormattedMessage().contains("gestor@teste.com")));
+        assertTrue(appender.list.stream().anyMatch(e ->
+            e.getLevel().toString().equals("INFO")
+                && e.getFormattedMessage().contains("processado com sucesso")
+                && e.getFormattedMessage().contains("gestor@teste.com")));
+    }
+
+    @Test
+    void processar_falhaRender_logaError() throws Exception {
+        when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+        when(relatorioPdfService.renderFolhaExecutivo(anyString(), anyLong(), anyInt(), anyInt()))
+            .thenThrow(new IllegalStateException("falha render"));
+        ListAppender<ILoggingEvent> appender = capturarLogsRelatorioGeracaoWorker();
+
+        worker.processar(10L).get();
+
+        assertTrue(appender.list.stream().anyMatch(e ->
+            e.getLevel().toString().equals("ERROR")
+                && e.getFormattedMessage().contains("Erro ao processar relatório 10")));
     }
 
     @Test
     void truncarErro_limita500Caracteres() {
         String longa = "e".repeat(600);
         assertEquals(500, RelatorioGeracaoWorker.truncarErro(longa).length());
+    }
+
+    private ListAppender<ILoggingEvent> capturarLogsRelatorioGeracaoWorker() {
+        Logger logger = (Logger) LoggerFactory.getLogger(RelatorioGeracaoWorker.class);
+        logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        return appender;
     }
 }

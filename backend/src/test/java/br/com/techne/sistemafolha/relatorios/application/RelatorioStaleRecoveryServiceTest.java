@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -97,6 +98,7 @@ class RelatorioStaleRecoveryServiceTest {
         verify(relatorioRepository).save(captor.capture());
         assertEquals(RelatorioStatus.ERRO, captor.getValue().getStatus());
         assertEquals(RelatorioGeracaoConstants.ERRO_TEMPO_ESGOTADO, captor.getValue().getErro());
+        assertNotNull(captor.getValue().getDataProcessamento());
         verify(recoveryTracker).clear(10L);
         verify(enqueueFn, never()).accept(any());
     }
