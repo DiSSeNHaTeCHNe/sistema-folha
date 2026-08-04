@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { AppThemeProvider, useAppTheme } from './ThemeContext';
 import * as storage from '../theme/storage';
+import { TEMAS } from '../theme/themes';
 
 function ThemeProbe() {
   const { temaId, setTemaId, temas } = useAppTheme();
@@ -41,7 +42,7 @@ describe('ThemeContext', () => {
     );
 
     expect(screen.getByText('tema-id:classico')).toBeInTheDocument();
-    expect(screen.getByText('temas-count:1')).toBeInTheDocument();
+    expect(screen.getByText(`temas-count:${TEMAS.length}`)).toBeInTheDocument();
   });
 
   it('initializes from lerTemaSalvo', () => {

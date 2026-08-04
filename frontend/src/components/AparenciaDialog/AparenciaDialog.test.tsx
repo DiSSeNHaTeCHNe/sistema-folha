@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { AparenciaDialog } from './index';
 import { AppThemeProvider } from '../../contexts/ThemeContext';
 import * as storage from '../../theme/storage';
+import { TEMAS } from '../../theme/themes';
 
 const mockOnClose = vi.fn();
 
@@ -80,6 +81,7 @@ describe('AparenciaDialog', () => {
   it('displays color samples for each theme', () => {
     renderDialog();
 
-    expect(screen.getAllByLabelText(/Amostra de cor/)).toHaveLength(3);
+    const totalAmostras = TEMAS.reduce((total, tema) => total + tema.amostras.length, 0);
+    expect(screen.getAllByLabelText(/Amostra de cor/)).toHaveLength(totalAmostras);
   });
 });
