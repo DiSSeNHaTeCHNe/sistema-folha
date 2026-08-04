@@ -1,307 +1,119 @@
 # Sistema de Controle de Folha de Pagamento
 
-## Descrição
-Sistema completo para controle de folha de pagamento, desenvolvido com Spring Boot no backend e React no frontend.
+Sistema integrado de folha de pagamento para a Techne: cadastros, importação ADP, processamento mensal, benefícios, organograma com ACL hierárquico, dashboard e relatórios executivos PDF.
 
-## 📋 Changelog
+**Documentação canônica (spec-driven):** `_docs/specs/` — `PROJECT.md`, `ROADMAP.md`, `STATE.md`, `TESTING.md`.
 
-### Versão 1.1 (17/10/2025)
-✅ **Nova Funcionalidade - Visualização em Gráfico do Organograma**
-- Adicionado modo de visualização tipo mapa mental com zoom/pan
-- Toggle para alternar entre modo Lista (tradicional) e Gráfico (novo)
-- Biblioteca ReactFlow integrada para navegação intuitiva
-- MiniMap para overview da estrutura completa
-- Layout automático hierárquico com centralização inteligente
-- Todas funcionalidades de edição mantidas no modo gráfico
-- Performance otimizada para hierarquias complexas
-- 📄 Documentação detalhada: `relatorios/MELHORIA_VISUALIZACAO_GRAFICO_ORGANOGRAMA.md`
+## Stack
 
-**Dependências adicionadas:**
-- `reactflow: ^11.x` - Visualização de grafos interativos
+| Camada | Tecnologias |
+|--------|-------------|
+| **Backend** | Java 17, Spring Boot 3.2, Spring Security (JWT + API Keys), JPA, PostgreSQL, Flyway, OpenPDF, JaCoCo |
+| **Frontend** | React 19, TypeScript, Material-UI v7, Vite 6, Vitest, MSW, Playwright (smoke) |
+| **Infra local** | Docker Compose (PostgreSQL `:5433`), scripts em `diversos/scripts/` |
 
-**Arquivos modificados:**
-- `frontend/src/pages/Organograma/index.tsx` - Integração do toggle
-- `frontend/src/components/OrganogramaGrafico/index.tsx` - Novo componente
-- `frontend/package.json` - Nova dependência
+## Funcionalidades principais
 
-## Tecnologias Utilizadas
+- **Autenticação:** login JWT, refresh token, API Keys (`sf_live_`) para integrações/MCP
+- **Cadastros:** funcionários, cargos, centros de custo, linhas de negócio, rubricas, rubricas fixas
+- **Folha:** importação ADP, processamento mensal, fichas, totalização bruto/líquido/custo CLT
+- **Benefícios mensais:** resumo por competência, importação, tipos de benefício
+- **Organograma:** modo lista + gráfico (ReactFlow), ACL por centro de custo
+- **Dashboard:** KPIs agregados com Recharts
+- **Relatórios:** PDF executivo de folha e custo de benefícios (geração async, download)
+- **Importação:** folha ADP e benefícios mensais via upload
 
-### Backend
-- Java 17
-- Spring Boot 3.2.3
-- Spring Security
-- Spring Data JPA
-- PostgreSQL
-- Flyway (migrações)
-- JWT (autenticação)
-- OpenAPI/Swagger
-- Lombok
-- Maven
-
-### Frontend
-- React 18
-- TypeScript
-- Material-UI v7
-- ReactFlow (visualização de grafos)
-- Vite
-- Axios
-- React Router
-- React Hook Form
-- @dnd-kit (drag & drop)
-- ESLint
-- Prettier
-
-## Funcionalidades Implementadas
-
-### 1. Autenticação e Autorização
-- Login com JWT
-- Controle de permissões
-- Refresh token
-- Proteção de rotas
-
-### 2. Gestão de Usuários
-- CRUD completo de usuários
-- Controle de permissões
-- Soft delete
-- Validações de dados
-
-### 3. Gestão de Funcionários
-- CRUD completo de funcionários
-- Campos específicos:
-  - Nome
-  - Cargo
-  - Centro de Custo
-  - Linha de Negócio
-  - ID Externo
-  - Data de Admissão
-  - Sexo
-  - Tipo de Salário
-  - Função
-  - Dependentes (IRRF e Salário Família)
-  - Vínculo
-- Soft delete
-- Validações de dados
-
-### 4. Folha de Pagamento
-- CRUD completo de registros
-- Campos:
-  - Funcionário
-  - Rubrica
-  - Data Início/Fim
-  - Valor
-  - Quantidade
-  - Base de Cálculo
-- Soft delete
-- Validações de dados
-
-### 5. Benefícios
-- CRUD completo de benefícios
-- Campos:
-  - Funcionário
-  - Descrição
-  - Valor
-  - Data Início/Fim
-  - Observação
-- Soft delete
-- Validações de dados
-
-### 6. Relatórios
-- Geração de relatórios em PDF
-- Tipos de relatórios:
-  - Folha de Pagamento
-  - Benefícios
-- Campos dos relatórios:
-  - Mês/Ano
-  - Total de Funcionários
-  - Total da Folha
-  - Total de Benefícios
-  - Status
-  - Data de Processamento
-- Download de relatórios
-
-### 7. Interface do Usuário
-- Design responsivo com Material-UI
-- Componentes reutilizáveis:
-  - Formulários
-  - Tabelas
-  - Notificações
-  - Diálogos de confirmação
-  - Campos de data
-  - Campos monetários
-  - Campos de seleção
-  - Campos de texto
-  - Campos numéricos
-  - Campos de área de texto
-  - Checkboxes
-  - Radio buttons
-  - Switches
-  - Autocomplete
-  - Campos de data/hora
-  - Campos de hora
-
-### 8. Testes
-- Testes unitários
-- Testes de integração
-- Testes de API com Postman
-- Script de teste automatizado
-
-### 9. Documentação
-- API documentada com Swagger/OpenAPI
-- Documentação de código
-- Coleção Postman para testes
-
-### 10. Segurança
-- Autenticação JWT
-- Controle de permissões
-- Validação de dados
-- Proteção contra CSRF
-- Headers de segurança
-- Sanitização de inputs
-
-### 11. Banco de Dados
-- PostgreSQL
-- Migrações com Flyway
-- Soft delete em todas as entidades
-- Índices para performance
-- Relacionamentos otimizados
-
-### 12. DevOps
-- Scripts de build
-- Scripts de teste
-- Configuração de ambiente
-- Documentação de deploy
-
-## Estrutura do Projeto
+## Estrutura do projeto
 
 ```text
 sistema-folha/
-├── frontend/              # SPA React
-├── backend/               # API Spring Boot (pom.xml + src/)
-├── diversos/              # Scripts, Postman, utilitários, relatórios
-│   ├── scripts/
-│   ├── postman/
-│   ├── bcrypt-generator/
-│   ├── db/
-│   └── relatorios/
-├── _docs/                 # PRD, specs, documentação canônica
+├── frontend/                 # SPA React (rotas em src/routes/)
+├── backend/                  # API Spring Boot — monólito modular por domínio
+│   └── src/main/java/.../
+│       ├── auth/             # JWT, usuários, API keys
+│       ├── cadastros/        # Mestres
+│       ├── folha/            # Processamento e motor CLT
+│       ├── beneficios/       # Benefícios mensais
+│       ├── organograma/      # Árvore + ACL
+│       ├── relatorios/       # PDF async
+│       ├── importacao/       # ADP
+│       └── dashboard/        # Stats agregados
+├── diversos/                 # Scripts, Postman, OpenAPI export
+├── _docs/specs/              # Specs TLC, roadmap, estado do projeto
 ├── docker-compose.yml
 └── Dockerfile
 ```
 
-### Backend (`backend/`)
-
-```text
-backend/
-├── pom.xml
-└── src/
-    ├── main/java/br/com/techne/sistemafolha/
-    │   ├── config/
-    │   ├── controller/
-    │   ├── dto/
-    │   ├── model/
-    │   ├── repository/
-    │   ├── service/
-    │   └── SistemaFolhaApplication.java
-    └── main/resources/
-        ├── db/migration/
-        └── application.yml
-```
-
-### Frontend (`frontend/`)
-
-```text
-frontend/
-├── src/
-│   ├── components/
-│   ├── contexts/
-│   ├── hooks/
-│   ├── pages/
-│   ├── services/
-│   ├── types/
-│   └── App.tsx
-├── public/
-└── package.json
-```
-
-## Como Executar
+## Como executar
 
 ### Pré-requisitos
-- JDK 17
-- Maven 3.8+
-- Node.js 18+
-- PostgreSQL 12+
-- NPM ou Yarn
 
-### Backend
-1. Configure o banco de dados em `backend/src/main/resources/application.yml`:
-```yaml
-spring.datasource.url: jdbc:postgresql://localhost:5432/sistema_folha
-spring.datasource.username: seu_usuario
-spring.datasource.password: sua_senha
+- JDK 17, Maven 3.8+, Node.js 18+, Docker (opcional, para Postgres e Testcontainers)
+
+### Banco (Docker)
+
+```bash
+docker compose up -d
+# Postgres em localhost:5433 — user/pass postgres, DB sistema_folha
 ```
 
-2. Execute as migrações:
+Ajuste `backend/src/main/resources/application.yml` se necessário (`spring.datasource.url`).
+
+### Backend
+
 ```bash
 cd backend
 mvn flyway:migrate
-```
-
-3. Inicie o servidor:
-```bash
-cd backend
 mvn spring-boot:run
+# API: http://localhost:8083/api
+# Swagger: http://localhost:8083/api/swagger-ui.html
 ```
 
 ### Frontend
-1. Instale as dependências:
+
 ```bash
 cd frontend
 npm install
-```
-
-2. Inicie o servidor de desenvolvimento:
-```bash
-cd frontend
 npm run dev
+# SPA: http://localhost:5173 (porta padrão Vite)
 ```
 
-## Testes
+## Testes e qualidade
 
-### API
-1. Importe a coleção do Postman:
-```
+| Gate | Comando |
+|------|---------|
+| Backend | `cd backend && mvn test` |
+| Frontend | `cd frontend && npm test` |
+| Cobertura ≥95% (canônico) | `bash diversos/scripts/check-coverage-95.sh` |
+| E2E smoke (login) | `cd frontend && npm run test:e2e` |
+| Sonar local | `bash diversos/scripts/sonar-analyze.sh` (requer `.sonar.env`) |
+
+Detalhes: `_docs/specs/TESTING.md`.
+
+### Postman
+
+```text
 diversos/postman/sistema-folha.postman_collection.json
-```
-
-2. Importe o ambiente:
-```
 diversos/postman/sistema-folha.postman_environment.json
-```
-
-3. Execute os testes:
-```bash
 ./diversos/scripts/test-api.sh
 ```
 
-4. Consulte a documentação das collections:
-```
-diversos/postman/README.md
-```
+## Próximos passos (roadmap)
 
-## Próximos Passos
-1. Implementar testes unitários no frontend
-2. Adicionar mais relatórios
-3. Implementar dashboard com gráficos
-4. Adicionar sistema de notificações em tempo real
-5. Implementar histórico de alterações
-6. Adicionar backup automático
-7. Implementar relatórios personalizados
-8. Melhorar performance com lazy loading
-9. Otimizar carregamento de imagens
-10. Implementar cache
-11. Otimizar queries do banco
-12. Implementar compressão de dados
-13. Configurar CI/CD
-14. Adicionar Docker
-15. Configurar ambientes (dev, staging, prod)
-16. Implementar monitoramento e logging 
+Ver `_docs/specs/ROADMAP.md`. Destaques:
+
+- **M2 em curso:** refinamento importação ADP, integridade CPF
+- **Próxima feature UX:** temas visuais selecionáveis (`_docs/specs/features/temas-visuais/`)
+- **M3:** CI/CD remoto, observabilidade, strategy pattern de pagamentos
+
+## Changelog (recente)
+
+### 2026-08 — Relatórios executivos + API Keys
+
+- PDF async folha/benefício (OpenPDF, AD-015)
+- API Keys PAT para integrações
+- Gate cobertura 95% BE+FE (AD-014)
+
+### 2025-10 — Organograma gráfico
+
+- Modo ReactFlow com zoom/pan; toggle lista/gráfico
