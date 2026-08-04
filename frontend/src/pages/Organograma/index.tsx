@@ -708,7 +708,7 @@ const NoOrganogramaCard: React.FC<{
               </Box>
 
               {no.descricao && (
-                <Typography variant="body2" color="textSecondary" mb={2}>
+                <Typography variant="body2" color="text.secondary" mb={2}>
                   {no.descricao}
                 </Typography>
               )}
@@ -1327,7 +1327,7 @@ export default function Organograma() {
                 rows={3}
               />
               {parentIdForNew && (
-                <Typography variant="body2" color="textSecondary" mt={1}>
+                <Typography variant="body2" color="text.secondary" mt={1}>
                   Este nó será criado como filho do nó selecionado.
                 </Typography>
               )}

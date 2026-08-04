@@ -582,42 +582,42 @@ export default function Funcionarios() {
                       }}
                     >
                       <Typography 
-                        color="textSecondary" 
+                        color="text.secondary" 
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>CPF:</strong> {funcionario.cpf}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>Data de Admissão:</strong> {formatarDataCompetencia(funcionario.dataAdmissao)}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>Cargo:</strong> {funcionario.cargoDescricao || 'N/A'}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>Centro de Custo:</strong> {funcionario.centroCustoDescricao || 'N/A'}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                         sx={{ mb: 1 }}
                       >
                         <strong>Linha de Negócio:</strong> {funcionario.linhaNegocioDescricao || 'N/A'}
                       </Typography>
                       <Typography 
-                        color="textSecondary"
+                        color="text.secondary"
                         variant="body2"
                       >
                         <strong>ID Externo:</strong> {funcionario.idExterno || 'N/A'}

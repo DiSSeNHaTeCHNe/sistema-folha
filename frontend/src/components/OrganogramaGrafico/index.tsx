@@ -200,7 +200,7 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
             {no.descricao && (
               <Typography
                 variant="body2"
-                color="textSecondary"
+                color="text.secondary"
                 mb={1.5}
                 sx={{
                   fontSize: '0.75rem',

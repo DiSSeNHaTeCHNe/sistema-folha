@@ -393,16 +393,16 @@ export function BeneficiosMensais() {
                   <Typography variant="h6" gutterBottom>
                     {funcionario.funcionarioNome}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Cargo: {funcionario.cargoDescricao || '-'}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Centro de Custo: {funcionario.centroCustoDescricao || '-'}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Linha de Negócio: {funcionario.linhaNegocioDescricao || '-'}
                   </Typography>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="text.secondary" gutterBottom>
                     Total:{' '}
                     {new Intl.NumberFormat('pt-BR', {
                       style: 'currency',
@@ -425,7 +425,7 @@ export function BeneficiosMensais() {
           </Box>
 
           {filteredFuncionarios.length === 0 && (
-            <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
+            <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
               Nenhum funcionário encontrado para este período.
             </Typography>
           )}
@@ -529,7 +529,7 @@ export function BeneficiosMensais() {
           </TableContainer>
 
           {resumosCompetencia.length === 0 && (
-            <Typography color="textSecondary" align="center" sx={{ mt: 4 }}>
+            <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
               Nenhum benefício mensal encontrado.
             </Typography>
           )}
