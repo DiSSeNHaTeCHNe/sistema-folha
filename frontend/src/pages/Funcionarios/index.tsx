@@ -532,7 +532,11 @@ export default function Funcionarios() {
                             color: 'primary.main',
                             '&:hover': {
                               backgroundColor: 'primary.light',
-                              color: 'white',
+                              // Quick 013: `primary.light` virou tint claro (era o
+                              // meio-tom derivado pelo MUI), então o ícone branco
+                              // sumiria no hover. `primary.main` sobre o próprio tint
+                              // é o par varrido em contraste.test.ts (≥ 3:1).
+                              color: 'primary.main',
                             },
                           }}
                         >

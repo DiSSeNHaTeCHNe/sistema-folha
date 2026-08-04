@@ -25,7 +25,11 @@ const CORPORATE_CHARTS = [
 ] as const;
 
 const TOKENS_CORPORATE: TokensTema = {
-  primary: { main: '#3B82F6', contrastText: '#0F172A' },
+  // Quick 013 / D-5: era #3B82F6, que rende 3.68:1 como cor de texto sobre
+  // background.paper (valores monetários, Button variant="text", chips). #1167F4
+  // preserva a matiz azul e sobe para 4.92:1. `contrastText` deixou de ser #0F172A
+  // (3.63:1 sobre o novo main) e passou a #FFFFFF (4.92:1).
+  primary: { main: '#1167F4', light: '#E2EDFE', contrastText: '#FFFFFF' },
   secondary: { main: '#0F6E56' },
   // Quick 012 / DD-3: `light` explícito como tint (main misturado a 88% de branco).
   // A derivação do MUI (`lighten(main, 0.2)`) produz um meio-tom e deixa o par
@@ -57,7 +61,10 @@ const SOFT_CHARTS = [
 ] as const;
 
 const TOKENS_SOFT: TokensTema = {
-  primary: { main: '#1D9E75', contrastText: '#0F172A' },
+  // Quick 013 / D-5: era #1D9E75 (3.39:1 como texto sobre background.paper).
+  // #188361 preserva a matiz verde e sobe para 4.71:1; `contrastText` deixou de ser
+  // #0F172A (3.79:1 sobre o novo main) e passou a #FFFFFF (4.71:1).
+  primary: { main: '#188361', light: '#E3F0EC', contrastText: '#FFFFFF' },
   secondary: { main: '#D85A30' },
   // Quick 012 / DD-3: tints explícitos — ver nota em TOKENS_CORPORATE.
   success: { main: '#0F6E56', light: '#E2EEEB' },
@@ -88,7 +95,11 @@ const INDIGO_CHARTS = [
 
 const TOKENS_INDIGO: TokensTema = {
   mode: 'dark',
-  primary: { main: '#7F77DD', contrastText: '#12121A' },
+  // Quick 013 / D-5: tema escuro, então o ajuste é clarear, não escurecer. #7F77DD
+  // rendia 4.48:1 sobre background.paper (#1C1C28); #8078DD é o menor clareamento
+  // (L+0,2% em HSL, matiz e saturação intactas) que fecha o piso, em 4.53:1.
+  // `light` segue DD-3: mais escuro que `main`, não um tint claro.
+  primary: { main: '#8078DD', light: '#2E2B50', contrastText: '#12121A' },
   secondary: { main: '#5DCAA5' },
   // DD-3: `light` explícito no tema escuro — a derivação do MUI clareia `main` e
   // produziria fundo de avatar quase branco sobre o paper #1C1C28.
@@ -130,7 +141,10 @@ const POPPINS_FONT_FAMILY = [
 ].join(',');
 
 const TOKENS_TECHNE: TokensTema = {
-  primary: { main: '#7836FC', contrastText: '#FFFFFF' },
+  // Quick 013: `main` já passava no par do D-5 (5.63:1 sobre paper) e não muda —
+  // segue casado com relatorios.branding.primary-color. Só `light` é declarado,
+  // pelo par novo `primary.main × primary.light` (tint a 88% de branco, 4.70:1).
+  primary: { main: '#7836FC', light: '#EFE7FF', contrastText: '#FFFFFF' },
   secondary: { main: '#3661FC' },
   // Quick 012 / DD-3: tints explícitos — ver nota em TOKENS_CORPORATE.
   success: { main: '#0F6E56', light: '#E2EEEB' },
@@ -171,7 +185,13 @@ function criarClassico(): Theme {
   return createTheme({
     palette: {
       primary: {
-        main: '#1976d2',
+        // Quick 013 / D-5: era #1976d2, que rende 4.37:1 sobre background.default e
+        // 4.60:1 sobre paper — reprova por 0,13 no par em que `primary.main` é cor de
+        // texto. Por decisão do usuário (2026-08-04) o `classico` também é ajustado
+        // por acessibilidade (DD-4 revisado na quick 012): nenhum tema fica isento.
+        // #1873cd é o menor escurecimento que fecha o piso: 4.56:1 / 4.80:1.
+        light: '#e3eef9',
+        main: '#1873cd',
       },
       secondary: {
         main: '#dc004e',
@@ -257,28 +277,28 @@ export const TEMAS: readonly TemaDefinicao[] = [
     id: 'classico',
     nome: 'Clássico',
     descricao: 'Tema azul MUI padrão, idêntico à aparência original do sistema.',
-    amostras: ['#1976d2', '#dc004e', '#f8f9fa'],
+    amostras: ['#1873cd', '#dc004e', '#f8f9fa'],
     criar: criarClassico,
   },
   {
     id: 'corporate',
     nome: 'Corporate slate',
     descricao: 'Sidebar grafite, conteúdo claro e azul institucional. Denso e sóbrio.',
-    amostras: ['#0F172A', '#3B82F6', '#0F6E56'],
+    amostras: ['#0F172A', '#1167F4', '#0F6E56'],
     criar: criarCorporate,
   },
   {
     id: 'soft',
     nome: 'Soft neutral',
     descricao: 'Fundo quente off-white, verde como acento. Arejado e confortável para leitura.',
-    amostras: ['#2C2C2A', '#1D9E75', '#D85A30'],
+    amostras: ['#2C2C2A', '#188361', '#D85A30'],
     criar: criarSoft,
   },
   {
     id: 'indigo',
     nome: 'Indigo dark',
     descricao: 'Tema escuro com acento índigo. Alto contraste, ideal para dashboards.',
-    amostras: ['#12121A', '#7F77DD', '#5DCAA5'],
+    amostras: ['#12121A', '#8078DD', '#5DCAA5'],
     criar: criarIndigo,
   },
   {

@@ -7,7 +7,7 @@ export interface ChromeTokens {
   selecionado: string;
 }
 
-/** Papel semântico (success/warning/error/info) declarado pelo tema. */
+/** Papel de cor (primary/success/warning/error/info) declarado pelo tema. */
 export interface TokensPapelSemantico {
   main: string;
   light?: string;
@@ -16,7 +16,12 @@ export interface TokensPapelSemantico {
 
 export interface TokensTema {
   mode?: 'light' | 'dark';
-  primary: { main: string; contrastText?: string };
+  /**
+   * Quick 013: `light` passou a fazer parte do contrato de `primary`. Sem ele o MUI
+   * deriva `lighten(main, 0.2)`, um meio-tom que rende no máximo ~1,4:1 no par
+   * `primary.main × primary.light` — abaixo dos 3:1 do WCAG 1.4.11.
+   */
+  primary: TokensPapelSemantico;
   secondary: { main: string };
   success?: TokensPapelSemantico;
   warning?: TokensPapelSemantico;
