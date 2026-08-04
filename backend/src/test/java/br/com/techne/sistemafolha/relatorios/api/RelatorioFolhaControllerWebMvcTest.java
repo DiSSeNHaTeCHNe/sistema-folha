@@ -6,6 +6,7 @@ import br.com.techne.sistemafolha.config.SecurityConfig;
 import br.com.techne.sistemafolha.exception.GlobalExceptionHandler;
 import br.com.techne.sistemafolha.relatorios.application.RelatorioGeracaoService;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioAcessoNegadoException;
+import br.com.techne.sistemafolha.relatorios.domain.RelatorioGeracaoLimiteException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioIndisponivelException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioNotFoundException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioStatus;
@@ -88,7 +89,7 @@ class RelatorioFolhaControllerWebMvcTest {
         RelatorioFolhaDTO dto = new RelatorioFolhaDTO(
             1L, atual.getMonthValue(), atual.getYear(),
             100, new BigDecimal("5000"), new BigDecimal("500"),
-            RelatorioStatus.PROCESSADO, null, null);
+            RelatorioStatus.PROCESSADO, null, null, LocalDateTime.now(), false);
         when(relatorioGeracaoService.gerarFolha(eq("gestor@teste.com"), anyInt(), anyInt()))
             .thenReturn(dto);
 
@@ -186,10 +187,10 @@ class RelatorioFolhaControllerWebMvcTest {
     void listar_retornaRelatoriosOrdenadosAnoMesDesc() throws Exception {
         RelatorioFolhaDTO recente = new RelatorioFolhaDTO(
             2L, 6, 2026, 10, new BigDecimal("5000"), new BigDecimal("500"),
-            RelatorioStatus.PROCESSADO, LocalDateTime.now(), null);
+            RelatorioStatus.PROCESSADO, LocalDateTime.now(), null, LocalDateTime.now(), false);
         RelatorioFolhaDTO antigo = new RelatorioFolhaDTO(
             1L, 1, 2024, 5, new BigDecimal("3000"), new BigDecimal("300"),
-            RelatorioStatus.PROCESSADO, LocalDateTime.now(), null);
+            RelatorioStatus.PROCESSADO, LocalDateTime.now(), null, LocalDateTime.now(), false);
         when(relatorioGeracaoService.listarFolha("gestor@teste.com"))
             .thenReturn(List.of(recente, antigo));
 
@@ -199,6 +200,22 @@ class RelatorioFolhaControllerWebMvcTest {
             .andExpect(jsonPath("$[0].mes").value(6))
             .andExpect(jsonPath("$[1].ano").value(2024))
             .andExpect(jsonPath("$[1].mes").value(1));
+    }
+
+    @Test
+    @WithMockUser(username = "gestor@teste.com", roles = "USER")
+    void gerar_limitePendentes_retorna429() throws Exception {
+        YearMonth atual = YearMonth.now();
+        when(relatorioGeracaoService.gerarFolha(
+            eq("gestor@teste.com"), eq(atual.getMonthValue()), eq(atual.getYear())))
+            .thenThrow(new RelatorioGeracaoLimiteException(3));
+
+        mockMvc.perform(post("/relatorios/folha")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"mes\":" + atual.getMonthValue() + ",\"ano\":" + atual.getYear() + "}"))
+            .andExpect(status().isTooManyRequests())
+            .andExpect(jsonPath("$.status").value(429))
+            .andExpect(jsonPath("$.message").value("Limite de 3 gerações simultâneas por usuário atingido"));
     }
 
     @Test

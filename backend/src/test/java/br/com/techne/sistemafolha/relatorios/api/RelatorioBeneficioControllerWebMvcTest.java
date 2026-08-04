@@ -80,7 +80,7 @@ class RelatorioBeneficioControllerWebMvcTest {
         RelatorioBeneficioDTO dto = new RelatorioBeneficioDTO(
             2L, atual.getMonthValue(), atual.getYear(),
             new BigDecimal("2000"), new BigDecimal("10000"),
-            RelatorioStatus.PROCESSADO, null, null);
+            RelatorioStatus.PROCESSADO, null, null, null, false);
         when(relatorioGeracaoService.gerarBeneficio(eq("gestor@teste.com"), anyInt(), anyInt()))
             .thenReturn(dto);
 

@@ -13,5 +13,7 @@ public record RelatorioBeneficioDTO(
     BigDecimal totalValor,
     RelatorioStatus status,
     LocalDateTime dataProcessamento,
-    String erro
+    String erro,
+    LocalDateTime dataCriacao,
+    boolean stale
 ) {}

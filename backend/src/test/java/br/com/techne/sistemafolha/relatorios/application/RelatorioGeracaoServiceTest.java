@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.quality.Strictness;
 import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.SimpleTransactionStatus;
@@ -33,14 +33,16 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -67,6 +69,10 @@ class RelatorioGeracaoServiceTest {
     private OrganogramaAcessoPort organogramaAcessoPort;
     @Mock
     private PlatformTransactionManager transactionManager;
+    @Mock
+    private RelatorioStaleRecoveryService staleRecoveryService;
+    @Mock
+    private RelatorioStaleDetector staleDetector;
 
     private RelatorioGeracaoProperties properties;
 
@@ -93,6 +99,8 @@ class RelatorioGeracaoServiceTest {
             return null;
         }).when(transactionManager).commit(any());
 
+        when(staleRecoveryService.contarPendentesAtivos(1L)).thenReturn(0L);
+
         service = new RelatorioGeracaoService(
             relatorioRepository,
             relatorioArquivoRepository,
@@ -100,6 +108,8 @@ class RelatorioGeracaoServiceTest {
             properties,
             usuarioLookupPort,
             organogramaAcessoPort,
+            staleRecoveryService,
+            staleDetector,
             transactionManager);
 
         usuario = new Usuario();
@@ -113,6 +123,7 @@ class RelatorioGeracaoServiceTest {
         relatorio.setAno(YearMonth.now().getYear());
         relatorio.setUsuario(usuario);
         relatorio.setAtivo(true);
+        relatorio.setDataCriacao(LocalDateTime.now());
     }
 
     @Test
@@ -134,18 +145,65 @@ class RelatorioGeracaoServiceTest {
     }
 
     @Test
-    void gerarFolha_limitePendente_lancaRelatorioGeracaoLimiteException() {
+    void gerarFolha_limitePendenteAtivos_lancaRelatorioGeracaoLimiteException() {
         when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
         when(organogramaAcessoPort.obterContextoAcesso(1L)).thenReturn(
             new AccessContextDTO(true, true, true, null, null, 1L, "Dir", 1));
         when(relatorioRepository.findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(
             eq(1L), eq(RelatorioTipo.FOLHA), anyInt(), anyInt()))
             .thenReturn(Optional.empty());
-        when(relatorioRepository.countByUsuarioIdAndStatusAndAtivoTrue(1L, RelatorioStatus.PENDENTE))
-            .thenReturn(3L);
+        when(staleRecoveryService.contarPendentesAtivos(1L)).thenReturn(3L);
 
         assertThrows(RelatorioGeracaoLimiteException.class,
             () -> service.gerarFolha(LOGIN, 1, YearMonth.now().getYear()));
+    }
+
+    @Test
+    void gerarFolha_tresStaleNaoDisparam429() {
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+        when(organogramaAcessoPort.obterContextoAcesso(1L)).thenReturn(
+            new AccessContextDTO(true, true, true, null, null, 1L, "Dir", 1));
+        when(relatorioRepository.findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(
+            eq(1L), eq(RelatorioTipo.FOLHA), anyInt(), anyInt()))
+            .thenReturn(Optional.empty());
+        when(staleRecoveryService.contarPendentesAtivos(1L)).thenReturn(0L);
+        when(relatorioRepository.save(any())).thenAnswer(invocation -> {
+            Relatorio salvo = invocation.getArgument(0);
+            salvo.setId(10L);
+            return salvo;
+        });
+        when(relatorioGeracaoWorker.processar(10L)).thenReturn(CompletableFuture.completedFuture(null));
+        when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+        when(staleDetector.isStale(any(), eq(false))).thenReturn(false);
+
+        RelatorioFolhaDTO dto = service.gerarFolha(LOGIN, 1, YearMonth.now().getYear());
+
+        assertEquals(RelatorioStatus.PENDENTE, dto.status());
+        verify(staleRecoveryService).recuperarParaUsuario(1L);
+    }
+
+    @Test
+    void gerarFolha_mesmaTuplaPendenteNonStale_reenfileiraWorker() {
+        int mes = 1;
+        int ano = YearMonth.now().getYear();
+        relatorio.setMes(mes);
+        relatorio.setStatus(RelatorioStatus.PENDENTE);
+
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+        when(organogramaAcessoPort.obterContextoAcesso(1L)).thenReturn(
+            new AccessContextDTO(true, true, true, null, null, 1L, "Dir", 1));
+        when(relatorioRepository.findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(
+            1L, RelatorioTipo.FOLHA, mes, ano)).thenReturn(Optional.of(relatorio));
+        when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+        when(relatorioRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(relatorioGeracaoWorker.processar(10L)).thenReturn(CompletableFuture.completedFuture(null));
+        when(staleDetector.isStale(relatorio, false)).thenReturn(false);
+        when(relatorioArquivoRepository.findByRelatorioId(10L)).thenReturn(Optional.empty());
+
+        service.gerarFolha(LOGIN, mes, ano);
+
+        verify(relatorioGeracaoWorker).processar(10L);
+        verify(staleRecoveryService, never()).contarPendentesAtivos(1L);
     }
 
     @Test
@@ -160,8 +218,6 @@ class RelatorioGeracaoServiceTest {
             new AccessContextDTO(true, true, true, null, null, 1L, "Dir", 1));
         when(relatorioRepository.findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(
             1L, RelatorioTipo.FOLHA, mes, ano)).thenReturn(Optional.of(relatorio));
-        when(relatorioRepository.countByUsuarioIdAndStatusAndAtivoTrue(1L, RelatorioStatus.PENDENTE))
-            .thenReturn(0L);
         when(relatorioRepository.save(any())).thenAnswer(invocation -> {
             Relatorio salvo = invocation.getArgument(0);
             assertEquals(RelatorioStatus.PENDENTE, salvo.getStatus());
@@ -172,6 +228,7 @@ class RelatorioGeracaoServiceTest {
             return CompletableFuture.completedFuture(null);
         });
         when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+        when(staleDetector.isStale(any(), eq(false))).thenReturn(false);
 
         RelatorioFolhaDTO dto = service.gerarFolha(LOGIN, mes, ano);
 
@@ -221,7 +278,7 @@ class RelatorioGeracaoServiceTest {
     }
 
     @Test
-    void listarFolha_usaOrdenacaoRepositorioAnoMesDesc() {
+    void listarFolha_filtraPorUsuarioIdEExecutaRecovery() {
         Relatorio antigo = new Relatorio();
         antigo.setId(1L);
         antigo.setTipo(RelatorioTipo.FOLHA);
@@ -229,6 +286,7 @@ class RelatorioGeracaoServiceTest {
         antigo.setAno(2024);
         antigo.setStatus(RelatorioStatus.PROCESSADO);
         antigo.setAtivo(true);
+        antigo.setDataCriacao(LocalDateTime.now());
 
         Relatorio recente = new Relatorio();
         recente.setId(2L);
@@ -237,19 +295,37 @@ class RelatorioGeracaoServiceTest {
         recente.setAno(2026);
         recente.setStatus(RelatorioStatus.PROCESSADO);
         recente.setAtivo(true);
+        recente.setDataCriacao(LocalDateTime.now());
 
         when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
-        when(relatorioRepository.findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo.FOLHA))
+        when(relatorioRepository.findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(1L, RelatorioTipo.FOLHA))
             .thenReturn(List.of(recente, antigo));
+        when(staleDetector.isStale(any(), eq(false))).thenReturn(false);
 
         List<RelatorioFolhaDTO> resultado = service.listarFolha(LOGIN);
 
         assertEquals(2, resultado.size());
         assertEquals(2026, resultado.get(0).ano());
-        assertEquals(6, resultado.get(0).mes());
-        assertEquals(2024, resultado.get(1).ano());
-        assertEquals(1, resultado.get(1).mes());
-        verify(relatorioRepository).findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo.FOLHA);
+        verify(staleRecoveryService).recuperarParaUsuario(1L);
+        verify(relatorioRepository).findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(1L, RelatorioTipo.FOLHA);
+    }
+
+    @Test
+    void listarFolha_dtoIncluiDataCriacaoEstale() {
+        relatorio.setStatus(RelatorioStatus.PENDENTE);
+        LocalDateTime criacao = LocalDateTime.of(2026, 1, 1, 10, 0);
+        relatorio.setDataCriacao(criacao);
+
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+        when(relatorioRepository.findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(1L, RelatorioTipo.FOLHA))
+            .thenReturn(List.of(relatorio));
+        when(relatorioArquivoRepository.findByRelatorioId(10L)).thenReturn(Optional.empty());
+        when(staleDetector.isStale(relatorio, false)).thenReturn(true);
+
+        List<RelatorioFolhaDTO> resultado = service.listarFolha(LOGIN);
+
+        assertEquals(criacao, resultado.get(0).dataCriacao());
+        assertTrue(resultado.get(0).stale());
     }
 
     @Test
@@ -263,8 +339,6 @@ class RelatorioGeracaoServiceTest {
             new AccessContextDTO(true, true, true, null, null, 1L, "Dir", 1));
         when(relatorioRepository.findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(
             1L, RelatorioTipo.FOLHA, mes, ano)).thenReturn(Optional.empty());
-        when(relatorioRepository.countByUsuarioIdAndStatusAndAtivoTrue(1L, RelatorioStatus.PENDENTE))
-            .thenReturn(0L);
         when(relatorioRepository.save(any())).thenAnswer(invocation -> {
             Relatorio salvo = invocation.getArgument(0);
             salvo.setId(10L);
@@ -275,9 +349,11 @@ class RelatorioGeracaoServiceTest {
             return CompletableFuture.completedFuture(null);
         });
         when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+        when(staleDetector.isStale(any(), eq(false))).thenReturn(false);
 
         service.gerarFolha(LOGIN, mes, ano);
 
         verify(relatorioGeracaoWorker).processar(10L);
+        verify(staleRecoveryService).recuperarParaUsuario(1L);
     }
 }

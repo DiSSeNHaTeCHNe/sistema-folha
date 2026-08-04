@@ -15,6 +15,7 @@ import br.com.techne.sistemafolha.relatorios.domain.RelatorioStatus;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioTipo;
 import br.com.techne.sistemafolha.relatorios.infrastructure.RelatorioArquivoRepository;
 import br.com.techne.sistemafolha.relatorios.infrastructure.RelatorioRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +24,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -39,6 +39,8 @@ public class RelatorioGeracaoService {
     private final RelatorioGeracaoProperties properties;
     private final UsuarioLookupPort usuarioLookupPort;
     private final OrganogramaAcessoPort organogramaAcessoPort;
+    private final RelatorioStaleRecoveryService staleRecoveryService;
+    private final RelatorioStaleDetector staleDetector;
     private final TransactionTemplate transactionTemplate;
 
     public RelatorioGeracaoService(
@@ -48,6 +50,8 @@ public class RelatorioGeracaoService {
             RelatorioGeracaoProperties properties,
             UsuarioLookupPort usuarioLookupPort,
             OrganogramaAcessoPort organogramaAcessoPort,
+            @Lazy RelatorioStaleRecoveryService staleRecoveryService,
+            RelatorioStaleDetector staleDetector,
             PlatformTransactionManager transactionManager) {
         this.relatorioRepository = relatorioRepository;
         this.relatorioArquivoRepository = relatorioArquivoRepository;
@@ -55,6 +59,8 @@ public class RelatorioGeracaoService {
         this.properties = properties;
         this.usuarioLookupPort = usuarioLookupPort;
         this.organogramaAcessoPort = organogramaAcessoPort;
+        this.staleRecoveryService = staleRecoveryService;
+        this.staleDetector = staleDetector;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
@@ -72,21 +78,23 @@ public class RelatorioGeracaoService {
         return toBeneficioDto(recarregar(handle.relatorioId()));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<RelatorioFolhaDTO> listarFolha(String login) {
-        obterUsuario(login);
+        Usuario usuario = obterUsuario(login);
+        staleRecoveryService.recuperarParaUsuario(usuario.getId());
         return relatorioRepository
-            .findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo.FOLHA)
+            .findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(usuario.getId(), RelatorioTipo.FOLHA)
             .stream()
             .map(this::toFolhaDto)
             .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<RelatorioBeneficioDTO> listarBeneficio(String login) {
-        obterUsuario(login);
+        Usuario usuario = obterUsuario(login);
+        staleRecoveryService.recuperarParaUsuario(usuario.getId());
         return relatorioRepository
-            .findByTipoAndAtivoTrueOrderByAnoDescMesDesc(RelatorioTipo.BENEFICIO)
+            .findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(usuario.getId(), RelatorioTipo.BENEFICIO)
             .stream()
             .map(this::toBeneficioDto)
             .toList();
@@ -115,14 +123,20 @@ public class RelatorioGeracaoService {
         Usuario usuario = obterUsuario(login);
         validarAcesso(usuario.getId());
 
+        staleRecoveryService.recuperarParaUsuario(usuario.getId());
+
         Relatorio relatorio = relatorioRepository
             .findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(usuario.getId(), tipo, mes, ano)
             .orElseGet(() -> criarNovoRelatorio(usuario, tipo, mes, ano));
 
+        if (relatorio.getId() != null) {
+            staleRecoveryService.recuperarRelatorio(recarregar(relatorio.getId()));
+            relatorio = recarregar(relatorio.getId());
+        }
+
         boolean jaPendente = relatorio.getStatus() == RelatorioStatus.PENDENTE;
         if (!jaPendente) {
-            long pendentes = relatorioRepository.countByUsuarioIdAndStatusAndAtivoTrue(
-                usuario.getId(), RelatorioStatus.PENDENTE);
+            long pendentes = staleRecoveryService.contarPendentesAtivos(usuario.getId());
             if (pendentes >= properties.getMaxJobsSimultaneosPorUsuario()) {
                 throw new RelatorioGeracaoLimiteException(properties.getMaxJobsSimultaneosPorUsuario());
             }
@@ -179,8 +193,7 @@ public class RelatorioGeracaoService {
     private record ProcessamentoHandle(Long relatorioId, CompletableFuture<Void> future) {}
 
     private Relatorio criarNovoRelatorio(Usuario usuario, RelatorioTipo tipo, int mes, int ano) {
-        long pendentes = relatorioRepository.countByUsuarioIdAndStatusAndAtivoTrue(
-            usuario.getId(), RelatorioStatus.PENDENTE);
+        long pendentes = staleRecoveryService.contarPendentesAtivos(usuario.getId());
         if (pendentes >= properties.getMaxJobsSimultaneosPorUsuario()) {
             throw new RelatorioGeracaoLimiteException(properties.getMaxJobsSimultaneosPorUsuario());
         }
@@ -240,6 +253,15 @@ public class RelatorioGeracaoService {
             .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
     }
 
+    private boolean isStale(Relatorio relatorio) {
+        if (relatorio.getStatus() != RelatorioStatus.PENDENTE) {
+            return false;
+        }
+        boolean hasBlob = relatorio.getId() != null
+            && relatorioArquivoRepository.findByRelatorioId(relatorio.getId()).isPresent();
+        return staleDetector.isStale(relatorio, hasBlob);
+    }
+
     private RelatorioFolhaDTO toFolhaDto(Relatorio relatorio) {
         return new RelatorioFolhaDTO(
             relatorio.getId(),
@@ -250,7 +272,9 @@ public class RelatorioGeracaoService {
             relatorio.getTotalBeneficios(),
             relatorio.getStatus(),
             relatorio.getDataProcessamento(),
-            relatorio.getErro()
+            relatorio.getErro(),
+            relatorio.getDataCriacao(),
+            isStale(relatorio)
         );
     }
 
@@ -263,7 +287,9 @@ public class RelatorioGeracaoService {
             relatorio.getTotalValor(),
             relatorio.getStatus(),
             relatorio.getDataProcessamento(),
-            relatorio.getErro()
+            relatorio.getErro(),
+            relatorio.getDataCriacao(),
+            isStale(relatorio)
         );
     }
 }
