@@ -92,6 +92,14 @@ function renderDashboard(state?: object, temaId?: TemaId) {
  * forma funcional devolvida por getComputedStyle. Sem literal de cor no fonte,
  * para não violar a guarda de src/theme/noColorLiterals.test.ts.
  */
+/** jsdom devolve o valor especificado; rem é resolvido contra o root de 16px. */
+function paraPx(fontSize: string): number {
+  if (fontSize.endsWith('rem')) {
+    return Number.parseFloat(fontSize) * 16;
+  }
+  return Number.parseFloat(fontSize);
+}
+
 function canaisDaCor(cor: string): number[] {
   if (cor.startsWith('#')) {
     const hex = cor.slice(1);
@@ -218,6 +226,21 @@ describe('Dashboard page', () => {
     expect(getComputedStyle(titulo).color, `${temaId}: título herda a cor do contêiner`).toBe(
       getComputedStyle(conteiner).color,
     );
+  });
+
+  /**
+   * TEMAF-07 / P1-Escala AC5: no Dashboard renderizado, o título de página mede 24px
+   * e o maior valor de KPI mede 27px, medidos por getComputedStyle. Cobertura parcial —
+   * a medição no navegador está bloqueada (ver `_docs/estudo-visual/varredura-pos-fidelidade.md`).
+   * O valor a 27px é o do card "Total de Funcionários" (h3), o maior da linha de KPI.
+   */
+  it.each(TEMA_IDS)('título mede 24px e o maior valor de KPI mede 27px no tema %s', async (temaId) => {
+    renderDashboard(undefined, temaId);
+    const titulo = await screen.findByRole('heading', { name: 'Dashboard Gerencial' });
+    const valorKpi = screen.getByText(String(fullStats.totalFuncionarios));
+
+    expect(paraPx(getComputedStyle(titulo).fontSize), `${temaId}: título de página`).toBeCloseTo(24, 1);
+    expect(paraPx(getComputedStyle(valorKpi).fontSize), `${temaId}: maior valor de KPI`).toBeCloseTo(27, 1);
   });
 
   // TEMAF-12 / P1-Props AC5: props color semânticas sobrevivem à remoção das props de estilo.
