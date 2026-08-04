@@ -166,6 +166,14 @@ describe('Dashboard page', () => {
     });
   });
 
+
+  it('does not render fake KPI variation chips', async () => {
+    renderDashboard();
+    await waitFor(() => expect(screen.getByText('42')).toBeInTheDocument());
+    expect(screen.queryByText(/\+\d+\.\d+% este mês/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Estável')).not.toBeInTheDocument();
+  });
+
   it('renders main KPI cards and chart sections', async () => {
     renderDashboard();
     await waitFor(() => expect(screen.getByText('Total de Funcionários')).toBeInTheDocument());

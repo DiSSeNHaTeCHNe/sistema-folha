@@ -195,14 +195,7 @@ export default function Dashboard() {
                   <Typography variant="h3">
                     {stats.totalFuncionarios}
                   </Typography>
-                  <Chip 
-                    label="+2.5% este mês" 
-                    size="small" 
-                    color="success"
-                    variant="outlined"
-                    sx={{ mt: 1 }} 
-                  />
-                </Box>
+</Box>
                 <Avatar sx={{ backgroundColor: 'info.light', color: 'info.main', width: 56, height: 56 }}>
                   <People fontSize="large" />
                 </Avatar>
@@ -223,14 +216,7 @@ export default function Dashboard() {
                   <Typography variant="h4" color="success.main">
                     {formatMoneyDisplay(stats.custoMensalFolha)}
                   </Typography>
-                  <Chip 
-                    label="+5.2% este mês" 
-                    size="small" 
-                    color="success"
-                    variant="outlined"
-                    sx={{ mt: 1 }} 
-                  />
-                </Box>
+</Box>
                 <Avatar sx={{ backgroundColor: 'success.light', color: 'success.main', width: 56, height: 56 }}>
                   <AttachMoney fontSize="large" />
                 </Avatar>
@@ -251,14 +237,7 @@ export default function Dashboard() {
                   <Typography variant="h3" color="warning.main">
                     {stats.totalBeneficiosAtivos}
                   </Typography>
-                  <Chip 
-                    label="Estável" 
-                    size="small" 
-                    color="warning"
-                    variant="outlined"
-                    sx={{ mt: 1 }} 
-                  />
-                </Box>
+</Box>
                 <Avatar sx={{ backgroundColor: 'warning.light', color: 'warning.main', width: 56, height: 56 }}>
                   <CardGiftcard fontSize="large" />
                 </Avatar>
