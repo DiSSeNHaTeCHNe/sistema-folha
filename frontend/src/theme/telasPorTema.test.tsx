@@ -7,6 +7,7 @@ import { FolhaPagamento } from '../pages/FolhaPagamento';
 import Organograma from '../pages/Organograma';
 import { defaultMockAuth, renderWithProviders } from '../test/renderWithProviders';
 import type { TemaId } from './themes';
+import { criarTema } from './themes';
 import { getDashboardStats } from '../services/dashboardService';
 import { funcionarioService } from '../services/funcionarioService';
 import { cargoService } from '../services/cargoService';
@@ -281,10 +282,26 @@ describe('varredura de telas por tema', () => {
     setupServiceMocks();
   });
 
-  describe.each(['corporate', 'soft', 'indigo'] as const)('tema %s', (temaId) => {
+  describe.each(['corporate', 'soft', 'indigo', 'techne'] as const)('tema %s', (temaId) => {
     it.each(telasSmoke(temaId))('renderiza $nome sem erro', async ({ render, assert }) => {
       render();
       await assert();
+    });
+  });
+
+  describe('tema techne — Folha de Pagamento', () => {
+    it('renderiza com tipografia Poppins sem quebra de layout denso', async () => {
+      expect(criarTema('techne').typography.fontFamily).toMatch(/^Poppins/);
+
+      renderWithProviders(<FolhaPagamento />, { temaId: 'techne' });
+
+      expect(screen.getByRole('heading', { name: 'Folha de Pagamento' })).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.getByRole('heading', { name: 'Resumos da Folha de Pagamento' }),
+        ).toBeInTheDocument();
+      });
+      expect(screen.getByRole('columnheader', { name: /competência/i })).toBeInTheDocument();
     });
   });
 });

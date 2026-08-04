@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { AppThemeProvider, useAppTheme } from './ThemeContext';
 import * as storage from '../theme/storage';
-import { TEMAS } from '../theme/themes';
+import { TEMAS, TEMA_PADRAO } from '../theme/themes';
 
 function ThemeProbe() {
   const { temaId, setTemaId, temas } = useAppTheme();
@@ -41,8 +41,32 @@ describe('ThemeContext', () => {
       </AppThemeProvider>,
     );
 
-    expect(screen.getByText('tema-id:classico')).toBeInTheDocument();
+    expect(screen.getByText(`tema-id:${TEMA_PADRAO}`)).toBeInTheDocument();
     expect(screen.getByText(`temas-count:${TEMAS.length}`)).toBeInTheDocument();
+  });
+
+  it('initializes with techne when no preference is stored', () => {
+    render(
+      <AppThemeProvider>
+        <ThemeProbe />
+      </AppThemeProvider>,
+    );
+
+    expect(screen.getByText('tema-id:techne')).toBeInTheDocument();
+    expect(screen.getByText('primary:#7836FC')).toBeInTheDocument();
+  });
+
+  it('respects stored preference instead of default tema', () => {
+    vi.spyOn(storage, 'lerTemaSalvo').mockReturnValue('corporate');
+
+    render(
+      <AppThemeProvider>
+        <ThemeProbe />
+      </AppThemeProvider>,
+    );
+
+    expect(screen.getByText('tema-id:corporate')).toBeInTheDocument();
+    expect(screen.getByText('primary:#3B82F6')).toBeInTheDocument();
   });
 
   it('initializes from lerTemaSalvo', () => {
@@ -70,12 +94,13 @@ describe('ThemeContext', () => {
     await waitFor(() => {
       expect(screen.getByText('mount-count:1')).toBeInTheDocument();
     });
-    expect(screen.getByText('primary:#1976d2')).toBeInTheDocument();
+    expect(screen.getByText('primary:#7836FC')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'apply-classico' }));
 
     expect(gravarSpy).toHaveBeenCalledWith('classico');
     expect(screen.getByText('tema-id:classico')).toBeInTheDocument();
+    expect(screen.getByText('primary:#1976d2')).toBeInTheDocument();
     expect(screen.getByText('mount-count:1')).toBeInTheDocument();
   });
 

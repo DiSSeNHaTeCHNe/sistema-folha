@@ -2,8 +2,8 @@
 
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
-**Last Updated:** 2026-08-03  
-**Current Work:** `temas-visuais` — spec/design/tasks/context prontos; aguardando aprovação → Execute (próxima feature de produto)
+**Last Updated:** 2026-08-04  
+**Current Work:** `temas-visuais` — Fase 5 concluída (T21–T23); Techne brand como tema padrão (AD-016)
 
 ---
 
@@ -121,18 +121,26 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 **Scope:** Domínio `relatorios.{api,application,infrastructure}`; extensão `BeneficioConsultaPort`; FE `pages/Relatorios/` hub cards.  
 **Status:** active
 
+### AD-016: Tema Techne como padrão do frontend (2026-08-04)
+
+**Decision:** `TEMA_PADRAO = 'techne'` no frontend; paleta alinhada a `relatorios.branding.primary-color` (`#7836FC`, AD-015); tipografia Poppins empacotada via `@fontsource/poppins`.  
+**Reason:** Feature `temas-visuais` Fase 5 — coerência visual entre UI e PDFs executivos; identidade Techne como default para novos usuários.  
+**Trade-off:** Preferência persiste só em `localStorage` (sem sync por usuário no backend neste MVP).  
+**Scope:** `frontend/src/theme/**`, bootstrap `main.tsx`; cinco temas permanecem selecionáveis.  
+**Status:** active
+
 ---
 
 ## Handoff
 
-- **Branch:** `main` (sincronizada com `origin/main`)
+- **Branch:** `feat/temas-visuais` (T1–T23 concluídos; aguardando Verifier / merge)
+- **Feature (in progress)**: `temas-visuais` — cinco temas selecionáveis; Techne brand padrão (AD-016); Poppins local; smoke 5 telas OK
 - **Feature (closed on main)**: `relatorios-executivos` + `relatorios-executivos-fix1` → mergeados (2026-08-03); AD-015 active; validation PASS / PASS com ressalvas
 - **Feature (closed on main)**: `auth-api-keys` + fix1 + fix2 → mergeados; AD-013 active; PAT `sf_live_`, UI `/api-keys`
-- **Feature (next)**: `temas-visuais` → spec/design/tasks/context prontos (untracked até quick 011); aguardando aprovação Execute
-- **Quick task (in progress)**: `011-repo-limpo-atualizado` — sync governança, README, specs pendentes, higiene git
+- **Quick task (done)**: `011-repo-limpo-atualizado` — sync governança, README, specs pendentes, higiene git
 - **Branches locais obsoletas (merged)**: `feat/relatorios-executivos`, `feat/auth-api-keys`, `feat/mcp-agent-tools`, `feat/acl-cc-competencia`, `feat/folha-custo-clt`, `feat/organograma-linhas-hierarquia` — candidatas a delete
-- **Branches locais ativas (não merged)**: `feat/cobertura-testes-95`, `feat/adequacao-analise-projeto`, `feat/qualidade-criticos-sonar`
-- **Decisions**: AD-001…AD-015 active
+- **Branches locais ativas (não merged)**: `feat/cobertura-testes-95`, `feat/adequacao-analise-projeto`, `feat/qualidade-criticos-sonar`, `feat/temas-visuais`
+- **Decisions**: AD-001…AD-016 active
 ---
 
 ## Blockers
@@ -201,6 +209,8 @@ _None currently._
 - Notificações em tempo real
 - Adequação do código ao harness (fase 2) — ROADMAP Deferred
 - Mover relatório de conformidade para `diversos/relatorios/` se precisar versionar
+- **Orçamento e Planejamento de Custo de Pessoal** — spec draft criado 2026-08-04 (`_docs/specs/features/orcamento-custo-pessoal/spec.md`); orçado x realizado por centro de custo com consolidação hierárquica via organograma; ADP não cobre isso, é a motivação original da feature; aguardando priorização (Design pendente)
+- **Preferência de tema por usuário no backend** — hoje a escolha de tema persiste só em `localStorage`; sync server-side permitiria mesma aparência em múltiplos dispositivos e política corporativa de tema padrão
 
 ---
 

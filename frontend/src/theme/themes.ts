@@ -130,7 +130,7 @@ const TOKENS_TECHNE: TokensTema = {
 
 export const TEMA_IDS = ['classico', 'corporate', 'soft', 'indigo', 'techne'] as const;
 export type TemaId = (typeof TEMA_IDS)[number];
-export const TEMA_PADRAO: TemaId = 'classico';
+export const TEMA_PADRAO: TemaId = 'techne';
 
 export interface TemaDefinicao {
   id: TemaId;

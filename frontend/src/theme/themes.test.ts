@@ -49,8 +49,8 @@ describe('themes', () => {
     expect(isTemaId('techne')).toBe(true);
   });
 
-  it('uses classico as default tema', () => {
-    expect(TEMA_PADRAO).toBe('classico');
+  it('uses techne as default tema', () => {
+    expect(TEMA_PADRAO).toBe('techne');
   });
 
   it('registers corporate theme with study palette tokens', () => {
