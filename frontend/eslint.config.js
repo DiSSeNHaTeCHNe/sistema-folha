@@ -25,4 +25,18 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['src/pages/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'Literal[value=/#[0-9a-fA-F]{3,8}\\b|rgba?\\(|hsla?\\(/]',
+          message:
+            'Cor fixa proibida fora de src/theme/. Use o token do tema (palette.*) ou useTheme().',
+        },
+      ],
+    },
+  },
 )

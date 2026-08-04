@@ -53,13 +53,13 @@ export function RelatorioCatalogCard({
     <Card
       component="article"
       aria-labelledby={`relatorio-card-title-${title.replace(/\s+/g, '-').toLowerCase()}`}
-      sx={{
+      sx={(theme) => ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 2,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-      }}
+        boxShadow: theme.shadows[2],
+      })}
     >
       <CardContent sx={{ flexGrow: 1, p: 3 }}>
         <Box display="flex" alignItems="flex-start" justifyContent="space-between" mb={2}>
