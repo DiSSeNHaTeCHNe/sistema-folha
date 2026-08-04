@@ -63,7 +63,33 @@ const TOKENS_SOFT: TokensTema = {
   },
 };
 
-export const TEMA_IDS = ['classico', 'corporate', 'soft'] as const;
+const INDIGO_CHARTS = [
+  '#7F77DD',
+  '#5DCAA5',
+  '#F0997B',
+  '#EF9F27',
+  '#AFA9EC',
+  '#F09595',
+  '#8A88A3',
+  '#5DCAA5',
+] as const;
+
+const TOKENS_INDIGO: TokensTema = {
+  mode: 'dark',
+  primary: { main: '#7F77DD', contrastText: '#12121A' },
+  secondary: { main: '#5DCAA5' },
+  background: { default: '#12121A', paper: '#1C1C28' },
+  divider: '#2A2A38',
+  charts: [...INDIGO_CHARTS],
+  chrome: {
+    bg: '#0C0C12',
+    fg: '#8A88A3',
+    fgAtivo: '#EDECF7',
+    selecionado: '#231F3E',
+  },
+};
+
+export const TEMA_IDS = ['classico', 'corporate', 'soft', 'indigo'] as const;
 export type TemaId = (typeof TEMA_IDS)[number];
 export const TEMA_PADRAO: TemaId = 'classico';
 
@@ -129,6 +155,10 @@ function criarSoft(): Theme {
   return montarTema(TOKENS_SOFT);
 }
 
+function criarIndigo(): Theme {
+  return montarTema(TOKENS_INDIGO);
+}
+
 export const TEMAS: readonly TemaDefinicao[] = [
   {
     id: 'classico',
@@ -150,6 +180,13 @@ export const TEMAS: readonly TemaDefinicao[] = [
     descricao: 'Fundo quente off-white, verde como acento. Arejado e confortável para leitura.',
     amostras: ['#2C2C2A', '#1D9E75', '#D85A30'],
     criar: criarSoft,
+  },
+  {
+    id: 'indigo',
+    nome: 'Indigo dark',
+    descricao: 'Tema escuro com acento índigo. Alto contraste, ideal para dashboards.',
+    amostras: ['#12121A', '#7F77DD', '#5DCAA5'],
+    criar: criarIndigo,
   },
 ];
 

@@ -29,7 +29,8 @@ describe('themes', () => {
     expect(isTemaId(42)).toBe(false);
     expect(isTemaId('corporate')).toBe(true);
     expect(isTemaId('soft')).toBe(true);
-    expect(isTemaId('indigo')).toBe(false);
+    expect(isTemaId('indigo')).toBe(true);
+    expect(isTemaId('techne')).toBe(false);
   });
 
   it('uses classico as default tema', () => {
@@ -49,6 +50,15 @@ describe('themes', () => {
     expect(theme.palette.primary.main).toBe('#1D9E75');
     expect(theme.palette.chrome.bg).toBe('#F4F2EC');
     expect(theme.palette.background.default).toBe('#FBFAF7');
+    expect(theme.palette.charts.length).toBeGreaterThan(0);
+  });
+
+  it('registers indigo dark theme with study palette tokens', () => {
+    const theme = criarTema('indigo');
+    expect(theme.palette.mode).toBe('dark');
+    expect(theme.palette.primary.main).toBe('#7F77DD');
+    expect(theme.palette.background.default).toBe('#12121A');
+    expect(theme.palette.background.paper).toBe('#1C1C28');
     expect(theme.palette.charts.length).toBeGreaterThan(0);
   });
 });
