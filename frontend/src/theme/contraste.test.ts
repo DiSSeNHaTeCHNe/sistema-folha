@@ -33,10 +33,31 @@ const PARES_CONTRASTE = [
     fg: (palette: ReturnType<typeof criarTema>['palette']) => palette.primary.contrastText,
     bg: (palette: ReturnType<typeof criarTema>['palette']) => palette.primary.main,
   },
+  {
+    /**
+     * Quick 013 / D-5 (code-review R-2): `primary.main` também é usado como **cor de
+     * texto** sobre `background.paper` — valores monetários, `Button variant="text"`,
+     * chips "Normal"/"Filtrar"/"Ver Funcionários" em /folha-pagamento, /relatorios,
+     * /usuarios, /rubricas, /rubricas-fixas e /importacao. É par diferente do
+     * `primary.contrastText / primary.main` acima (texto *dentro* do botão preenchido)
+     * e ninguém o media: reprovava em soft (3,39), corporate (3,68), classico (4,37)
+     * e indigo (4,48).
+     */
+    nome: 'primary.main / background.paper',
+    fg: (palette: ReturnType<typeof criarTema>['palette']) => palette.primary.main,
+    bg: (palette: ReturnType<typeof criarTema>['palette']) => palette.background.paper,
+  },
 ] as const;
 
 /** TEMAF-03: os quatro papéis semânticos contra a superfície em que aparecem. */
 const PAPEIS_SEMANTICOS = ['success', 'warning', 'error', 'info'] as const;
+
+/**
+ * Papéis cujo par `main × light` é renderizado lado a lado. `primary` entra por
+ * quick 013: `primary.light` é fundo em Funcionarios/index.tsx:534 e
+ * Organograma/index.tsx:617, com `primary.main` como cor de primeiro plano.
+ */
+const PAPEIS_COM_TINT = ['primary', ...PAPEIS_SEMANTICOS] as const;
 
 /**
  * WCAG 1.4.11 (componente gráfico não textual): o ícone do avatar de KPI é pintado
@@ -86,7 +107,7 @@ describe('razaoContraste', () => {
     'tema %s atende WCAG 1.4.11 no par ícone × fundo do avatar de KPI',
     (temaId) => {
       const palette = criarTema(temaId).palette;
-      for (const papel of PAPEIS_SEMANTICOS) {
+      for (const papel of PAPEIS_COM_TINT) {
         expect(
           razaoContraste(palette[papel].main, palette[papel].light),
           `${temaId}: ${papel}.main / ${papel}.light`,

@@ -66,7 +66,8 @@ describe('ThemeContext', () => {
     );
 
     expect(screen.getByText('tema-id:corporate')).toBeInTheDocument();
-    expect(screen.getByText('primary:#3B82F6')).toBeInTheDocument();
+    // Quick 013 / D-5: era #3B82F6 (3.68:1 como cor de texto sobre background.paper).
+    expect(screen.getByText('primary:#1167F4')).toBeInTheDocument();
   });
 
   it('initializes from lerTemaSalvo', () => {
@@ -100,7 +101,8 @@ describe('ThemeContext', () => {
 
     expect(gravarSpy).toHaveBeenCalledWith('classico');
     expect(screen.getByText('tema-id:classico')).toBeInTheDocument();
-    expect(screen.getByText('primary:#1976d2')).toBeInTheDocument();
+    // Quick 013 / D-5: era #1976d2 (4.37:1 sobre background.default, reprova por 0,13).
+    expect(screen.getByText('primary:#1873cd')).toBeInTheDocument();
     expect(screen.getByText('mount-count:1')).toBeInTheDocument();
   });
 

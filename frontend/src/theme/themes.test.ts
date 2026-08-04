@@ -69,10 +69,11 @@ describe('themes', () => {
   // Quick 012 (2026-08-04): DD-4 revisado por decisão do usuário — o `classico`
   // preserva as cores herdadas do tema inline, exceto onde a acessibilidade obriga.
   // `warning.main` deixou de ser #f57c00 (2.70:1 contra background.paper) e passou a
-  // #b05900. É a única cor do `classico` alterada; as demais seguem fixadas aqui.
+  // #b05900. Quick 013 acrescentou `primary.main` (#1976d2 → #1873cd, 4.37:1 contra
+  // background.default). São as duas únicas cores do `classico` alteradas; as demais
+  // seguem fixadas aqui.
   it('preserves classico palette from main.tsx inline theme', () => {
     const theme = criarTema('classico');
-    expect(theme.palette.primary.main).toBe('#1976d2');
     expect(theme.palette.secondary.main).toBe('#dc004e');
     expect(theme.palette.background.default).toBe('#f8f9fa');
     expect(theme.palette.info.light).toBe('#e3f2fd');
@@ -94,6 +95,20 @@ describe('themes', () => {
     );
     expect(
       razaoContraste(palette.warning.main, palette.background.default),
+    ).toBeGreaterThanOrEqual(RAZAO_MINIMA_AA);
+  });
+
+  it('corrige primary.main do classico por acessibilidade (quick 013)', () => {
+    const palette = criarTema('classico').palette;
+    expect(palette.primary.main).toBe('#1873cd');
+    expect(palette.primary.main).not.toBe('#1976d2');
+    expect(palette.primary.light).toBe('#e3eef9');
+    // D-5: `primary.main` é cor de texto sobre as duas superfícies.
+    expect(razaoContraste(palette.primary.main, palette.background.paper)).toBeGreaterThanOrEqual(
+      RAZAO_MINIMA_AA,
+    );
+    expect(
+      razaoContraste(palette.primary.main, palette.background.default),
     ).toBeGreaterThanOrEqual(RAZAO_MINIMA_AA);
   });
 
@@ -122,7 +137,10 @@ describe('themes', () => {
 
   it('registers corporate theme with study palette tokens', () => {
     const theme = criarTema('corporate');
-    expect(theme.palette.primary.main).toBe('#3B82F6');
+    // Quick 013 / D-5: #3B82F6 rendia 3.68:1 como cor de texto sobre paper.
+    expect(theme.palette.primary.main).toBe('#1167F4');
+    expect(theme.palette.primary.main).not.toBe('#3B82F6');
+    expect(theme.palette.primary.contrastText).toBe('#FFFFFF');
     expect(theme.palette.chrome.bg).toBe('#0F172A');
     expect(theme.palette.background.default).toBe('#F4F6F8');
     expect(theme.palette.charts.length).toBeGreaterThan(0);
@@ -130,7 +148,10 @@ describe('themes', () => {
 
   it('registers soft theme with study palette tokens', () => {
     const theme = criarTema('soft');
-    expect(theme.palette.primary.main).toBe('#1D9E75');
+    // Quick 013 / D-5: #1D9E75 rendia 3.39:1 como cor de texto sobre paper.
+    expect(theme.palette.primary.main).toBe('#188361');
+    expect(theme.palette.primary.main).not.toBe('#1D9E75');
+    expect(theme.palette.primary.contrastText).toBe('#FFFFFF');
     expect(theme.palette.chrome.bg).toBe('#F4F2EC');
     expect(theme.palette.background.default).toBe('#FBFAF7');
     expect(theme.palette.charts.length).toBeGreaterThan(0);
@@ -139,7 +160,10 @@ describe('themes', () => {
   it('registers indigo dark theme with study palette tokens', () => {
     const theme = criarTema('indigo');
     expect(theme.palette.mode).toBe('dark');
-    expect(theme.palette.primary.main).toBe('#7F77DD');
+    // Quick 013 / D-5: tema escuro — #7F77DD foi clareado, não escurecido (4.48:1
+    // sobre background.paper #1C1C28).
+    expect(theme.palette.primary.main).toBe('#8078DD');
+    expect(theme.palette.primary.main).not.toBe('#7F77DD');
     expect(theme.palette.background.default).toBe('#12121A');
     expect(theme.palette.background.paper).toBe('#1C1C28');
     expect(theme.palette.charts.length).toBeGreaterThan(0);
@@ -221,6 +245,35 @@ describe('themes', () => {
       for (const papel of PAPEIS) {
         expect(palette[papel].light, `${temaId}: ${papel}.light`).toBe(esperado[papel]);
       }
+    },
+  );
+
+  // Quick 013 / D-5: `primary.light` explícito nos cinco temas. Mesmo critério e
+  // mesmo estilo de tint da quick 012 (main misturado a 88% de branco), exceto no
+  // `indigo`, que por DD-3 usa um `light` mais escuro que o `main`. Sem valor
+  // explícito o MUI deriva `lighten(main, 0.2)` e o par `main × light` fica em ~1,4:1.
+  it.each([
+    ['classico', '#1873cd', '#e3eef9'],
+    ['corporate', '#1167F4', '#E2EDFE'],
+    ['soft', '#188361', '#E3F0EC'],
+    ['indigo', '#8078DD', '#2E2B50'],
+    ['techne', '#7836FC', '#EFE7FF'],
+  ] as const)(
+    'tema %s declara primary.light explícito e ≥ 3:1 contra primary.main (quick 013)',
+    (temaId, mainEsperado, lightEsperado) => {
+      const palette = criarTema(temaId).palette;
+      expect(palette.primary.main, `${temaId}: primary.main`).toBe(mainEsperado);
+      expect(palette.primary.light, `${temaId}: primary.light`).toBe(lightEsperado);
+      // D-5: `primary.main` como cor de texto sobre a superfície do card.
+      expect(
+        razaoContraste(palette.primary.main, palette.background.paper),
+        `${temaId}: primary.main / background.paper`,
+      ).toBeGreaterThanOrEqual(RAZAO_MINIMA_AA);
+      // `primary.contrastText` (texto dentro do botão preenchido) segue AA.
+      expect(
+        razaoContraste(palette.primary.contrastText, palette.primary.main),
+        `${temaId}: primary.contrastText / primary.main`,
+      ).toBeGreaterThanOrEqual(RAZAO_MINIMA_AA);
     },
   );
 
