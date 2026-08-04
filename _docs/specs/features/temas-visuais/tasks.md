@@ -12,7 +12,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Context**: `_docs/specs/features/temas-visuais/context.md`
 **Design**: `_docs/specs/features/temas-visuais/design.md`
 **Estudo visual de origem**: `_docs/estudo-visual/`
-**Status**: Draft — aguardando aprovação antes de Execute
+**Status**: Execute complete — 23 tasks + 2 fix cycles (Verifier PASS @ `ab2cf01`)
 **User preference (project):** sem commits automáticos salvo pedido explícito.
 
 ---

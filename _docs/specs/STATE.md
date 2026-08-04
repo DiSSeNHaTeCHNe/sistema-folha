@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-08-04  
-**Current Work:** `temas-visuais` — Fase 5 concluída (T21–T23); Techne brand como tema padrão (AD-016)
+**Current Work:** `temas-visuais` — Execute complete on `feat/temas-visuais` (Verifier PASS @ `ab2cf01`); aguardando squash merge
 
 ---
 
@@ -133,8 +133,8 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Branch:** `feat/temas-visuais` (T1–T23 concluídos; aguardando Verifier / merge)
-- **Feature (in progress)**: `temas-visuais` — cinco temas selecionáveis; Techne brand padrão (AD-016); Poppins local; smoke 5 telas OK
+- **Branch:** `feat/temas-visuais` (HEAD `ab2cf01`, base `a16f25f`; 25 commits; Verifier PASS)
+- **Feature (execute complete, not merged)**: `temas-visuais` — 5 temas; Techne padrão (AD-016); 559 tests; gaps P2 abertos (TEMA-14/10 test depth)
 - **Feature (closed on main)**: `relatorios-executivos` + `relatorios-executivos-fix1` → mergeados (2026-08-03); AD-015 active; validation PASS / PASS com ressalvas
 - **Feature (closed on main)**: `auth-api-keys` + fix1 + fix2 → mergeados; AD-013 active; PAT `sf_live_`, UI `/api-keys`
 - **Quick task (done)**: `011-repo-limpo-atualizado` — sync governança, README, specs pendentes, higiene git
@@ -209,7 +209,8 @@ _None currently._
 - Notificações em tempo real
 - Adequação do código ao harness (fase 2) — ROADMAP Deferred
 - Mover relatório de conformidade para `diversos/relatorios/` se precisar versionar
-- **Orçamento e Planejamento de Custo de Pessoal** — spec draft criado 2026-08-04 (`_docs/specs/features/orcamento-custo-pessoal/spec.md`); orçado x realizado por centro de custo com consolidação hierárquica via organograma; ADP não cobre isso, é a motivação original da feature; aguardando priorização (Design pendente)
+- **Orçamento e Planejamento de Custo de Pessoal** — spec draft criado 2026-08-04 (`_docs/specs/features/orcamento-custo-pessoal/spec.md`); orçado x realizado por centro de custo com consolidação hierárquica via organograma; ADP não cobre isso, é a motivação original da feature; torna-se o primeiro template de `workspace-usuario` (abaixo); aguardando priorização (Design pendente)
+- **Workspace do Usuário — Dados, Widgets e Templates** — spec + context criados 2026-08-04 (`_docs/specs/features/workspace-usuario/`); plataforma para o usuário criar datasets próprios (esquema tipado), montar widgets com fórmula restrita, organizar em múltiplos workspaces, e publicar estrutura (nunca dado) num catálogo interno escopado à hierarquia; inclui camada de IA via MCP (propor-e-confirmar, permissão dedicada, sob demanda) construída sobre `mcp-agent-tools`; orçamento é o primeiro template nativo; Complex — Design pendente
 - **Preferência de tema por usuário no backend** — hoje a escolha de tema persiste só em `localStorage`; sync server-side permitiria mesma aparência em múltiplos dispositivos e política corporativa de tema padrão
 
 ---

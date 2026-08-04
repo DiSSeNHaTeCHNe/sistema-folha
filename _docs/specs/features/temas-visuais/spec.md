@@ -205,24 +205,24 @@ afeta todo usuário sem preferência gravada.
 
 | ID | Story | Fase | Status |
 | --- | --- | --- | --- |
-| TEMA-01 | P1: Base tokenizada | 1 | Pending |
-| TEMA-02 | P1: Base tokenizada — paleta de gráficos no tema | 1 | Pending |
-| TEMA-03 | P1: Base tokenizada — lint anti-cor-fixa | 1 | Pending |
-| TEMA-04 | P1: Seletor — validação do id persistido | 1 | Pending |
-| TEMA-05 | P1: Seletor — resiliência a `localStorage` indisponível | 1 | Pending |
-| TEMA-06 | P1: Seletor — persistência entre recarregamentos | 1 | Pending |
-| TEMA-07 | P1: Seletor — troca atômica sem recarregar | 1 | Pending |
-| TEMA-08 | P1: Seletor — item "Aparência" no menu do avatar | 1 | Pending |
-| TEMA-09 | P1: Seletor — dialog com amostras e a11y | 1 | Pending |
-| TEMA-10 | P1: Base tokenizada — `index.css` sem cor | 1 | Pending |
-| TEMA-11 | P1: Corporate slate | 2 | Pending |
-| TEMA-12 | P2: Soft neutral | 3 | Pending |
-| TEMA-13 | P2: Indigo dark | 4 | Pending |
-| TEMA-14 | P2: Indigo dark — Organograma legível no escuro | 4 | Pending |
-| TEMA-15 | P1: Techne brand | 5 | Pending |
-| TEMA-16 | P1: Techne brand — Poppins local | 5 | Pending |
-| TEMA-17 | P1: Techne brand — adoção como padrão | 5 | Pending |
-| TEMA-18 | Todas — contraste WCAG AA por tema | 2,3,4,5 | Pending |
+| TEMA-01 | P1: Base tokenizada | 1 | ✅ Verified |
+| TEMA-02 | P1: Base tokenizada — paleta de gráficos no tema | 1 | ✅ Verified |
+| TEMA-03 | P1: Base tokenizada — lint anti-cor-fixa | 1 | ✅ Verified |
+| TEMA-04 | P1: Seletor — validação do id persistido | 1 | ✅ Verified |
+| TEMA-05 | P1: Seletor — resiliência a `localStorage` indisponível | 1 | ✅ Verified |
+| TEMA-06 | P1: Seletor — persistência entre recarregamentos | 1 | ✅ Verified |
+| TEMA-07 | P1: Seletor — troca atômica sem recarregar | 1 | ✅ Verified |
+| TEMA-08 | P1: Seletor — item "Aparência" no menu do avatar | 1 | ✅ Verified |
+| TEMA-09 | P1: Seletor — dialog com amostras e a11y | 1 | ✅ Verified |
+| TEMA-10 | P1: Base tokenizada — `index.css` sem cor | 1 | ✅ Verified (test gap P2) |
+| TEMA-11 | P1: Corporate slate | 2 | ✅ Verified |
+| TEMA-12 | P2: Soft neutral | 3 | ✅ Verified |
+| TEMA-13 | P2: Indigo dark | 4 | ✅ Verified |
+| TEMA-14 | P2: Indigo dark — Organograma legível no escuro | 4 | ⚠️ Partial (test gap P2) |
+| TEMA-15 | P1: Techne brand | 5 | ✅ Verified |
+| TEMA-16 | P1: Techne brand — Poppins local | 5 | ✅ Verified |
+| TEMA-17 | P1: Techne brand — adoção como padrão | 5 | ✅ Verified |
+| TEMA-18 | Todas — contraste WCAG AA por tema | 2,3,4,5 | ✅ Verified |
 
 **Coverage:** 18 requisitos, 18 mapeados para tasks, 0 sem mapeamento.
 
