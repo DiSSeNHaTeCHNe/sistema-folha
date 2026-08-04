@@ -25,6 +25,7 @@ export interface RelatorioCatalogCardProps {
   onRetry?: () => void;
   generating?: boolean;
   downloading?: boolean;
+  stale?: boolean;
 }
 
 export function RelatorioCatalogCard({
@@ -40,8 +41,11 @@ export function RelatorioCatalogCard({
   onRetry,
   generating = false,
   downloading = false,
+  stale = false,
 }: RelatorioCatalogCardProps) {
   const isPending = status === 'PENDENTE';
+  const isPendingActive = isPending && !stale;
+  const isPendingStale = isPending && stale;
   const isProcessed = status === 'PROCESSADO';
   const isError = status === 'ERRO';
 
@@ -97,13 +101,19 @@ export function RelatorioCatalogCard({
           </Typography>
         )}
 
-        {isPending && (
+        {isPendingActive && (
           <Box display="flex" alignItems="center" gap={1} mt={2} role="status" aria-live="polite">
             <CircularProgress size={20} aria-hidden="true" />
             <Typography variant="body2" color="text.secondary">
               Gerando relatório…
             </Typography>
           </Box>
+        )}
+
+        {isPendingStale && (
+          <Typography variant="body2" color="warning.main" mt={2} role="status">
+            Geração travada — tente novamente.
+          </Typography>
         )}
 
         {isError && erro && (
@@ -145,9 +155,21 @@ export function RelatorioCatalogCard({
           </Button>
         )}
 
-        {isPending && (
+        {isPendingActive && (
           <Button variant="outlined" disabled aria-label={`Gerar ${title} — aguardando processamento`}>
             Gerando…
+          </Button>
+        )}
+
+        {isPendingStale && onRetry && (
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={onRetry}
+            disabled={generating}
+            aria-label={`Tentar novamente ${title}`}
+          >
+            Tentar novamente
           </Button>
         )}
 
@@ -179,7 +201,7 @@ export function RelatorioCatalogCard({
           <Button
             variant="outlined"
             onClick={onGenerate}
-            disabled={generating || isPending}
+            disabled={generating || isPendingActive}
             aria-label={`Gerar novamente ${title}`}
           >
             Gerar novamente
