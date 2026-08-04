@@ -130,7 +130,6 @@ frontend/test-results/
 
 # PoC experimental (não roteado — ver DashboardCustomizavel)
 frontend/src/pages/DashboardCustomizavel/
-frontend/src/services/dashboardLayoutService.ts
 
 # Backups locais
 *.bak
