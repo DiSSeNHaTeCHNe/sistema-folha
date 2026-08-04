@@ -65,11 +65,12 @@ interface NoOrganogramaNodeData {
 const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
   const theme = useTheme();
   const primaryMain = theme.palette.primary.main;
+  const nodeLabelColor = theme.palette.getContrastText(primaryMain);
   const handleStyle = {
     background: primaryMain,
     width: 12,
     height: 12,
-    border: `2px solid ${theme.palette.common.white}`,
+    border: `2px solid ${theme.palette.background.paper}`,
   };
 
   const no = data.no as NoOrganogramaWithChildren;
@@ -102,46 +103,76 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
           bgcolor: 'background.paper',
           cursor: 'pointer',
           transition: 'all 0.3s ease-in-out',
+          overflow: 'hidden',
           '&:hover': {
             boxShadow: 6,
           },
         }}
       >
-      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-        {!showDetails ? (
-          // MODO COMPACTO - Só título e badges
-          <Box>
-            <Box display="flex" alignItems="center" justifyContent="space-between" gap={0.5} mb={0.5}>
+      <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+        <Box
+          sx={{
+            bgcolor: 'primary.main',
+            color: nodeLabelColor,
+            px: 1.5,
+            py: 1,
+          }}
+        >
+          {!showDetails ? (
+            <Box display="flex" alignItems="center" justifyContent="space-between" gap={0.5}>
               <Typography variant="body2" fontWeight="bold" flex={1} noWrap>
                 {no.nome}
               </Typography>
               <Box display="flex" gap={0.25}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={(e) => { e.stopPropagation(); data.onAddChild(no.id); }}
                   title="Adicionar filho"
-                  sx={{ p: 0.25 }}
+                  sx={{ p: 0.25, color: 'inherit' }}
                 >
                   <AddIcon sx={{ fontSize: 16 }} />
                 </IconButton>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={(e) => { e.stopPropagation(); data.onEdit(no); }}
                   title="Editar"
-                  sx={{ p: 0.25 }}
+                  sx={{ p: 0.25, color: 'inherit' }}
                 >
                   <EditIcon sx={{ fontSize: 16 }} />
                 </IconButton>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={(e) => { e.stopPropagation(); data.onDelete(no.id); }}
                   title="Excluir"
-                  sx={{ p: 0.25 }}
+                  sx={{ p: 0.25, color: 'inherit' }}
                 >
                   <DeleteIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Box>
             </Box>
+          ) : (
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="subtitle1" fontWeight="bold" noWrap flex={1}>
+                {no.nome}
+              </Typography>
+              <Box>
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); data.onAddChild(no.id); }} sx={{ color: 'inherit' }}>
+                  <AddIcon fontSize="small" />
+                </IconButton>
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); data.onEdit(no); }} sx={{ color: 'inherit' }}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); data.onDelete(no.id); }} sx={{ color: 'inherit' }}>
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+        </Box>
+        <Box sx={{ p: 1.5 }}>
+        {!showDetails ? (
+          // MODO COMPACTO - badges
+          <Box>
             <Box display="flex" gap={0.5}>
               {funcionariosCount > 0 && (
                 <Chip
@@ -166,23 +197,6 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
         ) : (
           // MODO EXPANDIDO - Todos os detalhes
           <>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="subtitle1" fontWeight="bold" noWrap flex={1}>
-                {no.nome}
-              </Typography>
-              <Box>
-                <IconButton size="small" onClick={(e) => { e.stopPropagation(); data.onAddChild(no.id); }}>
-                  <AddIcon fontSize="small" />
-                </IconButton>
-                <IconButton size="small" onClick={(e) => { e.stopPropagation(); data.onEdit(no); }}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton size="small" onClick={(e) => { e.stopPropagation(); data.onDelete(no.id); }}>
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            </Box>
-
             {no.descricao && (
               <Typography
                 variant="body2"
@@ -276,6 +290,7 @@ const NoOrganogramaNode = ({ data }: { data: NoOrganogramaNodeData }) => {
             )}
           </>
         )}
+        </Box>
       </CardContent>
     </Card>
     
@@ -309,6 +324,8 @@ export default function OrganogramaGrafico({
 }: OrganogramaGraficoProps) {
   const theme = useTheme();
   const primaryMain = theme.palette.primary.main;
+  const canvasBackground = theme.palette.background.default;
+  const minimapBackground = theme.palette.background.paper;
 
   // Converter a estrutura hierárquica em nós e arestas para o ReactFlow
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
@@ -422,7 +439,7 @@ export default function OrganogramaGrafico({
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   return (
-    <Box sx={{ width: '100%', height: 600, border: '1px solid', borderColor: 'grey.300' }}>
+    <Box sx={{ width: '100%', height: 600, border: '1px solid', borderColor: 'divider' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -434,19 +451,21 @@ export default function OrganogramaGrafico({
         attributionPosition="bottom-left"
         minZoom={0.1}
         maxZoom={2}
+        style={{ backgroundColor: canvasBackground }}
         defaultEdgeOptions={{
           type: 'step',
           animated: false,
           style: { strokeWidth: 3, stroke: primaryMain },
         }}
       >
-        <Background />
+        <Background color={theme.palette.divider} />
         <Controls />
         <MiniMap
           nodeColor={() => primaryMain}
           nodeStrokeWidth={3}
           zoomable
           pannable
+          style={{ backgroundColor: minimapBackground }}
         />
         <Panel position="top-right">
           <Box
