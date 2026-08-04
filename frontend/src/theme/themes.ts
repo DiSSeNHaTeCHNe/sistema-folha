@@ -40,8 +40,8 @@ function criarClassico(): Theme {
       chrome: {
         bg: '#ffffff',
         fg: 'rgba(0, 0, 0, 0.87)',
-        fgAtivo: '#1976d2',
-        selecionado: 'rgba(25, 118, 210, 0.08)',
+        fgAtivo: '#0d47a1',
+        selecionado: '#90caf9',
       },
     },
     typography: {

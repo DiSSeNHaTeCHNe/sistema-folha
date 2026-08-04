@@ -18,7 +18,7 @@ describe('themes', () => {
     const theme = criarTema('classico');
     expect(theme.palette.charts).toEqual([...CLASSICO_CHARTS]);
     expect(theme.palette.chrome.bg).toBe('#ffffff');
-    expect(theme.palette.chrome.fgAtivo).toBe('#1976d2');
+    expect(theme.palette.chrome.fgAtivo).toBe('#0d47a1');
   });
 
   it('validates tema ids with isTemaId', () => {
