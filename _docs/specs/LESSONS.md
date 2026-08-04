@@ -110,6 +110,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: FIX1-02 (backend/relatorios/worker)
 - last seen: 2026-08-04T01:42:03Z
 
+### L-017 — Quando uma variante de configuracao e construida fora da fabrica compartilhada, replique para ela o mesmo teste parametrizado que cobre a fabrica
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `theme` · harmful: 0
+- features: temas-fidelidade-visual
+- evidence: M7 — frontend/src/theme/themes.ts:215 (validation.md, Discrimination Sensor) (theme)
+- last seen: 2026-08-04T14:25:01Z
+
+### L-018 — Quando o ambiente de teste nao resolve o valor final, asserte o valor esperado e registre a limitacao, nao apenas um proxy de herança
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `frontend-tests` · harmful: 0
+- features: temas-fidelidade-visual
+- evidence: P1-Props AC4 — frontend/src/pages/Dashboard/Dashboard.test.tsx:217 (frontend-tests)
+- last seen: 2026-08-04T14:25:10Z
+
+### L-019 — Criterio de sucesso expresso como comando de grep deve repetir o mesmo escopo de diretorios do AC correspondente
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
+- features: temas-fidelidade-visual
+- evidence: Success Criteria da spec vs P1-Props AC1 — frontend/src/theme/escalaRenderizada.test.tsx:38 (spec)
+- last seen: 2026-08-04T14:25:10Z
+
+### L-020 — Quando o usuario ratifica um desvio e o documento de origem e atualizado, rebaixe o marcador SPEC_DEVIATION a nota explicativa no mesmo commit
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `docs` · harmful: 0
+- features: temas-fidelidade-visual
+- evidence: SPEC_DEVIATION em frontend/src/theme/themes.ts:134 (docs)
+- last seen: 2026-08-04T14:25:10Z
+
 ## Quarantined (failed when applied — ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
