@@ -31,16 +31,21 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,6 +53,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,6 +79,9 @@ class RelatorioGeracaoServiceTest {
     private RelatorioStaleRecoveryService staleRecoveryService;
     @Mock
     private RelatorioStaleDetector staleDetector;
+
+    @Mock
+    private Consumer<Long> staleEnqueueFn;
 
     private RelatorioGeracaoProperties properties;
 
@@ -180,6 +189,63 @@ class RelatorioGeracaoServiceTest {
 
         assertEquals(RelatorioStatus.PENDENTE, dto.status());
         verify(staleRecoveryService).recuperarParaUsuario(1L);
+    }
+
+    @Test
+    void gerarFolha_staleJob_reenfileiraUmaVezSemPromoverErroNaMesmaRequisicao() {
+        int mes = 1;
+        int ano = YearMonth.now().getYear();
+        relatorio.setMes(mes);
+        relatorio.setStatus(RelatorioStatus.PENDENTE);
+        relatorio.setDataCriacao(LocalDateTime.ofInstant(
+            Instant.parse("2026-01-01T00:00:00Z"), ZoneId.of("America/Sao_Paulo")));
+
+        RelatorioGeracaoProperties staleProps = new RelatorioGeracaoProperties();
+        staleProps.setTimeoutSegundos(60);
+        staleProps.setStaleGraceSegundos(120);
+        Clock clock = Clock.fixed(Instant.parse("2026-06-15T12:00:00Z"), ZoneId.of("America/Sao_Paulo"));
+        RelatorioStaleDetector realDetector = new RelatorioStaleDetector(staleProps, clock);
+        RelatorioRecoveryTracker realTracker = new RelatorioRecoveryTracker();
+        RelatorioStaleRecoveryService realStaleService = new RelatorioStaleRecoveryService(
+            relatorioRepository,
+            relatorioArquivoRepository,
+            realDetector,
+            realTracker,
+            staleEnqueueFn,
+            transactionManager);
+
+        service = new RelatorioGeracaoService(
+            relatorioRepository,
+            relatorioArquivoRepository,
+            relatorioGeracaoWorker,
+            properties,
+            usuarioLookupPort,
+            organogramaAcessoPort,
+            realStaleService,
+            staleDetector,
+            transactionManager);
+
+        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+        when(organogramaAcessoPort.obterContextoAcesso(1L)).thenReturn(
+            new AccessContextDTO(true, true, true, null, null, 1L, "Dir", 1));
+        when(relatorioRepository.findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(
+            1L, RelatorioTipo.FOLHA, mes, ano)).thenReturn(Optional.of(relatorio));
+        when(relatorioRepository.findByUsuarioIdAndStatusAndAtivoTrue(1L, RelatorioStatus.PENDENTE))
+            .thenReturn(List.of(relatorio));
+        when(relatorioRepository.findById(10L)).thenReturn(Optional.of(relatorio));
+        when(relatorioRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(relatorioArquivoRepository.findByRelatorioId(10L)).thenReturn(Optional.empty());
+        when(relatorioGeracaoWorker.processar(10L)).thenReturn(CompletableFuture.completedFuture(null));
+        when(staleDetector.isStale(relatorio, false)).thenReturn(true);
+
+        RelatorioFolhaDTO dto = service.gerarFolha(LOGIN, mes, ano);
+
+        assertEquals(RelatorioStatus.PENDENTE, dto.status());
+        assertNotEquals(RelatorioStatus.ERRO, dto.status());
+        verify(staleEnqueueFn, times(1)).accept(10L);
+        verify(relatorioGeracaoWorker).processar(10L);
+        verify(relatorioRepository, never()).save(org.mockito.ArgumentMatchers.argThat(
+            r -> ((Relatorio) r).getStatus() == RelatorioStatus.ERRO));
     }
 
     @Test

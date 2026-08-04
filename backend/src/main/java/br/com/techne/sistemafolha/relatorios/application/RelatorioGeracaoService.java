@@ -130,7 +130,6 @@ public class RelatorioGeracaoService {
             .orElseGet(() -> criarNovoRelatorio(usuario, tipo, mes, ano));
 
         if (relatorio.getId() != null) {
-            staleRecoveryService.recuperarRelatorio(recarregar(relatorio.getId()));
             relatorio = recarregar(relatorio.getId());
         }
 
