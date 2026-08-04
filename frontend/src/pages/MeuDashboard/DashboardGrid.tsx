@@ -16,6 +16,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Box, IconButton, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import type { DashboardStats } from '../../services/dashboardService';
 import type { WidgetInstance } from './types';
@@ -28,6 +29,7 @@ interface DashboardGridProps {
   stats: DashboardStats;
   editMode: boolean;
   onWidgetsChange?: (widgets: WidgetInstance[]) => void;
+  onRemoveWidget?: (instanceId: string) => void;
 }
 
 function normalizeOrder(widgets: WidgetInstance[]): WidgetInstance[] {
@@ -39,11 +41,13 @@ function SortableWidgetItem({
   stats,
   editMode,
   onColSpanChange,
+  onRemoveWidget,
 }: {
   instance: WidgetInstance;
   stats: DashboardStats;
   editMode: boolean;
   onColSpanChange: (instanceId: string, colSpan: number) => void;
+  onRemoveWidget?: (instanceId: string) => void;
 }) {
   const definition = getWidgetDefinition(instance.widgetId);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -100,6 +104,13 @@ function SortableWidgetItem({
                   </ToggleButton>
                 ))}
               </ToggleButtonGroup>
+              <IconButton
+                aria-label={`Remover ${definition.titulo}`}
+                size="small"
+                onClick={() => onRemoveWidget?.(instance.instanceId)}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
             </Box>
           ) : undefined
         }
@@ -110,7 +121,7 @@ function SortableWidgetItem({
   );
 }
 
-export function DashboardGrid({ widgets, stats, editMode, onWidgetsChange }: DashboardGridProps) {
+export function DashboardGrid({ widgets, stats, editMode, onWidgetsChange, onRemoveWidget }: DashboardGridProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -160,6 +171,7 @@ export function DashboardGrid({ widgets, stats, editMode, onWidgetsChange }: Das
           stats={stats}
           editMode={editMode}
           onColSpanChange={handleColSpanChange}
+          onRemoveWidget={onRemoveWidget}
         />
       ))}
     </Box>

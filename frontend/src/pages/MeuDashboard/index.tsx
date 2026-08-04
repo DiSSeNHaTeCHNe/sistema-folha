@@ -1,98 +1,83 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { getDashboardStats } from '../../services/dashboardService';
 import type { DashboardStats } from '../../services/dashboardService';
-import { getDashboardLayout } from '../../services/dashboardLayoutService';
 import { useNotification } from '../../hooks/useNotification';
 import { Notification } from '../../components/Notification';
-import type { DashboardLayout, WidgetInstance } from './types';
-import { WidgetFrame } from './WidgetFrame';
-import { getWidgetDefinition } from './widgets/registry';
-
-function sortWidgets(widgets: WidgetInstance[]): WidgetInstance[] {
-  return [...widgets].sort((a, b) => a.ordem - b.ordem);
-}
-
-function StaticDashboardGrid({
-  widgets,
-  stats,
-}: {
-  widgets: WidgetInstance[];
-  stats: DashboardStats;
-}) {
-  return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(12, 1fr)',
-        gap: 3,
-        '@media (max-width: 900px)': {
-          '& > *': { gridColumn: 'span 12 !important' },
-        },
-      }}
-    >
-      {widgets.map((instance) => {
-        const definition = getWidgetDefinition(instance.widgetId);
-        if (!definition) {
-          return null;
-        }
-        const { Component } = definition;
-        return (
-          <Box
-            key={instance.instanceId}
-            sx={{ gridColumn: `span ${instance.colSpan}`, gridRow: `span ${instance.rowSpan}` }}
-          >
-            <WidgetFrame title={definition.titulo}>
-              <Component instance={instance} stats={stats} editMode={false} />
-            </WidgetFrame>
-          </Box>
-        );
-      })}
-    </Box>
-  );
-}
+import { DashboardGrid } from './DashboardGrid';
+import { DashboardEmptyState, WidgetCatalogDrawer } from './WidgetCatalogDrawer';
+import { useDashboardLayout } from './hooks/useDashboardLayout';
+import type { WidgetCatalogItem, WidgetInstance } from './types';
+import { criarWidgetFromCatalog } from './widgetUtils';
 
 export default function MeuDashboard() {
-  const [layout, setLayout] = useState<DashboardLayout | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const { notification, showNotification, hideNotification } = useNotification();
+  const {
+    activeLayout,
+    catalog,
+    editMode,
+    loading: layoutLoading,
+    enterEditMode,
+    updateDraftWidgets,
+    setDraftLayout,
+    draftLayout,
+  } = useDashboardLayout();
 
   useEffect(() => {
     let cancelled = false;
-
-    async function load() {
+    async function loadStats() {
       try {
-        setLoading(true);
-        const [layoutData, statsData] = await Promise.all([getDashboardLayout(), getDashboardStats()]);
+        setStatsLoading(true);
+        const data = await getDashboardStats();
         if (!cancelled) {
-          setLayout(layoutData);
-          setStats(statsData);
-          setError(null);
+          setStats(data);
         }
       } catch {
         if (!cancelled) {
-          setError('Erro ao carregar Meu Dashboard');
-          showNotification('Erro ao carregar Meu Dashboard', 'error');
+          showNotification('Erro ao carregar dados do dashboard', 'error');
         }
       } finally {
         if (!cancelled) {
-          setLoading(false);
+          setStatsLoading(false);
         }
       }
     }
-
-    void load();
+    void loadStats();
     return () => {
       cancelled = true;
     };
   }, [showNotification]);
 
-  const sortedWidgets = useMemo(
-    () => (layout ? sortWidgets(layout.widgets) : []),
-    [layout],
-  );
+  const widgets = useMemo(() => {
+    if (!activeLayout) {
+      return [];
+    }
+    return [...activeLayout.widgets].sort((a, b) => a.ordem - b.ordem);
+  }, [activeLayout]);
+
+  const handleAddWidget = (item: WidgetCatalogItem) => {
+    if (!editMode || !draftLayout) {
+      return;
+    }
+    const nextWidget = criarWidgetFromCatalog(item, draftLayout.widgets.length);
+    updateDraftWidgets([...draftLayout.widgets, nextWidget]);
+    setCatalogOpen(false);
+  };
+
+  const handleRemoveWidget = (instanceId: string) => {
+    if (!editMode || !draftLayout) {
+      return;
+    }
+    const filtered = draftLayout.widgets
+      .filter((widget) => widget.instanceId !== instanceId)
+      .map((widget, index) => ({ ...widget, ordem: index }));
+    updateDraftWidgets(filtered);
+  };
+
+  const loading = layoutLoading || statsLoading;
 
   if (loading) {
     return (
@@ -102,23 +87,58 @@ export default function MeuDashboard() {
     );
   }
 
-  if (error || !layout || !stats) {
-    return <Alert severity="error">{error ?? 'Erro ao carregar Meu Dashboard'}</Alert>;
+  if (!stats || !activeLayout) {
+    return <Alert severity="error">Erro ao carregar Meu Dashboard</Alert>;
   }
 
   return (
     <>
       <Box sx={{ backgroundColor: 'background.default', minHeight: '100vh' }}>
-        <Box mb={4}>
-          <Typography variant="h4" gutterBottom>
-            Meu Dashboard
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Visão personalizada do sistema de folha de pagamento
-          </Typography>
+        <Box mb={4} display="flex" justifyContent="space-between" alignItems="flex-start" gap={2}>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Meu Dashboard
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary">
+              Visão personalizada do sistema de folha de pagamento
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={1}>
+            {!editMode && (
+              <Button variant="outlined" onClick={enterEditMode}>
+                Editar layout
+              </Button>
+            )}
+            {editMode && (
+              <Button variant="contained" onClick={() => setCatalogOpen(true)}>
+                Adicionar widget
+              </Button>
+            )}
+          </Stack>
         </Box>
-        <StaticDashboardGrid widgets={sortedWidgets} stats={stats} />
+
+        {widgets.length === 0 ? (
+          <DashboardEmptyState editMode={editMode} onAddWidgets={() => setCatalogOpen(true)} />
+        ) : (
+          <DashboardGrid
+            widgets={widgets}
+            stats={stats}
+            editMode={editMode}
+            onWidgetsChange={editMode ? updateDraftWidgets : undefined}
+            onRemoveWidget={editMode ? handleRemoveWidget : undefined}
+          />
+        )}
       </Box>
+
+      <WidgetCatalogDrawer
+        open={catalogOpen}
+        onClose={() => setCatalogOpen(false)}
+        catalog={catalog}
+        widgets={widgets}
+        onAddWidget={handleAddWidget}
+        onLimitReached={(message) => showNotification(message, 'warning')}
+      />
+
       <Notification
         open={notification.open}
         message={notification.message}
