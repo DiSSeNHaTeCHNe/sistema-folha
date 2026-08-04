@@ -187,6 +187,7 @@ _None currently._
 | 009 | Folha detalhe separar 13º                    | 2026-07-28 | —       | ✅ Done |
 | 010 | Sonar gate new_violations                    | 2026-08-02 | pending | ✅ Done |
 | 011 | Repo limpo e docs alinhados                  | 2026-08-03 | bf669dd | ✅ Done |
+| 012 | Contraste dos temas: avatar de KPI + texto   | 2026-08-04 | d55132d, 649041a | ⚠️ Parcial (D-5 bloqueado: 4º arquivo) |
 
 ---
 

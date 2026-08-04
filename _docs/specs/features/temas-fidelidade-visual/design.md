@@ -75,6 +75,13 @@ em matiz que atinge 4,75:1.
 estreitado para excluí-lo. Esse par (1 de 20) fica fora da varredura de
 contraste, com `SPEC_DEVIATION` em `contraste.test.ts`.
 
+> **Encerrada em 2026-08-04 (quick task 012).** O usuário reabriu e decidiu o
+> contrário: o `classico` é ajustado por acessibilidade. `warning.main` passou a
+> `#b05900` (4,91:1 contra `background.paper`, 4,48:1 contra o tint `#fff3e0`), a
+> isenção saiu da varredura e o `SPEC_DEVIATION` foi removido. A varredura
+> semântica cobre agora 20 pares de 20. Ver
+> `_docs/specs/quick/012-contraste-temas-avatar-texto/`.
+
 ### Contraste
 
 O teste parametrizado de `contraste.ts` ganha quatro pares novos por tema:
@@ -203,6 +210,15 @@ A varredura visual das 20 telas continua sendo feita por captura, comparando com
 | DD-5 | Só `h3`, `h4`, `h6` mudam | Revisar a escala inteira | Medição normalizada mostrou que as demais já estão no alvo |
 | DD-6 | Lint contra `fontWeight` em prop | Só documentar a convenção | Convenção não documentada em lint não sobrevive à terceira tela nova |
 | DD-7 | Teste de escala renderizada além do unitário | Só o unitário sobre o objeto tema | O unitário não detecta prop vencendo o tema — que é a causa raiz desta feature |
+
+> **DD-3 e DD-4 revisados em 2026-08-04 (quick task 012), por decisão do usuário.**
+> DD-3 deixa de valer só para o `indigo`: `corporate`, `soft` e `techne` também
+> declaram `light` explícito, porque a derivação `lighten(main, 0.2)` do MUI deixa
+> o par ícone × fundo do avatar de KPI em 1,40–2,51:1, abaixo dos 3:1 do
+> WCAG 1.4.11 (code-review R-1). DD-4 deixa de ser absoluto: o `classico` preserva
+> as cores herdadas **exceto onde a acessibilidade obriga** — hoje, só o
+> `warning.main`. Enquadramento aceito pelo usuário: ou o `classico` muda por
+> acessibilidade em todos os papéis que reprovam, ou em nenhum.
 
 ---
 
