@@ -38,7 +38,32 @@ const TOKENS_CORPORATE: TokensTema = {
   },
 };
 
-export const TEMA_IDS = ['classico', 'corporate'] as const;
+const SOFT_CHARTS = [
+  '#1D9E75',
+  '#D85A30',
+  '#2C2C2A',
+  '#854F0B',
+  '#0F6E56',
+  '#888780',
+  '#993C1D',
+  '#5F5E5A',
+] as const;
+
+const TOKENS_SOFT: TokensTema = {
+  primary: { main: '#1D9E75', contrastText: '#0F172A' },
+  secondary: { main: '#D85A30' },
+  background: { default: '#FBFAF7', paper: '#FFFFFF' },
+  divider: '#E3E0D6',
+  charts: [...SOFT_CHARTS],
+  chrome: {
+    bg: '#F4F2EC',
+    fg: '#5F5E5A',
+    fgAtivo: '#2C2C2A',
+    selecionado: '#E4E0D3',
+  },
+};
+
+export const TEMA_IDS = ['classico', 'corporate', 'soft'] as const;
 export type TemaId = (typeof TEMA_IDS)[number];
 export const TEMA_PADRAO: TemaId = 'classico';
 
@@ -100,6 +125,10 @@ function criarCorporate(): Theme {
   return montarTema(TOKENS_CORPORATE);
 }
 
+function criarSoft(): Theme {
+  return montarTema(TOKENS_SOFT);
+}
+
 export const TEMAS: readonly TemaDefinicao[] = [
   {
     id: 'classico',
@@ -114,6 +143,13 @@ export const TEMAS: readonly TemaDefinicao[] = [
     descricao: 'Sidebar grafite, conteúdo claro e azul institucional. Denso e sóbrio.',
     amostras: ['#0F172A', '#3B82F6', '#0F6E56'],
     criar: criarCorporate,
+  },
+  {
+    id: 'soft',
+    nome: 'Soft neutral',
+    descricao: 'Fundo quente off-white, verde como acento. Arejado e confortável para leitura.',
+    amostras: ['#2C2C2A', '#1D9E75', '#D85A30'],
+    criar: criarSoft,
   },
 ];
 
