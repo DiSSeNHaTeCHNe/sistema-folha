@@ -27,10 +27,19 @@ describe('themes', () => {
     expect(isTemaId(undefined)).toBe(false);
     expect(isTemaId('')).toBe(false);
     expect(isTemaId(42)).toBe(false);
-    expect(isTemaId('corporate')).toBe(false);
+    expect(isTemaId('corporate')).toBe(true);
+    expect(isTemaId('soft')).toBe(false);
   });
 
   it('uses classico as default tema', () => {
     expect(TEMA_PADRAO).toBe('classico');
+  });
+
+  it('registers corporate theme with study palette tokens', () => {
+    const theme = criarTema('corporate');
+    expect(theme.palette.primary.main).toBe('#3B82F6');
+    expect(theme.palette.chrome.bg).toBe('#0F172A');
+    expect(theme.palette.background.default).toBe('#F4F6F8');
+    expect(theme.palette.charts.length).toBeGreaterThan(0);
   });
 });

@@ -20,7 +20,7 @@ describe('storage', () => {
   });
 
   it('returns default when stored id is unknown', () => {
-    localStorage.setItem(CHAVE, 'corporate');
+    localStorage.setItem(CHAVE, 'tema-inexistente');
     expect(lerTemaSalvo()).toBe(TEMA_PADRAO);
   });
 
@@ -47,5 +47,11 @@ describe('storage', () => {
     gravarTema('classico');
     expect(localStorage.getItem(CHAVE)).toBe('classico');
     expect(lerTemaSalvo()).toBe('classico');
+  });
+
+  it('persists corporate when registered', () => {
+    gravarTema('corporate');
+    expect(localStorage.getItem(CHAVE)).toBe('corporate');
+    expect(lerTemaSalvo()).toBe('corporate');
   });
 });
