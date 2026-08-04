@@ -3,6 +3,8 @@ package br.com.techne.sistemafolha.relatorios.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -22,9 +24,8 @@ public class RelatorioArquivo {
     @JoinColumn(name = "relatorio_id")
     private Relatorio relatorio;
 
-    @Lob
-    @Basic(fetch = FetchType.LAZY)
-    @Column(name = "pdf_bytes", nullable = false)
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "pdf_bytes", nullable = false, columnDefinition = "bytea")
     private byte[] pdfBytes;
 
     @Column(name = "tamanho_bytes", nullable = false)

@@ -1,5 +1,4 @@
 import api from './api';
-import axios from 'axios';
 
 /** Backend aguarda até 60s (`relatorios.geracao.timeout-segundos`); axios default é 10s. */
 export const RELATORIO_GERACAO_TIMEOUT_MS = 65_000;
@@ -36,15 +35,27 @@ interface ApiErrorBody {
   detail?: string;
 }
 
-function isTimeoutError(error: unknown): boolean {
-  if (!axios.isAxiosError(error)) {
-    return false;
-  }
-  return error.code === 'ECONNABORTED' || error.message.toLowerCase().includes('timeout');
+interface RelatorioAxiosError {
+  isAxiosError?: boolean;
+  code?: string;
+  message?: string;
+  response?: {
+    status?: number;
+    data?: ApiErrorBody;
+  };
+}
+
+function isAxiosLikeError(error: unknown): error is RelatorioAxiosError {
+  return typeof error === 'object' && error !== null && 'isAxiosError' in error;
+}
+
+function isTimeoutError(error: RelatorioAxiosError): boolean {
+  return error.code === 'ECONNABORTED'
+    || (error.message?.toLowerCase().includes('timeout') ?? false);
 }
 
 export function resolveRelatorioApiError(error: unknown): string {
-  if (axios.isAxiosError<ApiErrorBody>(error)) {
+  if (isAxiosLikeError(error)) {
     const status = error.response?.status;
     if (status === 429) {
       return error.response?.data?.message
