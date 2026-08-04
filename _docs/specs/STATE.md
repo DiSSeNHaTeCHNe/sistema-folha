@@ -189,6 +189,7 @@ _None currently._
 | 011 | Repo limpo e docs alinhados                  | 2026-08-03 | bf669dd | ✅ Done |
 | 012 | Contraste dos temas: avatar de KPI + texto   | 2026-08-04 | d55132d, 649041a | ⚠️ Parcial (D-5 bloqueado: 4º arquivo) |
 | 013 | D-5: `primary.main` como cor de texto (AA)   | 2026-08-04 | 641fb2e, 5a92326 | ✅ Done (teto de arquivos estendido pelo usuário) |
+| 014 | Overlay de elevação off + varredura do fundo efetivo | 2026-08-04 | afea6f6, 95df7fe, 2640f2b, 2378986 | ✅ Done (teto estendido; `Alert`/R-3 fica como dívida) |
 
 ---
 

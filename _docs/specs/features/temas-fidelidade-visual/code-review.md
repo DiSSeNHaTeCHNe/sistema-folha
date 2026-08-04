@@ -155,3 +155,34 @@ Acrescentado após o review; nada acima foi reescrito.
 
 Como as duas varreduras percorrem `TEMAS`, nenhum tema futuro escapa dos pares —
 que era a preocupação de fundo da R-2.
+
+---
+
+## Follow-up — R-2 fechado no pixel; R-3 vira dívida explícita (2026-08-04)
+
+Acrescentado após o review e após a verificação no navegador
+(`_docs/specs/quick/013-contraste-primary-texto/VERIFICACAO.md`). Nada acima foi reescrito.
+
+- **R-2 — a preocupação de fundo era maior do que o par.** A verificação no pixel mostrou
+  que, mesmo com os dois pares novos, o teste continuava medindo o **token** e a tela
+  mostrava outra cor: no `indigo`, o MUI pinta um overlay de elevação
+  (`background-image: linear-gradient(rgba(255,255,255,α), …)`) sobre `background.paper`, e
+  o Card renderizava `#272733`, não `#1C1C28` — `primary.main` em **3,95:1**, não 4,53.
+  A **quick task 014** (`afea6f6`, `95df7fe`, `2640f2b`, `2378986`) fechou isso por decisão
+  do usuário **desligando o overlay** (`MuiPaper.styleOverrides.root.backgroundImage:
+  'none'` em `montarTema`), de modo que o token volta a ser a verdade renderizada, e
+  acrescentou à varredura a medição do **fundo efetivo** de cada nível de elevação em uso
+  (Card, Login, AppBar, Menu/Select, Drawer, Dialog): 30 asserções de que o fundo
+  renderizado **é** o token, mais 10 de AA para `primary.main` sobre ele. Números em
+  `_docs/specs/quick/014-overlay-elevacao-contraste-efetivo/TASK.md`.
+- **R-3 — confirmada no pixel, e registrada como dívida.** O `Alert` standard deriva de
+  `.light` (`bg = lighten(light, 0.9)`, `color = darken(light, 0.6)`). Com os tints da 012,
+  o fundo fica quase branco nos temas claros (`#fcfdfd`) e `#040407` no `indigo`, e o texto
+  vira cinza: o alerta perde a cor semântica. **Contraste passa em 20/20 pares
+  (6,05–9,47)** — é defeito visual, não de acessibilidade. A alternativa que o review
+  sugere (token próprio para o fundo de tint, em vez de sobrecarregar `.light`) é decisão
+  de design ainda **não tomada** pelo usuário; a 014 registrou os números e não corrigiu.
+- Defeitos colaterais fechados no caminho: `Funcionarios/index.tsx:556` (ícone "Inativar"
+  em `color: 'white'` sobre `error.light`, 1,14–1,21:1) e `AparenciaDialog/index.tsx`
+  (ícone do tema ativo a 1,68:1 no `indigo`). `noColorLiterals.test.ts` passou a barrar cor
+  **nomeada**, que era a fresta por onde `'white'` sobreviveu a duas quick tasks.

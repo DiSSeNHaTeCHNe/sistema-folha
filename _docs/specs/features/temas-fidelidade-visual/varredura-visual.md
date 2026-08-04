@@ -366,3 +366,28 @@ Acrescentado após a varredura; os achados acima ficam como registrados.
   3:1 — fecha também a R-2 do `code-review.md`.
 
 D-1, D-2, D-4, D-6 e D-7 seguem abertos.
+
+---
+
+## Follow-up — D-5 fechado também no pixel (2026-08-04)
+
+Acrescentado após a verificação no navegador
+(`_docs/specs/quick/013-contraste-primary-texto/VERIFICACAO.md`, rodada 2). Nada acima foi
+reescrito.
+
+A rodada 2 mediu o D-5 em elemento real nos cinco temas e fechou **4 de 5**: `classico`
+4,80, `corporate` 4,92, `soft` 4,71, `techne` 5,63. O `indigo` **reprovou em 3,95**, e o
+motivo é o mesmo erro de origem: o cálculo da 013 usava o **token** `background.paper`
+(`#1C1C28`), mas o MUI pinta um overlay de elevação sobre ele em `mode: 'dark'`
+(`background-image: linear-gradient(rgba(255,255,255,α), …)`), e o Card renderiza
+**`#272733`**. O Dialog, com α maior, chegava a 2,68.
+
+A **quick task 014** (`afea6f6`, `95df7fe`, `2640f2b`, `2378986`) fechou o `indigo` sem
+mexer em `primary.main`: por decisão do usuário, o overlay foi **desligado**
+(`MuiPaper.styleOverrides.root.backgroundImage: 'none'` em `montarTema`), o que faz o token
+voltar a ser a cor renderizada — `#8078DD` sobre `#1C1C28` = **4,53** no Card e no Dialog.
+`contraste.test.ts` passou a medir o **fundo efetivo** de cada nível de elevação em uso, e
+não só o token: 30 asserções de identidade fundo-efetivo ≡ token e 10 de AA. Números em
+`_docs/specs/quick/014-overlay-elevacao-contraste-efetivo/TASK.md`.
+
+**D-5 fechado nos 5 temas.** D-1, D-2, D-4, D-6 e D-7 seguem abertos.
