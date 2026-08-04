@@ -35,7 +35,7 @@ const DEFAULTS_MUI = {
 
 /**
  * Valores esperados por tema (design.md, tabela "Valores por tema").
- * `techne.info` está escurecido em relação à tabela — ver SPEC_DEVIATION em themes.ts.
+ * `techne.info` usa a variante escurecida por contraste AA — ver nota em themes.ts.
  */
 const SEMANTICAS_ESPERADAS = {
   corporate: { success: '#0F6E56', warning: '#854F0B', error: '#A32D2D', info: '#185FA5' },

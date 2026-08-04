@@ -131,10 +131,10 @@ const TOKENS_TECHNE: TokensTema = {
   success: { main: '#0F6E56' },
   warning: { main: '#8A5200' },
   error: { main: '#A32D2D' },
-  // SPEC_DEVIATION: `info` escurecido de #0C8DCE (tabela do design.md) para #0A7AB0.
-  // Reason: o azul institucional #0C8DCE rende 3.67:1 contra background.paper
-  // (#FFFFFF), abaixo do mínimo AA de 4.5:1 exigido por spec.md AC4 (TEMAF-03).
-  // #0A7AB0 é a variante mais próxima em matiz que atinge 4.75:1.
+  // `info` é #0A7AB0, e não o azul institucional #0C8DCE: este rende 3.67:1 contra
+  // background.paper (#FFFFFF), abaixo do mínimo AA de 4.5:1 exigido por spec.md AC4
+  // (TEMAF-03). #0A7AB0 é a variante mais próxima em matiz e atinge 4.75:1.
+  // Não é desvio: design.md já traz #0A7AB0 na tabela de valores por tema (QA-2).
   info: { main: '#0A7AB0' },
   background: { default: '#EFF2F7', paper: '#FFFFFF' },
   divider: '#D8DCE6',
