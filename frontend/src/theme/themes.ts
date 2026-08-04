@@ -27,10 +27,13 @@ const CORPORATE_CHARTS = [
 const TOKENS_CORPORATE: TokensTema = {
   primary: { main: '#3B82F6', contrastText: '#0F172A' },
   secondary: { main: '#0F6E56' },
-  success: { main: '#0F6E56' },
-  warning: { main: '#854F0B' },
-  error: { main: '#A32D2D' },
-  info: { main: '#185FA5' },
+  // Quick 012 / DD-3: `light` explícito como tint (main misturado a 88% de branco).
+  // A derivação do MUI (`lighten(main, 0.2)`) produz um meio-tom e deixa o par
+  // ícone × fundo do avatar de KPI em ~1.5:1, abaixo dos 3:1 do WCAG 1.4.11.
+  success: { main: '#0F6E56', light: '#E2EEEB' },
+  warning: { main: '#854F0B', light: '#F0EAE2' },
+  error: { main: '#A32D2D', light: '#F4E6E6' },
+  info: { main: '#185FA5', light: '#E3ECF4' },
   background: { default: '#F4F6F8', paper: '#FFFFFF' },
   divider: '#DDE3EA',
   charts: [...CORPORATE_CHARTS],
@@ -56,10 +59,11 @@ const SOFT_CHARTS = [
 const TOKENS_SOFT: TokensTema = {
   primary: { main: '#1D9E75', contrastText: '#0F172A' },
   secondary: { main: '#D85A30' },
-  success: { main: '#0F6E56' },
-  warning: { main: '#854F0B' },
-  error: { main: '#993C1D' },
-  info: { main: '#5F5E5A' },
+  // Quick 012 / DD-3: tints explícitos — ver nota em TOKENS_CORPORATE.
+  success: { main: '#0F6E56', light: '#E2EEEB' },
+  warning: { main: '#854F0B', light: '#F0EAE2' },
+  error: { main: '#993C1D', light: '#F3E8E4' },
+  info: { main: '#5F5E5A', light: '#ECECEB' },
   background: { default: '#FBFAF7', paper: '#FFFFFF' },
   divider: '#E3E0D6',
   charts: [...SOFT_CHARTS],
@@ -128,14 +132,15 @@ const POPPINS_FONT_FAMILY = [
 const TOKENS_TECHNE: TokensTema = {
   primary: { main: '#7836FC', contrastText: '#FFFFFF' },
   secondary: { main: '#3661FC' },
-  success: { main: '#0F6E56' },
-  warning: { main: '#8A5200' },
-  error: { main: '#A32D2D' },
+  // Quick 012 / DD-3: tints explícitos — ver nota em TOKENS_CORPORATE.
+  success: { main: '#0F6E56', light: '#E2EEEB' },
+  warning: { main: '#8A5200', light: '#F1EAE0' },
+  error: { main: '#A32D2D', light: '#F4E6E6' },
   // `info` é #0A7AB0, e não o azul institucional #0C8DCE: este rende 3.67:1 contra
   // background.paper (#FFFFFF), abaixo do mínimo AA de 4.5:1 exigido por spec.md AC4
   // (TEMAF-03). #0A7AB0 é a variante mais próxima em matiz e atinge 4.75:1.
   // Não é desvio: design.md já traz #0A7AB0 na tabela de valores por tema (QA-2).
-  info: { main: '#0A7AB0' },
+  info: { main: '#0A7AB0', light: '#E2EFF6' },
   background: { default: '#EFF2F7', paper: '#FFFFFF' },
   divider: '#D8DCE6',
   charts: [...TECHNE_CHARTS],
@@ -181,7 +186,11 @@ function criarClassico(): Theme {
       },
       warning: {
         light: '#fff3e0',
-        main: '#f57c00',
+        // Quick 012: era #f57c00, que rende 2.70:1 contra background.paper e 2.47:1
+        // contra o próprio tint do avatar. Por decisão do usuário (2026-08-04) o
+        // `classico` também é ajustado por acessibilidade — DD-4 revisado, QA-1
+        // encerrada. #b05900 mantém a matiz laranja e rende 4.91:1 / 4.48:1.
+        main: '#b05900',
       },
       error: {
         light: '#ffebee',

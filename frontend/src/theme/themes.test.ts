@@ -44,6 +44,13 @@ const SEMANTICAS_ESPERADAS = {
   techne: { success: '#0F6E56', warning: '#8A5200', error: '#A32D2D', info: '#0A7AB0' },
 } as const;
 
+/** Tints de avatar declarados na quick task 012 (main misturado a 88% de branco). */
+const LIGHTS_ESPERADOS = {
+  corporate: { success: '#E2EEEB', warning: '#F0EAE2', error: '#F4E6E6', info: '#E3ECF4' },
+  soft: { success: '#E2EEEB', warning: '#F0EAE2', error: '#F3E8E4', info: '#ECECEB' },
+  techne: { success: '#E2EEEB', warning: '#F1EAE0', error: '#F4E6E6', info: '#E2EFF6' },
+} as const;
+
 const PAPEIS = ['success', 'warning', 'error', 'info'] as const;
 
 /** Variantes fora do escopo da escala (DD-5) — devem seguir o default do MUI. */
@@ -59,6 +66,10 @@ const VARIANTES_PRESERVADAS = [
 ] as const;
 
 describe('themes', () => {
+  // Quick 012 (2026-08-04): DD-4 revisado por decisão do usuário — o `classico`
+  // preserva as cores herdadas do tema inline, exceto onde a acessibilidade obriga.
+  // `warning.main` deixou de ser #f57c00 (2.70:1 contra background.paper) e passou a
+  // #b05900. É a única cor do `classico` alterada; as demais seguem fixadas aqui.
   it('preserves classico palette from main.tsx inline theme', () => {
     const theme = criarTema('classico');
     expect(theme.palette.primary.main).toBe('#1976d2');
@@ -69,10 +80,21 @@ describe('themes', () => {
     expect(theme.palette.success.light).toBe('#e8f5e8');
     expect(theme.palette.success.main).toBe('#2e7d32');
     expect(theme.palette.warning.light).toBe('#fff3e0');
-    expect(theme.palette.warning.main).toBe('#f57c00');
     expect(theme.palette.error.light).toBe('#ffebee');
     expect(theme.palette.error.main).toBe('#c62828');
     expect(theme.palette.divider).toBe('#e9ecef');
+  });
+
+  it('corrige warning.main do classico por acessibilidade (quick 012)', () => {
+    const palette = criarTema('classico').palette;
+    expect(palette.warning.main).toBe('#b05900');
+    expect(palette.warning.main).not.toBe('#f57c00');
+    expect(razaoContraste(palette.warning.main, palette.background.paper)).toBeGreaterThanOrEqual(
+      RAZAO_MINIMA_AA,
+    );
+    expect(
+      razaoContraste(palette.warning.main, palette.background.default),
+    ).toBeGreaterThanOrEqual(RAZAO_MINIMA_AA);
   });
 
   it('exposes charts and chrome on classico', () => {
@@ -183,6 +205,21 @@ describe('themes', () => {
       const palette = criarTema(temaId).palette;
       for (const papel of PAPEIS) {
         expect(palette[papel].main, `${temaId}: ${papel}.main`).not.toBe(DEFAULTS_MUI[papel]);
+      }
+    },
+  );
+
+  // Quick 012: tints explícitos nos temas claros (main misturado a 88% de branco).
+  // Sem eles o MUI deriva `lighten(main, 0.2)`, um meio-tom que deixa o ícone do
+  // avatar de KPI em ~1.5:1 sobre o próprio fundo. A razão mínima é verificada na
+  // varredura de contraste; aqui ficam fixados os valores da tabela do design.
+  it.each(['corporate', 'soft', 'techne'] as const)(
+    'tema %s declara light explícito nas quatro semânticas (quick 012)',
+    (temaId) => {
+      const palette = criarTema(temaId).palette;
+      const esperado = LIGHTS_ESPERADOS[temaId];
+      for (const papel of PAPEIS) {
+        expect(palette[papel].light, `${temaId}: ${papel}.light`).toBe(esperado[papel]);
       }
     },
   );
