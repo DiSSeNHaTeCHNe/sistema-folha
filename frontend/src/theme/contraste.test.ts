@@ -39,15 +39,11 @@ const PARES_CONTRASTE = [
 const PAPEIS_SEMANTICOS = ['success', 'warning', 'error', 'info'] as const;
 
 /**
- * SPEC_DEVIATION: o par `classico` × `warning.main` fica fora da varredura semântica.
- * Reason: spec.md AC4 (TEMAF-03) exige 4.5:1 em todos os temas, mas o edge case do
- * `classico` e DD-4 do design exigem que ele preserve as cores de antes. O
- * `warning.main` herdado (#f57c00, fixado em themes.test.ts) rende 2.70:1 contra
- * `background.paper` — o próprio default de fábrica do MUI (#ed6c02) renderia 3.11:1.
- * Os dois requisitos são inconciliáveis sem decisão do usuário; nenhuma cor do
- * `classico` foi alterada e a exceção é a mínima possível (1 par de 20).
+ * WCAG 1.4.11 (componente gráfico não textual): o ícone do avatar de KPI é pintado
+ * em `X.main` sobre `X.light` (Dashboard/index.tsx:206,234,262,290,500,550), par que
+ * a varredura AA contra `background.paper` não enxerga (code-review R-2).
  */
-const EXCECOES_SEMANTICAS: ReadonlySet<string> = new Set(['classico/warning']);
+const RAZAO_MINIMA_GRAFICA = 3;
 
 describe('razaoContraste', () => {
   it('returns 21 for black on white', () => {
@@ -78,13 +74,23 @@ describe('razaoContraste', () => {
     (temaId) => {
       const palette = criarTema(temaId).palette;
       for (const papel of PAPEIS_SEMANTICOS) {
-        if (EXCECOES_SEMANTICAS.has(`${temaId}/${papel}`)) {
-          continue;
-        }
         expect(
           razaoContraste(palette[papel].main, palette.background.paper),
           `${temaId}: ${papel}.main / background.paper`,
         ).toBeGreaterThanOrEqual(RAZAO_MINIMA_AA);
+      }
+    },
+  );
+
+  it.each(TEMAS.map((tema) => [tema.id] as const))(
+    'tema %s atende WCAG 1.4.11 no par ícone × fundo do avatar de KPI',
+    (temaId) => {
+      const palette = criarTema(temaId).palette;
+      for (const papel of PAPEIS_SEMANTICOS) {
+        expect(
+          razaoContraste(palette[papel].main, palette[papel].light),
+          `${temaId}: ${papel}.main / ${papel}.light`,
+        ).toBeGreaterThanOrEqual(RAZAO_MINIMA_GRAFICA);
       }
     },
   );
