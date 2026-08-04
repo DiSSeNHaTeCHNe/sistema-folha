@@ -61,7 +61,10 @@ export default function Dashboard() {
   const { notification, showNotification, hideNotification } = useNotification();
 
   useEffect(() => {
-    if (location.state?.acessoNegado) {
+    if (location.state?.acessoNegadoMeuDashboard) {
+      showNotification('Acesso negado ao Meu Dashboard.', 'warning');
+      navigate('/dashboard', { replace: true, state: {} });
+    } else if (location.state?.acessoNegado) {
       showNotification('Acesso negado. Apenas administradores.', 'warning');
       navigate('/dashboard', { replace: true, state: {} });
     }

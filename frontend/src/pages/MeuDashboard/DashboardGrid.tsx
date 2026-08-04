@@ -17,7 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { Box, IconButton, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Box, IconButton, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import type { DashboardStats } from '../../services/dashboardService';
 import type { WidgetInstance } from './types';
 import { COL_SPAN_PRESETS, type ColSpanPreset } from './types';

@@ -21,6 +21,8 @@ import LinhasNegocio from '../pages/LinhasNegocio';
 import Organograma from '../pages/Organograma';
 import TiposBeneficio from '../pages/TiposBeneficio';
 import ApiKeys from '../pages/ApiKeys';
+import MeuDashboard from '../pages/MeuDashboard';
+import { DashboardCustomRoute } from './DashboardCustomRoute';
 
 function PrivateRoute() {
   const { user, loading } = useAuth();
@@ -51,6 +53,9 @@ export function RouterWithAuth() {
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route element={<DashboardCustomRoute />}>
+                <Route path="/meu-dashboard" element={<MeuDashboard />} />
+              </Route>
               <Route path="/funcionarios" element={<Funcionarios />} />
               <Route path="/folha-pagamento" element={<FolhaPagamento />} />
               <Route path="/beneficios-mensais" element={<BeneficiosMensais />} />

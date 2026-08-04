@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { getDashboardStats } from '../../services/dashboardService';
 import type { DashboardStats } from '../../services/dashboardService';
 import { useNotification } from '../../hooks/useNotification';
@@ -7,22 +19,27 @@ import { Notification } from '../../components/Notification';
 import { DashboardGrid } from './DashboardGrid';
 import { DashboardEmptyState, WidgetCatalogDrawer } from './WidgetCatalogDrawer';
 import { useDashboardLayout } from './hooks/useDashboardLayout';
-import type { WidgetCatalogItem, WidgetInstance } from './types';
+import type { WidgetCatalogItem } from './types';
 import { criarWidgetFromCatalog } from './widgetUtils';
 
 export default function MeuDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const { notification, showNotification, hideNotification } = useNotification();
   const {
     activeLayout,
     catalog,
     editMode,
     loading: layoutLoading,
+    saving,
+    dirty,
     enterEditMode,
+    cancelEdit,
+    save,
+    resetToDefault,
     updateDraftWidgets,
-    setDraftLayout,
     draftLayout,
   } = useDashboardLayout();
 
@@ -51,6 +68,18 @@ export default function MeuDashboard() {
     };
   }, [showNotification]);
 
+  useEffect(() => {
+    if (!dirty) {
+      return;
+    }
+    const handler = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
+
   const widgets = useMemo(() => {
     if (!activeLayout) {
       return [];
@@ -75,6 +104,25 @@ export default function MeuDashboard() {
       .filter((widget) => widget.instanceId !== instanceId)
       .map((widget, index) => ({ ...widget, ordem: index }));
     updateDraftWidgets(filtered);
+  };
+
+  const handleSave = async () => {
+    const ok = await save();
+    if (ok) {
+      showNotification('Layout salvo com sucesso', 'success');
+    } else {
+      showNotification('Erro ao salvar layout', 'error');
+    }
+  };
+
+  const handleReset = async () => {
+    setResetDialogOpen(false);
+    const ok = await resetToDefault();
+    if (ok) {
+      showNotification('Layout padrão restaurado', 'success');
+    } else {
+      showNotification('Erro ao restaurar layout padrão', 'error');
+    }
   };
 
   const loading = layoutLoading || statsLoading;
@@ -103,16 +151,27 @@ export default function MeuDashboard() {
               Visão personalizada do sistema de folha de pagamento
             </Typography>
           </Box>
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             {!editMode && (
               <Button variant="outlined" onClick={enterEditMode}>
                 Editar layout
               </Button>
             )}
             {editMode && (
-              <Button variant="contained" onClick={() => setCatalogOpen(true)}>
-                Adicionar widget
-              </Button>
+              <>
+                <Button variant="contained" onClick={() => void handleSave()} disabled={saving || !dirty}>
+                  Salvar
+                </Button>
+                <Button variant="outlined" onClick={cancelEdit} disabled={saving}>
+                  Cancelar
+                </Button>
+                <Button variant="outlined" color="warning" onClick={() => setResetDialogOpen(true)} disabled={saving}>
+                  Restaurar padrão
+                </Button>
+                <Button variant="contained" onClick={() => setCatalogOpen(true)}>
+                  Adicionar widget
+                </Button>
+              </>
             )}
           </Stack>
         </Box>
@@ -138,6 +197,21 @@ export default function MeuDashboard() {
         onAddWidget={handleAddWidget}
         onLimitReached={(message) => showNotification(message, 'warning')}
       />
+
+      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} aria-labelledby="reset-dialog-title">
+        <DialogTitle id="reset-dialog-title">Restaurar layout padrão?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Esta ação substitui seu layout personalizado pelos 11 widgets padrão. Deseja continuar?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetDialogOpen(false)}>Cancelar</Button>
+          <Button color="warning" onClick={() => void handleReset()} autoFocus>
+            Restaurar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Notification
         open={notification.open}

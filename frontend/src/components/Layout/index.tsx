@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AlterarSenhaDialog } from '../AlterarSenhaDialog';
 import { AparenciaDialog } from '../AparenciaDialog';
 import { isAdmin, canAccessApiKeysPage } from '../../utils/permissions';
+import { podeAcessarMeuDashboard } from '../../utils/dashboardAccess';
 import {
   AppBar,
   Box,
@@ -48,7 +49,7 @@ const drawerWidth = 240;
 
 export function Layout() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, acessoUsuario } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [cadastroOpen, setCadastroOpen] = useState(false);
@@ -56,6 +57,7 @@ export function Layout() {
   const [aparenciaOpen, setAparenciaOpen] = useState(false);
   const userIsAdmin = isAdmin(user);
   const showApiKeysMenu = canAccessApiKeysPage(user);
+  const showMeuDashboardMenu = podeAcessarMeuDashboard(acessoUsuario);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -90,6 +92,7 @@ export function Layout() {
 
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
+    ...(showMeuDashboardMenu ? [{ text: 'Meu Dashboard', icon: <Dashboard />, path: '/meu-dashboard' }] : []),
     { text: 'Funcionários', icon: <People />, path: '/funcionarios' },
     { text: 'Folha de Pagamento', icon: <AttachMoney />, path: '/folha-pagamento' },
     { text: 'Benefícios Mensais', icon: <Redeem />, path: '/beneficios-mensais' },

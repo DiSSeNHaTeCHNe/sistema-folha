@@ -261,8 +261,8 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-14 (client foundation)
 
 **Done when**:
-- [ ] Funções tipadas chamam `/dashboard/layout` e `/dashboard/widgets/catalog`
-- [ ] `npm run build` passa
+- [x] Funções tipadas chamam `/dashboard/layout` e `/dashboard/widgets/catalog`
+- [x] `npm run build` passa
 
 **Tests**: none (HTTP coberto indiretamente em T11/T15 via MSW ou mock)  
 **Gate**: build  
@@ -286,10 +286,10 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-01, DASHC-02 (render foundation)
 
 **Done when**:
-- [ ] Registry exporta `WidgetDefinition` conforme design
-- [ ] KPI widgets **sem** chips de variação percentual
-- [ ] Widget por cargo renderiza `porCargo` quando presente em stats
-- [ ] Gate quick FE: testes unitários mínimos por widget (render com stats mock)
+- [x] Registry exporta `WidgetDefinition` conforme design
+- [x] KPI widgets **sem** chips de variação percentual
+- [x] Widget por cargo renderiza `porCargo` quando presente em stats
+- [x] Gate quick FE: testes unitários mínimos por widget (render com stats mock)
 
 **Tests**: unit (1 test file por widget type ou `widgets/registry.test.tsx` cobrindo render de cada id)  
 **Gate**: quick FE  
@@ -309,10 +309,10 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-01, DASHC-02, DASHC-11
 
 **Done when**:
-- [ ] Primeiro acesso exibe 11 widgets na ordem do layout padrão
-- [ ] Valores batem com stats monolítico (mesmo usuário/competência)
-- [ ] Fora do modo edição: sem handles/menus
-- [ ] Gate quick FE: `npm test -- MeuDashboard.test.tsx` (shell render)
+- [x] Primeiro acesso exibe 11 widgets na ordem do layout padrão
+- [x] Valores batem com stats monolítico (mesmo usuário/competência)
+- [x] Fora do modo edição: sem handles/menus
+- [x] Gate quick FE: `npm test -- MeuDashboard.test.tsx` (shell render)
 
 **Tests**: unit  
 **Gate**: quick FE  
@@ -329,9 +329,9 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-06
 
 **Done when**:
-- [ ] Strings hardcoded ausentes do código (`grep` zero matches)
-- [ ] Teste asserta ausência de chip de variação nos KPIs
-- [ ] Gate: `npm test -- Dashboard.test`
+- [x] Strings hardcoded ausentes do código (`grep` zero matches)
+- [x] Teste asserta ausência de chip de variação nos KPIs
+- [x] Gate: `npm test -- Dashboard.test`
 
 **Tests**: unit  
 **Gate**: quick FE  
@@ -351,10 +351,10 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-19…23, DASHC-27 (FE ignore unknown)
 
 **Done when**:
-- [ ] Salvar chama PUT e sai do modo edição em sucesso
-- [ ] Falha PUT mantém draft + notification error
-- [ ] Cancelar descarta draft
-- [ ] Gate quick FE: `npm test -- useDashboardLayout.test`
+- [x] Salvar chama PUT e sai do modo edição em sucesso
+- [x] Falha PUT mantém draft + notification error
+- [x] Cancelar descarta draft
+- [x] Gate quick FE: `npm test -- useDashboardLayout.test`
 
 **Tests**: unit (MSW ou mock service)  
 **Gate**: quick FE  
@@ -371,10 +371,10 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-07…09, DASHC-12
 
 **Done when**:
-- [ ] Arrastar reordena widgets e atualiza `ordem`
-- [ ] Teclado reordena sem mouse (mock `@dnd-kit` ou integração)
-- [ ] Viewport estreita empilha sem mutar layout salvo
-- [ ] Gate quick FE: `npm test -- DashboardGrid.test`
+- [x] Arrastar reordena widgets e atualiza `ordem`
+- [x] Teclado reordena sem mouse (mock `@dnd-kit` ou integração)
+- [x] Viewport estreita empilha sem mutar layout salvo
+- [x] Gate quick FE: `npm test -- DashboardGrid.test`
 
 **Tests**: unit  
 **Gate**: quick FE  
@@ -393,10 +393,10 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-10, DASHC-13…18
 
 **Done when**:
-- [ ] Adicionar insere widget com `colSpanPadrao` do catálogo
-- [ ] Widget presente marcado indisponível para duplicata (Fase 1)
-- [ ] Layout vazio mostra mensagem + ações (DASHC-13)
-- [ ] Limite 30 bloqueia add com mensagem
+- [x] Adicionar insere widget com `colSpanPadrao` do catálogo
+- [x] Widget presente marcado indisponível para duplicata (Fase 1)
+- [x] Layout vazio mostra mensagem + ações (DASHC-13)
+- [x] Limite 30 bloqueia add com mensagem
 
 **Tests**: unit (drawer + add/remove flows)  
 **Gate**: quick FE  
@@ -417,10 +417,10 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-03…05, DASHC-19…22
 
 **Done when**:
-- [ ] Dois itens menu: "Dashboard" e "Meu Dashboard" (quando permitido)
-- [ ] Usuário sem escopo: menu oculto + rota redireciona/403
-- [ ] Restaurar padrão confirma e recarrega 11 widgets
-- [ ] Gate: `npm test -- dashboardAccess` + build
+- [x] Dois itens menu: "Dashboard" e "Meu Dashboard" (quando permitido)
+- [x] Usuário sem escopo: menu oculto + rota redireciona/403
+- [x] Restaurar padrão confirma e recarrega 11 widgets
+- [x] Gate: `npm test -- dashboardAccess` + build
 
 **Tests**: unit (`dashboardAccess.test.ts` + route test)  
 **Gate**: build  

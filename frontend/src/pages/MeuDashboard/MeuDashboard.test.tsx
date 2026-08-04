@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import MeuDashboard from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { getDashboardStats } from '../../services/dashboardService';
-import { getDashboardLayout } from '../../services/dashboardLayoutService';
+import {
+  getDashboardLayout,
+  getWidgetCatalog,
+} from '../../services/dashboardLayoutService';
 import type { DashboardStats } from '../../services/dashboardService';
 import type { DashboardLayout } from './types';
 
@@ -25,6 +28,9 @@ vi.mock('../../services/dashboardService', () => ({
 
 vi.mock('../../services/dashboardLayoutService', () => ({
   getDashboardLayout: vi.fn(),
+  getWidgetCatalog: vi.fn(),
+  saveDashboardLayout: vi.fn(),
+  resetDashboardLayout: vi.fn(),
 }));
 
 const mockStats: DashboardStats = {
@@ -63,6 +69,7 @@ describe('MeuDashboard shell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getDashboardLayout).mockResolvedValue(defaultLayout);
+    vi.mocked(getWidgetCatalog).mockResolvedValue([]);
     vi.mocked(getDashboardStats).mockResolvedValue(mockStats);
   });
 
@@ -76,11 +83,14 @@ describe('MeuDashboard shell', () => {
     expect(screen.getByText('001 - Salário')).toBeInTheDocument();
   });
 
-  it('shows error when layout load fails', async () => {
-    vi.mocked(getDashboardLayout).mockRejectedValue(new Error('fail'));
+  it('shows edit toolbar actions in edit mode', async () => {
     renderWithProviders(<MeuDashboard />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Editar layout' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Editar layout' }));
     await waitFor(() => {
-      expect(screen.getByText('Erro ao carregar Meu Dashboard')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Salvar' })).toBeInTheDocument();
     });
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Restaurar padrão' })).toBeInTheDocument();
   });
 });
