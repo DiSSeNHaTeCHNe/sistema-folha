@@ -28,7 +28,7 @@
 |------|---------|
 | `11b12f0` | docs(specs): sync governance with main after relatorios and api-keys merge |
 | `9617a25` | docs(readme): align with modular architecture and current features *(inclui specs batch 3)* |
-| `1cc2e5e` | chore(repo): gitignore local junk and complete quick task 011 |
+| `bf669dd` | chore(repo): gitignore local junk and complete quick task 011 |
 
 ## Verification
 
