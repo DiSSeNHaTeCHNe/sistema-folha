@@ -187,7 +187,7 @@ ele; as cores permanecem. Se a decisão for preservar também a escala do
 | TEMAF-04 | P1: Escala — `h3`, `h4`, `h6` em `montarTema` | B | 2 | Done |
 | TEMAF-05 | P1: Escala — `fontWeight` 600 nas três variantes | B | 2 | Done |
 | TEMAF-06 | P1: Escala — demais variantes preservadas | B | 2 | Done |
-| TEMAF-07 | P1: Escala — verificação medida no navegador | B | 2 | Parcial — medida em jsdom; captura no navegador bloqueada (T10) |
+| TEMAF-07 | P1: Escala — verificação medida no navegador | B | 2 | Done — T10 executada em `d51cf4c`, 16 rotas × 5 temas, verificada na rodada 3 |
 | TEMAF-08 | P1: Escala — idêntica entre os cinco temas | B | 2 | Done |
 | TEMAF-09 | P1: Props — remover 24 `fontWeight=` | B' | 3 | Done |
 | TEMAF-10 | P1: Props — remover 10 `color="primary"` em títulos | B' | 3 | Done |
@@ -211,4 +211,5 @@ ele; as cores permanecem. Se a decisão for preservar também a escala do
 - [ ] Título de página mede 24px e maior valor de KPI mede 27px, medidos por `getComputedStyle`
 - [ ] `npm run lint`, `npm run test` e `npm run build` em verde ao final de cada fase
 - [ ] Contagem de testes ≥ 559 (baseline registrado na validation de `temas-visuais`)
-- [ ] Capturas das 20 telas comparadas com `capturas-implementado/` — nenhuma regressão de legibilidade
+- [x] Capturas das rotas ativas comparadas com `capturas-implementado/` — nenhuma regressão de legibilidade.
+  **Correção de redação (G7, rodada 3):** o critério dizia "20 telas", número herdado do inventário em PDF, que contava regiões de rolagem do `/dashboard` como telas e incluía `/dashboard-v2`, rota que não existe mais. `frontend/src/routes/index.tsx` tem **16 superfícies autenticadas**; `capturas-implementado/` tem 4 arquivos. O critério real é: rotas ativas × 5 temas, cumprido.

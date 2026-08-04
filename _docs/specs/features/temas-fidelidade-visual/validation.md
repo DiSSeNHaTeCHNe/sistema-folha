@@ -10,31 +10,43 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Veredito** | ✅ PASS — com 1 item aberto bloqueado por ambiente (G2), fora do alcance automatizado |
+| **Veredito** | ✅ PASS — 14/14 ACs com evidência; verificação visual executada; nenhum gap Major aberto |
 | **Spec vigente** | `_docs/specs/features/temas-fidelidade-visual/spec.md` (QA-1 e QA-2 resolvidas; Success Criteria reescopado em `ebc2535`) |
-| **HEAD validado** | `ebc2535` (branch `feat/temas-fidelidade-visual`, base `0a0eac7`) |
-| **Gate** | ✅ `lint` 0 erros / `test` 632 passed, 0 failed / `build` OK |
-| **Sensor** | 6 mutações, 6 mortas, 0 sobreviventes (inclui a reinjeção do sobrevivente da rodada 1) |
-| **Última execução** | 2026-08-04 (rodada 2) |
+| **HEAD validado** | `d51cf4c` (branch `feat/temas-fidelidade-visual`, base `0a0eac7`) |
+| **Gate** | ✅ `lint` 0 erros / `test` 632 passed, 0 failed (44 arquivos) / `build` OK |
+| **Sensor** | Rodada 2: 6 mutações, 6 mortas. Acumulado: 13 mutações, 13 mortas. **Não refeito na rodada 3** — `git diff ebc2535..d51cf4c -- frontend/src/` é vazio |
+| **Última execução** | 2026-08-04 (rodada 3) |
 
 **Gaps abertos:**
 
-1. **G2 (Major — bloqueado por ambiente, não é defeito de código)** — TEMAF-07 / TEMAF-14:
-   a varredura visual das 20 telas × 5 temas (T10) segue sem acontecer. `claude-in-chrome`
-   não alcança o sandbox e não há dev server no host. Continuam sem evidência: legibilidade,
-   corte e sobreposição; o estado do transbordo do card de Custo Empresa; a comparação com
-   `capturas-implementado/`. Requer decisão do usuário (UAT manual ou reagendar T10) —
-   não é fechável por teste automatizado.
-2. **G5 (Minor / residual, pré-existente)** — pesos de fonte fora do tema na forma `sx`,
+1. **G5 (Minor / residual, pré-existente)** — pesos de fonte fora do tema na forma `sx`,
    que nem a guarda nem a regra de lint pegam (a regra mira `JSXAttribute[name.name='fontWeight']`):
    `frontend/src/pages/Importacao/index.tsx:816` (`<Typography variant="body2" sx={{ mt: 2, fontWeight: 'bold' }}>`)
    e `frontend/src/pages/Funcionarios/index.tsx:499` (`<Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>`,
    este último redundante com o tema). Fora da letra do AC1 de P1-Props, mas contraria a
    Goal "peso decidido pelo tema".
+2. **G6 (Minor — residual de cobertura da T10)** — três pontos declaradamente não medidos
+   pela varredura, nenhum deles tocando um AC: o diálogo "Ver Rubricas" (onde vivem os
+   `subtitle1` de `FolhaPagamento/index.tsx:380,434`) não abre por ausência de ficha
+   processada na base; os rótulos de nó do Organograma em modo gráfico ficam abaixo de 1px
+   mensurável com `fitView`; a sub-tela "Funcionários da competência" foi medida só no `indigo`.
+3. **G7 (Minor — defeito de redação da spec)** — o Success Criteria "Capturas das 20 telas
+   comparadas com `capturas-implementado/`" é insatisfazível na letra:
+   `_docs/estudo-visual/capturas-implementado/` contém **4 arquivos**, não 20. A T10 comparou
+   os 4 disponíveis e substituiu o restante por medição instrumentada (evidência mais forte
+   que a comparação visual pretendida). Cumprido em substância; o texto do critério precisa
+   ser corrigido ou o baseline completado.
 
-**Gaps fechados na rodada 2:** G1 (FIX-1, `b0280e8`), G3 (FIX-4, `ebc2535`),
+**Gaps fechados na rodada 3:** **G2** (T10 executada, `d51cf4c` — ver julgamento na seção
+da rodada 3). **Fechados na rodada 2:** G1 (FIX-1, `b0280e8`), G3 (FIX-4, `ebc2535`),
 G4 (FIX-2, `41771a3`). O marcador `SPEC_DEVIATION` obsoleto de `techne.info` foi
 rebaixado a nota (FIX-3, `b8d8019`).
+
+**Dívidas registradas fora do escopo desta feature** (D-1 a D-7 de
+`varredura-visual.md` §10) — nenhuma é gap desta feature; nenhuma é coberta por AC.
+Destaque: **D-3** (R-1 — 19 pares ícone×avatar abaixo de 3:1 em `corporate`/`soft`/`techne`
+e 1 em `classico`) e **D-5** (`primary.main` como cor de **texto** reprova AA em 4 dos
+5 temas) — **D-5 confirmado como pré-existente**, ver rodada 3.
 
 ---
 
@@ -436,3 +448,187 @@ marcador de desvio obsoleto rebaixado a nota.
 
 **Próximo passo**: escalar G2 ao usuário (UAT manual ou reagendamento de T10). Nenhum
 fix de código pendente.
+
+---
+
+## Execução — `temas-fidelidade-visual` · 2026-08-04 · rodada 3 · `ebc2535..d51cf4c`
+
+**Range acumulado da feature**: `0a0eac7..d51cf4c`.
+**Verifier**: sub-agente independente (autor ≠ verificador). Regra evidência-ou-zero.
+**Veredito**: ✅ **PASS** — G2 fechado; nenhum gap Major aberto.
+
+### Escopo desta rodada — deliberadamente estreito
+
+A rodada 2 deu PASS com um único gap Major: **G2**, a varredura visual bloqueada por
+ambiente. O bloqueio caiu (o usuário subiu o frontend em `http://localhost:3000` com
+backend e sessão autenticada) e a T10 foi executada. Esta rodada julga **apenas** se a
+evidência da T10 fecha o G2, e reavalia TEMAF-07/TEMAF-14 e os Edge Cases à luz dela.
+
+**Pré-condição verificada pelo Verifier antes de qualquer outra coisa:**
+
+```
+git diff --stat ebc2535..d51cf4c -- frontend/src/   →  (vazio)
+git diff --stat ebc2535..d51cf4c                    →  4 arquivos, todos em _docs/
+                                                       (code-review.md, tasks.md,
+                                                        validation.md, varredura-visual.md)
+```
+
+**Nenhuma linha de código de produção ou de teste mudou desde a rodada 2.** Por isso a
+varredura de cobertura dos 14 ACs e o sensor de mutação **não foram refeitos** — os
+resultados da rodada 2 continuam válidos por construção. O gate foi reexecutado para
+confirmar o estado.
+
+> Nota: há uma modificação **não commitada** em
+> `backend/src/main/java/br/com/techne/sistemafolha/beneficios/infrastructure/BeneficioMensalRepository.java`
+> (JPQL `cc.codigo` → `CAST(cc.id AS string)`) que **não é desta feature**. Confirmado que
+> não entra no range validado e não foi tocada.
+
+---
+
+### Julgamento do G2 — a evidência da T10 se sustenta?
+
+Artefatos julgados: `_docs/specs/features/temas-fidelidade-visual/varredura-visual.md`
+(versionado, `d51cf4c`), `_docs/estudo-visual/varredura-pos-fidelidade.md` (dados brutos,
+533 linhas) e `_docs/estudo-visual/capturas-pos-fidelidade/` (6 arquivos). As duas últimas
+estão em `.gitignore`.
+
+**Veredito: G2 FECHADO.** Os quatro "Done when" de T10 estão preenchidos com medição real
+de navegador, não com proxy. As verificações céticas abaixo foram feitas pelo Verifier,
+não aceitas do relatório.
+
+| Alegação da T10 | Verificação independente do Verifier | Veredito |
+| --- | --- | --- |
+| "16 rotas ativas cobertas × 5 temas" (a spec fala em **20 telas**) | Contei em `frontend/src/routes/index.tsx`: o `<Routes>` declara **exatamente 16 rotas que renderizam tela autenticada** (`/dashboard`, `/funcionarios`, `/folha-pagamento`, `/beneficios-mensais`, `/relatorios`, `/api-keys`, `/usuarios`, `/linhas-negocio`, `/centros-custo`, `/cargos`, `/rubricas`, `/rubricas-fixas`, `/tipos-beneficio`, `/organograma`, `/importacao` — 15 — mais `/organograma` em modo gráfico como 16ª superfície). As demais entradas são `/login` e **três** `<Navigate>` (`/beneficios`, `/`, `*`). **`/dashboard-v2` não existe** no arquivo. As "20 telas" vêm de `inventario-visual-estado-atual.pdf`, anterior à remoção e que conta regiões de rolagem de `/dashboard` como telas distintas | ✅ **Confirmado — não é subcontagem.** A reconciliação 20→16 é real e justificada |
+| Título 24px/600 e maior KPI 27px/600 em 5/5 temas × 16 telas; `h6` 16px/600 ×60 por tema | Consistência interna conferida: o relatório diz que `/api-keys` **não tem `h4` algum**, e ainda assim conta 16 `h4` em 16 telas. Fecha porque `/dashboard` tem **dois** `h4` (o título e o valor de Custo Empresa, que é `h4` e não `h3`). Os dados brutos (§1 de `varredura-pos-fidelidade.md`) listam os dois nominalmente. Contagens de `h3` (×3) batem com os 3 KPIs `h3` do Dashboard | ✅ **Confirmado — internamente consistente** |
+| Zero sobreposições e zero ilegibilidades | Os 4 "pares" sinalizados no `/dashboard`/`techne` foram investigados no relatório e descartados como `<tspan>` de eixo do Recharts em linhas consecutivas (caixas de linha se tocam 7px, glifos não), com confirmação por captura. O falso positivo dos badges "brancos sobre branco" foi rastreado até `background-image: linear-gradient` — limitação declarada da sonda, não achado. **Descartar os próprios positivos com causa nomeada é sinal de rigor, não de complacência** | ✅ **Confirmado** |
+| Dois cortes pré-existentes nos 5 temas | Ambos com geometria em px nos dados brutos e ambos verificados nas capturas de referência. Ver Edge Cases abaixo | ✅ **Confirmado** |
+
+**Fraquezas reais encontradas na evidência** (registradas, nenhuma invalida o fechamento):
+
+1. **Erro de citação `file:line` em §6.** O relatório atribui a "Custo Empresa: R$ …"
+   *do card de funcionário* a `FolhaPagamento/index.tsx:775`. Conferi: a linha 775 em
+   `d51cf4c` é a **célula da tabela** (`<Typography color="success.main" variant="body1">`);
+   a linha do card está em ~638. O rótulo veio da tabela de R-4 do `code-review.md:73`, que
+   já trazia a mesma linha. **Os dois elementos foram de fato medidos** (um confirmado, o
+   outro refutado), então não há buraco de cobertura — só a citação está errada.
+2. **Durabilidade da evidência.** Os dados brutos e as capturas estão em `.gitignore`.
+   O artefato versionado é o resumo. Um verificador futuro não consegue re-derivar a
+   medição a partir do repositório. Não é gap desta feature; é caveat de rastreabilidade.
+3. **Três pontos declaradamente não medidos** → G6 (ver Status atual). Nenhum toca um AC.
+
+---
+
+### Status revisado de TEMAF-07 e TEMAF-14
+
+| Requisito | Status rodada 2 | Status rodada 3 | Base |
+| --- | --- | --- | --- |
+| **TEMAF-07** — "Escala: verificação medida no navegador" | ⚠️ Parcial (jsdom sim, navegador não) | ✅ **Done / Verified** | O AC5 de P1-Escala pede título de página a 24px e maior valor de KPI a 27px "verificável por `getComputedStyle`". Medido **no navegador**, `getComputedStyle` real, 5 temas × 16 telas: `h4` 24/600, `h3` 27/600, `h6` 16/600, sem uma única exceção e sem nenhuma prop inline vencendo o tema. O tema ativo foi reconfirmado a cada troca por token computado (`background.default` + `fontFamily` — `techne` em Poppins, `classico` em `-apple-system`), o que descarta a hipótese de as 5 medições serem o mesmo tema repetido. Isso é **mais** do que o AC pede |
+| **TEMAF-14** — "suítes existentes sem alteração de asserção" | ⚠️ Parcial (asserções ✅; varredura ❌) | ✅ **Done / Verified** | O AC7 de P1-Props é uma propriedade do **diff**, não da tela: `git diff 0a0eac7..d51cf4c -- 'frontend/src/**/*.test.*' \| grep -cE "^-.*expect\("` → **0**. Já estava satisfeito na rodada 1. O "Parcial" da rodada 2 era um efeito colateral de o G2 ter sido pendurado nos dois requisitos. **A varredura não contradiz nada e acrescenta uma confirmação lateral**: como não houve regressão visual, não existia motivo oculto para enfraquecer asserção alguma |
+
+---
+
+### Edge Cases da spec — cobertura à luz da T10
+
+| Edge Case | Evidência | Veredito |
+| --- | --- | --- |
+| `classico` recebe a escala nova preservando as cores | Testes (`themes.test.ts:140-148` escala, `:56-70` cores, `:153-165` variantes preservadas) **e** navegador: `classico` mede `h4` 24/600 como os demais, com `background.default` `#f8f9fa` e cores próprias intactas | ✅ **Coberto** |
+| "`h4` com valor monetário longo: a redução para 24px SHALL **diminuir** o transbordo, **mas não há garantia de eliminá-lo**" | Medido no card Custo Empresa: sobreposição valor×ícone **25px+ → 0px nos 5 temas** (o inventário do estado atual descrevia o valor "encobrindo parcialmente o ícone"); avatar segue **25–36px fora do card**, cortado por `overflow-x: hidden`. Déficit estrutural: `17+191+0+56+17 = 281px` de conteúdo em card de 228px. Presente também nas capturas de referência | ✅ **Coberto — e o resultado bate com a letra da spec.** Diminuiu (o que era SHALL) e não eliminou (o que a spec explicitamente não garantia). O Out of Scope já previa: "Se persistir, vira quick task própria" → é a **D-1** |
+| Organograma sob `indigo` com nós distinguíveis | Medido: `/organograma` (lista) sob `indigo` = **limpo** (0 cortes, 0 sobreposições, 0 falhas de contraste); modo gráfico sob `indigo` = `e8 c0 o0 b1`, e o único `b` é a marca d'água "React Flow" da biblioteca. **A premissa do edge case, porém, é falsa**: verifiquei que não existe `#fff` algum em `frontend/src/pages/Organograma/index.tsx` — nem em `d51cf4c` nem em `0a0eac7`. A linha 1218 é um `<Backdrop sx={{ color: 'common.white' }}>` (spinner de operação), sem relação com distinguibilidade de nó | ✅ **Coberto na substância** (nós distinguíveis sob `indigo`, medido), com a ressalva de que os rótulos de nó em modo gráfico não são mensuráveis sob `fitView` (G6) e de que a premissa citada na spec está desatualizada |
+| Teste que assertava cor/peso SHALL ser revisto, não deletado | `grep -cE "^-.*expect\("` = **0** no diff acumulado | ✅ **Coberto** |
+
+---
+
+### D-5 é regressão desta feature ou dívida pré-existente?
+
+**Veredito: PRÉ-EXISTENTE.** Determinado com `git diff 0a0eac7..d51cf4c`, não pelo relatório.
+
+D-5 é `primary.main` usado como cor de **texto** sobre `background.paper`, reprovando AA
+em `soft` (3,39), `corporate` (3,68), `indigo` (4,48) e `classico` (4,37).
+
+| Teste | Resultado |
+| --- | --- |
+| As ocorrências mudaram na feature? | `git diff 0a0eac7..d51cf4c -- frontend/src/pages/FolhaPagamento/index.tsx \| grep -E '^[+-].*primary'` → **saída vazia**. As duas `Typography` com `color="primary"` do arquivo (`:752` `variant="body2"` "Normal"; `:770` `variant="body1"` valor de Total Líquido) são **idênticas à base**. Os demais pontos ("Filtrar", "Ver Funcionários", "Limpar") são `Button`/`Chip` do MUI, não tocados |
+| A feature aumentou o uso de `primary.main` como texto? | **Não — reduziu.** `git diff 0a0eac7..d51cf4c -- frontend/src/pages frontend/src/components \| grep -cE '^-.*color="primary"'` → **10** linhas removidas (é exatamente o TEMAF-10), e **0** adicionadas em código de produção |
+| Vetor teórico de regressão: perder a isenção WCAG de "texto grande" ao cair de `bold` ≥18,66px para 400? | **Não se aplica.** Todos os elementos de D-5 medem 13–16px — sempre abaixo do limiar de texto grande, tanto antes quanto depois. O limiar de 4,5:1 já valia |
+| Algum AC cobre esse par? | **Não.** AC3/AC4 de P1-Semânticas cobrem as **quatro semânticas** contra `background.paper`, e essas passam. `primary` não é uma das quatro. `contraste.test.ts` testa `primary.contrastText / primary.main` — par diferente |
+
+**Conclusão**: D-5 **não é gap desta feature**. É a R-2 do `code-review.md`, agora confirmada
+com números, e vira dívida separada. A observação do worker de que o par está **ausente**
+de `contraste.test.ts` é procedente e é o ponto de partida natural do fix — mas fechá-lo
+exigiria um AC que a spec vigente não tem.
+
+Pela mesma lógica, **D-3** (R-1, contraste ícone×avatar) também não é gap desta feature:
+nenhum AC cobre o par ícone×fundo do avatar, e o `indigo` — o único tema onde a feature
+declarou `light` explícito, por DD-3 — é o único que **passa nos seis pares** (3,15–6,16).
+Isto é a prova empírica de que DD-3 estava certa, e simultaneamente o argumento para
+estendê-la a `corporate`/`soft`/`techne`, o que resolveria 18 dos 19 pares reprovados.
+
+---
+
+### Gate Check — rodada 3
+
+- **Comando**: `cd frontend && npm run lint && npm run test && npm run build`
+  (suíte em blocos por caminho por causa do timeout de 45s do shell)
+- **lint**: exit 0 — 15 problems (**0 errors**, 15 warnings `react-refresh` pré-existentes)
+- **test**: **632 passed, 0 failed, 0 skipped** em **44 arquivos** — idêntico à rodada 2,
+  como esperado de um diff sem código
+  - `src/theme` 106 (8 arq.) · `src/components` 40 (4) ·
+    `src/{contexts,hooks,lib,routes,services,test,utils}` 109 (17) ·
+    `src/smoke + pages/{ApiKeys,BeneficiosMensais,Dashboard*}` 100 (5) ·
+    `pages/{FolhaPagamento,Funcionarios,Importacao,Login}` 130 (4) ·
+    `pages/{Organograma,Relatorios*}` 69 (3) · `pages/{Rubricas*,Usuarios}` 78 (3)
+- **build**: exit 0 — `✓ built in 9.28s`
+- **Baseline `temas-visuais`**: 559 → **632** (+73)
+- **Integridade**: 0 asserções deletadas ou enfraquecidas no acumulado
+
+### Success Criteria da spec — conferência na rodada 3
+
+| Critério | Rodada 2 | Rodada 3 |
+| --- | --- | --- |
+| `git grep -c 'fontWeight='` em `pages/**` + `components/**` = 0 | ✅ | ✅ (código inalterado) |
+| `git grep -cE '<Typography[^>]*color="textSecondary"'` = 0 | ✅ | ✅ |
+| Nos 5 temas, semânticas ≠ default do MUI | ✅ | ✅ |
+| Título 24px e maior KPI 27px por `getComputedStyle` | ⚠️ só jsdom | ✅ **Cumprido integralmente** — medido no navegador, 5 temas × 16 telas |
+| `lint`, `test` e `build` em verde | ✅ | ✅ |
+| Contagem de testes ≥ 559 | ✅ 632 | ✅ 632 |
+| Capturas das 20 telas comparadas com `capturas-implementado/` | ❌ | 🟡 **Cumprido em substância, insatisfazível na letra** — `capturas-implementado/` contém **4 arquivos** (`corporate-dashboard.jpg`, `indigo-dashboard.jpg`, `techne-dashboard.jpg`, `techne-folha.jpg`), nunca 20. Os 4 foram comparados 1:1 com `capturas-pos-fidelidade/` (§8 de `varredura-visual.md`), mais 2 capturas novas de detalhe; o restante das 16 telas foi coberto por medição instrumentada, que é evidência **mais forte** que a comparação visual pretendida. **Nenhuma regressão de legibilidade encontrada** — que é a cláusula operativa do critério. Ver G7 |
+
+**Placar**: **6/7 cumpridos integralmente + 1 cumprido em substância** (o 7º com defeito
+de redação na própria spec).
+
+### Requirement Traceability Update — rodada 3
+
+| Requisito | Rodada 2 | Rodada 3 |
+| --- | --- | --- |
+| TEMAF-01 a TEMAF-06 | ✅ Verified | ✅ Verified (inalterados — sem mudança de código) |
+| **TEMAF-07** | ⚠️ Parcial | ✅ **Verified** — medido no navegador (T10) |
+| TEMAF-08 a TEMAF-13 | ✅ Verified | ✅ Verified (inalterados) |
+| **TEMAF-14** | ⚠️ Parcial | ✅ **Verified** — 0 asserções alteradas; a varredura não contradiz |
+
+**14/14 requisitos verificados. Nenhum `Parcial` remanescente.**
+
+### Task Completion — rodada 3
+
+| Task | Status | Notas |
+| --- | --- | --- |
+| T1–T9 | ✅ Done | Inalteradas desde a rodada 2 |
+| **T10** | ✅ **Done** | `d51cf4c` — varredura executada; 4/4 "Done when" preenchidos com evidência de navegador. Era ❌ Bloqueada nas rodadas 1 e 2 |
+
+### Summary — rodada 3
+
+**Overall**: ✅ **Pronto.** O único item Major que restava era ambiental, e caiu.
+
+**O que esta rodada estabeleceu**: a T10 aconteceu de verdade, com dev server real, dados
+reais e instrumentação por `getComputedStyle`/`getBoundingClientRect`; a contagem de telas
+foi conferida contra `routes/index.tsx` e não é subcontagem; TEMAF-07 e TEMAF-14 passam a
+Verified; os quatro Edge Cases da spec têm evidência, e o do Custo Empresa saiu **exatamente**
+como a spec previa ("diminuir, sem garantia de eliminar"); D-5 e D-3 são dívidas
+pré-existentes, provadas por diff, e não gaps desta feature.
+
+**O que sobra**: G5, G6 e G7 — todos Minor, nenhum bloqueante, nenhum exigindo mudança de
+código de produção. Mais as dívidas D-1 a D-7, que a própria varredura levantou e que
+merecem virar tasks próprias (prioridade sugerida: D-3 primeiro, porque o fix é declarar
+`light` explícito em três temas e resolve 18 pares de uma vez).
+
+**Próximo passo**: nenhum fix pendente nesta feature. Abrir tasks para D-1/D-2/D-3/D-4/D-5
+e corrigir a redação do 7º Success Criteria (G7).
