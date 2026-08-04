@@ -47,6 +47,16 @@ export const ESCALA_TIPOGRAFICA = {
 } as const;
 
 export function montarTema(tokens: TokensTema): Theme {
+  /**
+   * Quick 014: com o overlay desligado, `Menu`/`Select`/`Popover` passam a pintar
+   * exatamente `background.paper` — a mesma cor do `Card` sobre o qual flutuam. A
+   * sombra de elevação do MUI é preta e some no tema escuro, então a separação
+   * passa a depender de uma borda. Nos temas claros nada muda (a superfície
+   * flutuante já era `#FFFFFF` sobre `#FFFFFF` antes desta task).
+   */
+  const bordaSuperficieFlutuante =
+    tokens.mode === 'dark' && tokens.divider ? { border: `1px solid ${tokens.divider}` } : {};
+
   return createTheme({
     palette: {
       mode: tokens.mode ?? 'light',
@@ -67,6 +77,32 @@ export function montarTema(tokens: TokensTema): Theme {
     },
     typography: { ...tokens.typography, ...ESCALA_TIPOGRAFICA },
     components: {
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            /**
+             * Quick 014: em `mode: 'dark'` o MUI pinta um overlay de elevação por cima
+             * de `background.paper` (`background-image: linear-gradient(rgba(255,255,255,α),
+             * rgba(255,255,255,α))`, α crescente com a elevação). No `indigo` o Card
+             * renderizava `#272733` e não o token `#1C1C28`, e `primary.main` caía de
+             * 4,53:1 (o que o teste media) para 3,95:1 (o que a tela mostrava).
+             * Desligar o overlay faz o token voltar a ser a verdade renderizada.
+             * Nos temas claros é no-op: o overlay só existe no modo escuro.
+             */
+            backgroundImage: 'none',
+          },
+        },
+      },
+      MuiPopover: {
+        styleOverrides: {
+          paper: bordaSuperficieFlutuante,
+        },
+      },
+      MuiMenu: {
+        styleOverrides: {
+          paper: bordaSuperficieFlutuante,
+        },
+      },
       MuiButton: {
         styleOverrides: {
           root: {
