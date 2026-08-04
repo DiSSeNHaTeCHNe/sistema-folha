@@ -5,6 +5,7 @@ import { renderWithProviders } from '../../test/renderWithProviders';
 import { getDashboardStats } from '../../services/dashboardService';
 import type { DashboardStats } from '../../services/dashboardService';
 import { createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import { criarTema, TEMA_IDS, TEMA_PADRAO, type TemaId } from '../../theme/themes';
 
 const cellFills: string[] = [];
@@ -85,6 +86,32 @@ function renderDashboard(state?: object, temaId?: TemaId) {
       ? { initialEntries: [{ pathname: '/dashboard', state }] }
       : { initialEntries: ['/dashboard'] },
   });
+}
+
+/**
+ * Igual a `renderDashboard`, mas com o `CssBaseline` que a aplicação monta em volta
+ * das páginas — é ele que aplica `color: theme.palette.text.primary` no `body`, do
+ * qual o título herda. Isolado num render próprio para não alterar as demais asserções.
+ */
+function renderDashboardComBaseline(temaId: TemaId) {
+  return renderWithProviders(
+    <>
+      <CssBaseline />
+      <Dashboard />
+    </>,
+    { route: '/dashboard', temaId, routerProps: { initialEntries: ['/dashboard'] } },
+  );
+}
+
+/**
+ * Normaliza um token de cor (hex curto, hex longo, rgb ou rgba) pela CSSOM, na mesma
+ * forma que `getComputedStyle` devolve — preservando o canal alfa, que distingue
+ * `text.primary` do preto puro herdado por default.
+ */
+function corNormalizada(valor: string): string {
+  const sonda = document.createElement('div');
+  sonda.style.color = valor;
+  return sonda.style.color;
 }
 
 /**
@@ -211,8 +238,8 @@ describe('Dashboard page', () => {
    * `text.primary` do documento. O jsdom não resolve a herança vinda do CssBaseline,
    * então o que se asserta aqui é o equivalente verificável: o título não pinta a cor
    * de acento e sua cor computada é a mesma do contêiner (herança). Reintroduzir
-   * `color="primary"` quebra as duas asserções. A medição do valor absoluto de
-   * `text.primary` é feita no navegador (T10).
+   * `color="primary"` quebra as duas asserções. O valor absoluto de `text.primary`
+   * é fixado no teste seguinte.
    */
   it.each(TEMA_IDS)('título da página herda a cor do texto no tema %s', async (temaId) => {
     const palette = criarTema(temaId).palette;
@@ -225,6 +252,22 @@ describe('Dashboard page', () => {
     );
     expect(getComputedStyle(titulo).color, `${temaId}: título herda a cor do contêiner`).toBe(
       getComputedStyle(conteiner).color,
+    );
+  });
+
+  /**
+   * TEMAF-10 / P1-Props AC4: "a cor do título de página SHALL ser
+   * `theme.palette.text.primary`" — valor da spec, não proxy. Com o `CssBaseline`
+   * montado, o valor computado do título é comparado ao token do tema ativo,
+   * canal alfa incluído.
+   */
+  it.each(TEMA_IDS)('título da página tem a cor text.primary do tema %s', async (temaId) => {
+    const palette = criarTema(temaId).palette;
+    renderDashboardComBaseline(temaId);
+    const titulo = await screen.findByRole('heading', { name: 'Dashboard Gerencial' });
+
+    expect(getComputedStyle(titulo).color, `${temaId}: título em text.primary`).toBe(
+      corNormalizada(palette.text.primary),
     );
   });
 
