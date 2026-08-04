@@ -89,7 +89,46 @@ const TOKENS_INDIGO: TokensTema = {
   },
 };
 
-export const TEMA_IDS = ['classico', 'corporate', 'soft', 'indigo'] as const;
+const TECHNE_CHARTS = [
+  '#7836FC',
+  '#3661FC',
+  '#4C57D6',
+  '#20284E',
+  '#10B981',
+  '#F59E0B',
+  '#EF4444',
+  '#06B6D4',
+] as const;
+
+const POPPINS_FONT_FAMILY = [
+  'Poppins',
+  '-apple-system',
+  'BlinkMacSystemFont',
+  '"Segoe UI"',
+  'Roboto',
+  '"Helvetica Neue"',
+  'Arial',
+  'sans-serif',
+].join(',');
+
+const TOKENS_TECHNE: TokensTema = {
+  primary: { main: '#7836FC', contrastText: '#FFFFFF' },
+  secondary: { main: '#3661FC' },
+  background: { default: '#EFF2F7', paper: '#FFFFFF' },
+  divider: '#D8DCE6',
+  charts: [...TECHNE_CHARTS],
+  chrome: {
+    bg: '#20284E',
+    fg: '#B8C0D4',
+    fgAtivo: '#FFFFFF',
+    selecionado: '#4C57D6',
+  },
+  typography: {
+    fontFamily: POPPINS_FONT_FAMILY,
+  },
+};
+
+export const TEMA_IDS = ['classico', 'corporate', 'soft', 'indigo', 'techne'] as const;
 export type TemaId = (typeof TEMA_IDS)[number];
 export const TEMA_PADRAO: TemaId = 'classico';
 
@@ -159,6 +198,10 @@ function criarIndigo(): Theme {
   return montarTema(TOKENS_INDIGO);
 }
 
+function criarTechne(): Theme {
+  return montarTema(TOKENS_TECHNE);
+}
+
 export const TEMAS: readonly TemaDefinicao[] = [
   {
     id: 'classico',
@@ -187,6 +230,14 @@ export const TEMAS: readonly TemaDefinicao[] = [
     descricao: 'Tema escuro com acento índigo. Alto contraste, ideal para dashboards.',
     amostras: ['#12121A', '#7F77DD', '#5DCAA5'],
     criar: criarIndigo,
+  },
+  {
+    id: 'techne',
+    nome: 'Techne brand',
+    descricao:
+      'Identidade Techne: violeta institucional, chrome marinho e tipografia Poppins. Alinhado aos relatórios PDF.',
+    amostras: ['#7836FC', '#20284E', '#EFF2F7'],
+    criar: criarTechne,
   },
 ];
 

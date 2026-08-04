@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CLASSICO_CHARTS,
@@ -5,6 +8,19 @@ import {
   criarTema,
   isTemaId,
 } from './themes';
+
+function lerPrimaryColorRelatorios(): string {
+  const ymlPath = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    '../../../backend/src/main/resources/application.yml',
+  );
+  const content = readFileSync(ymlPath, 'utf-8');
+  const match = content.match(/primary-color:\s*"([^"]+)"/);
+  if (!match?.[1]) {
+    throw new Error('relatorios.branding.primary-color não encontrado em application.yml');
+  }
+  return match[1].toLowerCase();
+}
 
 describe('themes', () => {
   it('preserves classico palette from main.tsx inline theme', () => {
@@ -30,7 +46,7 @@ describe('themes', () => {
     expect(isTemaId('corporate')).toBe(true);
     expect(isTemaId('soft')).toBe(true);
     expect(isTemaId('indigo')).toBe(true);
-    expect(isTemaId('techne')).toBe(false);
+    expect(isTemaId('techne')).toBe(true);
   });
 
   it('uses classico as default tema', () => {
@@ -60,5 +76,19 @@ describe('themes', () => {
     expect(theme.palette.background.default).toBe('#12121A');
     expect(theme.palette.background.paper).toBe('#1C1C28');
     expect(theme.palette.charts.length).toBeGreaterThan(0);
+  });
+
+  it('registers techne brand theme with institutional palette tokens', () => {
+    const theme = criarTema('techne');
+    expect(theme.palette.primary.main).toBe('#7836FC');
+    expect(theme.palette.chrome.bg).toBe('#20284E');
+    expect(theme.palette.background.default).toBe('#EFF2F7');
+    expect(theme.typography.fontFamily).toMatch(/^Poppins/);
+    expect(theme.palette.charts.length).toBeGreaterThan(0);
+  });
+
+  it('keeps techne primary.main aligned with relatorios branding in application.yml', () => {
+    const theme = criarTema('techne');
+    expect(theme.palette.primary.main.toLowerCase()).toBe(lerPrimaryColorRelatorios());
   });
 });
