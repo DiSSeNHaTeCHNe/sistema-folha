@@ -4,6 +4,10 @@ import { montarTema, type TokensTema } from './tokens';
 const tokensExemplo: TokensTema = {
   primary: { main: '#3B82F6' },
   secondary: { main: '#dc004e' },
+  success: { main: '#0F6E56' },
+  warning: { main: '#854F0B' },
+  error: { main: '#A32D2D' },
+  info: { main: '#185FA5' },
   background: { default: '#F4F6F8' },
   charts: ['#4F46E5', '#10B981', '#F59E0B'],
   chrome: {
@@ -13,6 +17,14 @@ const tokensExemplo: TokensTema = {
     selecionado: 'rgba(255, 255, 255, 0.12)',
   },
 };
+
+/** Defaults de fábrica do MUI para os quatro papéis semânticos. */
+const DEFAULTS_MUI = {
+  success: '#2e7d32',
+  warning: '#ed6c02',
+  error: '#d32f2f',
+  info: '#0288d1',
+} as const;
 
 describe('montarTema', () => {
   it('populates palette.charts from tokens', () => {
@@ -39,5 +51,44 @@ describe('montarTema', () => {
       backgroundColor: tokensExemplo.chrome.bg,
       color: tokensExemplo.chrome.fg,
     });
+  });
+
+  it('populates palette.success.main from tokens instead of the MUI default', () => {
+    const theme = montarTema(tokensExemplo);
+    expect(theme.palette.success.main).toBe('#0F6E56');
+    expect(theme.palette.success.main).not.toBe(DEFAULTS_MUI.success);
+  });
+
+  it('populates palette.warning.main from tokens instead of the MUI default', () => {
+    const theme = montarTema(tokensExemplo);
+    expect(theme.palette.warning.main).toBe('#854F0B');
+    expect(theme.palette.warning.main).not.toBe(DEFAULTS_MUI.warning);
+  });
+
+  it('populates palette.error.main from tokens instead of the MUI default', () => {
+    const theme = montarTema(tokensExemplo);
+    expect(theme.palette.error.main).toBe('#A32D2D');
+    expect(theme.palette.error.main).not.toBe(DEFAULTS_MUI.error);
+  });
+
+  it('populates palette.info.main from tokens instead of the MUI default', () => {
+    const theme = montarTema(tokensExemplo);
+    expect(theme.palette.info.main).toBe('#185FA5');
+    expect(theme.palette.info.main).not.toBe(DEFAULTS_MUI.info);
+  });
+
+  it('forwards an explicit semantic light to the palette', () => {
+    const theme = montarTema({
+      ...tokensExemplo,
+      success: { main: '#5DCAA5', light: '#1F3B34' },
+    });
+    expect(theme.palette.success.light).toBe('#1F3B34');
+  });
+
+  it('lets MUI derive light when the token omits it', () => {
+    const theme = montarTema(tokensExemplo);
+    expect(tokensExemplo.success?.light).toBeUndefined();
+    expect(theme.palette.success.light).toBeTruthy();
+    expect(theme.palette.success.light).not.toBe(theme.palette.success.main);
   });
 });

@@ -7,10 +7,21 @@ export interface ChromeTokens {
   selecionado: string;
 }
 
+/** Papel semântico (success/warning/error/info) declarado pelo tema. */
+export interface TokensPapelSemantico {
+  main: string;
+  light?: string;
+  contrastText?: string;
+}
+
 export interface TokensTema {
   mode?: 'light' | 'dark';
   primary: { main: string; contrastText?: string };
   secondary: { main: string };
+  success?: TokensPapelSemantico;
+  warning?: TokensPapelSemantico;
+  error?: TokensPapelSemantico;
+  info?: TokensPapelSemantico;
   background: { default: string; paper?: string };
   text?: { primary?: string; secondary?: string };
   divider?: string;
@@ -25,6 +36,10 @@ export function montarTema(tokens: TokensTema): Theme {
       mode: tokens.mode ?? 'light',
       primary: tokens.primary,
       secondary: tokens.secondary,
+      ...(tokens.success ? { success: tokens.success } : {}),
+      ...(tokens.warning ? { warning: tokens.warning } : {}),
+      ...(tokens.error ? { error: tokens.error } : {}),
+      ...(tokens.info ? { info: tokens.info } : {}),
       background: {
         default: tokens.background.default,
         paper: tokens.background.paper ?? '#ffffff',
