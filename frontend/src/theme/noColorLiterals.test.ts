@@ -8,6 +8,16 @@ const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCAN_DIRS = ['pages', 'components'].map((dir) => join(SRC_ROOT, dir));
 const COLOR_PATTERN = /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/;
 
+/**
+ * Quick 014: hexadecimais e `rgba(...)` já eram barrados, mas a cor **nomeada**
+ * passava — e foi por essa fresta que `color: 'white'` sobreviveu duas vezes sobre um
+ * fundo `.light` que a quick 012 tornou tint claro (`Funcionarios/index.tsx:534`,
+ * corrigido pela 013, e `:556`, corrigido pela 014, ambos rendendo ~1,2:1 na tela).
+ * Tokens da paleta como `'common.white'` seguem válidos: o ponto antes do nome impede
+ * o casamento.
+ */
+const NAMED_COLOR_PATTERN = /['"](white|black)['"]/;
+
 function collectSourceFiles(dir: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -30,6 +40,20 @@ describe('no color literals in pages/components', () => {
     for (const dir of SCAN_DIRS) {
       for (const file of collectSourceFiles(dir)) {
         if (COLOR_PATTERN.test(readFileSync(file, 'utf-8'))) {
+          violations.push(file.replace(`${SRC_ROOT}/`, ''));
+        }
+      }
+    }
+
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
+
+  it('does not contain named color literals', () => {
+    const violations: string[] = [];
+
+    for (const dir of SCAN_DIRS) {
+      for (const file of collectSourceFiles(dir)) {
+        if (NAMED_COLOR_PATTERN.test(readFileSync(file, 'utf-8'))) {
           violations.push(file.replace(`${SRC_ROOT}/`, ''));
         }
       }
