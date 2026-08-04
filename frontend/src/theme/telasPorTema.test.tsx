@@ -282,7 +282,7 @@ describe('varredura de telas por tema', () => {
     setupServiceMocks();
   });
 
-  describe.each(['corporate', 'soft', 'indigo', 'techne'] as const)('tema %s', (temaId) => {
+  describe.each(['classico', 'corporate', 'soft', 'indigo', 'techne'] as const)('tema %s', (temaId) => {
     it.each(telasSmoke(temaId))('renderiza $nome sem erro', async ({ render, assert }) => {
       render();
       await assert();

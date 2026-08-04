@@ -45,7 +45,7 @@ import { formatMoneyDisplay } from '../../utils/money';
 export default function Dashboard() {
   const theme = useTheme();
   const chartColors = theme.palette.charts;
-  const primaryColor = theme.palette.primary.main;
+  const areaChartColor = chartColors[0];
   const cardSx = {
     borderRadius: 3,
     boxShadow: theme.shadows[2],
@@ -311,8 +311,8 @@ export default function Dashboard() {
                 <AreaChart data={areaData}>
                   <defs>
                     <linearGradient id="colorFolha" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={primaryColor} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={primaryColor} stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={areaChartColor} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={areaChartColor} stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="mes" />
@@ -326,7 +326,7 @@ export default function Dashboard() {
                   <Area 
                     type="monotone" 
                     dataKey="folha" 
-                    stroke={primaryColor} 
+                    stroke={areaChartColor} 
                     fillOpacity={1} 
                     fill="url(#colorFolha)" 
                     strokeWidth={3}

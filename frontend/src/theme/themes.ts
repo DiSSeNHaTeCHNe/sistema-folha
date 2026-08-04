@@ -149,9 +149,26 @@ function criarClassico(): Theme {
       secondary: {
         main: '#dc004e',
       },
-      background: {
-        default: '#f5f5f5',
+      info: {
+        light: '#e3f2fd',
+        main: '#1976d2',
       },
+      success: {
+        light: '#e8f5e8',
+        main: '#2e7d32',
+      },
+      warning: {
+        light: '#fff3e0',
+        main: '#f57c00',
+      },
+      error: {
+        light: '#ffebee',
+        main: '#c62828',
+      },
+      background: {
+        default: '#f8f9fa',
+      },
+      divider: '#e9ecef',
       charts: [...CLASSICO_CHARTS],
       chrome: {
         bg: '#ffffff',
@@ -207,7 +224,7 @@ export const TEMAS: readonly TemaDefinicao[] = [
     id: 'classico',
     nome: 'Clássico',
     descricao: 'Tema azul MUI padrão, idêntico à aparência original do sistema.',
-    amostras: ['#1976d2', '#dc004e', '#f5f5f5'],
+    amostras: ['#1976d2', '#dc004e', '#f8f9fa'],
     criar: criarClassico,
   },
   {

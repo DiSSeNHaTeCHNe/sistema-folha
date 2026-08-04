@@ -7,7 +7,7 @@ import { TEMAS } from '../../theme/themes';
 
 const mockOnClose = vi.fn();
 
-function renderDialog(open = true, initialTemaId?: 'classico') {
+function renderDialog(open = true, initialTemaId?: Parameters<typeof AppThemeProvider>[0]['initialTemaId']) {
   return render(
     <AppThemeProvider initialTemaId={initialTemaId}>
       <AparenciaDialog open={open} onClose={mockOnClose} />
@@ -32,6 +32,15 @@ describe('AparenciaDialog', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders one radio option per registered theme', () => {
+    renderDialog();
+
+    expect(screen.getAllByRole('radio')).toHaveLength(TEMAS.length);
+    for (const tema of TEMAS) {
+      expect(screen.getByRole('radio', { name: new RegExp(tema.nome, 'i') })).toBeInTheDocument();
+    }
+  });
+
   it('marks the active theme with aria-checked true', () => {
     renderDialog(true, 'classico');
 
@@ -39,18 +48,19 @@ describe('AparenciaDialog', () => {
     expect(activeOption).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('applies theme immediately when a theme is selected', () => {
+  it('applies theme immediately when switching to a different theme', () => {
     const gravarSpy = vi.spyOn(storage, 'gravarTema');
 
     renderDialog(true, 'classico');
 
-    fireEvent.click(screen.getByRole('radio', { name: /Clássico/i }));
+    expect(screen.getByRole('radio', { name: /Clássico/i })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: /Techne brand/i })).toHaveAttribute('aria-checked', 'false');
 
-    expect(gravarSpy).toHaveBeenCalledWith('classico');
-    expect(screen.getByRole('radio', { name: /Clássico/i })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    fireEvent.click(screen.getByRole('radio', { name: /Techne brand/i }));
+
+    expect(gravarSpy).toHaveBeenCalledWith('techne');
+    expect(screen.getByRole('radio', { name: /Techne brand/i })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: /Clássico/i })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('selects theme via Enter and Space keyboard navigation', () => {

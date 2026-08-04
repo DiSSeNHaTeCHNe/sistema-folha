@@ -27,7 +27,16 @@ describe('themes', () => {
     const theme = criarTema('classico');
     expect(theme.palette.primary.main).toBe('#1976d2');
     expect(theme.palette.secondary.main).toBe('#dc004e');
-    expect(theme.palette.background.default).toBe('#f5f5f5');
+    expect(theme.palette.background.default).toBe('#f8f9fa');
+    expect(theme.palette.info.light).toBe('#e3f2fd');
+    expect(theme.palette.info.main).toBe('#1976d2');
+    expect(theme.palette.success.light).toBe('#e8f5e8');
+    expect(theme.palette.success.main).toBe('#2e7d32');
+    expect(theme.palette.warning.light).toBe('#fff3e0');
+    expect(theme.palette.warning.main).toBe('#f57c00');
+    expect(theme.palette.error.light).toBe('#ffebee');
+    expect(theme.palette.error.main).toBe('#c62828');
+    expect(theme.palette.divider).toBe('#e9ecef');
   });
 
   it('exposes charts and chrome on classico', () => {
