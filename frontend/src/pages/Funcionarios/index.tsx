@@ -554,7 +554,13 @@ export default function Funcionarios() {
                             color: 'error.main',
                             '&:hover': {
                               backgroundColor: 'error.light',
-                              color: 'white',
+                              // Quick 014: mesmo defeito que a 013 corrigiu no botão
+                              // Editar acima. A quick 012 tornou `error.light` um tint
+                              // claro, e o branco literal virou branco sobre
+                              // quase-branco (1,14–1,21:1 em classico/corporate/soft/
+                              // techne). `error.main` sobre o próprio tint é o par
+                              // varrido em contraste.test.ts (≥ 3:1).
+                              color: 'error.main',
                             },
                           }}
                         >
