@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 @Configuration
 @EnableAsync
@@ -20,5 +21,10 @@ public class RelatorioAsyncConfig {
         executor.setThreadNamePrefix("relatorio-");
         executor.initialize();
         return executor;
+    }
+
+    @Bean
+    Consumer<Long> relatorioEnqueueFn(RelatorioGeracaoService relatorioGeracaoService) {
+        return relatorioGeracaoService::enfileirarProcessamento;
     }
 }

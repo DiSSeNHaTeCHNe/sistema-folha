@@ -15,6 +15,9 @@ public interface RelatorioRepository extends JpaRepository<Relatorio, Long> {
 
     List<Relatorio> findByUsuarioIdAndTipoAndAtivoTrueOrderByAnoDescMesDesc(Long usuarioId, RelatorioTipo tipo);
 
+    List<Relatorio> findByUsuarioIdAndStatusAndAtivoTrue(
+        Long usuarioId, br.com.techne.sistemafolha.relatorios.domain.RelatorioStatus status);
+
     Optional<Relatorio> findByIdAndUsuarioIdAndAtivoTrue(Long id, Long usuarioId);
 
     Optional<Relatorio> findByUsuarioIdAndTipoAndMesAndAnoAndAtivoTrue(

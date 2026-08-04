@@ -172,6 +172,10 @@ public class RelatorioGeracaoService {
         return future;
     }
 
+    void enfileirarProcessamento(Long relatorioId) {
+        enfileirarProcessamentoAposCommit(relatorioId);
+    }
+
     private record ProcessamentoHandle(Long relatorioId, CompletableFuture<Void> future) {}
 
     private Relatorio criarNovoRelatorio(Usuario usuario, RelatorioTipo tipo, int mes, int ano) {
