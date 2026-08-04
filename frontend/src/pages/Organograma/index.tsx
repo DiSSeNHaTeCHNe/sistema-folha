@@ -629,7 +629,7 @@ const NoOrganogramaCard: React.FC<{
             // MODO COMPACTO - Só título e badges
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Box display="flex" alignItems="center" gap={1} flex={1}>
-                <Typography variant="subtitle1" fontWeight="bold">
+                <Typography variant="subtitle1">
                   {no.nome}
                 </Typography>
                 {funcionariosCount > 0 && (

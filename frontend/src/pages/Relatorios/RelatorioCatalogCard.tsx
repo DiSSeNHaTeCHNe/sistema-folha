@@ -86,7 +86,6 @@ export function RelatorioCatalogCard({
           variant="h6"
           component="h2"
           gutterBottom
-          fontWeight={600}
         >
           {title}
         </Typography>

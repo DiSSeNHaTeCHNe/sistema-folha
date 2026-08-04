@@ -377,7 +377,7 @@ export function FolhaPagamento() {
             Nenhuma rubrica encontrada para este totalizador.
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Typography variant="subtitle1" fontWeight="bold">
+            <Typography variant="subtitle1">
               Total: {formatMoneyDisplay(0)}
             </Typography>
           </Box>
@@ -431,7 +431,7 @@ export function FolhaPagamento() {
           );
         })}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography variant="subtitle1">
             Total: {formatMoneyDisplay(cardTotal)}
           </Typography>
         </Box>
@@ -772,7 +772,7 @@ export function FolhaPagamento() {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography color="success.main" variant="body1" fontWeight="medium">
+                      <Typography color="success.main" variant="body1">
                         {formatMoneyDisplay(resumo.totalCustoEmpresa)}
                       </Typography>
                     </TableCell>

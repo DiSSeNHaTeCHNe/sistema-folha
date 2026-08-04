@@ -327,7 +327,7 @@ export default function Usuarios() {
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box mb={3}>
-        <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
+        <Typography variant="h4" gutterBottom>
           Manutenção de Usuários
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">

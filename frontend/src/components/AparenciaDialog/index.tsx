@@ -63,7 +63,7 @@ export function AparenciaDialog({ open, onClose }: AparenciaDialogProps) {
                 }}
               >
                 <Box flex={1}>
-                  <Typography variant="subtitle1" fontWeight="bold">
+                  <Typography variant="subtitle1">
                     {tema.nome}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
