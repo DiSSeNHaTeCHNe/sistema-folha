@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { createTheme } from '@mui/material/styles';
 import {
   CLASSICO_CHARTS,
   TEMA_IDS,
@@ -44,6 +45,18 @@ const SEMANTICAS_ESPERADAS = {
 } as const;
 
 const PAPEIS = ['success', 'warning', 'error', 'info'] as const;
+
+/** Variantes fora do escopo da escala (DD-5) — devem seguir o default do MUI. */
+const VARIANTES_PRESERVADAS = [
+  'body1',
+  'body2',
+  'subtitle1',
+  'subtitle2',
+  'caption',
+  'h1',
+  'h2',
+  'h5',
+] as const;
 
 describe('themes', () => {
   it('preserves classico palette from main.tsx inline theme', () => {
@@ -132,6 +145,25 @@ describe('themes', () => {
     expect(typography.h4.fontWeight).toBe(600);
     expect(typography.h6.fontSize).toBe('1rem');
     expect(typography.h6.fontWeight).toBe(600);
+  });
+
+  // TEMAF-06 / P1-Escala AC6: só h3, h4 e h6 mudam; as demais variantes seguem o
+  // default do MUI em todos os cinco temas, inclusive no `classico`, que é montado
+  // fora de `montarTema` (DD-3) e por isso não é coberto por tokens.test.ts.
+  it.each(TEMA_IDS)('tema %s preserva as demais variantes no default do MUI (TEMAF-06)', (temaId) => {
+    const typography = criarTema(temaId).typography;
+    const padrao = createTheme().typography;
+    for (const variante of VARIANTES_PRESERVADAS) {
+      expect(typography[variante].fontSize, `${temaId}: ${variante}.fontSize`).toBe(
+        padrao[variante].fontSize,
+      );
+      expect(typography[variante].fontWeight, `${temaId}: ${variante}.fontWeight`).toBe(
+        padrao[variante].fontWeight,
+      );
+      expect(typography[variante].lineHeight, `${temaId}: ${variante}.lineHeight`).toBe(
+        padrao[variante].lineHeight,
+      );
+    }
   });
 
   it.each(['corporate', 'soft', 'indigo', 'techne'] as const)(
