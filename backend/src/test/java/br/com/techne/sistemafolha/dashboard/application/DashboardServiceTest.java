@@ -1,7 +1,5 @@
 package br.com.techne.sistemafolha.dashboard.application;
 
-import br.com.techne.sistemafolha.auth.domain.Usuario;
-import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
 import br.com.techne.sistemafolha.beneficios.port.BeneficioConsultaPort;
 import br.com.techne.sistemafolha.cadastros.port.CadastrosImportLookupPort;
 import br.com.techne.sistemafolha.dashboard.api.DashboardStatsDTO;
@@ -12,8 +10,6 @@ import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaResumoSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaTotalizacaoPort;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
-import br.com.techne.sistemafolha.organograma.acesso.port.MotivoNegacaoAcesso;
-import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -60,19 +56,14 @@ class DashboardServiceTest {
     private BeneficioConsultaPort beneficioConsultaPort;
 
     @Mock
-    private OrganogramaAcessoPort organogramaAcessoPort;
-
-    @Mock
-    private UsuarioLookupPort usuarioLookupPort;
+    private DashboardAccessGuard dashboardAccessGuard;
 
     @InjectMocks
     private DashboardService dashboardService;
 
     @Test
     void getStats_restritoComCentrosVazios_retornaEmptyENaoChamaPortsDeDados() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
-            .thenReturn(contextoRestrito(Set.of()));
+        stubAccessDenied();
 
         DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
 
@@ -85,10 +76,7 @@ class DashboardServiceTest {
 
     @Test
     void getStats_semFuncionario_retornaEmptyENaoChamaPortsDeDados() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
-            .thenReturn(new AccessContextDTO(
-                false, false, false, Set.of(), MotivoNegacaoAcesso.SEM_FUNCIONARIO, null, null, null));
+        stubAccessDenied();
 
         DashboardStatsDTO stats = dashboardService.getStats(LOGIN);
 
@@ -100,8 +88,7 @@ class DashboardServiceTest {
 
     @Test
     void getStats_acessoTotal_preservaAgregacaoGlobalComResumo() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubAccessTotal();
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 1, false,
@@ -139,9 +126,8 @@ class DashboardServiceTest {
 
     @Test
     void getStats_restritoComCentros_calculaEvolucaoScopedNaoGlobal() {
-        stubUsuario();
         Set<Long> centros = Set.of(10L);
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoRestrito(centros));
+        stubAccessRestrito(centros);
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false,
@@ -184,9 +170,8 @@ class DashboardServiceTest {
 
     @Test
     void getStats_restritoComCentros_competenciaSemLinhas_pontoZeroNaEvolucao() {
-        stubUsuario();
         Set<Long> centros = Set.of(10L);
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoRestrito(centros));
+        stubAccessRestrito(centros);
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("99999.00"), 10, false,
@@ -215,17 +200,18 @@ class DashboardServiceTest {
 
     @Test
     void getStats_loginAusente_retornaEmpty() {
+        when(dashboardAccessGuard.resolve(null))
+            .thenReturn(DashboardAccessGuard.ResolvedDashboardAccess.accessDenied());
         DashboardStatsDTO stats = dashboardService.getStats(null);
 
         assertEmptyStats(stats);
-        verify(usuarioLookupPort, never()).findByLoginAndAtivoTrue(any());
+        verify(dashboardAccessGuard).resolve(null);
         verify(folhaConsultaPort, never()).findResumoMaisRecente();
     }
 
     @Test
     void getStats_acessoTotalSemResumo_usaCountCadastros() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubAccessTotal();
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.empty());
         when(cadastrosImportLookupPort.countFuncionariosAtivos()).thenReturn(10L);
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(any(), any()))
@@ -241,8 +227,7 @@ class DashboardServiceTest {
 
     @Test
     void getStats_acessoTotal_evolucaoExcluiDecimoTerceiro_quandoPortRetornaApenasRegulares() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubAccessTotal();
 
         LocalDate dezInicio = LocalDate.of(2024, 12, 1);
         LocalDate dezFim = LocalDate.of(2024, 12, 31);
@@ -280,9 +265,8 @@ class DashboardServiceTest {
 
     @Test
     void getStats_restritoComCentros_evolucaoExcluiDecimoTerceiro_quandoPortRetornaApenasRegulares() {
-        stubUsuario();
         Set<Long> centros = Set.of(10L);
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoRestrito(centros));
+        stubAccessRestrito(centros);
 
         LocalDate dezInicio = LocalDate.of(2024, 12, 1);
         LocalDate dezFim = LocalDate.of(2024, 12, 31);
@@ -325,8 +309,7 @@ class DashboardServiceTest {
 
     @Test
     void getStats_acessoTotal_semResumo_incluiBeneficios() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubAccessTotal();
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.empty());
         when(cadastrosImportLookupPort.countFuncionariosAtivos()).thenReturn(3L);
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(any(), any()))
@@ -342,8 +325,7 @@ class DashboardServiceTest {
 
     @Test
     void getStats_acessoTotal_comResumo_agregaPorLinhaCentroCargoETops() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubAccessTotal();
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, new BigDecimal("50000.00"), 2, false,
@@ -379,52 +361,43 @@ class DashboardServiceTest {
 
     @Test
     void getStats_usuarioInexistente_retornaEmpty() {
-        when(usuarioLookupPort.findByLoginAndAtivoTrue("ghost")).thenReturn(Optional.empty());
+        stubAccessDenied("ghost");
 
         DashboardStatsDTO stats = dashboardService.getStats("ghost");
 
         assertEmptyStats(stats);
-        verify(organogramaAcessoPort, never()).obterContextoAcesso(any());
     }
 
     @Test
     void getStats_loginBlank_retornaEmpty() {
+        stubAccessDenied("   ");
         assertEmptyStats(dashboardService.getStats("   "));
     }
 
     @Test
     void getStats_motivoNegacaoExplicito_retornaEmpty() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
-            .thenReturn(new AccessContextDTO(false, false, false, Set.of(),
-                MotivoNegacaoAcesso.SEM_FUNCIONARIO, null, null, null));
+        stubAccessDenied();
 
         assertEmptyStats(dashboardService.getStats(LOGIN));
     }
 
     @Test
     void getStats_scopedCentrosVazios_retornaEmpty() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
-            .thenReturn(new AccessContextDTO(true, true, false, Collections.emptySet(), null, 2L, "TI", 1));
+        stubAccessDenied();
 
         assertEmptyStats(dashboardService.getStats(LOGIN));
     }
 
     @Test
     void getStats_semOrganograma_retornaEmpty() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
-            .thenReturn(new AccessContextDTO(false, true, false, Set.of(10L), null, null, null, null));
+        stubAccessDenied();
 
         assertEmptyStats(dashboardService.getStats(LOGIN));
     }
 
     @Test
     void getStats_restritoSemResumo_contaFuncionariosPorCentros() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
-            .thenReturn(contextoRestrito(Set.of(10L)));
+        stubAccessRestrito(Set.of(10L));
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.empty());
         when(cadastrosImportLookupPort.countFuncionariosAtivosPorCentros(Set.of(10L))).thenReturn(3L);
         when(beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
@@ -438,8 +411,7 @@ class DashboardServiceTest {
 
     @Test
     void getStats_comResumo_filtraLinhasSemIdsOpcionais() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubAccessTotal();
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
             LocalDate.of(2024, 10, 1), LocalDate.of(2024, 10, 31),
             BigDecimal.TEN, 1, false, BigDecimal.ONE);
@@ -467,26 +439,21 @@ class DashboardServiceTest {
 
     @Test
     void getStats_centrosNullNoContexto_retornaEmpty() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
-            .thenReturn(new AccessContextDTO(true, true, false, null, null, 2L, "TI", 1));
+        stubAccessDenied();
 
         assertEmptyStats(dashboardService.getStats(LOGIN));
     }
 
     @Test
     void getStats_comFuncionarioSemNoOrganograma_retornaEmpty() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID))
-            .thenReturn(new AccessContextDTO(true, false, false, Set.of(10L), null, null, null, null));
+        stubAccessDenied();
 
         assertEmptyStats(dashboardService.getStats(LOGIN));
     }
 
     @Test
     void getStats_topRubricasOrdenaELimitaCinco() {
-        stubUsuario();
-        when(organogramaAcessoPort.obterContextoAcesso(USUARIO_ID)).thenReturn(contextoAcessoTotal());
+        stubAccessTotal();
 
         FolhaResumoSnapshot resumo = new FolhaResumoSnapshot(
             COMPETENCIA_INICIO, COMPETENCIA_FIM, BigDecimal.TEN, 1, false, BigDecimal.ONE);
@@ -516,12 +483,24 @@ class DashboardServiceTest {
         assertEquals(16L, stats.topDescontos().get(0).id());
     }
 
-    private void stubUsuario() {
-        Usuario usuario = new Usuario();
-        usuario.setId(USUARIO_ID);
-        usuario.setLogin(LOGIN);
-        usuario.setAtivo(true);
-        when(usuarioLookupPort.findByLoginAndAtivoTrue(LOGIN)).thenReturn(Optional.of(usuario));
+    private void stubAccessDenied() {
+        when(dashboardAccessGuard.resolve(LOGIN))
+            .thenReturn(DashboardAccessGuard.ResolvedDashboardAccess.accessDenied());
+    }
+
+    private void stubAccessDenied(String login) {
+        when(dashboardAccessGuard.resolve(login))
+            .thenReturn(DashboardAccessGuard.ResolvedDashboardAccess.accessDenied());
+    }
+
+    private void stubAccessTotal() {
+        when(dashboardAccessGuard.resolve(LOGIN)).thenReturn(
+            new DashboardAccessGuard.ResolvedDashboardAccess(false, USUARIO_ID, contextoAcessoTotal(), null));
+    }
+
+    private void stubAccessRestrito(Set<Long> centros) {
+        when(dashboardAccessGuard.resolve(LOGIN)).thenReturn(
+            new DashboardAccessGuard.ResolvedDashboardAccess(false, USUARIO_ID, contextoRestrito(centros), centros));
     }
 
     private AccessContextDTO contextoAcessoTotal() {

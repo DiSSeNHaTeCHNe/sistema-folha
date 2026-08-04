@@ -1,11 +1,9 @@
 package br.com.techne.sistemafolha.dashboard.application;
 
-import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
 import br.com.techne.sistemafolha.dashboard.api.DashboardStatsDTO;
 import br.com.techne.sistemafolha.dashboard.api.EvolucaoMensalDTO;
 import br.com.techne.sistemafolha.dashboard.port.DashboardConsultaPort;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
-import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +16,7 @@ import java.util.Set;
 public class DashboardConsultaAdapter implements DashboardConsultaPort {
 
     private final DashboardStatsAggregator statsAggregator;
-    private final UsuarioLookupPort usuarioLookupPort;
-    private final OrganogramaAcessoPort organogramaAcessoPort;
+    private final DashboardAccessGuard dashboardAccessGuard;
 
     @Override
     public DashboardStatsDTO getStatsForCompetencia(
@@ -44,32 +41,11 @@ public class DashboardConsultaAdapter implements DashboardConsultaPort {
     }
 
     private ResolvedAccess resolveAccess(String login) {
-        if (login == null || login.isBlank()) {
+        DashboardAccessGuard.ResolvedDashboardAccess access = dashboardAccessGuard.resolve(login);
+        if (access.denied()) {
             return ResolvedAccess.deniedAccess();
         }
-        var usuarioOpt = usuarioLookupPort.findByLoginAndAtivoTrue(login);
-        if (usuarioOpt.isEmpty()) {
-            return ResolvedAccess.deniedAccess();
-        }
-        AccessContextDTO contexto = organogramaAcessoPort.obterContextoAcesso(usuarioOpt.get().getId());
-        if (deveNegarAcesso(contexto)) {
-            return ResolvedAccess.deniedAccess();
-        }
-        Set<Long> centrosScoped = contexto.acessoTotal() ? null : contexto.centrosCustoIds();
-        return new ResolvedAccess(false, contexto, centrosScoped);
-    }
-
-    private boolean deveNegarAcesso(AccessContextDTO contexto) {
-        if (contexto.acessoTotal()) {
-            return false;
-        }
-        if (contexto.motivoNegacao() != null) {
-            return true;
-        }
-        if (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma()) {
-            return true;
-        }
-        return contexto.centrosCustoIds() == null || contexto.centrosCustoIds().isEmpty();
+        return new ResolvedAccess(false, access.contexto(), access.centrosScoped());
     }
 
     private DashboardStatsDTO emptyStats() {

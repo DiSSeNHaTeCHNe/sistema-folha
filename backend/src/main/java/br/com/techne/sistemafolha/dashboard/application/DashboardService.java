@@ -1,15 +1,11 @@
 package br.com.techne.sistemafolha.dashboard.application;
 
-import br.com.techne.sistemafolha.auth.domain.Usuario;
-import br.com.techne.sistemafolha.auth.port.UsuarioLookupPort;
 import br.com.techne.sistemafolha.beneficios.port.BeneficioConsultaPort;
 import br.com.techne.sistemafolha.cadastros.port.CadastrosImportLookupPort;
 import br.com.techne.sistemafolha.dashboard.api.DashboardStatsDTO;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaResumoSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaTotalizacaoPort;
-import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
-import br.com.techne.sistemafolha.organograma.acesso.port.OrganogramaAcessoPort;
 import br.com.techne.sistemafolha.shared.logging.DomainLogging;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -21,7 +17,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -35,27 +30,18 @@ public class DashboardService {
     private final FolhaTotalizacaoPort folhaTotalizacaoPort;
     private final CadastrosImportLookupPort cadastrosImportLookupPort;
     private final BeneficioConsultaPort beneficioConsultaPort;
-    private final OrganogramaAcessoPort organogramaAcessoPort;
-    private final UsuarioLookupPort usuarioLookupPort;
+    private final DashboardAccessGuard dashboardAccessGuard;
 
     public DashboardStatsDTO getStats(String login) {
         logger.debug("{}Calculando estatísticas do dashboard", DOMAIN_PREFIX);
 
-        if (login == null || login.isBlank()) {
+        DashboardAccessGuard.ResolvedDashboardAccess access = dashboardAccessGuard.resolve(login);
+        if (access.denied()) {
             return emptyStats();
         }
 
-        Optional<Usuario> usuarioOpt = usuarioLookupPort.findByLoginAndAtivoTrue(login);
-        if (usuarioOpt.isEmpty()) {
-            return emptyStats();
-        }
-
-        AccessContextDTO contexto = organogramaAcessoPort.obterContextoAcesso(usuarioOpt.get().getId());
-        if (deveNegarAcesso(contexto)) {
-            return emptyStats();
-        }
-
-        Set<Long> centrosScoped = contexto.acessoTotal() ? null : contexto.centrosCustoIds();
+        var contexto = access.contexto();
+        var centrosScoped = access.centrosScoped();
 
         Optional<FolhaResumoSnapshot> resumoMaisRecente = folhaConsultaPort.findResumoMaisRecente();
 
@@ -102,20 +88,7 @@ public class DashboardService {
         return new DashboardStatsAggregator(folhaConsultaPort, folhaTotalizacaoPort, beneficioConsultaPort);
     }
 
-    private boolean deveNegarAcesso(AccessContextDTO contexto) {
-        if (contexto.acessoTotal()) {
-            return false;
-        }
-        if (contexto.motivoNegacao() != null) {
-            return true;
-        }
-        if (!contexto.temFuncionarioVinculado() || !contexto.temNoOrganograma()) {
-            return true;
-        }
-        return contexto.centrosCustoIds() == null || contexto.centrosCustoIds().isEmpty();
-    }
-
-    private DashboardStatsDTO emptyStats() {
+private DashboardStatsDTO emptyStats() {
         return new DashboardStatsDTO(
             0L,
             BigDecimal.ZERO,

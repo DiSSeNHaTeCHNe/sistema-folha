@@ -16,6 +16,7 @@ import br.com.techne.sistemafolha.cadastros.domain.RubricaNotFoundException;
 import br.com.techne.sistemafolha.folha.domain.FichaMensalNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.NoOrganogramaNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.OrganogramaAtivoConflictException;
+import br.com.techne.sistemafolha.dashboard.domain.DashboardAcessoNegadoException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioAcessoNegadoException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioGeracaoLimiteException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioIndisponivelException;
@@ -148,6 +149,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleRelatorioGeracaoLimiteException(RelatorioGeracaoLimiteException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+
+    @ExceptionHandler(DashboardAcessoNegadoException.class)
+    public ResponseEntity<ErrorResponse> handleDashboardAcessoNegadoException(DashboardAcessoNegadoException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(RelatorioAcessoNegadoException.class)
