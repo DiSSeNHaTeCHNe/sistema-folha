@@ -14,7 +14,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Estudo de origem**: `_docs/estudo-visual/aproximacao-mockups.md` (+ `.pdf` com as capturas lado a lado)
 **Referência visual**: `_docs/estudo-visual/propostas-visual-sistema-folha.pdf`, `capturas-implementado/`
 **Feature anterior**: `_docs/specs/features/temas-visuais/` (PASS @ `ab2cf01`)
-**Status**: Em execução — Fases 1–3 concluídas (batches 1 e 2); Fase 4 (T10) bloqueada por indisponibilidade de captura. Branch `feat/temas-fidelidade-visual`, base `0a0eac7`.
+**Status**: Fases 1–4 concluídas. T10 executada em 2026-08-04 com o frontend do usuário em `http://localhost:3000`. Branch `feat/temas-fidelidade-visual`, base `0a0eac7`.
 **User preference (project):** commits atômicos por task autorizados nesta execução.
 
 ---
@@ -294,10 +294,10 @@ T10
 
 ---
 
-### T10: [!] Varredura visual das 20 telas nos cinco temas — BLOQUEADA
+### T10: [x] Varredura visual das 20 telas nos cinco temas
 
 **What**: Capturar as 20 telas sob cada tema, comparar com `_docs/estudo-visual/capturas-implementado/` e com os mockups, e registrar o resultado.
-**Where**: `_docs/specs/features/temas-fidelidade-visual/validation.md`, capturas em `_docs/estudo-visual/`
+**Where**: `_docs/specs/features/temas-fidelidade-visual/varredura-visual.md`, capturas em `_docs/estudo-visual/capturas-pos-fidelidade/`
 **Depends on**: T9
 **Reuses**: rotas listadas em `_docs/estudo-visual/README.md`; gerador `gerador/gen_estado_atual.py`
 **Requirement**: TEMAF-07, TEMAF-14
@@ -306,15 +306,24 @@ T10
 
 **Done when**:
 
-- [ ] Título de página mede 24px e maior valor de KPI mede 27px, medidos por `getComputedStyle` e registrados
-- [ ] Nenhuma tela apresenta texto ilegível, cortado ou sobreposto em nenhum dos cinco temas
-- [ ] Estado do transbordo do card de Custo Empresa registrado: resolvido, aliviado ou persistente
-- [ ] Comparação com as capturas de referência anexada ao `validation.md`
-- [ ] Gate: `npm run lint && npm run test && npm run build`
-- [ ] Test count final ≥ 559 + soma das tasks anteriores
+- [x] Título de página mede 24px e maior valor de KPI mede 27px, medidos por `getComputedStyle` e registrados — 16 telas × 5 temas, uniforme
+- [x] Nenhuma tela apresenta texto ilegível, cortado ou sobreposto em nenhum dos cinco temas — 0 sobreposições e 0 ilegibilidades; 2 cortes de layout **pré-existentes** (avatar do KPI de Custo Empresa, eixo Y do gráfico) registrados como D-1 e D-2
+- [x] Estado do transbordo do card de Custo Empresa registrado: **aliviado, persistente** — sobreposição valor×ícone caiu para 0px, mas o avatar fica 25–36px fora do card e é cortado por `overflow: hidden`
+- [x] Comparação com as capturas de referência anexada ao relatório
+- [x] Gate: `npm run lint && npm run test && npm run build`
+- [x] Test count final ≥ 559 + soma das tasks anteriores
 
 **Tests**: unit (suíte completa como gate) · **Gate**: full
-**Commit**: `docs(tema): varredura visual pos-fidelidade` → **nao aplicado** — a varredura nao aconteceu. Entregue no lugar `test(dashboard): mede escala renderizada do titulo e do maior KPI` `fe3975f`, com o bloqueio registrado em `_docs/estudo-visual/varredura-pos-fidelidade.md`.
+**Relatórios**: `varredura-visual.md` (versionado) e `_docs/estudo-visual/varredura-pos-fidelidade.md` (completo, com dados brutos)
+**Commit**: `docs(tema): varredura visual pos-fidelidade`
+
+**Achados que viram triagem** (nenhum corrigido — escopo estrito da T10):
+R-1 do code review **confirmado** (18 pares ícone×avatar abaixo de 3:1 em
+`corporate`/`soft`/`techne`, +1 no `classico`; `indigo` passa em 6/6 graças ao
+`light` explícito de DD-3). R-4 **misto**: confirmado só em
+`FolhaPagamento:775`, refutado no top-5 do Dashboard e nas colunas da tabela de
+resumos. Novo: `primary.main` como cor de **texto** reprova AA em 4 de 5 temas e
+não está coberto por `contraste.test.ts` (R-2 do review, agora com números).
 
 ---
 
