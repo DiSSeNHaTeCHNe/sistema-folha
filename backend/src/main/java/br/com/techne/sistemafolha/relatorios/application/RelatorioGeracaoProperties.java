@@ -14,4 +14,5 @@ public class RelatorioGeracaoProperties {
     private int timeoutSegundos = 60;
     private int maxTamanhoMb = 50;
     private int maxJobsSimultaneosPorUsuario = 3;
+    private int staleGraceSegundos = 120;
 }

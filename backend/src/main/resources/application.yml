@@ -62,5 +62,6 @@ relatorios:
     logo-path: "classpath:branding/logo.png"
   geracao:
     timeout-segundos: 60
+    stale-grace-segundos: 120
     max-tamanho-mb: 50
     max-jobs-simultaneos-por-usuario: 3
