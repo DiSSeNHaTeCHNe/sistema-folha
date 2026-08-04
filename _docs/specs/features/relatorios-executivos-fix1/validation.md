@@ -4,11 +4,11 @@
 
 | Campo | Valor |
 | ----- | ----- |
-| **Verdict** | FAIL (gate + sensor PASS; AC evidence gaps on FIX1-02 partial, FIX1-04, FIX1-22) |
+| **Verdict** | PASS |
 | **Spec slug** | `relatorios-executivos-fix1` |
-| **HEAD** | `2e1b812` (`fix1(relatorios): mapeamento BYTEA explícito relatorio_arquivo`) |
-| **Commit range** | `2fc9f12..2e1b812` (6 fix1 commits) |
-| **Open gaps** | FIX1-04 (P1 logs untested), FIX1-22 (P2 BYTEA mapping untested), FIX1-02 partial (`dataProcessamento` on ERRO not asserted) |
+| **HEAD** | `af65679` (`fix(cycle-1): add RelatorioArquivo BYTEA mapping test`) |
+| **Commit range** | `2fc9f12..af65679` (6 fix1 + 3 fix cycle 1 commits) |
+| **Open gaps** | none |
 
 ---
 
@@ -120,3 +120,71 @@
 **What works:** Stale detection/recovery, 429 limit with stale exclusion, worker terminal states, FE timeout/errors/retry, user-scoped listing, PDF persist path  
 **Blockers:** P1 observability AC (FIX1-04) lacks test evidence per evidence-or-zero  
 **Next steps:** Add 3 targeted tests above → re-verify (iteration 1/3)
+
+---
+
+## Execution — relatorios-executivos-fix1 — fix cycle 1 — 2026-08-03
+
+**Slug:** relatorios-executivos-fix1  
+**Date:** 2026-08-03  
+**Commit range:** `4239172..af65679`  
+**Verifier:** independent sub-agent (author ≠ verifier)  
+**Overall:** PASS
+
+### Fix cycle 1 commits
+
+| Commit | Description |
+| ------ | ----------- |
+| `18c3d41` | F1: remove duplicate `recuperarRelatorio` in `iniciarGeracao` (double-enqueue bug) |
+| `f2efe23` | F2/F3: ListAppender log tests (FIX1-04); `dataProcessamento` on ERRO assertions (FIX1-02) |
+| `af65679` | F4: `RelatorioArquivoMappingTest` (FIX1-22) |
+
+### Task Completion
+
+| Task | Status | Notes |
+| ---- | ------ | ----- |
+| Cycle-1 gaps | ✅ Done | FIX1-02, FIX1-04, FIX1-22 closed; F1 double-recovery removed |
+
+### Gate Check
+
+| Metric | Result |
+| ------ | ------ |
+| **Command** | Full fix1 gate from `tasks.md` + `RelatorioArquivoMappingTest` |
+| **Backend** | 59 passed, 0 failed, 0 skipped |
+| **Frontend** | 30 passed, 0 failed |
+| **Build** | `npm run build` — SUCCESS |
+| **Total** | **89 passed, 0 failed** |
+
+### Spec-Anchored Acceptance Criteria (delta)
+
+| AC | Criterion | Evidence | Result |
+| -- | --------- | -------- | ------ |
+| FIX1-02 | ERRO path fills `dataProcessamento` | `RelatorioGeracaoWorkerTest.java:141` — `assertNotNull(salvo.getDataProcessamento())` (render fail); `:161` (size fail); `:198` (inativo) | ✅ PASS |
+| FIX1-04 | Worker start/finish structured logs | `RelatorioGeracaoWorkerTest.java:176-185` — WARN "não encontrado"; `:203-230` — INFO "Iniciando processamento" + "processado com sucesso"; `:234-244` — ERROR "Erro ao processar relatório 10" | ✅ PASS |
+| FIX1-22 | dev profile: `pdfBytes` maps BYTEA without OID | `RelatorioArquivoMappingTest.java:22-32` — no `@Lob`; `@JdbcTypeCode(VARBINARY)`; `columnDefinition` contains `bytea` | ✅ PASS |
+
+**AC summary (full feature):** 23 PASS, 0 GAP, 0 PARTIAL
+
+### Discrimination Sensor (fix cycle 1 scope)
+
+| Mutation | File | Description | Killed? |
+| -------- | ---- | ----------- | ------- |
+| M1 | `RelatorioGeracaoWorker.java` | Remove `setDataProcessamento` in `marcarErro` | ✅ Killed (`RelatorioGeracaoWorkerTest`, `RelatorioStaleRecoveryServiceTest`) |
+| M2 | `RelatorioArquivo.java` | Remove `@JdbcTypeCode` on `pdfBytes` | ✅ Killed (`RelatorioArquivoMappingTest`) |
+| M3 | `RelatorioGeracaoService.java` | Re-add duplicate `recuperarRelatorio` in `iniciarGeracao` | ✅ Killed (`gerarFolha_staleJob_reenfileiraUmaVezSemPromoverErroNaMesmaRequisicao`) |
+| M4 | `RelatorioGeracaoWorker.java` | Remove "Iniciando processamento" log line | ✅ Killed (`processar_sucesso_logaInicioEFinalizacao`) |
+
+**Sensor depth:** 4 behavior-level faults on cycle-1 changed code  
+**Result:** 4/4 killed — PASS ✅
+
+### Ranked Gaps
+
+none
+
+### Summary
+
+**Gate:** 89/89 tests passed, build SUCCESS  
+**Sensor:** 4/4 killed on cycle-1 deltas  
+**What works:** All 23 FIX1 ACs evidenced; double-recovery bug removed; worker observability and ERRO timestamps tested; BYTEA mapping asserted  
+**Blockers:** none  
+**Next steps:** feature ready for merge review
