@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   Alert,
@@ -13,9 +13,13 @@ import { Notification } from '../../components/Notification';
 import { createDashboardQueryClient } from '../MeuDashboard/queryClient';
 import { useWorkspaceLayout } from './hooks/useWorkspaceLayout';
 import { WorkspaceEmptyState, WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { WorkspaceGrid } from './WorkspaceGrid';
+import { listWidgetDefinitions } from '../../services/workspaceService';
+import type { UserWidgetDefinition } from './types';
 
 function WorkspacePageContent() {
   const { notification, showNotification, hideNotification } = useNotification();
+  const [userDefinitions, setUserDefinitions] = useState<UserWidgetDefinition[]>([]);
   const {
     summaries,
     activeWorkspaceId,
@@ -30,7 +34,33 @@ function WorkspacePageContent() {
     enterEditMode,
     cancelEdit,
     save,
+    updateDraftWidgets,
   } = useWorkspaceLayout();
+
+  useEffect(() => {
+    void listWidgetDefinitions()
+      .then(setUserDefinitions)
+      .catch(() => setUserDefinitions([]));
+  }, []);
+
+  useEffect(() => {
+    if (!dirty) {
+      return;
+    }
+    const handler = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
+
+  const widgets = useMemo(() => {
+    if (!activeLayout) {
+      return [];
+    }
+    return [...activeLayout.widgets].sort((a, b) => a.ordem - b.ordem);
+  }, [activeLayout]);
 
   const hasWorkspaces = summaries.length > 0;
 
@@ -59,6 +89,17 @@ function WorkspacePageContent() {
     } else {
       showNotification('Erro ao salvar layout', 'error');
     }
+  };
+
+  const handleRemoveWidget = (instanceId: string) => {
+    if (!editMode) {
+      return;
+    }
+    const next = widgets.filter((widget) => widget.instanceId !== instanceId).map((widget, index) => ({
+      ...widget,
+      ordem: index,
+    }));
+    updateDraftWidgets(next);
   };
 
   if (loading) {
@@ -116,10 +157,19 @@ function WorkspacePageContent() {
           <WorkspaceEmptyState />
         ) : !activeLayout ? (
           <Alert severity="error">Erro ao carregar workspace selecionado</Alert>
-        ) : activeLayout.widgets.length === 0 ? (
+        ) : widgets.length === 0 ? (
           <Alert severity="info" role="status">
-            Workspace vazio — adicione widgets no modo de edição (em breve nesta tela).
+            Workspace vazio — entre no modo de edição para adicionar widgets.
           </Alert>
+        ) : activeWorkspaceId != null ? (
+          <WorkspaceGrid
+            workspaceId={activeWorkspaceId}
+            widgets={widgets}
+            userDefinitions={userDefinitions}
+            editMode={editMode}
+            onWidgetsChange={editMode ? updateDraftWidgets : undefined}
+            onRemoveWidget={editMode ? handleRemoveWidget : undefined}
+          />
         ) : null}
       </Box>
 

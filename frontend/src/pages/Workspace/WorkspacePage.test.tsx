@@ -10,6 +10,7 @@ vi.mock('../../services/workspaceService', () => ({
   createWorkspace: vi.fn(),
   deleteWorkspace: vi.fn(),
   saveWorkspaceLayout: vi.fn(),
+  listWidgetDefinitions: vi.fn().mockResolvedValue([]),
 }));
 
 describe('WorkspacePage', () => {
