@@ -544,9 +544,9 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-40
 
 **Done when**:
-- [ ] Widget visível dispara fetch; widget ausente do layout não fetcha
-- [ ] `staleTime` 5min por chave `[widgetId, instanceId, config, competencia]`
-- [ ] Erro isolado no widget (error boundary ou state local)
+- [x] Widget visível dispara fetch; widget ausente do layout não fetcha
+- [x] `staleTime` 5min por chave `[widgetId, instanceId, config, competencia]`
+- [x] Erro isolado no widget (error boundary ou state local)
 
 **Tests**: unit (hook com QueryClientProvider test wrapper + MSW)  
 **Gate**: quick FE  

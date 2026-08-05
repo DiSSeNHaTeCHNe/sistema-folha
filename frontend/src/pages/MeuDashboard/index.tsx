@@ -23,8 +23,11 @@ import { useDashboardLayout } from './hooks/useDashboardLayout';
 import type { WidgetCatalogItem } from './types';
 import { criarWidgetFromCatalog } from './widgetUtils';
 import { createDashboardQueryClient } from './queryClient';
+import { CompetenciaSelector } from './CompetenciaSelector';
+import { useCompetenciaGlobal } from './hooks/useCompetenciaGlobal';
 
 function MeuDashboardContent() {
+  const { competenciaGlobal, setCompetenciaGlobal } = useCompetenciaGlobal();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -149,9 +152,10 @@ function MeuDashboardContent() {
             <Typography variant="h4" gutterBottom>
               Meu Dashboard
             </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
+            <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>
               Visão personalizada do sistema de folha de pagamento
             </Typography>
+            <CompetenciaSelector value={competenciaGlobal} onChange={setCompetenciaGlobal} />
           </Box>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             {!editMode && (
