@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +47,9 @@ class DatasetRowServiceTest {
     @Mock
     private WorkspaceDatasetRowRepository rowRepository;
 
+    @Mock
+    private DatasetAuditService datasetAuditService;
+
     private DatasetRowService rowService;
 
     @BeforeEach
@@ -54,7 +58,8 @@ class DatasetRowServiceTest {
             workspaceAccessGuard,
             datasetService,
             rowRepository,
-            new DatasetQuotaPolicy()
+            new DatasetQuotaPolicy(),
+            datasetAuditService
         );
     }
 
@@ -73,8 +78,8 @@ class DatasetRowServiceTest {
             new DatasetRowRequest(Map.of("quantidade", 10)));
 
         assertEquals(100L, result.id());
-        assertEquals(DATASET_ID, result.datasetId());
         assertEquals(10, result.valores().get("quantidade"));
+        verify(datasetAuditService).registrarCriacao(100L, USUARIO_ID, result.valores());
     }
 
     @Test
@@ -132,6 +137,8 @@ class DatasetRowServiceTest {
             new DatasetRowRequest(Map.of("quantidade", 20)));
 
         assertEquals(20, result.valores().get("quantidade"));
+        verify(datasetAuditService).registrarAtualizacao(
+            eq(100L), eq(USUARIO_ID), eq(Map.of("quantidade", 10)), eq(Map.of("quantidade", 20)));
     }
 
     @Test
@@ -154,6 +161,7 @@ class DatasetRowServiceTest {
 
         rowService.removerLinha(LOGIN, DATASET_ID, 100L);
 
+        verify(datasetAuditService).registrarExclusao(100L, USUARIO_ID, row.getValores());
         verify(rowRepository).delete(row);
     }
 

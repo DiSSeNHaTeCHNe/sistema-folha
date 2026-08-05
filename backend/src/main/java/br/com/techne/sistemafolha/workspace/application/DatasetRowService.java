@@ -23,6 +23,7 @@ public class DatasetRowService {
     private final DatasetService datasetService;
     private final WorkspaceDatasetRowRepository rowRepository;
     private final DatasetQuotaPolicy quotaPolicy;
+    private final DatasetAuditService datasetAuditService;
     private final br.com.techne.sistemafolha.workspace.domain.DatasetRowValidator rowValidator =
         new br.com.techne.sistemafolha.workspace.domain.DatasetRowValidator();
 
@@ -42,7 +43,9 @@ public class DatasetRowService {
         row.setDatasetId(datasetId);
         row.setValores(Map.copyOf(request.valores()));
         row.setOrdem((int) rowCount);
-        return toDto(rowRepository.save(row));
+        WorkspaceDatasetRow saved = rowRepository.save(row);
+        datasetAuditService.registrarCriacao(saved.getId(), usuarioId, saved.getValores());
+        return toDto(saved);
     }
 
     @Transactional
@@ -53,8 +56,11 @@ public class DatasetRowService {
         WorkspaceDatasetRow row = findOwnedRow(datasetId, rowId);
 
         validarValores(dataset, request.valores());
+        Map<String, Object> valoresAnteriores = Map.copyOf(row.getValores());
         row.setValores(Map.copyOf(request.valores()));
-        return toDto(rowRepository.save(row));
+        WorkspaceDatasetRow saved = rowRepository.save(row);
+        datasetAuditService.registrarAtualizacao(saved.getId(), usuarioId, valoresAnteriores, saved.getValores());
+        return toDto(saved);
     }
 
     @Transactional
@@ -63,6 +69,7 @@ public class DatasetRowService {
         Long usuarioId = workspaceAccessGuard.resolve(login).usuarioId();
         datasetService.findOwnedDataset(usuarioId, datasetId);
         WorkspaceDatasetRow row = findOwnedRow(datasetId, rowId);
+        datasetAuditService.registrarExclusao(row.getId(), usuarioId, row.getValores());
         rowRepository.delete(row);
     }
 
