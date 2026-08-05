@@ -604,11 +604,11 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Seleção KPI/Tabela/Gráfico; fontes filtradas ACL
-- [ ] Erro fórmula inline antes submit; preview pt-BR moeda
-- [ ] Confirm persiste definição + adiciona ao layout workspace
-- [ ] Gate check passes: `cd frontend && npm test -- WidgetBuilderPage`
-- [ ] Test count: ≥6 tests pass
+- [x] Seleção KPI/Tabela/Gráfico; fontes filtradas ACL
+- [x] Erro fórmula inline antes submit; preview pt-BR moeda
+- [x] Confirm persiste definição + adiciona ao layout workspace
+- [x] Gate check passes: `cd frontend && npm test -- WidgetBuilderPage`
+- [x] Test count: ≥6 tests pass
 
 **Tests**: unit  
 **Gate**: quick FE
@@ -630,10 +630,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Cards distintos nativo vs publicado; versão visível
-- [ ] Link "Ver diferenças" quando upgrade disponível
-- [ ] Gate check passes: `cd frontend && npm test -- TemplateCatalogPage`
-- [ ] Test count: ≥4 tests pass
+- [x] Cards distintos nativo vs publicado; versão visível
+- [x] Link "Ver diferenças" quando upgrade disponível
+- [x] Gate check passes: `cd frontend && npm test -- TemplateCatalogPage`
+- [x] Test count: ≥4 tests pass
 
 **Tests**: unit  
 **Gate**: quick FE
@@ -655,10 +655,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Checklist explícito esquema/definições vs linhas/valores/histórico
-- [ ] Bloqueio item não salvo; feedback sucesso/erro idempotente
-- [ ] Gate check passes: `cd frontend && npm test -- TemplatePublishPage`
-- [ ] Test count: ≥5 tests pass
+- [x] Checklist explícito esquema/definições vs linhas/valores/histórico
+- [x] Bloqueio item não salvo; feedback sucesso/erro idempotente
+- [x] Gate check passes: `cd frontend && npm test -- TemplatePublishPage`
+- [x] Test count: ≥5 tests pass
 
 **Tests**: unit  
 **Gate**: quick FE
@@ -680,10 +680,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Diff lista campos/widgets/fórmulas add/remove/alterados
-- [ ] Ações Atualizar e Permanecer sem upgrade silencioso
-- [ ] Gate check passes: `cd frontend && npm test -- TemplateUpgradePage compareTemplateStructures`
-- [ ] Test count: ≥5 tests pass
+- [x] Diff lista campos/widgets/fórmulas add/remove/alterados
+- [x] Ações Atualizar e Permanecer sem upgrade silencioso
+- [x] Gate check passes: `cd frontend && npm test -- TemplateUpgradePage compareTemplateStructures`
+- [x] Test count: ≥5 tests pass
 
 **Tests**: unit  
 **Gate**: quick FE
@@ -705,10 +705,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Timeline cronológica; drill-down linha
-- [ ] Empty state explicativo quando sem alterações
-- [ ] Gate check passes: `cd frontend && npm test -- DatasetHistoryPage`
-- [ ] Test count: ≥5 tests pass
+- [x] Timeline cronológica; drill-down linha
+- [x] Empty state explicativo quando sem alterações
+- [x] Gate check passes: `cd frontend && npm test -- DatasetHistoryPage`
+- [x] Test count: ≥5 tests pass
 
 **Tests**: unit  
 **Gate**: quick FE
