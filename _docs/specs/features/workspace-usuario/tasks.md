@@ -10,7 +10,20 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design**: `_docs/specs/features/workspace-usuario/design.md`  
 **Spec**: `_docs/specs/features/workspace-usuario/spec.md`  
-**Status**: P1 complete — Batch 5 done (T1–T30); ready for P2 Batch 6 (T31–T39)
+**Status**: P2 complete — Batch 6 done (T31–T39); ready for P3 Batch 7 (T40–T48)
+
+### Batch 6 complete (2026-08-05)
+| Task | Commit | Gate |
+| ---- | ------ | ---- |
+| T31 | `c9d31ca` | build ✅ |
+| T32 | `4ebf118` | quick BE ✅ |
+| T33 | `b0e1eae` | quick BE ✅ |
+| T34 | `8d5f6c2` | quick BE ✅ |
+| T35 | `b9c377e` | full API ✅ |
+| T36 | `1d05b86` | quick BE ✅ |
+| T37 | `37db646` | quick FE ✅ |
+| T38 | `dc8665c` | quick FE ✅ |
+| T39 | `3eb53b8` | release ✅ |
 
 ### Batch 5 complete (2026-08-05)
 | Task | Commit | Gate |
