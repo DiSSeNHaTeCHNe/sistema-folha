@@ -32,9 +32,88 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DashboardStatsAggregator {
 
+    private static final int TOP_LISTA_PADRAO = 5;
+
     private final FolhaConsultaPort folhaConsultaPort;
     private final FolhaTotalizacaoPort folhaTotalizacaoPort;
     private final BeneficioConsultaPort beneficioConsultaPort;
+
+    public List<FolhaLinhaSnapshot> linhasCompetencia(
+            Set<Long> centrosScoped,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            boolean decimoTerceiro) {
+        return folhaConsultaPort.findLinhasAtivasPorCompetencia(
+            competenciaInicio, competenciaFim, decimoTerceiro, centrosScoped);
+    }
+
+    public long contarFuncionarios(List<FolhaLinhaSnapshot> folhaCompetencia) {
+        return folhaCompetencia.stream()
+            .map(FolhaLinhaSnapshot::funcionarioId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet())
+            .size();
+    }
+
+    public BigDecimal calcularCustoEmpresa(
+            List<FolhaLinhaSnapshot> folhaCompetencia,
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            AccessContextDTO contexto) {
+        return folhaTotalizacaoPort.calcularTotalCustoEmpresa(
+            folhaCompetencia, competenciaInicio, competenciaFim, contexto);
+    }
+
+    public long contarBeneficiosAtivos(
+            LocalDate competenciaInicio,
+            LocalDate competenciaFim,
+            Set<Long> centrosScoped) {
+        return centrosScoped == null
+            ? beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(competenciaInicio, competenciaFim)
+            : beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
+                competenciaInicio, competenciaFim, centrosScoped);
+    }
+
+    public BigDecimal calcularTotalProventos(List<FolhaLinhaSnapshot> folhaCompetencia) {
+        return folhaCompetencia.stream()
+            .filter(fp -> "PROVENTO".equals(fp.tipoRubricaDescricao()))
+            .map(FolhaLinhaSnapshot::valor)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal calcularTotalDescontos(List<FolhaLinhaSnapshot> folhaCompetencia) {
+        return folhaCompetencia.stream()
+            .filter(fp -> "DESCONTO".equals(fp.tipoRubricaDescricao()))
+            .map(FolhaLinhaSnapshot::valor)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public List<CentroCustoStatsDTO> porCentroCusto(List<FolhaLinhaSnapshot> folhaCompetencia, int topN) {
+        return limitarOrdenadoPorValor(calcularStatsPorCentroCusto(folhaCompetencia), topN,
+            CentroCustoStatsDTO::valorTotal);
+    }
+
+    public List<LinhaNegocioStatsDTO> porLinhaNegocio(List<FolhaLinhaSnapshot> folhaCompetencia, int topN) {
+        return limitarOrdenadoPorValor(calcularStatsPorLinhaNegocio(folhaCompetencia), topN,
+            LinhaNegocioStatsDTO::valorTotal);
+    }
+
+    public List<CargoStatsDTO> porCargo(List<FolhaLinhaSnapshot> folhaCompetencia, int topN) {
+        return limitarOrdenadoPorValor(calcularStatsPorCargo(folhaCompetencia), topN,
+            CargoStatsDTO::valorTotal);
+    }
+
+    public List<RubricaStatsDTO> topProventos(List<FolhaLinhaSnapshot> folhaCompetencia, int topN) {
+        return limitarOrdenadoPorValor(calcularTopProventosSemLimite(folhaCompetencia), topN,
+            RubricaStatsDTO::valorTotal);
+    }
+
+    public List<RubricaStatsDTO> topDescontos(List<FolhaLinhaSnapshot> folhaCompetencia, int topN) {
+        return limitarOrdenadoPorValor(calcularTopDescontosSemLimite(folhaCompetencia), topN,
+            RubricaStatsDTO::valorTotal);
+    }
 
     public DashboardStatsDTO aggregateForCompetencia(
             AccessContextDTO contexto,
@@ -43,22 +122,13 @@ public class DashboardStatsAggregator {
             LocalDate competenciaFim,
             boolean decimoTerceiro) {
 
-        List<FolhaLinhaSnapshot> folhaCompetencia = folhaConsultaPort.findLinhasAtivasPorCompetencia(
-            competenciaInicio, competenciaFim, decimoTerceiro, centrosScoped);
+        List<FolhaLinhaSnapshot> folhaCompetencia = linhasCompetencia(
+            centrosScoped, competenciaInicio, competenciaFim, decimoTerceiro);
 
-        long totalFuncionarios = folhaCompetencia.stream()
-            .map(FolhaLinhaSnapshot::funcionarioId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet())
-            .size();
-
-        BigDecimal custoMensalFolha = folhaTotalizacaoPort.calcularTotalCustoEmpresa(
+        long totalFuncionarios = contarFuncionarios(folhaCompetencia);
+        BigDecimal custoMensalFolha = calcularCustoEmpresa(
             folhaCompetencia, competenciaInicio, competenciaFim, contexto);
-
-        long totalBeneficiosAtivos = centrosScoped == null
-            ? beneficioConsultaPort.contarLancamentosAtivosNaCompetencia(competenciaInicio, competenciaFim)
-            : beneficioConsultaPort.contarLancamentosAtivosNaCompetenciaPorCentros(
-                competenciaInicio, competenciaFim, centrosScoped);
+        long totalBeneficiosAtivos = contarBeneficiosAtivos(competenciaInicio, competenciaFim, centrosScoped);
 
         List<LinhaNegocioStatsDTO> porLinhaNegocio = calcularStatsPorLinhaNegocio(folhaCompetencia);
         List<CentroCustoStatsDTO> porCentroCusto = calcularStatsPorCentroCusto(folhaCompetencia);
@@ -66,8 +136,8 @@ public class DashboardStatsAggregator {
 
         BigDecimal totalProventos = calcularTotalProventos(folhaCompetencia);
         BigDecimal totalDescontos = calcularTotalDescontos(folhaCompetencia);
-        List<RubricaStatsDTO> topProventos = calcularTopProventos(folhaCompetencia);
-        List<RubricaStatsDTO> topDescontos = calcularTopDescontos(folhaCompetencia);
+        List<RubricaStatsDTO> topProventos = topProventos(folhaCompetencia, TOP_LISTA_PADRAO);
+        List<RubricaStatsDTO> topDescontos = topDescontos(folhaCompetencia, TOP_LISTA_PADRAO);
 
         List<EvolucaoMensalDTO> evolucaoMensal = contexto.acessoTotal()
             ? calcularEvolucaoMensal()
@@ -225,72 +295,47 @@ public class DashboardStatsAggregator {
             .toList();
     }
 
-    private BigDecimal calcularTotalProventos(List<FolhaLinhaSnapshot> folhaCompetencia) {
-        return folhaCompetencia.stream()
-            .filter(fp -> "PROVENTO".equals(fp.tipoRubricaDescricao()))
-            .map(FolhaLinhaSnapshot::valor)
-            .filter(Objects::nonNull)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    private List<RubricaStatsDTO> calcularTopProventosSemLimite(List<FolhaLinhaSnapshot> folhaCompetencia) {
+        return agruparRubricas(folhaCompetencia, "PROVENTO");
     }
 
-    private BigDecimal calcularTotalDescontos(List<FolhaLinhaSnapshot> folhaCompetencia) {
-        return folhaCompetencia.stream()
-            .filter(fp -> "DESCONTO".equals(fp.tipoRubricaDescricao()))
-            .map(FolhaLinhaSnapshot::valor)
-            .filter(Objects::nonNull)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    private List<RubricaStatsDTO> calcularTopDescontosSemLimite(List<FolhaLinhaSnapshot> folhaCompetencia) {
+        return agruparRubricas(folhaCompetencia, "DESCONTO");
     }
 
-    private List<RubricaStatsDTO> calcularTopProventos(List<FolhaLinhaSnapshot> folhaCompetencia) {
+    private List<RubricaStatsDTO> agruparRubricas(List<FolhaLinhaSnapshot> folhaCompetencia, String tipo) {
         Map<Long, List<FolhaLinhaSnapshot>> porRubrica = folhaCompetencia.stream()
-            .filter(fp -> "PROVENTO".equals(fp.tipoRubricaDescricao()))
+            .filter(fp -> tipo.equals(fp.tipoRubricaDescricao()))
             .filter(fp -> fp.rubricaId() != null)
             .collect(Collectors.groupingBy(FolhaLinhaSnapshot::rubricaId));
 
         return porRubrica.entrySet().stream()
             .map(entry -> {
-                List<FolhaLinhaSnapshot> proventos = entry.getValue();
-                BigDecimal valorTotal = proventos.stream()
+                List<FolhaLinhaSnapshot> linhas = entry.getValue();
+                BigDecimal valorTotal = linhas.stream()
                     .map(FolhaLinhaSnapshot::valor)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
                 return new RubricaStatsDTO(
                     entry.getKey(),
-                    proventos.get(0).rubricaCodigo(),
-                    proventos.get(0).rubricaDescricao(),
+                    linhas.get(0).rubricaCodigo(),
+                    linhas.get(0).rubricaDescricao(),
                     valorTotal,
-                    (long) proventos.size()
+                    (long) linhas.size()
                 );
             })
             .sorted((a, b) -> b.valorTotal().compareTo(a.valorTotal()))
-            .limit(5)
             .toList();
     }
 
-    private List<RubricaStatsDTO> calcularTopDescontos(List<FolhaLinhaSnapshot> folhaCompetencia) {
-        Map<Long, List<FolhaLinhaSnapshot>> porRubrica = folhaCompetencia.stream()
-            .filter(fp -> "DESCONTO".equals(fp.tipoRubricaDescricao()))
-            .filter(fp -> fp.rubricaId() != null)
-            .collect(Collectors.groupingBy(FolhaLinhaSnapshot::rubricaId));
-
-        return porRubrica.entrySet().stream()
-            .map(entry -> {
-                List<FolhaLinhaSnapshot> descontos = entry.getValue();
-                BigDecimal valorTotal = descontos.stream()
-                    .map(FolhaLinhaSnapshot::valor)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                return new RubricaStatsDTO(
-                    entry.getKey(),
-                    descontos.get(0).rubricaCodigo(),
-                    descontos.get(0).rubricaDescricao(),
-                    valorTotal,
-                    (long) descontos.size()
-                );
-            })
-            .sorted((a, b) -> b.valorTotal().compareTo(a.valorTotal()))
-            .limit(5)
+    private <T> List<T> limitarOrdenadoPorValor(List<T> items, int topN, java.util.function.Function<T, BigDecimal> valorFn) {
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+        List<T> ordenado = items.stream()
+            .sorted((a, b) -> valorFn.apply(b).compareTo(valorFn.apply(a)))
             .toList();
+        return ordenado.size() <= topN ? ordenado : ordenado.subList(0, topN);
     }
 
     private List<EvolucaoMensalDTO> calcularEvolucaoMensal() {

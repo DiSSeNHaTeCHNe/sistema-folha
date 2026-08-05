@@ -521,9 +521,9 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-32…34, DASHC-40
 
 **Done when**:
-- [ ] Aggregator expõe slices sem duplicar SQL das agregações existentes
-- [ ] `getStats` monolítico continua usando os mesmos métodos internos
-- [ ] Gate quick: tests aggregator + query service green
+- [x] Aggregator expõe slices sem duplicar SQL das agregações existentes
+- [x] `getStats` monolítico continua usando os mesmos métodos internos
+- [x] Gate quick: tests aggregator + query service green
 
 **Tests**: unit (aggregator slice tests ou via QueryServiceTest)  
 **Gate**: quick  

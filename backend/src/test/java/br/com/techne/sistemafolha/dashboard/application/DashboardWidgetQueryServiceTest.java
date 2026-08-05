@@ -2,7 +2,6 @@ package br.com.techne.sistemafolha.dashboard.application;
 
 import br.com.techne.sistemafolha.dashboard.api.CentroCustoStatsDTO;
 import br.com.techne.sistemafolha.dashboard.api.DashboardStatsDTO;
-import br.com.techne.sistemafolha.dashboard.api.DashboardStatsDTO;
 import br.com.techne.sistemafolha.dashboard.api.WidgetDataDTO;
 import br.com.techne.sistemafolha.dashboard.api.WidgetQueryParams;
 import br.com.techne.sistemafolha.dashboard.domain.DashboardAcessoNegadoException;
@@ -123,7 +122,7 @@ class DashboardWidgetQueryServiceTest {
 
         assertTrue(result.semDados());
         assertEquals("2024-06", result.competencia());
-        verify(dashboardStatsAggregator, never()).aggregateForCompetencia(any(), any(), any(), any(), eq(false));
+        verify(dashboardStatsAggregator, never()).linhasCompetencia(any(), any(), any(), eq(false));
     }
 
     @Test
@@ -131,8 +130,9 @@ class DashboardWidgetQueryServiceTest {
         mockAcessoTotal("gestor");
         when(dashboardWidgetCatalogService.isWidgetPermitido("gestor", "kpi-total-funcionarios")).thenReturn(true);
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumoAtual()));
-        when(dashboardStatsAggregator.aggregateForCompetencia(any(), eq(null), any(), any(), eq(false)))
-            .thenReturn(statsComFuncionarios(42L));
+        when(dashboardStatsAggregator.linhasCompetencia(any(), any(), any(), eq(false)))
+            .thenReturn(List.of());
+        when(dashboardStatsAggregator.contarFuncionarios(any())).thenReturn(42L);
 
         WidgetDataDTO result = service.consultar("gestor", "kpi-total-funcionarios", new WidgetQueryParams(
             null, null, null, null, null, null, null, null));
@@ -146,8 +146,11 @@ class DashboardWidgetQueryServiceTest {
         mockAcessoTotal("gestor");
         when(dashboardWidgetCatalogService.isWidgetPermitido("gestor", "lista-top-proventos")).thenReturn(true);
         when(folhaConsultaPort.findResumoMaisRecente()).thenReturn(Optional.of(resumoAtual()));
-        when(dashboardStatsAggregator.aggregateForCompetencia(any(), any(), any(), any(), eq(false)))
-            .thenReturn(statsComTopProventos(7));
+        when(dashboardStatsAggregator.linhasCompetencia(any(), any(), any(), eq(false)))
+            .thenReturn(List.of());
+        when(dashboardStatsAggregator.topProventos(any(), eq(3)))
+            .thenReturn(List.of(
+                rubrica(0), rubrica(1), rubrica(2)));
 
         WidgetQueryParams params = WidgetQueryParams.fromQueryMap(Map.of("topN", "3"));
         WidgetDataDTO result = service.consultar("gestor", "lista-top-proventos", params);
@@ -175,26 +178,8 @@ class DashboardWidgetQueryServiceTest {
             COMPETENCIA_INICIO, COMPETENCIA_FIM, BigDecimal.ZERO, 0, false, BigDecimal.ZERO);
     }
 
-    private DashboardStatsDTO statsComFuncionarios(long total) {
-        return new DashboardStatsDTO(
-            total, BigDecimal.ZERO, 0L,
-            List.of(), List.of(), List.of(),
-            BigDecimal.ZERO, BigDecimal.ZERO,
-            List.of(), List.of(), List.of()
-        );
-    }
-
-    private DashboardStatsDTO statsComTopProventos(int quantidade) {
-        List<br.com.techne.sistemafolha.dashboard.api.RubricaStatsDTO> rubricas = java.util.stream.IntStream
-            .range(0, quantidade)
-            .mapToObj(i -> new br.com.techne.sistemafolha.dashboard.api.RubricaStatsDTO(
-                (long) i, "00" + i, "Rubrica " + i, BigDecimal.TEN, 1L))
-            .toList();
-        return new DashboardStatsDTO(
-            0L, BigDecimal.ZERO, 0L,
-            List.of(), List.of(), List.of(),
-            BigDecimal.ZERO, BigDecimal.ZERO,
-            rubricas, List.of(), List.of()
-        );
+    private br.com.techne.sistemafolha.dashboard.api.RubricaStatsDTO rubrica(int i) {
+        return new br.com.techne.sistemafolha.dashboard.api.RubricaStatsDTO(
+            (long) i, "00" + i, "Rubrica " + i, BigDecimal.TEN, 1L);
     }
 }

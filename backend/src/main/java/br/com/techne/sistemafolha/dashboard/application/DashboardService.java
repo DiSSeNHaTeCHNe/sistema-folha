@@ -31,6 +31,7 @@ public class DashboardService {
     private final CadastrosImportLookupPort cadastrosImportLookupPort;
     private final BeneficioConsultaPort beneficioConsultaPort;
     private final DashboardAccessGuard dashboardAccessGuard;
+    private final DashboardStatsAggregator dashboardStatsAggregator;
 
     public DashboardStatsDTO getStats(String login) {
         logger.debug("{}Calculando estatísticas do dashboard", DOMAIN_PREFIX);
@@ -75,7 +76,7 @@ public class DashboardService {
         }
 
         FolhaResumoSnapshot resumo = resumoMaisRecente.get();
-        return aggregator().aggregateForCompetencia(
+        return dashboardStatsAggregator.aggregateForCompetencia(
             contexto,
             centrosScoped,
             resumo.competenciaInicio(),
@@ -84,11 +85,7 @@ public class DashboardService {
         );
     }
 
-    private DashboardStatsAggregator aggregator() {
-        return new DashboardStatsAggregator(folhaConsultaPort, folhaTotalizacaoPort, beneficioConsultaPort);
-    }
-
-private DashboardStatsDTO emptyStats() {
+    private DashboardStatsDTO emptyStats() {
         return new DashboardStatsDTO(
             0L,
             BigDecimal.ZERO,

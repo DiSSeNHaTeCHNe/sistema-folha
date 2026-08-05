@@ -10,9 +10,10 @@ import br.com.techne.sistemafolha.folha.port.FolhaLinhaSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaResumoSnapshot;
 import br.com.techne.sistemafolha.folha.port.FolhaTotalizacaoPort;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -58,8 +59,21 @@ class DashboardServiceTest {
     @Mock
     private DashboardAccessGuard dashboardAccessGuard;
 
-    @InjectMocks
+    private DashboardStatsAggregator dashboardStatsAggregator;
     private DashboardService dashboardService;
+
+    @BeforeEach
+    void setUp() {
+        dashboardStatsAggregator = new DashboardStatsAggregator(
+            folhaConsultaPort, folhaTotalizacaoPort, beneficioConsultaPort);
+        dashboardService = new DashboardService(
+            folhaConsultaPort,
+            folhaTotalizacaoPort,
+            cadastrosImportLookupPort,
+            beneficioConsultaPort,
+            dashboardAccessGuard,
+            dashboardStatsAggregator);
+    }
 
     @Test
     void getStats_restritoComCentrosVazios_retornaEmptyENaoChamaPortsDeDados() {

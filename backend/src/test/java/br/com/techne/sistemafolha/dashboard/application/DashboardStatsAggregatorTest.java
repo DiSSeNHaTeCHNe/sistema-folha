@@ -99,6 +99,35 @@ class DashboardStatsAggregatorTest {
     }
 
     @Test
+    void porCentroCusto_respeitaTopN() {
+        List<FolhaLinhaSnapshot> linhas = List.of(
+            linha(1L, 10L, "CC A", 1L, "LN", 200L, "Dev", 1L, "001", "Sal", "PROVENTO", new BigDecimal("100")),
+            linha(2L, 20L, "CC B", 1L, "LN", 200L, "Dev", 1L, "001", "Sal", "PROVENTO", new BigDecimal("300")),
+            linha(3L, 30L, "CC C", 1L, "LN", 200L, "Dev", 1L, "001", "Sal", "PROVENTO", new BigDecimal("200"))
+        );
+
+        var resultado = aggregator.porCentroCusto(linhas, 2);
+
+        assertEquals(2, resultado.size());
+        assertEquals(20L, resultado.get(0).id());
+        assertEquals(30L, resultado.get(1).id());
+    }
+
+    @Test
+    void topProventos_respeitaTopN() {
+        List<FolhaLinhaSnapshot> linhas = List.of(
+            linha(1L, 10L, "CC", 1L, "LN", 200L, "Dev", 1L, "001", "A", "PROVENTO", new BigDecimal("50")),
+            linha(1L, 10L, "CC", 1L, "LN", 200L, "Dev", 2L, "002", "B", "PROVENTO", new BigDecimal("150")),
+            linha(1L, 10L, "CC", 1L, "LN", 200L, "Dev", 3L, "003", "C", "PROVENTO", new BigDecimal("100"))
+        );
+
+        var resultado = aggregator.topProventos(linhas, 2);
+
+        assertEquals(2, resultado.size());
+        assertEquals(2L, resultado.get(0).id());
+    }
+
+    @Test
     void evolucaoMeses_retornaSeisMesesTerminandoNaCompetencia() {
         AccessContextDTO contexto = new AccessContextDTO(true, true, true, Set.of(), null, 1L, "Raiz", 0);
         LocalDate fim = LocalDate.of(2024, 6, 30);

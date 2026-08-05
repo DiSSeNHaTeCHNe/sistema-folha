@@ -1,7 +1,5 @@
 package br.com.techne.sistemafolha.dashboard.application;
 
-import br.com.techne.sistemafolha.dashboard.api.DashboardStatsDTO;
-import br.com.techne.sistemafolha.dashboard.api.EvolucaoMensalDTO;
 import br.com.techne.sistemafolha.dashboard.api.WidgetDataDTO;
 import br.com.techne.sistemafolha.dashboard.api.WidgetQueryParams;
 import br.com.techne.sistemafolha.dashboard.domain.DashboardAcessoNegadoException;
@@ -58,15 +56,21 @@ public class DashboardWidgetQueryService {
             return WidgetDataDTO.semDados(widgetId, competencia.competenciaLabel());
         }
 
-        DashboardStatsDTO stats = dashboardStatsAggregator.aggregateForCompetencia(
-            access.contexto(),
+        List<FolhaLinhaSnapshot> linhas = dashboardStatsAggregator.linhasCompetencia(
             access.centrosScoped(),
             competencia.inicio(),
             competencia.fim(),
-            competencia.decimoTerceiro()
-        );
+            competencia.decimoTerceiro());
+        linhas = filtrarLinhas(linhas, params);
 
-        return mapearDados(widgetId, competencia.competenciaLabel(), stats, catalogEntry, params);
+        return mapearDados(
+            widgetId,
+            competencia.competenciaLabel(),
+            access,
+            linhas,
+            competencia,
+            catalogEntry,
+            params);
     }
 
     private void validarParamsPorWidget(WidgetCatalog entry, WidgetQueryParams params) {
@@ -169,63 +173,71 @@ public class DashboardWidgetQueryService {
     private WidgetDataDTO mapearDados(
             String widgetId,
             String competencia,
-            DashboardStatsDTO stats,
+            DashboardAccessGuard.ResolvedDashboardAccess access,
+            List<FolhaLinhaSnapshot> linhas,
+            CompetenciaResolvida competenciaResolvida,
             WidgetCatalog entry,
             WidgetQueryParams params) {
 
         int topN = params.topN() != null ? params.topN() : topNPadrao(entry);
         int meses = params.quantidadeMeses() != null ? params.quantidadeMeses() : 12;
+        AccessContextDTO contexto = access.contexto();
 
         return switch (entry) {
             case KPI_TOTAL_FUNCIONARIOS -> new WidgetDataDTO(
-                widgetId, competencia, false, stats.totalFuncionarios(),
+                widgetId, competencia, false,
+                dashboardStatsAggregator.contarFuncionarios(linhas),
                 null, null, null, null, null, null, null, null, null, null);
             case KPI_CUSTO_EMPRESA -> new WidgetDataDTO(
                 widgetId, competencia, false, null,
-                stats.custoMensalFolha(), null, null, null, null, null, null, null, null, null);
+                dashboardStatsAggregator.calcularCustoEmpresa(
+                    linhas, competenciaResolvida.inicio(), competenciaResolvida.fim(), contexto),
+                null, null, null, null, null, null, null, null, null);
             case KPI_BENEFICIOS_ATIVOS -> new WidgetDataDTO(
                 widgetId, competencia, false, null, null,
-                stats.totalBeneficiosAtivos(), null, null, null, null, null, null, null, null);
+                dashboardStatsAggregator.contarBeneficiosAtivos(
+                    competenciaResolvida.inicio(), competenciaResolvida.fim(), access.centrosScoped()),
+                null, null, null, null, null, null, null, null);
             case KPI_RELACAO_PD -> new WidgetDataDTO(
                 widgetId, competencia, false, null, null, null,
-                stats.totalProventos(), stats.totalDescontos(), null, null, null, null, null, null);
+                dashboardStatsAggregator.calcularTotalProventos(linhas),
+                dashboardStatsAggregator.calcularTotalDescontos(linhas),
+                null, null, null, null, null, null);
             case GRAFICO_EVOLUCAO_MENSAL -> new WidgetDataDTO(
                 widgetId, competencia, false, null, null, null, null, null, null, null, null, null, null,
-                evolucaoFiltrada(stats, meses));
+                dashboardStatsAggregator.evolucaoMeses(
+                    contexto, access.centrosScoped(), competenciaResolvida.fim(), meses, competenciaResolvida.decimoTerceiro()));
             case GRAFICO_FUNCIONARIOS_POR_CC, GRAFICO_CUSTO_POR_CC -> new WidgetDataDTO(
                 widgetId, competencia, false, null, null, null, null, null, null,
-                limitar(stats.porCentroCusto(), topN), null, null, null, null);
+                dashboardStatsAggregator.porCentroCusto(linhas, topN), null, null, null, null);
             case GRAFICO_FUNCIONARIOS_POR_LINHA, GRAFICO_CUSTO_POR_LINHA -> new WidgetDataDTO(
                 widgetId, competencia, false, null, null, null, null, null,
-                limitar(stats.porLinhaNegocio(), topN), null, null, null, null, null);
+                dashboardStatsAggregator.porLinhaNegocio(linhas, topN), null, null, null, null, null);
             case LISTA_TOP_PROVENTOS -> new WidgetDataDTO(
                 widgetId, competencia, false, null, null, null, null, null, null, null, null,
-                limitar(stats.topProventos(), topN), null, null);
+                dashboardStatsAggregator.topProventos(linhas, topN), null, null);
             case LISTA_TOP_DESCONTOS -> new WidgetDataDTO(
                 widgetId, competencia, false, null, null, null, null, null, null, null, null, null,
-                limitar(stats.topDescontos(), topN), null);
+                dashboardStatsAggregator.topDescontos(linhas, topN), null);
             case GRAFICO_FUNCIONARIOS_POR_CARGO -> new WidgetDataDTO(
                 widgetId, competencia, false, null, null, null, null, null, null, null,
-                limitar(stats.porCargo(), topN), null, null, null);
+                dashboardStatsAggregator.porCargo(linhas, topN), null, null, null);
         };
     }
 
-    private List<EvolucaoMensalDTO> evolucaoFiltrada(DashboardStatsDTO stats, int meses) {
-        List<EvolucaoMensalDTO> evolucao = stats.evolucaoMensal();
-        if (evolucao == null || evolucao.isEmpty()) {
-            return List.of();
+    private List<FolhaLinhaSnapshot> filtrarLinhas(List<FolhaLinhaSnapshot> linhas, WidgetQueryParams params) {
+        List<FolhaLinhaSnapshot> filtradas = linhas;
+        if (params.centroCustoId() != null) {
+            filtradas = filtradas.stream()
+                .filter(l -> params.centroCustoId().equals(l.centroCustoId()))
+                .toList();
         }
-        if (evolucao.size() <= meses) {
-            return evolucao;
+        if (params.linhaNegocioId() != null) {
+            filtradas = filtradas.stream()
+                .filter(l -> params.linhaNegocioId().equals(l.linhaNegocioId()))
+                .toList();
         }
-        return evolucao.subList(evolucao.size() - meses, evolucao.size());
-    }
-
-    private <T> List<T> limitar(List<T> items, int topN) {
-        if (items == null || items.isEmpty()) {
-            return List.of();
-        }
-        return items.size() <= topN ? items : items.subList(0, topN);
+        return filtradas;
     }
 
     private int topNPadrao(WidgetCatalog entry) {
