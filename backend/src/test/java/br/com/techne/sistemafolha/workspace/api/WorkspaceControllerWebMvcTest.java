@@ -18,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -71,12 +72,13 @@ class WorkspaceControllerWebMvcTest {
     @WithMockUser(username = "user-a", roles = "USER")
     void listar_comEscopo_retorna200() throws Exception {
         when(workspaceService.listar("user-a")).thenReturn(List.of(
-            new WorkspaceSummaryDTO(1L, "Financeiro", 2)));
+            new WorkspaceSummaryDTO(1L, "Financeiro", 2, LocalDateTime.parse("2026-08-01T14:30:00"))));
 
         mockMvc.perform(get("/workspace/workspaces"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].nome").value("Financeiro"))
-            .andExpect(jsonPath("$[0].totalWidgets").value(2));
+            .andExpect(jsonPath("$[0].totalWidgets").value(2))
+            .andExpect(jsonPath("$[0].dataAtualizacao").exists());
     }
 
     @Test

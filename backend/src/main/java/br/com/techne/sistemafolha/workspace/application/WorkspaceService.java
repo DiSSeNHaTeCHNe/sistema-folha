@@ -126,7 +126,11 @@ public class WorkspaceService {
 
     private WorkspaceSummaryDTO toSummary(Workspace workspace) {
         int total = workspace.getWidgets() != null ? workspace.getWidgets().size() : 0;
-        return new WorkspaceSummaryDTO(workspace.getId(), workspace.getNome(), total);
+        return new WorkspaceSummaryDTO(
+            workspace.getId(),
+            workspace.getNome(),
+            total,
+            workspace.getDataAtualizacao());
     }
 
     private WorkspaceDTO toDto(Workspace workspace) {

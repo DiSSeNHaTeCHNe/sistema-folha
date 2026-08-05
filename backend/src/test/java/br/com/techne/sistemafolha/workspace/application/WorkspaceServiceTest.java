@@ -20,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,9 @@ class WorkspaceServiceTest {
     @Test
     void listar_retornaWorkspacesDoUsuario() {
         stubAcesso();
+        LocalDateTime updatedAt = LocalDateTime.parse("2026-08-01T14:30:00");
         Workspace ws = workspaceEntity("Planejamento", List.of());
+        ws.setDataAtualizacao(updatedAt);
         when(workspaceRepository.findByUsuarioIdOrderByNomeAsc(USUARIO_ID)).thenReturn(List.of(ws));
 
         List<WorkspaceSummaryDTO> result = workspaceService.listar(LOGIN);
@@ -71,6 +74,7 @@ class WorkspaceServiceTest {
         assertEquals(1, result.size());
         assertEquals("Planejamento", result.get(0).nome());
         assertEquals(0, result.get(0).totalWidgets());
+        assertEquals(updatedAt, result.get(0).dataAtualizacao());
     }
 
     @Test
