@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.workspace.api;
 
 import br.com.techne.sistemafolha.workspace.application.WidgetDefinitionService;
+import br.com.techne.sistemafolha.workspace.application.WidgetQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ import java.util.List;
 public class WidgetDefinitionController {
 
     private final WidgetDefinitionService widgetDefinitionService;
+    private final WidgetQueryService widgetQueryService;
 
     @GetMapping
     @Operation(summary = "Lista definições de widget do usuário")
@@ -40,6 +42,14 @@ public class WidgetDefinitionController {
             @Valid @RequestBody CreateWidgetDefinitionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(widgetDefinitionService.criar(authentication.getName(), request));
+    }
+
+    @PostMapping("/preview")
+    @Operation(summary = "Pré-visualiza widget sem persistir (WKS2-19)")
+    public ResponseEntity<WorkspaceWidgetDataDTO> preview(
+            Authentication authentication,
+            @Valid @RequestBody CreateWidgetDefinitionRequest request) {
+        return ResponseEntity.ok(widgetQueryService.preview(authentication.getName(), request));
     }
 
     @GetMapping("/{id}")

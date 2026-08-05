@@ -58,6 +58,8 @@ class WidgetQueryServiceTest {
     @Mock
     private DatasetService datasetService;
     @Mock
+    private WidgetDefinitionService widgetDefinitionService;
+    @Mock
     private OrcamentoConsultaPort orcamentoConsultaPort;
     @Mock
     private FolhaConsultaPort folhaConsultaPort;
@@ -74,6 +76,7 @@ class WidgetQueryServiceTest {
             widgetDefinitionRepository,
             rowRepository,
             datasetService,
+            widgetDefinitionService,
             formulaEngine,
             orcamentoConsultaPort,
             folhaConsultaPort);

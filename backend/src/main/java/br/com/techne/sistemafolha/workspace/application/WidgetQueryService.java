@@ -3,6 +3,7 @@ package br.com.techne.sistemafolha.workspace.application;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaResumoSnapshot;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
+import br.com.techne.sistemafolha.workspace.api.CreateWidgetDefinitionRequest;
 import br.com.techne.sistemafolha.workspace.api.WorkspaceWidgetDataDTO;
 import br.com.techne.sistemafolha.workspace.api.WorkspaceWidgetQueryParams;
 import br.com.techne.sistemafolha.workspace.domain.DatasetFieldSchema;
@@ -14,7 +15,9 @@ import br.com.techne.sistemafolha.workspace.domain.WorkspaceDataset;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetRow;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceWidgetDefinition;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceWidgetPayload;
+import br.com.techne.sistemafolha.workspace.domain.InvalidFormulaException;
 import br.com.techne.sistemafolha.workspace.domain.formula.EvaluationContext;
+import br.com.techne.sistemafolha.workspace.domain.formula.FormulaValidationResult;
 import br.com.techne.sistemafolha.workspace.domain.formula.TypedValue;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceDatasetRowRepository;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceWidgetDefinitionRepository;
@@ -44,12 +47,17 @@ import java.util.stream.Collectors;
 public class WidgetQueryService {
 
     private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
+    private static final String PREVIEW_INSTANCE_ID = "preview";
+    private static final Set<String> VALID_TIPOS = Set.of(
+        "KPI", "TABELA", "GRAFICO_LINHA", "GRAFICO_BARRA"
+    );
 
     private final WorkspaceAccessGuard workspaceAccessGuard;
     private final WorkspaceService workspaceService;
     private final WorkspaceWidgetDefinitionRepository widgetDefinitionRepository;
     private final WorkspaceDatasetRowRepository rowRepository;
     private final DatasetService datasetService;
+    private final WidgetDefinitionService widgetDefinitionService;
     private final FormulaEngine formulaEngine;
     private final OrcamentoConsultaPort orcamentoConsultaPort;
     private final FolhaConsultaPort folhaConsultaPort;
@@ -101,6 +109,60 @@ public class WidgetQueryService {
             default -> WorkspaceWidgetDataDTO.semDados(
                 instanceId, definition.getId(), null, definition.getTipo(), competenciaLabel);
         };
+    }
+
+    @Transactional(readOnly = true)
+    public WorkspaceWidgetDataDTO preview(String login, CreateWidgetDefinitionRequest request) {
+        workspaceAccessGuard.assertEscopo(login);
+        WorkspaceAccessGuard.ResolvedWorkspaceAccess access = workspaceAccessGuard.resolve(login);
+        validarPreviewRequest(login, request);
+
+        WorkspaceWidgetDefinition definition = toEphemeralDefinition(request);
+        WorkspaceWidgetPayload layoutWidget = new WorkspaceWidgetPayload(
+            PREVIEW_INSTANCE_ID, 0, 4, 1, null, null, Map.of());
+
+        YearMonth competencia = resolverCompetencia(null);
+        String competenciaLabel = competencia.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+
+        if (semEscopoSistema(access.contexto())) {
+            return WorkspaceWidgetDataDTO.semDados(
+                PREVIEW_INSTANCE_ID, null, null, definition.getTipo(), competenciaLabel);
+        }
+
+        return switch (definition.getTipo()) {
+            case "KPI" -> resolverKpi(access, layoutWidget, definition, competencia, competenciaLabel);
+            case "TABELA" -> resolverTabela(access, layoutWidget, definition, competencia, competenciaLabel);
+            default -> WorkspaceWidgetDataDTO.semDados(
+                PREVIEW_INSTANCE_ID, null, null, definition.getTipo(), competenciaLabel);
+        };
+    }
+
+    private void validarPreviewRequest(String login, CreateWidgetDefinitionRequest request) {
+        if (request.tipo() == null || !VALID_TIPOS.contains(request.tipo())) {
+            throw new IllegalArgumentException("tipo: inválido — use KPI, TABELA, GRAFICO_LINHA ou GRAFICO_BARRA");
+        }
+        if (request.formula() != null && !request.formula().isBlank()) {
+            var fields = widgetDefinitionService.buildAvailableFields(login, request.fontes());
+            FormulaValidationResult result = formulaEngine.validate(request.formula(), fields);
+            if (!result.valid()) {
+                throw new InvalidFormulaException(result.errors());
+            }
+        }
+    }
+
+    private WorkspaceWidgetDefinition toEphemeralDefinition(CreateWidgetDefinitionRequest request) {
+        WorkspaceWidgetDefinition definition = new WorkspaceWidgetDefinition();
+        definition.setNome(request.nome().trim());
+        definition.setTipo(request.tipo());
+        definition.setFontes(new ArrayList<>(request.fontes()));
+        definition.setFormula(blankToNull(request.formula()));
+        definition.setConfig(request.config() != null ? new HashMap<>(request.config()) : new HashMap<>());
+        definition.setInvalido(false);
+        return definition;
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     private WorkspaceWidgetDataDTO resolverKpi(

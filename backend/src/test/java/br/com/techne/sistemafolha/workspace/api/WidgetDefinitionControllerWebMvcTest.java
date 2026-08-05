@@ -5,6 +5,7 @@ import br.com.techne.sistemafolha.config.SecurityConfig;
 import br.com.techne.sistemafolha.exception.GlobalExceptionHandler;
 import br.com.techne.sistemafolha.security.JwtService;
 import br.com.techne.sistemafolha.workspace.application.WidgetDefinitionService;
+import br.com.techne.sistemafolha.workspace.application.WidgetQueryService;
 import br.com.techne.sistemafolha.workspace.domain.InvalidFormulaException;
 import br.com.techne.sistemafolha.workspace.domain.WidgetSourceKind;
 import br.com.techne.sistemafolha.workspace.domain.WidgetSourceRef;
@@ -44,6 +45,9 @@ class WidgetDefinitionControllerWebMvcTest {
 
     @MockBean
     private WidgetDefinitionService widgetDefinitionService;
+
+    @MockBean
+    private WidgetQueryService widgetQueryService;
 
     @MockBean
     private JwtService jwtService;
@@ -209,6 +213,53 @@ class WidgetDefinitionControllerWebMvcTest {
             .andExpect(jsonPath("$.id").value(5));
 
         verify(widgetDefinitionService).obter("user-b", 5L);
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void preview_valido_retorna200ComDadosFormatados() throws Exception {
+        when(widgetQueryService.preview(eq("user-a"), any(CreateWidgetDefinitionRequest.class)))
+            .thenReturn(new WorkspaceWidgetDataDTO(
+                "preview", null, null, "KPI", false, false, "2026-06",
+                Map.of("valor", "R$ 1.234,56"), List.of()));
+
+        mockMvc.perform(post("/workspace/widget-definitions/preview")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"nome":"KPI Preview","tipo":"KPI","fontes":[{"kind":"SISTEMA","ref":"FOLHA"}],
+                    "formula":"SOMA(total_proventos)"}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.instanceId").value("preview"))
+            .andExpect(jsonPath("$.valores.valor").value("R$ 1.234,56"));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void preview_semEscopo_retorna403() throws Exception {
+        when(widgetQueryService.preview(eq("user-a"), any(CreateWidgetDefinitionRequest.class)))
+            .thenThrow(new WorkspaceAcessoNegadoException());
+
+        mockMvc.perform(post("/workspace/widget-definitions/preview")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"nome":"KPI","tipo":"KPI","fontes":[{"kind":"SISTEMA","ref":"FOLHA"}],
+                    "formula":"SOMA(total_proventos)"}"""))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void preview_formulaInvalida_retorna400() throws Exception {
+        when(widgetQueryService.preview(eq("user-a"), any(CreateWidgetDefinitionRequest.class)))
+            .thenThrow(new InvalidFormulaException(List.of("Campo inválido: x")));
+
+        mockMvc.perform(post("/workspace/widget-definitions/preview")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"nome":"KPI","tipo":"KPI","fontes":[{"kind":"SISTEMA","ref":"FOLHA"}],
+                    "formula":"SOMA(x)"}"""))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors[0].field").value("formula"));
     }
 
     private WidgetDefinitionDTO sampleDto() {
