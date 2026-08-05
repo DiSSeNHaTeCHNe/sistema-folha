@@ -19,9 +19,20 @@ vi.mock('../../services/workspaceService', () => ({
   createWidgetDefinition: vi.fn(),
 }));
 
-vi.mock('./WorkspaceGrid', () => ({
-  WorkspaceGrid: () => <div role="region" aria-label="Grid de widgets do workspace">grid</div>,
-}));
+vi.mock('./WorkspaceGrid', async () => {
+  const { colors } = await import('./workspaceTheme');
+  return {
+    WorkspaceGrid: () => (
+      <div
+        role="region"
+        aria-label="Grid de widgets do workspace"
+        style={{ borderLeft: `4px solid ${colors.violet}` }}
+      >
+        grid
+      </div>
+    ),
+  };
+});
 
 function renderDetail(route = '/workspace/1') {
   return renderWithProviders(
@@ -88,7 +99,7 @@ describe('WorkspaceDetailPage', () => {
     expect(screen.getAllByRole('button', { name: 'Instalar template' }).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('applies Techne page and navy tokens from workspaceTheme (WKS2F1-16)', async () => {
+  it('applies Techne palette tokens from workspaceTheme (WKS2F1-16)', async () => {
     const { container } = renderDetail('/workspace/1');
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'Planejamento', level: 1 })).toBeInTheDocument(),
@@ -98,5 +109,14 @@ describe('WorkspaceDetailPage', () => {
     expect(screen.getByRole('heading', { name: 'Planejamento', level: 1 })).toHaveStyle({
       color: colors.navy,
     });
+
+    expect(screen.getByRole('region', { name: 'Grid de widgets do workspace' })).toHaveStyle({
+      borderLeftColor: colors.violet,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar layout' }));
+    await waitFor(() => expect(screen.getByText('editando')).toBeInTheDocument());
+    const editChip = screen.getByText('editando').closest('.MuiChip-root') as HTMLElement;
+    expect(editChip).toHaveStyle({ border: `1px solid ${colors.line}` });
   });
 });

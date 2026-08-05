@@ -155,7 +155,7 @@ describe('WorkspaceHubPage', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent(/Limite atingido/i);
   });
 
-  it('applies Techne page and navy tokens from workspaceTheme (WKS2F1-16)', async () => {
+  it('applies Techne palette tokens from workspaceTheme (WKS2F1-16)', async () => {
     const { container } = renderWithProviders(<WorkspaceHubPage />);
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'Meus workspaces', level: 1 })).toBeInTheDocument(),
@@ -165,5 +165,14 @@ describe('WorkspaceHubPage', () => {
     expect(screen.getByRole('heading', { name: 'Meus workspaces', level: 1 })).toHaveStyle({
       color: colors.navy,
     });
+
+    const workspaceCard = screen
+      .getByRole('heading', { name: 'Planejamento', level: 2 })
+      .closest('.MuiCard-root') as HTMLElement;
+    expect(workspaceCard).toHaveStyle({ borderColor: colors.line });
+
+    const progressBar = screen.getByRole('progressbar', { name: 'Datasets: 2 de 20' });
+    const bar = progressBar.querySelector('.MuiLinearProgress-bar') as HTMLElement;
+    expect(bar).toHaveStyle({ backgroundColor: colors.violet });
   });
 });

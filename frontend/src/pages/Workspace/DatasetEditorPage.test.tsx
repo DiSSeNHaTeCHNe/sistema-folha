@@ -227,7 +227,7 @@ describe('DatasetEditorPage', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/Carregando dataset/i);
   });
 
-  it('applies Techne page and navy tokens from workspaceTheme (WKS2F1-16)', async () => {
+  it('applies Techne palette tokens from workspaceTheme (WKS2F1-16)', async () => {
     const { container } = renderEditor();
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /Editor: Previsão/i, level: 1 })).toBeInTheDocument(),
@@ -237,5 +237,11 @@ describe('DatasetEditorPage', () => {
     expect(screen.getByRole('heading', { name: /Editor: Previsão/i, level: 1 })).toHaveStyle({
       color: colors.navy,
     });
+
+    const fieldTypePanel = screen.getByText('Tipos de campo').closest('.MuiPaper-root') as HTMLElement;
+    expect(fieldTypePanel).toHaveStyle({ borderColor: colors.line });
+
+    fireEvent.click(screen.getByDisplayValue('headcount').closest('tr') as HTMLElement);
+    expect(screen.getByRole('button', { name: 'Tipo Número' })).toHaveStyle({ borderColor: colors.violet });
   });
 });

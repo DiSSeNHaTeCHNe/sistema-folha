@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -167,7 +168,8 @@ class DatasetControllerWebMvcTest {
                     {"campos":[{"nome":"a","tipo":"TEXTO","observacao":"%s"}],"schemaVersion":1}"""
                     .formatted(observacaoLonga)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.status").value(400));
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message", containsString("campos[0].observacao")));
     }
 
     @Test
