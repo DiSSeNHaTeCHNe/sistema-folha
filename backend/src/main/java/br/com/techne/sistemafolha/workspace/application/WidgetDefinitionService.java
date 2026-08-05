@@ -106,6 +106,13 @@ public class WidgetDefinitionService {
         return toDto(findOwned(usuarioId, id));
     }
 
+    @Transactional(readOnly = true)
+    public List<AvailableField> buildAvailableFields(String login, List<WidgetSourceRef> fontes) {
+        workspaceAccessGuard.assertEscopo(login);
+        Long usuarioId = workspaceAccessGuard.resolve(login).usuarioId();
+        return resolveAvailableFields(usuarioId, fontes, List.of());
+    }
+
     @Transactional
     public void marcarInvalidoSeFormulaQuebrada(Long usuarioId, Long datasetId) {
         WorkspaceDataset dataset = datasetService.findOwnedDataset(usuarioId, datasetId);
