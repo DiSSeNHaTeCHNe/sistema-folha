@@ -23,6 +23,7 @@ import { COL_SPAN_PRESETS, type ColSpanPreset } from './types';
 import { WidgetFrame } from '../MeuDashboard/WidgetFrame';
 import { WidgetDataRenderer } from './widgets/WidgetDataRenderer';
 import { getWorkspaceWidgetDefinition } from './widgets/registry';
+import { SourceBadge, resolveWidgetSource } from './components/SourceBadge';
 
 interface WorkspaceGridProps {
   workspaceId: number;
@@ -63,6 +64,7 @@ function SortableWidgetItem({
     ? userDefinitions.find((item) => item.id === instance.userWidgetDefinitionId)
     : undefined;
   const invalid = userDef?.invalido ?? false;
+  const sourceKind = resolveWidgetSource(instance, userDefinitions);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: instance.instanceId,
@@ -94,6 +96,7 @@ function SortableWidgetItem({
       <WidgetFrame
         title={definition.titulo}
         editMode={editMode}
+        badge={<SourceBadge source={sourceKind} />}
         toolbar={
           editMode ? (
             <Box display="flex" alignItems="center" gap={1} mb={1}>
