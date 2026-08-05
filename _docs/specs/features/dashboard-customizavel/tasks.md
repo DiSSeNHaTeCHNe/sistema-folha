@@ -454,8 +454,8 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-20
 
 **Done when**:
-- [ ] E2E passa localmente: `npm run test:e2e -- e2e/meu-dashboard.spec.ts`
-- [ ] Fluxo: edit → save → reload → widget removido permanece ausente
+- [x] E2E passa localmente: `npm run test:e2e -- e2e/meu-dashboard.spec.ts`
+- [x] Fluxo: edit → save → reload → widget removido permanece ausente
 
 **Tests**: e2e  
 **Gate**: full  
@@ -475,10 +475,10 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-28…31, DASHC-35…36, DASHC-40…43
 
 **Done when**:
-- [ ] Params fora da whitelist → 400
-- [ ] CC/LN fora do escopo → negado ou filtrado
-- [ ] Competência sem folha → `semDados=true`
-- [ ] Gate quick: `mvn test -Dtest=DashboardWidgetQueryServiceTest`
+- [x] Params fora da whitelist → 400
+- [x] CC/LN fora do escopo → negado ou filtrado
+- [x] Competência sem folha → `semDados=true`
+- [x] Gate quick: `mvn test -Dtest=DashboardWidgetQueryServiceTest`
 
 **Tests**: unit (ACL scoped/total, whitelist, semDados, topN bounds)  
 **Gate**: quick  
