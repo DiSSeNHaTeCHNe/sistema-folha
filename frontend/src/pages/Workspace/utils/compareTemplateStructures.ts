@@ -1,4 +1,4 @@
-import type { TemplateStructureResumo } from '../pages/Workspace/types';
+import type { TemplateStructureResumo } from '../types';
 
 export interface TemplateStructureDiff {
   camposAdicionados: string[];

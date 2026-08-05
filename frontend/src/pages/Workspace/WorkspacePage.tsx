@@ -18,7 +18,6 @@ import { createDashboardQueryClient } from '../MeuDashboard/queryClient';
 import { useWorkspaceLayout } from './hooks/useWorkspaceLayout';
 import { WorkspaceEmptyState, WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { WorkspaceGrid } from './WorkspaceGrid';
-import { WidgetBuilderDrawer } from './WidgetBuilderDrawer';
 import { ProposalReviewDialog } from './ProposalReviewDialog';
 import {
   confirmWorkspaceProposal,
@@ -34,7 +33,6 @@ function WorkspacePageContent() {
   const { user } = useAuth();
   const { notification, showNotification, hideNotification } = useNotification();
   const [userDefinitions, setUserDefinitions] = useState<UserWidgetDefinition[]>([]);
-  const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false);
   const [installingOrcamento, setInstallingOrcamento] = useState(false);
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
   const [activeProposal, setActiveProposal] = useState<WorkspaceProposal | null>(null);
@@ -124,17 +122,6 @@ function WorkspacePageContent() {
       ordem: index,
     }));
     updateDraftWidgets(next);
-  };
-
-  const handleWidgetSaved = (definition: UserWidgetDefinition) => {
-    setUserDefinitions((current) => {
-      const exists = current.some((item) => item.id === definition.id);
-      if (exists) {
-        return current.map((item) => (item.id === definition.id ? definition : item));
-      }
-      return [...current, definition];
-    });
-    showNotification('Widget salvo', 'success');
   };
 
   const handleInstallOrcamento = async () => {
@@ -257,9 +244,6 @@ function WorkspacePageContent() {
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {!editMode && (
                 <>
-                  <Button variant="outlined" onClick={() => setWidgetBuilderOpen(true)}>
-                    Novo widget
-                  </Button>
                   {podeSugerirIa && (
                     <Button variant="outlined" onClick={() => void handleSugerirParaMim()}>
                       Sugerir para mim
@@ -310,12 +294,6 @@ function WorkspacePageContent() {
           />
         ) : null}
       </Box>
-
-      <WidgetBuilderDrawer
-        open={widgetBuilderOpen}
-        onClose={() => setWidgetBuilderOpen(false)}
-        onSaved={handleWidgetSaved}
-      />
 
       <ProposalReviewDialog
         open={proposalDialogOpen}

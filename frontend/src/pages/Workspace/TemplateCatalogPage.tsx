@@ -188,7 +188,7 @@ export default function TemplateCatalogPage() {
                   component="article"
                   aria-labelledby={`template-${item.id}-title`}
                   sx={{
-                    border: `1px solid ${colors.border}`,
+                    border: `1px solid ${colors.line}`,
                     boxShadow: 'none',
                     bgcolor: native ? colors.page : 'background.paper',
                   }}

@@ -1,3 +1,4 @@
+/** @deprecated v2 uses WidgetBuilderPage at /workspace/:id/widgets/novo — kept for unit tests only (T28) */
 import { useEffect, useState } from 'react';
 import {
   Box,

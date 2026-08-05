@@ -31,7 +31,7 @@ describe('WorkspacePageShell', () => {
     expect(screen.getByRole('button', { name: 'Novo dataset' })).toBeInTheDocument();
   });
 
-  it('applies Techne page background token (#EFF2F7)', () => {
+  it('applies Techne page background token from workspaceTheme', () => {
     const { container } = renderWithProviders(
       <WorkspacePageShell title="Catálogo">
         <p>Cards</p>

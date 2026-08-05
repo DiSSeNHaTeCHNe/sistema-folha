@@ -730,11 +730,11 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Com `WORKSPACE_IA_CRIAR`: fluxo propor/aplicar/descartar inline
-- [ ] Sem permissão: mensagem indisponibilidade
-- [ ] TTL 72h exibido quando pendente
-- [ ] Gate check passes: `cd frontend && npm test -- WorkspaceAssistantPage`
-- [ ] Test count: ≥4 tests pass
+- [x] Com `WORKSPACE_IA_CRIAR`: fluxo propor/aplicar/descartar inline
+- [x] Sem permissão: mensagem indisponibilidade
+- [x] TTL 72h exibido quando pendente
+- [x] Gate check passes: `cd frontend && npm test -- WorkspaceAssistantPage`
+- [x] Test count: ≥4 tests pass
 
 **Tests**: unit  
 **Gate**: quick FE
@@ -756,10 +756,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Lista sugestões como cards revisáveis
-- [ ] Nenhuma aplicação automática
-- [ ] Gate check passes: `cd frontend && npm test -- WorkspaceSuggestionsPage`
-- [ ] Test count: ≥3 tests pass
+- [x] Lista sugestões como cards revisáveis
+- [x] Nenhuma aplicação automática
+- [x] Gate check passes: `cd frontend && npm test -- WorkspaceSuggestionsPage`
+- [x] Test count: ≥3 tests pass
 
 **Tests**: unit  
 **Gate**: quick FE
@@ -781,10 +781,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Fórmula inválida: banner no widget, workspace carrega
-- [ ] Paleta Techne consistente hub/detail/dataset/catálogo
-- [ ] Gate check passes: `cd frontend && npm test -- WidgetErrorBanner WorkspaceGrid`
-- [ ] Test count: ≥4 tests pass
+- [x] Fórmula inválida: banner no widget, workspace carrega
+- [x] Paleta Techne consistente hub/detail/dataset/catálogo
+- [x] Gate check passes: `cd frontend && npm test -- WidgetErrorBanner WorkspaceGrid`
+- [x] Test count: ≥4 tests pass
 
 **Tests**: unit  
 **Gate**: quick FE
@@ -806,10 +806,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] `WorkspaceHubPage.test` + `WorkspaceDetailPage.test` cobrem cenários migrados
-- [ ] `WidgetBuilderDrawer` não referenciado em fluxo principal (redirect ou removido)
-- [ ] Gate check passes: **release gate** + regressão v1
-- [ ] Test count: suite workspace FE ≥ baseline v1 (sem deleções silenciosas)
+- [x] `WorkspaceHubPage.test` + `WorkspaceDetailPage.test` cobrem cenários migrados
+- [x] `WidgetBuilderDrawer` não referenciado em fluxo principal (redirect ou removido)
+- [x] Gate check passes: **release gate** + regressão v1
+- [x] Test count: suite workspace FE ≥ baseline v1 (sem deleções silenciosas)
 
 **Tests**: unit  
 **Gate**: release

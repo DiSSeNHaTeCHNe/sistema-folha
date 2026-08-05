@@ -18,10 +18,6 @@ vi.mock('../../services/workspaceService', () => ({
   createWidgetDefinition: vi.fn(),
 }));
 
-vi.mock('./WidgetBuilderDrawer', () => ({
-  WidgetBuilderDrawer: () => null,
-}));
-
 vi.mock('./WorkspaceGrid', () => ({
   WorkspaceGrid: () => <div role="region" aria-label="Grid de widgets do workspace">grid</div>,
 }));

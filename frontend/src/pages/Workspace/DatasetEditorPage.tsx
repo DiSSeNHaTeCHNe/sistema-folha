@@ -44,7 +44,7 @@ import { QuotaProgressBar } from './components/QuotaProgressBar';
 import { InlineCellError } from './components/InlineCellError';
 import { WORKSPACE_LIMITS } from './workspaceLimits';
 import { colors } from './workspaceTheme';
-import type { DatasetDefinition, DatasetFieldSchema, DatasetFieldType, DatasetRow } from './types';
+import type { DatasetDefinition, DatasetFieldSchema, DatasetRow } from './types';
 
 interface FieldEditorRow extends DatasetFieldSchema {
   key: string;

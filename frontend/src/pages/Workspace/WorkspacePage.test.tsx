@@ -1,8 +1,9 @@
+/** @deprecated v1 monolith — scenarios migrated to WorkspaceHubPage.test and WorkspaceDetailPage.test (T28) */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import WorkspacePage from './WorkspacePage';
 import { renderWithProviders } from '../../test/renderWithProviders';
-import { listWorkspaces, getWorkspace, createWorkspace } from '../../services/workspaceService';
+import { listWorkspaces, getWorkspace } from '../../services/workspaceService';
 
 vi.mock('../../services/workspaceService', () => ({
   listWorkspaces: vi.fn(),
@@ -12,9 +13,12 @@ vi.mock('../../services/workspaceService', () => ({
   saveWorkspaceLayout: vi.fn(),
   listWidgetDefinitions: vi.fn().mockResolvedValue([]),
   installOrcamentoTemplate: vi.fn(),
+  createWorkspaceProposal: vi.fn(),
+  confirmWorkspaceProposal: vi.fn(),
+  discardWorkspaceProposal: vi.fn(),
 }));
 
-describe('WorkspacePage', () => {
+describe('WorkspacePage (deprecated v1 smoke)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(listWorkspaces).mockResolvedValue([
@@ -23,69 +27,14 @@ describe('WorkspacePage', () => {
     vi.mocked(getWorkspace).mockResolvedValue({ id: 1, nome: 'Planejamento', widgets: [] });
   });
 
-  it('shows loading spinner initially', () => {
-    vi.mocked(listWorkspaces).mockReturnValue(new Promise(() => {}));
-    renderWithProviders(<WorkspacePage />);
-    expect(screen.getByLabelText('Carregando Workspace')).toBeInTheDocument();
-  });
-
-  it('renders heading and switcher for scoped user', async () => {
+  it('still renders for v1 regression baseline', async () => {
     renderWithProviders(<WorkspacePage />);
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Workspace' })).toBeInTheDocument());
-    expect(screen.getByLabelText('Workspace')).toBeInTheDocument();
   });
 
-  it('shows empty state when no workspaces exist', async () => {
-    vi.mocked(listWorkspaces).mockResolvedValue([]);
-    renderWithProviders(<WorkspacePage />);
-    await waitFor(() =>
-      expect(screen.getByRole('status', { name: 'Nenhum workspace configurado' })).toBeInTheDocument(),
-    );
-  });
-
-  it('shows empty workspace alert when layout has no widgets', async () => {
-    renderWithProviders(<WorkspacePage />);
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/Workspace vazio/i));
-  });
-
-  it('shows edit layout button when workspace loaded', async () => {
+  it('does not reference WidgetBuilderDrawer in toolbar', async () => {
     renderWithProviders(<WorkspacePage />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Editar layout' })).toBeInTheDocument());
-  });
-
-  it('shows orçamento install and novo widget buttons when workspace loaded', async () => {
-    renderWithProviders(<WorkspacePage />);
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Instalar template de orçamento' })).toBeInTheDocument(),
-    );
-    expect(screen.getByRole('button', { name: 'Novo widget' })).toBeInTheDocument();
-  });
-
-  it('loads workspace with widgets without crash', async () => {
-    vi.mocked(getWorkspace).mockResolvedValue({
-      id: 1,
-      nome: 'Planejamento',
-      widgets: [{ instanceId: 'w1', ordem: 0, colSpan: 4, rowSpan: 1, widgetId: 'kpi-total-funcionarios' }],
-    });
-    vi.mocked(listWorkspaces).mockResolvedValue([{ id: 1, nome: 'Planejamento', totalWidgets: 1 }]);
-    renderWithProviders(<WorkspacePage />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Editar layout' })).toBeInTheDocument());
-    expect(screen.queryByRole('status', { name: /Workspace vazio/i })).not.toBeInTheDocument();
-  });
-});
-
-describe('WorkspacePage create flow', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(listWorkspaces).mockResolvedValue([]);
-    vi.mocked(createWorkspace).mockResolvedValue({ id: 2, nome: 'Novo', widgets: [] });
-    vi.mocked(getWorkspace).mockResolvedValue({ id: 2, nome: 'Novo', widgets: [] });
-  });
-
-  it('shows empty state before workspaces exist', async () => {
-    renderWithProviders(<WorkspacePage />);
-    await waitFor(() =>
-      expect(screen.getByRole('status', { name: 'Nenhum workspace configurado' })).toBeInTheDocument(),
-    );
+    expect(screen.queryByRole('button', { name: 'Novo widget' })).not.toBeInTheDocument();
   });
 });
