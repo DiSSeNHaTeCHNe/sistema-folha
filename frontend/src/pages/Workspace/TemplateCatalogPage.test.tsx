@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import TemplateCatalogPage from './TemplateCatalogPage';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import {
+  installOrcamentoTemplate,
   installTemplate,
   listDatasets,
   listTemplateCatalog,
@@ -115,6 +116,37 @@ describe('TemplateCatalogPage', () => {
       expect(screen.getByText('Selecione um dataset ou widget salvo para publicar')).toBeInTheDocument(),
     );
     expect(publishDatasetTemplate).not.toHaveBeenCalled();
+  });
+
+  it('installs native orcamento template via orcamento endpoint', async () => {
+    const nativeCatalog = [
+      {
+        id: 0,
+        nome: 'Orçamento por CC',
+        tipo: 'PACOTE' as const,
+        versaoAtual: 1,
+        versaoMaisRecente: 1,
+        atualizacaoDisponivel: false,
+        publicadorUsuarioId: 0,
+        installationId: null,
+        versaoInstalada: null,
+      },
+    ];
+    vi.mocked(listTemplateCatalog).mockResolvedValue(nativeCatalog);
+    vi.mocked(installOrcamentoTemplate).mockResolvedValue({
+      workspaceId: 1,
+      datasetId: 50,
+      widgetDefinitionIds: [60, 61],
+      widgetsAdicionados: 2,
+    });
+    renderWithProviders(<TemplateCatalogPage />);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Instalar template Orçamento por CC' })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Instalar template Orçamento por CC' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar instalação' }));
+    await waitFor(() => expect(installOrcamentoTemplate).toHaveBeenCalledWith(1));
+    expect(installTemplate).not.toHaveBeenCalled();
   });
 
   it('installs template into selected workspace', async () => {

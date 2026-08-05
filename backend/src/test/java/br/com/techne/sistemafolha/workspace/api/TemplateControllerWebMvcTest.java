@@ -178,6 +178,21 @@ class TemplateControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user-a", roles = "USER")
+    void instalarTemplate_nativoOrcamento_idZero_retorna201() throws Exception {
+        when(templateInstallService.instalar(
+                eq("user-a"), eq(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID), eq(1L)))
+            .thenReturn(new TemplateInstallResultDTO(null, 0L, 1, 1L, 50L, List.of(60L, 61L), Map.of()));
+
+        mockMvc.perform(post("/workspace/templates/0/install")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"workspaceId\":1}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.templateId").value(0))
+            .andExpect(jsonPath("$.datasetId").value(50));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
     void instalarTemplate_valido_retorna201() throws Exception {
         when(templateInstallService.instalar(eq("user-a"), eq(3L), eq(1L)))
             .thenReturn(new TemplateInstallResultDTO(10L, 3L, 1, 1L, 50L, List.of(), Map.of("primary", 50L)));

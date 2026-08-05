@@ -221,6 +221,27 @@ class WorkspaceProposalServiceTest {
     }
 
     @Test
+    void confirmar_templateInstallNativoOrcamento_chamaInstalarComIdZero() {
+        stubAcesso();
+        ProposalPayload payload = contentBuilder.montarInstalacaoTemplate(
+            new TemplateCatalogItemDTO(
+                TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID,
+                "Orçamento por CC",
+                br.com.techne.sistemafolha.workspace.domain.TemplateTipo.PACOTE,
+                1, 1, false, 0L, null, null),
+            "instalar orçamento");
+        WorkspaceIaProposal proposal = pendingProposal(14L, payload);
+        when(proposalRepository.findByIdAndSolicitanteUsuarioId(14L, USUARIO_ID)).thenReturn(Optional.of(proposal));
+        when(proposalRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(templateInstallService.instalar(LOGIN, 0L, 4L))
+            .thenReturn(new TemplateInstallResultDTO(null, 0L, 1, 4L, 50L, List.of(60L, 61L), Map.of()));
+
+        service.confirmar(LOGIN, 14L, new ConfirmProposalRequest(null, null, null, null, null, null, 4L));
+
+        verify(templateInstallService).instalar(LOGIN, 0L, 4L);
+    }
+
+    @Test
     void confirmar_templateInstall_chamaTemplateInstallService() {
         stubAcesso();
         ProposalPayload payload = contentBuilder.montarInstalacaoTemplate(

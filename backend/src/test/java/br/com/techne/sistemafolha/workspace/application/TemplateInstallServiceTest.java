@@ -2,6 +2,7 @@ package br.com.techne.sistemafolha.workspace.application;
 
 import br.com.techne.sistemafolha.workspace.api.DatasetDTO;
 import br.com.techne.sistemafolha.workspace.api.DatasetFieldSchemaDTO;
+import br.com.techne.sistemafolha.workspace.api.OrcamentoInstallResultDTO;
 import br.com.techne.sistemafolha.workspace.api.TemplateInstallResultDTO;
 import br.com.techne.sistemafolha.workspace.domain.DatasetFieldType;
 import br.com.techne.sistemafolha.workspace.domain.TemplateStructurePayload;
@@ -42,6 +43,7 @@ class TemplateInstallServiceTest {
 
     @Mock private WorkspaceAccessGuard workspaceAccessGuard;
     @Mock private TemplatePublishService templatePublishService;
+    @Mock private OrcamentoTemplateInstaller orcamentoTemplateInstaller;
     @Mock private DatasetService datasetService;
     @Mock private WidgetDefinitionService widgetDefinitionService;
     @Mock private WorkspaceService workspaceService;
@@ -55,12 +57,28 @@ class TemplateInstallServiceTest {
         service = new TemplateInstallService(
             workspaceAccessGuard,
             templatePublishService,
+            orcamentoTemplateInstaller,
             datasetService,
             widgetDefinitionService,
             workspaceService,
             installationRepository,
             datasetRepository
         );
+    }
+
+    @Test
+    void instalar_templateNativoOrcamento_delegaParaOrcamentoInstaller() {
+        when(orcamentoTemplateInstaller.instalarOrcamentoPadrao(LOGIN, 1L))
+            .thenReturn(new OrcamentoInstallResultDTO(1L, 50L, List.of(60L, 61L)));
+
+        TemplateInstallResultDTO result = service.instalar(
+            LOGIN, TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID, 1L);
+
+        assertEquals(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID, result.templateId());
+        assertEquals(50L, result.datasetId());
+        assertEquals(2, result.widgetDefinitionIds().size());
+        verify(orcamentoTemplateInstaller).instalarOrcamentoPadrao(LOGIN, 1L);
+        verify(templatePublishService, never()).findVisibleTemplate(any(), any());
     }
 
     @Test

@@ -3,6 +3,7 @@ package br.com.techne.sistemafolha.workspace.application;
 import br.com.techne.sistemafolha.workspace.api.CreateDatasetRequest;
 import br.com.techne.sistemafolha.workspace.api.CreateWidgetDefinitionRequest;
 import br.com.techne.sistemafolha.workspace.api.DatasetFieldSchemaDTO;
+import br.com.techne.sistemafolha.workspace.api.OrcamentoInstallResultDTO;
 import br.com.techne.sistemafolha.workspace.api.TemplateInstallResultDTO;
 import br.com.techne.sistemafolha.workspace.api.UpdateDatasetSchemaRequest;
 import br.com.techne.sistemafolha.workspace.domain.DatasetFieldSchema;
@@ -29,6 +30,7 @@ public class TemplateInstallService {
 
     private final WorkspaceAccessGuard workspaceAccessGuard;
     private final TemplatePublishService templatePublishService;
+    private final OrcamentoTemplateInstaller orcamentoTemplateInstaller;
     private final DatasetService datasetService;
     private final WidgetDefinitionService widgetDefinitionService;
     private final WorkspaceService workspaceService;
@@ -37,6 +39,11 @@ public class TemplateInstallService {
 
     @Transactional
     public TemplateInstallResultDTO instalar(String login, Long templateId, Long workspaceId) {
+        if (TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID == templateId) {
+            OrcamentoInstallResultDTO orcamento = orcamentoTemplateInstaller.instalarOrcamentoPadrao(login, workspaceId);
+            return fromOrcamentoInstall(orcamento, templateId);
+        }
+
         workspaceAccessGuard.assertEscopo(login);
         Long usuarioId = workspaceAccessGuard.resolve(login).usuarioId();
         workspaceService.findOwnedWorkspace(usuarioId, workspaceId);
@@ -161,6 +168,22 @@ public class TemplateInstallService {
             .map(f -> new DatasetFieldSchemaDTO(
                 f.nome(), f.tipo(), f.referenciaEntidade(), f.obrigatorio()))
             .toList();
+    }
+
+    private TemplateInstallResultDTO fromOrcamentoInstall(OrcamentoInstallResultDTO orcamento, Long templateId) {
+        Map<String, Long> entityMap = new HashMap<>();
+        if (orcamento.datasetId() != null) {
+            entityMap.put("datasetId", orcamento.datasetId());
+        }
+        return new TemplateInstallResultDTO(
+            null,
+            templateId,
+            1,
+            orcamento.workspaceId(),
+            orcamento.datasetId(),
+            orcamento.widgetDefinitionIds(),
+            entityMap
+        );
     }
 
     private TemplateInstallResultDTO toResult(WorkspaceTemplateInstallation installation, TemplateTipo tipo) {

@@ -27,6 +27,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
+  installOrcamentoTemplate,
   installTemplate,
   listDatasets,
   listTemplateCatalog,
@@ -130,7 +131,11 @@ export default function TemplateCatalogPage() {
     setInstalling(true);
     setActionError(null);
     try {
-      await installTemplate(installTarget.id, selectedWorkspaceId);
+      if (installTarget.id === 0) {
+        await installOrcamentoTemplate(selectedWorkspaceId);
+      } else {
+        await installTemplate(installTarget.id, selectedWorkspaceId);
+      }
       setInstallTarget(null);
       await load();
     } catch (err) {
