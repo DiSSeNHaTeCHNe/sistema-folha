@@ -56,16 +56,27 @@ function newFieldKey(): string {
 }
 
 function toEditorFields(campos: DatasetFieldSchema[]): FieldEditorRow[] {
-  return campos.map((campo) => ({ ...campo, key: newFieldKey(), observacao: '' }));
+  return campos.map((campo) => ({
+    ...campo,
+    key: newFieldKey(),
+    observacao: campo.observacao ?? '',
+  }));
 }
 
 function stripEditorFields(fields: FieldEditorRow[]): DatasetFieldSchema[] {
-  return fields.map(({ nome, tipo, referenciaEntidade, obrigatorio }) => ({
-    nome,
-    tipo,
-    referenciaEntidade,
-    obrigatorio,
-  }));
+  return fields.map(({ nome, tipo, referenciaEntidade, obrigatorio, observacao }) => {
+    const trimmed = observacao?.trim();
+    const payload: DatasetFieldSchema = {
+      nome,
+      tipo,
+      referenciaEntidade,
+      obrigatorio,
+    };
+    if (trimmed) {
+      payload.observacao = trimmed;
+    }
+    return payload;
+  });
 }
 
 interface DatasetEditorPageProps {

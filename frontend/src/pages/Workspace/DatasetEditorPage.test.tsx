@@ -173,6 +173,47 @@ describe('DatasetEditorPage', () => {
     await waitFor(() => expect(deleteDatasetRow).toHaveBeenCalledWith(1, 10));
   });
 
+  it('persists observacao on save and reload (WKS2F1-09/10)', async () => {
+    vi.mocked(updateDatasetSchema).mockImplementation(async (_id, campos, version) => ({
+      ...dataset,
+      campos,
+      schemaVersion: version + 1,
+    }));
+
+    renderEditor();
+    await waitFor(() => expect(screen.getByDisplayValue('headcount')).toBeInTheDocument());
+
+    fireEvent.change(screen.getAllByLabelText('Observação')[0], {
+      target: { value: 'Total de colaboradores' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar esquema' }));
+
+    await waitFor(() =>
+      expect(updateDatasetSchema).toHaveBeenCalledWith(
+        1,
+        expect.arrayContaining([
+          expect.objectContaining({ nome: 'headcount', observacao: 'Total de colaboradores' }),
+        ]),
+        1,
+        false,
+      ),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByDisplayValue('Total de colaboradores')).toBeInTheDocument(),
+    );
+  });
+
+  it('reloads saved observacao when dataset already has value (WKS2F1-10)', async () => {
+    vi.mocked(getDataset).mockResolvedValue({
+      ...dataset,
+      campos: [{ nome: 'headcount', tipo: 'NUMERO', observacao: 'Valor salvo' }],
+    });
+
+    renderEditor();
+    await waitFor(() => expect(screen.getByDisplayValue('Valor salvo')).toBeInTheDocument());
+  });
+
   it('shows not found when dataset missing', async () => {
     vi.mocked(getDataset).mockRejectedValue(new Error('404'));
     renderEditor();
