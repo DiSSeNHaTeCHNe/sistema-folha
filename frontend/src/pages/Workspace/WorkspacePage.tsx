@@ -10,6 +10,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../hooks/useNotification';
 import { Notification } from '../../components/Notification';
 import { createDashboardQueryClient } from '../MeuDashboard/queryClient';
@@ -17,17 +18,29 @@ import { useWorkspaceLayout } from './hooks/useWorkspaceLayout';
 import { WorkspaceEmptyState, WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { WorkspaceGrid } from './WorkspaceGrid';
 import { WidgetBuilderDrawer } from './WidgetBuilderDrawer';
+import { ProposalReviewDialog } from './ProposalReviewDialog';
 import {
+  confirmWorkspaceProposal,
+  createWorkspaceProposal,
+  discardWorkspaceProposal,
   installOrcamentoTemplate,
   listWidgetDefinitions,
+  WorkspaceApiError,
 } from '../../services/workspaceService';
-import type { UserWidgetDefinition } from './types';
+import { WORKSPACE_IA_CRIAR, type UserWidgetDefinition, type WorkspaceProposal } from './types';
 
 function WorkspacePageContent() {
+  const { user } = useAuth();
   const { notification, showNotification, hideNotification } = useNotification();
   const [userDefinitions, setUserDefinitions] = useState<UserWidgetDefinition[]>([]);
   const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false);
   const [installingOrcamento, setInstallingOrcamento] = useState(false);
+  const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
+  const [activeProposal, setActiveProposal] = useState<WorkspaceProposal | null>(null);
+  const [proposalLoading, setProposalLoading] = useState(false);
+  const [proposalSubmitting, setProposalSubmitting] = useState(false);
+  const [proposalError, setProposalError] = useState<string | null>(null);
+  const podeSugerirIa = user?.permissoes?.includes(WORKSPACE_IA_CRIAR) ?? false;
   const {
     summaries,
     activeWorkspaceId,
@@ -142,6 +155,68 @@ function WorkspacePageContent() {
     }
   };
 
+  const handleSugerirParaMim = async () => {
+    setProposalDialogOpen(true);
+    setProposalLoading(true);
+    setProposalError(null);
+    setActiveProposal(null);
+    try {
+      const proposal = await createWorkspaceProposal('SUGESTAO');
+      setActiveProposal(proposal);
+    } catch (error) {
+      const message = error instanceof WorkspaceApiError
+        ? error.message
+        : 'Erro ao gerar sugestão';
+      setProposalError(message);
+    } finally {
+      setProposalLoading(false);
+    }
+  };
+
+  const handleCloseProposalDialog = () => {
+    if (proposalSubmitting) {
+      return;
+    }
+    setProposalDialogOpen(false);
+    setActiveProposal(null);
+    setProposalError(null);
+  };
+
+  const handleConfirmProposal = async (workspaceId?: number) => {
+    if (!activeProposal) {
+      return;
+    }
+    setProposalSubmitting(true);
+    try {
+      await confirmWorkspaceProposal(activeProposal.id, workspaceId != null ? { workspaceId } : undefined);
+      showNotification('Proposta aplicada com sucesso', 'success');
+      handleCloseProposalDialog();
+    } catch (error) {
+      const message = error instanceof WorkspaceApiError
+        ? error.message
+        : 'Erro ao confirmar proposta';
+      showNotification(message, 'error');
+    } finally {
+      setProposalSubmitting(false);
+    }
+  };
+
+  const handleDiscardProposal = async () => {
+    if (!activeProposal) {
+      return;
+    }
+    setProposalSubmitting(true);
+    try {
+      await discardWorkspaceProposal(activeProposal.id);
+      showNotification('Proposta descartada', 'success');
+      handleCloseProposalDialog();
+    } catch {
+      showNotification('Erro ao descartar proposta', 'error');
+    } finally {
+      setProposalSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -184,6 +259,11 @@ function WorkspacePageContent() {
                   <Button variant="outlined" onClick={() => setWidgetBuilderOpen(true)}>
                     Novo widget
                   </Button>
+                  {podeSugerirIa && (
+                    <Button variant="outlined" onClick={() => void handleSugerirParaMim()}>
+                      Sugerir para mim
+                    </Button>
+                  )}
                   <Button
                     variant="outlined"
                     onClick={() => void handleInstallOrcamento()}
@@ -234,6 +314,18 @@ function WorkspacePageContent() {
         open={widgetBuilderOpen}
         onClose={() => setWidgetBuilderOpen(false)}
         onSaved={handleWidgetSaved}
+      />
+
+      <ProposalReviewDialog
+        open={proposalDialogOpen}
+        proposal={activeProposal}
+        workspaces={summaries}
+        loading={proposalLoading}
+        submitting={proposalSubmitting}
+        error={proposalError}
+        onClose={handleCloseProposalDialog}
+        onConfirm={(workspaceId) => void handleConfirmProposal(workspaceId)}
+        onDiscard={() => void handleDiscardProposal()}
       />
 
       <Notification

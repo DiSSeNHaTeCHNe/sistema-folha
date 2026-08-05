@@ -139,6 +139,34 @@ export interface DatasetRowAuditEntry {
   dataEvento: string;
 }
 
+export type ProposalStatus = 'PENDENTE' | 'APLICADA' | 'DESCARTADA' | 'EXPIRADA';
+
+export interface ProposalPayload {
+  kind: string;
+  nome?: string;
+  campos?: DatasetFieldSchema[];
+  tipoWidget?: string;
+  fontes?: WidgetSourceRef[];
+  formula?: string;
+  config?: Record<string, unknown>;
+  templateId?: number;
+  workspaceId?: number;
+  descricao?: string;
+  dedupHash?: string;
+}
+
+export interface WorkspaceProposal {
+  id: number;
+  status: ProposalStatus;
+  payload: ProposalPayload;
+  solicitanteUsuarioId: number;
+  dataCriacao: string;
+  dataExpiracao: string;
+  dataResolucao: string | null;
+}
+
+export const WORKSPACE_IA_CRIAR = 'WORKSPACE_IA_CRIAR';
+
 export const MAX_WORKSPACE_WIDGETS = 30;
 
 export const COL_SPAN_PRESETS = {

@@ -15,6 +15,7 @@ import type {
   WorkspaceLayoutWidget,
   WorkspaceSummary,
   WorkspaceWidgetData,
+  WorkspaceProposal,
 } from '../pages/Workspace/types';
 
 export class WorkspaceApiError extends Error {
@@ -232,4 +233,38 @@ export async function listDatasetRowAudit(datasetId: number, rowId: number): Pro
   return wrapRequest(
     api.get<DatasetRowAuditEntry[]>(`/workspace/datasets/${datasetId}/rows/${rowId}/audit`),
   );
+}
+
+// --- IA proposals (P3) ---
+
+export async function createWorkspaceProposal(
+  tipo: string,
+  descricaoNatural?: string,
+): Promise<WorkspaceProposal> {
+  return wrapRequest(
+    api.post<WorkspaceProposal>('/workspace/proposals', {
+      tipo,
+      descricaoNatural: descricaoNatural ?? '',
+    }),
+  );
+}
+
+export async function getWorkspaceProposal(id: number): Promise<WorkspaceProposal> {
+  return wrapRequest(api.get<WorkspaceProposal>(`/workspace/proposals/${id}`));
+}
+
+export async function confirmWorkspaceProposal(
+  id: number,
+  ajustes?: {
+    nome?: string;
+    workspaceId?: number;
+  },
+): Promise<WorkspaceProposal> {
+  return wrapRequest(
+    api.post<WorkspaceProposal>(`/workspace/proposals/${id}/confirmar`, ajustes ?? {}),
+  );
+}
+
+export async function discardWorkspaceProposal(id: number): Promise<void> {
+  await wrapRequest(api.post<void>(`/workspace/proposals/${id}/descartar`));
 }
