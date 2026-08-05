@@ -1,4 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useMemo } from 'react';
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+  Outlet,
+  type RouteObject,
+} from 'react-router-dom';
 import { CircularProgress, Box } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { Login } from '../pages/Login';
@@ -55,62 +62,77 @@ function PrivateRoute() {
   return <Outlet />;
 }
 
-// Componente que envolve tudo com o BrowserRouter
+export const routeObjects: RouteObject[] = [
+  { path: '/login', element: <Login /> },
+  {
+    element: <PrivateRoute />,
+    children: [
+      {
+        element: <Layout />,
+        children: [
+          { path: '/dashboard', element: <Dashboard /> },
+          {
+            element: <DashboardCustomRoute />,
+            children: [{ path: '/meu-dashboard', element: <MeuDashboard /> }],
+          },
+          {
+            element: <WorkspaceRoute />,
+            children: [
+              { path: '/workspace', element: <WorkspaceHubPage /> },
+              { path: '/workspace/datasets', element: <DatasetListPage /> },
+              { path: '/workspace/datasets/:id/historico', element: <DatasetHistoryPage /> },
+              { path: '/workspace/datasets/:id', element: <DatasetEditorPage /> },
+              { path: '/workspace/templates/publish', element: <TemplatePublishPage /> },
+              { path: '/workspace/templates/:templateId/upgrade', element: <TemplateUpgradePage /> },
+              { path: '/workspace/templates', element: <TemplateCatalogPage /> },
+              { path: '/workspace/assistente', element: <WorkspaceAssistantPage /> },
+              { path: '/workspace/:workspaceId/widgets/novo', element: <WidgetBuilderPage /> },
+              { path: '/workspace/:workspaceId/sugestoes', element: <WorkspaceSuggestionsPage /> },
+              { path: '/workspace/:workspaceId', element: <WorkspaceDetailPage /> },
+            ],
+          },
+          { path: '/funcionarios', element: <Funcionarios /> },
+          { path: '/folha-pagamento', element: <FolhaPagamento /> },
+          { path: '/beneficios-mensais', element: <BeneficiosMensais /> },
+          { path: '/beneficios', element: <Navigate to="/beneficios-mensais" replace /> },
+          { path: '/relatorios', element: <Relatorios /> },
+          {
+            element: <ApiKeyRoute />,
+            children: [{ path: '/api-keys', element: <ApiKeys /> }],
+          },
+          {
+            element: <AdminRoute />,
+            children: [
+              { path: '/usuarios', element: <Usuarios /> },
+              { path: '/linhas-negocio', element: <LinhasNegocio /> },
+              { path: '/centros-custo', element: <CentrosCusto /> },
+              { path: '/cargos', element: <Cargos /> },
+              { path: '/rubricas', element: <Rubricas /> },
+              { path: '/rubricas-fixas', element: <RubricasFixas /> },
+              { path: '/tipos-beneficio', element: <TiposBeneficio /> },
+              { path: '/organograma', element: <Organograma /> },
+              { path: '/importacao', element: <Importacao /> },
+            ],
+          },
+          { path: '/', element: <Navigate to="/dashboard" replace /> },
+        ],
+      },
+    ],
+  },
+  { path: '*', element: <Navigate to="/dashboard" replace /> },
+];
+
 export function RouterWithAuth() {
+  const router = useMemo(() => createBrowserRouter(routeObjects), []);
+
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<PrivateRoute />}>
-            <Route element={<Layout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route element={<DashboardCustomRoute />}>
-                <Route path="/meu-dashboard" element={<MeuDashboard />} />
-              </Route>
-              <Route element={<WorkspaceRoute />}>
-                <Route path="/workspace" element={<WorkspaceHubPage />} />
-                <Route path="/workspace/datasets" element={<DatasetListPage />} />
-                <Route path="/workspace/datasets/:id/historico" element={<DatasetHistoryPage />} />
-                <Route path="/workspace/datasets/:id" element={<DatasetEditorPage />} />
-                <Route path="/workspace/templates/publish" element={<TemplatePublishPage />} />
-                <Route path="/workspace/templates/:templateId/upgrade" element={<TemplateUpgradePage />} />
-                <Route path="/workspace/templates" element={<TemplateCatalogPage />} />
-                <Route path="/workspace/assistente" element={<WorkspaceAssistantPage />} />
-                <Route path="/workspace/:workspaceId/widgets/novo" element={<WidgetBuilderPage />} />
-                <Route path="/workspace/:workspaceId/sugestoes" element={<WorkspaceSuggestionsPage />} />
-                <Route path="/workspace/:workspaceId" element={<WorkspaceDetailPage />} />
-              </Route>
-              <Route path="/funcionarios" element={<Funcionarios />} />
-              <Route path="/folha-pagamento" element={<FolhaPagamento />} />
-              <Route path="/beneficios-mensais" element={<BeneficiosMensais />} />
-              <Route path="/beneficios" element={<Navigate to="/beneficios-mensais" replace />} />
-              <Route path="/relatorios" element={<Relatorios />} />
-              <Route element={<ApiKeyRoute />}>
-                <Route path="/api-keys" element={<ApiKeys />} />
-              </Route>
-              <Route element={<AdminRoute />}>
-                <Route path="/usuarios" element={<Usuarios />} />
-                <Route path="/linhas-negocio" element={<LinhasNegocio />} />
-                <Route path="/centros-custo" element={<CentrosCusto />} />
-                <Route path="/cargos" element={<Cargos />} />
-                <Route path="/rubricas" element={<Rubricas />} />
-                <Route path="/rubricas-fixas" element={<RubricasFixas />} />
-                <Route path="/tipos-beneficio" element={<TiposBeneficio />} />
-                <Route path="/organograma" element={<Organograma />} />
-                <Route path="/importacao" element={<Importacao />} />
-              </Route>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            </Route>
-          </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   );
 }
 
 // Mantendo o AppRoutes para compatibilidade
 export function AppRoutes() {
   return <RouterWithAuth />;
-} 
+}
