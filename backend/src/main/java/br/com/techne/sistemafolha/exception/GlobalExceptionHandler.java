@@ -26,6 +26,9 @@ import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetRowNotFoundEx
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceNameConflictException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
+import br.com.techne.sistemafolha.workspace.domain.TemplatePublishException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateInstallationNotFoundException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceWidgetDefinitionNotFoundException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioAcessoNegadoException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioGeracaoLimiteException;
@@ -218,6 +221,26 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
             WorkspaceQuotaExceededException.CODE + ": " + ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(TemplatePublishException.class)
+    public ResponseEntity<ErrorResponse> handleTemplatePublishException(TemplatePublishException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(WorkspaceTemplateNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceTemplateNotFoundException(
+            WorkspaceTemplateNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkspaceTemplateInstallationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceTemplateInstallationNotFoundException(
+            WorkspaceTemplateInstallationNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(DatasetRowValidationException.class)

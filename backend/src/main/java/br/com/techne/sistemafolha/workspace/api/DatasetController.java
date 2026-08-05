@@ -1,5 +1,6 @@
 package br.com.techne.sistemafolha.workspace.api;
 
+import br.com.techne.sistemafolha.workspace.application.DatasetAuditService;
 import br.com.techne.sistemafolha.workspace.application.DatasetRowService;
 import br.com.techne.sistemafolha.workspace.application.DatasetService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +29,7 @@ public class DatasetController {
 
     private final DatasetService datasetService;
     private final DatasetRowService datasetRowService;
+    private final DatasetAuditService datasetAuditService;
 
     @GetMapping
     @Operation(summary = "Lista datasets do usuário autenticado")
@@ -111,5 +113,15 @@ public class DatasetController {
             @PathVariable Long rowId) {
         datasetRowService.removerLinha(authentication.getName(), id, rowId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/rows/{rowId}/audit")
+    @Operation(summary = "Histórico de auditoria da linha (WKS-23)")
+    public ResponseEntity<List<DatasetRowAuditEntryDTO>> listarAuditoriaLinha(
+            Authentication authentication,
+            @PathVariable Long id,
+            @PathVariable Long rowId) {
+        datasetRowService.obterLinha(authentication.getName(), id, rowId);
+        return ResponseEntity.ok(datasetAuditService.listarHistorico(rowId));
     }
 }

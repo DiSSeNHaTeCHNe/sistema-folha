@@ -4,9 +4,11 @@ import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 import br.com.techne.sistemafolha.config.SecurityConfig;
 import br.com.techne.sistemafolha.exception.GlobalExceptionHandler;
 import br.com.techne.sistemafolha.security.JwtService;
+import br.com.techne.sistemafolha.workspace.application.DatasetAuditService;
 import br.com.techne.sistemafolha.workspace.application.DatasetRowService;
 import br.com.techne.sistemafolha.workspace.application.DatasetService;
 import br.com.techne.sistemafolha.workspace.domain.DatasetFieldType;
+import br.com.techne.sistemafolha.workspace.domain.DatasetRowAuditAction;
 import br.com.techne.sistemafolha.workspace.domain.DatasetRowValidationException;
 import br.com.techne.sistemafolha.workspace.domain.FieldValidationError;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceAcessoNegadoException;
@@ -49,6 +51,9 @@ class DatasetControllerWebMvcTest {
 
     @MockBean
     private DatasetRowService datasetRowService;
+
+    @MockBean
+    private DatasetAuditService datasetAuditService;
 
     @MockBean
     private JwtService jwtService;
@@ -227,5 +232,32 @@ class DatasetControllerWebMvcTest {
             .andExpect(status().isNoContent());
 
         verify(datasetRowService).removerLinha("user-a", 1L, 10L);
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void listarAuditoriaLinha_retornaHistoricoCronologico() throws Exception {
+        when(datasetRowService.obterLinha("user-a", 1L, 10L))
+            .thenReturn(new DatasetRowDTO(10L, 1L, Map.of("valor", 5), 0));
+        when(datasetAuditService.listarHistorico(10L)).thenReturn(List.of(
+            new DatasetRowAuditEntryDTO(1L, 10L, 5L, DatasetRowAuditAction.CREATE, null,
+                Map.of("valor", 5), java.time.LocalDateTime.parse("2026-01-01T10:00:00")),
+            new DatasetRowAuditEntryDTO(2L, 10L, 5L, DatasetRowAuditAction.UPDATE,
+                Map.of("valor", 5), Map.of("valor", 10), java.time.LocalDateTime.parse("2026-01-01T11:00:00"))));
+
+        mockMvc.perform(get("/workspace/datasets/1/rows/10/audit"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].acao").value("CREATE"))
+            .andExpect(jsonPath("$[1].acao").value("UPDATE"));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void listarAuditoriaLinha_inexistente_retorna404() throws Exception {
+        when(datasetRowService.obterLinha("user-a", 1L, 99L))
+            .thenThrow(new br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetRowNotFoundException(1L, 99L));
+
+        mockMvc.perform(get("/workspace/datasets/1/rows/99/audit"))
+            .andExpect(status().isNotFound());
     }
 }
