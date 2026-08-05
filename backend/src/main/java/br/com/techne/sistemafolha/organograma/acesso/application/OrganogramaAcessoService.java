@@ -177,6 +177,25 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean noEstaNaSubarvore(Long noDescendenteId, Long noRaizId) {
+        if (noDescendenteId == null || noRaizId == null) {
+            return false;
+        }
+        if (noDescendenteId.equals(noRaizId)) {
+            return true;
+        }
+        NoOrganograma atual = noOrganogramaRepository.findByIdAndAtivoTrue(noDescendenteId).orElse(null);
+        while (atual != null && atual.getParent() != null) {
+            if (atual.getParent().getId().equals(noRaizId)) {
+                return true;
+            }
+            atual = noOrganogramaRepository.findByIdAndAtivoTrue(atual.getParent().getId()).orElse(null);
+        }
+        return false;
+    }
+
     private void coletarCentrosCustoRecursivo(NoOrganograma no, Set<Long> centrosAcessiveis) {
         List<CentroCustoOrganograma> centros = centroCustoOrganogramaRepository
             .findByNoOrganogramaWithCentroCustoAtivo(no);

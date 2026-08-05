@@ -62,4 +62,32 @@ public class WorkspaceAccessGuard {
             return new ResolvedWorkspaceAccess(true, null, null, null);
         }
     }
+
+    /**
+     * WKS-16: template visível para usuários na subárvore do nó do publicador (ou acesso total).
+     */
+    public boolean podeVerTemplate(AccessContextDTO viewerContext, Long publicadorUsuarioId,
+                                   Long templateOrganogramaNoId) {
+        if (viewerContext.acessoTotal()) {
+            return true;
+        }
+        if (deveNegarAcesso(viewerContext)) {
+            return false;
+        }
+        if (templateOrganogramaNoId == null) {
+            return false;
+        }
+        Long viewerNoId = viewerContext.noOrganogramaId();
+        if (viewerNoId == null) {
+            return false;
+        }
+        return organogramaAcessoPort.noEstaNaSubarvore(viewerNoId, templateOrganogramaNoId);
+    }
+
+    public void assertPodeVerTemplate(AccessContextDTO viewerContext, Long publicadorUsuarioId,
+                                      Long templateOrganogramaNoId) {
+        if (!podeVerTemplate(viewerContext, publicadorUsuarioId, templateOrganogramaNoId)) {
+            throw new WorkspaceAcessoNegadoException();
+        }
+    }
 }

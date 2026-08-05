@@ -14,6 +14,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class TemplateStructurePayload {
 
+    private Long sourceId;
     private String kind;
     private String nome;
     private List<DatasetFieldSchema> schema = new ArrayList<>();
