@@ -23,6 +23,8 @@ import br.com.techne.sistemafolha.workspace.domain.WorkspaceAcessoNegadoExceptio
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetConflictException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetRowNotFoundException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceNameConflictException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceWidgetDefinitionNotFoundException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioAcessoNegadoException;
@@ -190,6 +192,18 @@ public class GlobalExceptionHandler {
             WorkspaceWidgetDefinitionNotFoundException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkspaceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceNotFoundException(WorkspaceNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkspaceNameConflictException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceNameConflictException(WorkspaceNameConflictException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(WorkspaceDatasetConflictException.class)
