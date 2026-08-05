@@ -55,6 +55,22 @@ describe('WidgetConfigPanel', () => {
     expect(onChange).toHaveBeenCalledWith({ competencia: '2026-06' });
   });
 
+  it('updates tipoVisualizacao config for distribution widget (DASHC-34)', async () => {
+    const onChange = vi.fn();
+    renderWithProviders(
+      <WidgetConfigPanel
+        widgetId="grafico-funcionarios-por-cc"
+        config={null}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Configurações do widget' }));
+    fireEvent.mouseDown(screen.getByLabelText('Visualização'));
+    const listbox = await screen.findByRole('listbox');
+    fireEvent.click(within(listbox).getByRole('option', { name: 'Barras' }));
+    expect(onChange).toHaveBeenCalledWith({ tipoVisualizacao: 'BAR' });
+  });
+
   it('updates topN config for distribution widget (DASHC-32)', async () => {
     const onChange = vi.fn();
     renderWithProviders(

@@ -20,6 +20,15 @@ describe('widgetConfigValidation', () => {
     expect(result.errors[0]).toMatch(/yyyy-MM/);
   });
 
+  it('accepts centroCustoId and linhaNegocioId filter config (DASHC-33)', () => {
+    const result = validateWidgetConfig('grafico-funcionarios-por-cc', {
+      centroCustoId: 2,
+      linhaNegocioId: 3,
+    });
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
   it('rejects invalid tipoVisualizacao', () => {
     const result = validateWidgetConfig('grafico-funcionarios-por-cc', {
       tipoVisualizacao: 'DONUT' as 'PIE',

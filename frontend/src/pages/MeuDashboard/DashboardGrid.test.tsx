@@ -149,12 +149,54 @@ describe('DashboardGrid', () => {
     expect(next[1].ordem).toBe(1);
   });
 
-  it('uses responsive span without mutating widget data', async () => {
+  it('uses responsive span without mutating widget data (DASHC-12)', async () => {
+    const widgetsCopy = widgets.map((widget) => ({ ...widget }));
     renderWithProviders(
-      <DashboardGrid widgets={widgets} competenciaGlobal="2026-06" editMode={false} />,
+      <DashboardGrid widgets={widgetsCopy} competenciaGlobal="2026-06" editMode={false} />,
       { wrapper: createWrapper() },
     );
     await waitFor(() => expect(screen.getByLabelText('Total de Funcionários')).toBeInTheDocument());
-    expect(widgets[0].colSpan).toBe(3);
+
+    const gridItem = screen.getByLabelText('Total de Funcionários').parentElement;
+    expect(gridItem).toBeTruthy();
+    const cssText = collectInjectedCss(gridItem!);
+
+    expect(cssText).toMatch(/grid-column:\s*span\s+12/i);
+    expect(cssText).toMatch(/min-width:\s*900px[\s\S]*grid-column:\s*span\s+3/i);
+    expect(widgetsCopy[0].colSpan).toBe(3);
   });
 });
+
+function collectInjectedCss(element: HTMLElement): string {
+  const classNames = element.className.split(/\s+/).filter(Boolean);
+  let css = '';
+
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      for (const rule of Array.from(sheet.cssRules)) {
+        if (rule instanceof CSSMediaRule) {
+          for (const innerRule of Array.from(rule.cssRules)) {
+            if (
+              innerRule instanceof CSSStyleRule &&
+              classNames.some((className) => innerRule.selectorText.includes(className))
+            ) {
+              css += `${rule.conditionText}{${innerRule.cssText}}`;
+            }
+          }
+          continue;
+        }
+
+        if (
+          rule instanceof CSSStyleRule &&
+          classNames.some((className) => rule.selectorText.includes(className))
+        ) {
+          css += rule.cssText;
+        }
+      }
+    } catch {
+      // Ignore cross-origin stylesheets in jsdom.
+    }
+  }
+
+  return css;
+}

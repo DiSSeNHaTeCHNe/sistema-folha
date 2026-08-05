@@ -6,20 +6,13 @@ import { useWidgetData } from './useWidgetData';
 import { getWidgetData } from '../../../services/dashboardWidgetService';
 import type { WidgetData } from '../types';
 
-vi.mock('../../../services/dashboardWidgetService', () => ({
-  buildWidgetQueryParams: vi.fn((config, competenciaGlobal) => {
-    const params: Record<string, string | number> = {};
-    const competencia = config?.competencia ?? competenciaGlobal ?? undefined;
-    if (competencia) {
-      params.competencia = competencia;
-    }
-    if (config?.topN != null) {
-      params.topN = config.topN;
-    }
-    return params;
-  }),
-  getWidgetData: vi.fn(),
-}));
+vi.mock('../../../services/dashboardWidgetService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../services/dashboardWidgetService')>();
+  return {
+    ...actual,
+    getWidgetData: vi.fn(),
+  };
+});
 
 const mockData: WidgetData = {
   widgetId: 'kpi-total-funcionarios',
@@ -89,6 +82,26 @@ describe('useWidgetData', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error).toBeTruthy();
+  });
+
+  it('passes CC/LN filter config to widget data API (DASHC-33)', async () => {
+    const { result } = renderHook(
+      () =>
+        useWidgetData(
+          'grafico-funcionarios-por-cc',
+          'inst-1',
+          { centroCustoId: 2, linhaNegocioId: 5 },
+          '2026-06',
+        ),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(getWidgetData).toHaveBeenCalledWith('grafico-funcionarios-por-cc', {
+      competencia: '2026-06',
+      centroCustoId: 2,
+      linhaNegocioId: 5,
+    });
   });
 
   it('refetches when competencia global changes', async () => {

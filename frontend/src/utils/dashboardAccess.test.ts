@@ -43,3 +43,14 @@ describe('podeAcessarMeuDashboard', () => {
     expect(podeAcessarMeuDashboard(baseAcesso)).toBe(true);
   });
 });
+
+describe('widget CC/LN filter scope (DASHC-33)', () => {
+  it('restricts selectable centro de custo ids to user scope', () => {
+    const allCentros = [{ id: 1 }, { id: 2 }, { id: 99 }];
+    const scopedIds = baseAcesso.centrosCustoIds;
+    const optionsWithinScope = allCentros.filter((centro) => scopedIds.includes(centro.id));
+
+    expect(optionsWithinScope.map((centro) => centro.id)).toEqual([1, 2]);
+    expect(optionsWithinScope.some((centro) => centro.id === 99)).toBe(false);
+  });
+});

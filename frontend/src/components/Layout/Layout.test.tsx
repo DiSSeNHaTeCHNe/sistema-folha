@@ -1,10 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './index';
 import { defaultMockAuth, renderWithProviders } from '../../test/renderWithProviders';
+import type { AcessoUsuario } from '../../types';
 
 const mockLogout = vi.fn();
+let mockAcessoUsuario: AcessoUsuario | null = null;
 
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -12,6 +14,7 @@ vi.mock('../../contexts/AuthContext', () => ({
     user: { id: 1, login: 'admin', nome: 'Admin User', permissoes: ['ADMIN'] },
     isAuthenticated: true,
     logout: mockLogout,
+    acessoUsuario: mockAcessoUsuario,
   }),
 }));
 
@@ -37,6 +40,32 @@ function renderLayout() {
 }
 
 describe('Layout', () => {
+  beforeEach(() => {
+    mockAcessoUsuario = null;
+  });
+
+  it('shows Dashboard and Meu Dashboard simultaneously for scoped user (DASHC-05)', () => {
+    mockAcessoUsuario = {
+      temFuncionarioVinculado: true,
+      temNoOrganograma: true,
+      acessoTotal: false,
+      centrosCustoIds: [1, 2],
+      quantidadeCentrosAcessiveis: 2,
+    };
+    renderLayout();
+
+    expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Meu Dashboard').length).toBeGreaterThan(0);
+  });
+
+  it('hides Meu Dashboard menu item when user has no data scope (DASHC-05)', () => {
+    mockAcessoUsuario = null;
+    renderLayout();
+
+    expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Meu Dashboard')).not.toBeInTheDocument();
+  });
+
   it('renders app title and main navigation items', () => {
     renderLayout();
 
