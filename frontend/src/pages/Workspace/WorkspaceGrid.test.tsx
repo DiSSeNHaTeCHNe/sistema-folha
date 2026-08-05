@@ -135,7 +135,7 @@ describe('WorkspaceGrid', () => {
         />
       </QueryClientProvider>,
     );
-    expect(screen.getAllByRole('alert').some((el) => el.textContent?.includes('Fórmula inválida'))).toBe(true);
+    expect(screen.getAllByRole('status').some((el) => el.textContent?.includes('Fórmula inválida'))).toBe(true);
   });
 
   it('reorders widgets in edit mode', () => {

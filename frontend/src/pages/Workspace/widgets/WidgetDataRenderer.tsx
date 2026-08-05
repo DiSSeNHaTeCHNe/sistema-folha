@@ -1,4 +1,4 @@
-import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { getWorkspaceWidgetData } from '../../../services/workspaceService';
 import type { UserWidgetDefinition, WorkspaceLayoutWidget } from '../types';
@@ -9,6 +9,7 @@ import { DynamicChartWidget } from './DynamicChartWidget';
 import { WidgetDataRenderer as DashboardWidgetDataRenderer } from '../../MeuDashboard/WidgetDataRenderer';
 import { getWidgetDefinition } from '../../MeuDashboard/widgets/registry';
 import type { WidgetInstance } from '../../MeuDashboard/types';
+import { WidgetErrorBanner } from '../components/WidgetErrorBanner';
 
 interface WidgetDataRendererProps {
   workspaceId: number;
@@ -70,9 +71,11 @@ export function WidgetDataRenderer({
 
   if (userDef?.invalido || data?.invalido) {
     return (
-      <Alert severity="warning" role="alert">
-        Fórmula inválida — revise a definição do widget &quot;{userDef?.nome ?? definition?.titulo}&quot;.
-      </Alert>
+      <WidgetErrorBanner
+        variant="warn"
+        title="Fórmula inválida"
+        message={`Revise a definição do widget "${userDef?.nome ?? definition?.titulo}".`}
+      />
     );
   }
 
@@ -86,16 +89,15 @@ export function WidgetDataRenderer({
 
   if (isError) {
     return (
-      <Alert
-        severity="error"
+      <WidgetErrorBanner
+        title="Erro ao carregar"
+        message="Não foi possível carregar os dados deste widget."
         action={
           <Button color="inherit" size="small" onClick={() => void refetch()}>
             Recarregar
           </Button>
         }
-      >
-        Erro ao carregar dados do widget
-      </Alert>
+      />
     );
   }
 
@@ -108,7 +110,7 @@ export function WidgetDataRenderer({
   }
 
   if (!definition) {
-    return <Alert severity="error">Widget desconhecido</Alert>;
+    return <WidgetErrorBanner message="Widget desconhecido" />;
   }
 
   const title = userDef?.nome ?? definition.titulo;

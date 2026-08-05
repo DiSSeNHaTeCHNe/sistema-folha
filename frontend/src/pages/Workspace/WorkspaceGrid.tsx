@@ -17,7 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { Alert, Box, IconButton, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, IconButton, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import type { UserWidgetDefinition, WorkspaceLayoutWidget } from './types';
 import { COL_SPAN_PRESETS, type ColSpanPreset } from './types';
 import { WidgetFrame } from '../MeuDashboard/WidgetFrame';
@@ -60,10 +60,6 @@ function SortableWidgetItem({
     userDefinitions.map((item) => [item.id, { nome: item.nome, tipo: item.tipo, invalido: item.invalido }]),
   );
   const definition = getWorkspaceWidgetDefinition(instance, userMap);
-  const userDef = instance.userWidgetDefinitionId
-    ? userDefinitions.find((item) => item.id === instance.userWidgetDefinitionId)
-    : undefined;
-  const invalid = userDef?.invalido ?? false;
   const sourceKind = resolveWidgetSource(instance, userDefinitions);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -131,11 +127,6 @@ function SortableWidgetItem({
           ) : undefined
         }
       >
-        {invalid && (
-          <Alert severity="warning" role="alert" sx={{ mb: 1 }}>
-            Fórmula inválida neste widget — revise a definição antes de confiar nos números.
-          </Alert>
-        )}
         <WidgetDataRenderer
           workspaceId={workspaceId}
           widget={instance}

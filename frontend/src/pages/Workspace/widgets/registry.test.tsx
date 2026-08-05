@@ -112,7 +112,7 @@ describe('WidgetDataRenderer', () => {
         />
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/Fórmula inválida/i));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/Fórmula inválida/i));
   });
 
   it('renders dynamic KPI data for user widget', async () => {
