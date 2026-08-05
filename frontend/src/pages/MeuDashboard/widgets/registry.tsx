@@ -6,9 +6,8 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import type { ComponentType } from 'react';
-import type { DashboardStats } from '../../../services/dashboardService';
 import { formatMoneyDisplay } from '../../../utils/money';
-import type { WidgetCategoria, WidgetInstance } from '../types';
+import type { WidgetCategoria, WidgetData, WidgetInstance } from '../types';
 import { resolveTopN } from '../widgetConfigOptions';
 import {
   buildCustoPorCentroPie,
@@ -24,7 +23,7 @@ import { TopRubricasWidget } from './TopRubricasWidget';
 
 export interface WidgetProps {
   instance: WidgetInstance;
-  stats?: DashboardStats;
+  data: WidgetData;
   editMode: boolean;
 }
 
@@ -41,7 +40,7 @@ function KpiTotalFuncionarios(props: WidgetProps) {
   return (
     <KpiWidget
       title="Total de Funcionários"
-      value={props.stats?.totalFuncionarios ?? 0}
+      value={props.data.totalFuncionarios ?? 0}
       icon={<People fontSize="large" />}
       color="info"
     />
@@ -52,7 +51,7 @@ function KpiCustoEmpresa(props: WidgetProps) {
   return (
     <KpiWidget
       title="Custo Empresa"
-      value={formatMoneyDisplay(props.stats?.custoMensalFolha ?? 0)}
+      value={formatMoneyDisplay(props.data.custoMensalFolha)}
       icon={<AttachMoney fontSize="large" />}
       color="success"
       valueVariant="h4"
@@ -65,7 +64,7 @@ function KpiBeneficiosAtivos(props: WidgetProps) {
   return (
     <KpiWidget
       title="Benefícios Ativos"
-      value={props.stats?.totalBeneficiosAtivos ?? 0}
+      value={props.data.totalBeneficiosAtivos ?? 0}
       icon={<CardGiftcard fontSize="large" />}
       color="warning"
       valueColor="warning.main"
@@ -74,8 +73,8 @@ function KpiBeneficiosAtivos(props: WidgetProps) {
 }
 
 function KpiRelacaoPd(props: WidgetProps) {
-  const totalProventos = props.stats?.totalProventos ?? 0;
-  const totalDescontos = props.stats?.totalDescontos ?? 0;
+  const totalProventos = props.data.totalProventos ?? 0;
+  const totalDescontos = props.data.totalDescontos ?? 0;
   const total = totalProventos + totalDescontos;
   const percentual = total > 0 ? ((totalProventos / total) * 100).toFixed(1) : '0.0';
 
@@ -94,11 +93,11 @@ function KpiRelacaoPd(props: WidgetProps) {
 function GraficoFuncionariosPorCc(props: WidgetProps) {
   const theme = useTheme();
   const topN = resolveTopN(props.instance.widgetId, props.instance.config);
-  const data = props.stats ? buildFuncionariosPorCentroPie(props.stats, theme.palette.charts, topN) : [];
+  const chartData = buildFuncionariosPorCentroPie(props.data, theme.palette.charts, topN);
   return (
     <DistribuicaoWidget
       title="Funcionários por Centro de Custo"
-      data={data}
+      data={chartData}
       tipoVisualizacao={props.instance.config?.tipoVisualizacao}
     />
   );
@@ -107,11 +106,11 @@ function GraficoFuncionariosPorCc(props: WidgetProps) {
 function GraficoFuncionariosPorLinha(props: WidgetProps) {
   const theme = useTheme();
   const topN = resolveTopN(props.instance.widgetId, props.instance.config);
-  const data = props.stats ? buildFuncionariosPorLinhaPie(props.stats, theme.palette.charts, topN) : [];
+  const chartData = buildFuncionariosPorLinhaPie(props.data, theme.palette.charts, topN);
   return (
     <DistribuicaoWidget
       title="Funcionários por Linha de Negócio"
-      data={data}
+      data={chartData}
       tipoVisualizacao={props.instance.config?.tipoVisualizacao}
     />
   );
@@ -120,11 +119,11 @@ function GraficoFuncionariosPorLinha(props: WidgetProps) {
 function GraficoCustoPorCc(props: WidgetProps) {
   const theme = useTheme();
   const topN = resolveTopN(props.instance.widgetId, props.instance.config);
-  const data = props.stats ? buildCustoPorCentroPie(props.stats, theme.palette.charts, topN) : [];
+  const chartData = buildCustoPorCentroPie(props.data, theme.palette.charts, topN);
   return (
     <DistribuicaoWidget
       title="Custo Folha por Centro de Custo"
-      data={data}
+      data={chartData}
       currency
       tipoVisualizacao={props.instance.config?.tipoVisualizacao}
     />
@@ -134,11 +133,11 @@ function GraficoCustoPorCc(props: WidgetProps) {
 function GraficoCustoPorLinha(props: WidgetProps) {
   const theme = useTheme();
   const topN = resolveTopN(props.instance.widgetId, props.instance.config);
-  const data = props.stats ? buildCustoPorLinhaPie(props.stats, theme.palette.charts, topN) : [];
+  const chartData = buildCustoPorLinhaPie(props.data, theme.palette.charts, topN);
   return (
     <DistribuicaoWidget
       title="Custo Folha por Linha de Negócio"
-      data={data}
+      data={chartData}
       currency
       tipoVisualizacao={props.instance.config?.tipoVisualizacao}
     />

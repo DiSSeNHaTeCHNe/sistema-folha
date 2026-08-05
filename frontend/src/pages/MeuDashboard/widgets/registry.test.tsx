@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import type { DashboardStats } from '../../../services/dashboardService';
 import { renderWithProviders } from '../../../test/renderWithProviders';
-import type { WidgetInstance } from '../types';
+import type { WidgetData, WidgetInstance } from '../types';
 import { WIDGET_REGISTRY } from './registry';
 
 vi.mock('recharts', () => ({
@@ -34,6 +34,25 @@ const mockStats: DashboardStats = {
   topDescontos: [{ id: 2, codigo: '101', descricao: 'INSS', valorTotal: 15000, quantidadeOcorrencias: 40 }],
   evolucaoMensal: [{ mesAno: '2026-06', valorTotal: 125000, quantidadeFuncionarios: 42 }],
 };
+
+function toWidgetData(widgetId: string): WidgetData {
+  return {
+    widgetId,
+    competencia: '2026-06',
+    semDados: false,
+    totalFuncionarios: mockStats.totalFuncionarios,
+    custoMensalFolha: mockStats.custoMensalFolha,
+    totalBeneficiosAtivos: mockStats.totalBeneficiosAtivos,
+    totalProventos: mockStats.totalProventos,
+    totalDescontos: mockStats.totalDescontos,
+    porLinhaNegocio: mockStats.porLinhaNegocio,
+    porCentroCusto: mockStats.porCentroCusto,
+    porCargo: mockStats.porCargo,
+    topProventos: mockStats.topProventos,
+    topDescontos: mockStats.topDescontos,
+    evolucaoMensal: mockStats.evolucaoMensal,
+  };
+}
 
 const instance: WidgetInstance = {
   widgetId: 'placeholder',
@@ -67,7 +86,7 @@ describe('widget registry', () => {
     'renders %s without variation chips',
     (widgetId, _titulo, Component) => {
       renderWithProviders(
-        <Component instance={{ ...instance, widgetId }} stats={mockStats} editMode={false} />,
+        <Component instance={{ ...instance, widgetId }} data={toWidgetData(widgetId)} editMode={false} />,
       );
       expect(screen.getByText(expectedContent[widgetId])).toBeInTheDocument();
       expect(screen.queryByText(/\+\d+\.\d+% este mês/)).not.toBeInTheDocument();

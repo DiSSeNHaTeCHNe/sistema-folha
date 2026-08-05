@@ -10,12 +10,12 @@ interface TopRubricasWidgetProps extends WidgetProps {
   variant: 'proventos' | 'descontos';
 }
 
-export function TopRubricasWidget({ instance, stats, variant }: TopRubricasWidgetProps) {
+export function TopRubricasWidget({ instance, data, variant }: TopRubricasWidgetProps) {
   const theme = useTheme();
   const chartColors = theme.palette.charts;
   const topN = resolveTopN(instance.widgetId, instance.config);
   const rawItems: RubricaStats[] =
-    variant === 'proventos' ? stats?.topProventos ?? [] : stats?.topDescontos ?? [];
+    variant === 'proventos' ? data.topProventos ?? [] : data.topDescontos ?? [];
   const items = rawItems.slice(0, topN);
   const title = variant === 'proventos' ? `Top ${topN} Proventos` : `Top ${topN} Descontos`;
   const avatarColor = variant === 'proventos' ? 'success' : 'error';

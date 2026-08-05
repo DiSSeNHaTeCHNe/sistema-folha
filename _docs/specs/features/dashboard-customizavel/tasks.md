@@ -598,8 +598,8 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-37…39
 
 **Done when**:
-- [ ] Duas instâncias mesmo widget com configs distintas renderizam dados distintos
-- [ ] Remover uma instância não afeta a outra
+- [x] Duas instâncias mesmo widget com configs distintas renderizam dados distintos
+- [x] Remover uma instância não afeta a outra
 
 **Tests**: unit  
 **Gate**: quick FE  

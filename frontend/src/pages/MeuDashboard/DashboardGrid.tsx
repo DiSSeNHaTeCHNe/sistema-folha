@@ -18,17 +18,17 @@ import { CSS } from '@dnd-kit/utilities';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Box, IconButton, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import type { DashboardStats } from '../../services/dashboardService';
 import type { WidgetInstance } from './types';
 import { COL_SPAN_PRESETS, type ColSpanPreset } from './types';
 import { WidgetFrame } from './WidgetFrame';
 import { WidgetConfigPanel } from './WidgetConfigPanel';
+import { WidgetDataRenderer } from './WidgetDataRenderer';
 import { validateWidgetConfig } from './widgetConfigValidation';
 import { getWidgetDefinition } from './widgets/registry';
 
 interface DashboardGridProps {
   widgets: WidgetInstance[];
-  stats: DashboardStats;
+  competenciaGlobal: string | null;
   editMode: boolean;
   onWidgetsChange?: (widgets: WidgetInstance[]) => void;
   onRemoveWidget?: (instanceId: string) => void;
@@ -40,14 +40,14 @@ function normalizeOrder(widgets: WidgetInstance[]): WidgetInstance[] {
 
 function SortableWidgetItem({
   instance,
-  stats,
+  competenciaGlobal,
   editMode,
   onColSpanChange,
   onConfigChange,
   onRemoveWidget,
 }: {
   instance: WidgetInstance;
-  stats: DashboardStats;
+  competenciaGlobal: string | null;
   editMode: boolean;
   onColSpanChange: (instanceId: string, colSpan: number) => void;
   onConfigChange?: (instanceId: string, config: WidgetInstance['config']) => void;
@@ -63,7 +63,6 @@ function SortableWidgetItem({
     return null;
   }
 
-  const { Component } = definition;
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -129,13 +128,24 @@ function SortableWidgetItem({
             onChange={(config) => onConfigChange(instance.instanceId, config)}
           />
         )}
-        <Component instance={instance} stats={stats} editMode={editMode} />
+        <WidgetDataRenderer
+          instance={instance}
+          competenciaGlobal={competenciaGlobal}
+          editMode={editMode}
+          definition={definition}
+        />
       </WidgetFrame>
     </Box>
   );
 }
 
-export function DashboardGrid({ widgets, stats, editMode, onWidgetsChange, onRemoveWidget }: DashboardGridProps) {
+export function DashboardGrid({
+  widgets,
+  competenciaGlobal,
+  editMode,
+  onWidgetsChange,
+  onRemoveWidget,
+}: DashboardGridProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -191,7 +201,7 @@ export function DashboardGrid({ widgets, stats, editMode, onWidgetsChange, onRem
         <SortableWidgetItem
           key={instance.instanceId}
           instance={instance}
-          stats={stats}
+          competenciaGlobal={competenciaGlobal}
           editMode={editMode}
           onColSpanChange={handleColSpanChange}
           onConfigChange={editMode ? handleConfigChange : undefined}

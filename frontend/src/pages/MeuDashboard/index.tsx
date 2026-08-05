@@ -13,8 +13,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { getDashboardStats } from '../../services/dashboardService';
-import type { DashboardStats } from '../../services/dashboardService';
 import { useNotification } from '../../hooks/useNotification';
 import { Notification } from '../../components/Notification';
 import { DashboardGrid } from './DashboardGrid';
@@ -29,8 +27,6 @@ import { validateLayoutConfigs } from './widgetConfigValidation';
 
 function MeuDashboardContent() {
   const { competenciaGlobal, setCompetenciaGlobal } = useCompetenciaGlobal();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const { notification, showNotification, hideNotification } = useNotification();
@@ -48,31 +44,6 @@ function MeuDashboardContent() {
     updateDraftWidgets,
     draftLayout,
   } = useDashboardLayout();
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadStats() {
-      try {
-        setStatsLoading(true);
-        const data = await getDashboardStats();
-        if (!cancelled) {
-          setStats(data);
-        }
-      } catch {
-        if (!cancelled) {
-          showNotification('Erro ao carregar dados do dashboard', 'error');
-        }
-      } finally {
-        if (!cancelled) {
-          setStatsLoading(false);
-        }
-      }
-    }
-    void loadStats();
-    return () => {
-      cancelled = true;
-    };
-  }, [showNotification]);
 
   useEffect(() => {
     if (!dirty) {
@@ -138,9 +109,7 @@ function MeuDashboardContent() {
     }
   };
 
-  const loading = layoutLoading || statsLoading;
-
-  if (loading) {
+  if (layoutLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress size={60} aria-label="Carregando Meu Dashboard" />
@@ -148,7 +117,7 @@ function MeuDashboardContent() {
     );
   }
 
-  if (!stats || !activeLayout) {
+  if (!activeLayout) {
     return <Alert severity="error">Erro ao carregar Meu Dashboard</Alert>;
   }
 
@@ -195,7 +164,7 @@ function MeuDashboardContent() {
         ) : (
           <DashboardGrid
             widgets={widgets}
-            stats={stats}
+            competenciaGlobal={competenciaGlobal}
             editMode={editMode}
             onWidgetsChange={editMode ? updateDraftWidgets : undefined}
             onRemoveWidget={editMode ? handleRemoveWidget : undefined}

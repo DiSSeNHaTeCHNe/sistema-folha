@@ -11,12 +11,12 @@ import {
 import type { WidgetProps } from './registry';
 import { widgetCardSx } from './cardStyles';
 
-export function EvolucaoMensalWidget({ stats }: WidgetProps) {
+export function EvolucaoMensalWidget({ data }: WidgetProps) {
   const theme = useTheme();
   const chartColors = theme.palette.charts;
   const areaChartColor = chartColors[0];
 
-  const areaData = (stats?.evolucaoMensal ?? []).map((item) => ({
+  const areaData = (data.evolucaoMensal ?? []).map((item) => ({
     mes: item.mesAno,
     folha: item.valorTotal,
     funcionarios: item.quantidadeFuncionarios,

@@ -1,4 +1,4 @@
-import type { DashboardStats } from '../../../services/dashboardService';
+import type { WidgetData } from '../types';
 
 export type PieLegendEntry = {
   name: string;
@@ -26,41 +26,41 @@ export function buildPieData(
 }
 
 export function buildFuncionariosPorCentroPie(
-  stats: DashboardStats,
+  data: Pick<WidgetData, 'porCentroCusto'>,
   chartColors: readonly string[],
   maxItems = 5,
 ) {
-  return buildPieData(stats.porCentroCusto, 'quantidadeFuncionarios', chartColors, maxItems, 15);
+  return buildPieData(data.porCentroCusto ?? [], 'quantidadeFuncionarios', chartColors, maxItems, 15);
 }
 
 export function buildFuncionariosPorLinhaPie(
-  stats: DashboardStats,
+  data: Pick<WidgetData, 'porLinhaNegocio'>,
   chartColors: readonly string[],
   maxItems = 6,
 ) {
-  return buildPieData(stats.porLinhaNegocio, 'quantidadeFuncionarios', chartColors, maxItems, 12);
+  return buildPieData(data.porLinhaNegocio ?? [], 'quantidadeFuncionarios', chartColors, maxItems, 12);
 }
 
 export function buildCustoPorCentroPie(
-  stats: DashboardStats,
+  data: Pick<WidgetData, 'porCentroCusto'>,
   chartColors: readonly string[],
   maxItems = 6,
 ) {
-  return buildPieData(stats.porCentroCusto, 'valorTotal', chartColors, maxItems, 12);
+  return buildPieData(data.porCentroCusto ?? [], 'valorTotal', chartColors, maxItems, 12);
 }
 
 export function buildCustoPorLinhaPie(
-  stats: DashboardStats,
+  data: Pick<WidgetData, 'porLinhaNegocio'>,
   chartColors: readonly string[],
   maxItems = 6,
 ) {
-  return buildPieData(stats.porLinhaNegocio, 'valorTotal', chartColors, maxItems, 12);
+  return buildPieData(data.porLinhaNegocio ?? [], 'valorTotal', chartColors, maxItems, 12);
 }
 
 export function buildFuncionariosPorCargoPie(
-  stats: DashboardStats,
+  data: Pick<WidgetData, 'porCargo'>,
   chartColors: readonly string[],
   maxItems = 6,
 ) {
-  return buildPieData(stats.porCargo ?? [], 'quantidadeFuncionarios', chartColors, maxItems, 12);
+  return buildPieData(data.porCargo ?? [], 'quantidadeFuncionarios', chartColors, maxItems, 12);
 }

@@ -4,15 +4,15 @@ import { resolveTopN } from '../widgetConfigOptions';
 import { buildFuncionariosPorCargoPie } from './chartUtils';
 import { DistribuicaoWidget } from './DistribuicaoWidget';
 
-export function FuncionariosPorCargoWidget({ instance, stats }: WidgetProps) {
+export function FuncionariosPorCargoWidget({ instance, data: widgetData }: WidgetProps) {
   const theme = useTheme();
   const topN = resolveTopN(instance.widgetId, instance.config);
-  const data = stats ? buildFuncionariosPorCargoPie(stats, theme.palette.charts, topN) : [];
+  const chartData = buildFuncionariosPorCargoPie(widgetData, theme.palette.charts, topN);
 
   return (
     <DistribuicaoWidget
       title="Funcionários por Cargo"
-      data={data}
+      data={chartData}
       tipoVisualizacao={instance.config?.tipoVisualizacao}
     />
   );

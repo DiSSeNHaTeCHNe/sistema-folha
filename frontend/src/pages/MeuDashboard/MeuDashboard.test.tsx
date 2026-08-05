@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import MeuDashboard from './index';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { getDashboardStats } from '../../services/dashboardService';
+import { getWidgetData } from '../../services/dashboardWidgetService';
 import {
   getDashboardLayout,
   getWidgetCatalog,
@@ -10,7 +11,7 @@ import {
   saveDashboardLayout,
 } from '../../services/dashboardLayoutService';
 import type { DashboardStats } from '../../services/dashboardService';
-import type { DashboardLayout } from './types';
+import type { DashboardLayout, WidgetData } from './types';
 
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -26,6 +27,21 @@ vi.mock('recharts', () => ({
 
 vi.mock('../../services/dashboardService', () => ({
   getDashboardStats: vi.fn(),
+}));
+
+vi.mock('../../services/dashboardWidgetService', () => ({
+  buildWidgetQueryParams: vi.fn((config, competenciaGlobal) => {
+    const params: Record<string, string | number> = {};
+    const competencia = config?.competencia ?? competenciaGlobal ?? undefined;
+    if (competencia) {
+      params.competencia = competencia;
+    }
+    if (config?.topN != null) {
+      params.topN = config.topN;
+    }
+    return params;
+  }),
+  getWidgetData: vi.fn(),
 }));
 
 vi.mock('../../services/dashboardLayoutService', () => ({
@@ -48,6 +64,25 @@ const mockStats: DashboardStats = {
   topDescontos: [{ id: 2, codigo: '101', descricao: 'INSS', valorTotal: 15000, quantidadeOcorrencias: 40 }],
   evolucaoMensal: [{ mesAno: '2026-06', valorTotal: 125000, quantidadeFuncionarios: 42 }],
 };
+
+function toWidgetData(widgetId: string): WidgetData {
+  return {
+    widgetId,
+    competencia: '2026-06',
+    semDados: false,
+    totalFuncionarios: mockStats.totalFuncionarios,
+    custoMensalFolha: mockStats.custoMensalFolha,
+    totalBeneficiosAtivos: mockStats.totalBeneficiosAtivos,
+    totalProventos: mockStats.totalProventos,
+    totalDescontos: mockStats.totalDescontos,
+    porLinhaNegocio: mockStats.porLinhaNegocio,
+    porCentroCusto: mockStats.porCentroCusto,
+    porCargo: mockStats.porCargo,
+    topProventos: mockStats.topProventos,
+    topDescontos: mockStats.topDescontos,
+    evolucaoMensal: mockStats.evolucaoMensal,
+  };
+}
 
 const defaultLayout: DashboardLayout = {
   id: 1,
@@ -72,9 +107,17 @@ describe('MeuDashboard shell', () => {
     vi.clearAllMocks();
     vi.mocked(getDashboardLayout).mockResolvedValue(defaultLayout);
     vi.mocked(getWidgetCatalog).mockResolvedValue([]);
-    vi.mocked(getDashboardStats).mockResolvedValue(mockStats);
+    vi.mocked(getWidgetData).mockImplementation(async (widgetId) => toWidgetData(widgetId));
     vi.mocked(saveDashboardLayout).mockImplementation(async (layout) => layout);
     vi.mocked(resetDashboardLayout).mockResolvedValue(undefined);
+  });
+
+  it('does not call getDashboardStats (DASHC-40)', async () => {
+    renderWithProviders(<MeuDashboard />);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Meu Dashboard' })).toBeInTheDocument();
+    });
+    expect(getDashboardStats).not.toHaveBeenCalled();
   });
 
   it('renders page title and default layout widgets', async () => {
@@ -82,7 +125,7 @@ describe('MeuDashboard shell', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Meu Dashboard' })).toBeInTheDocument();
     });
-    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(await screen.findByText('42')).toBeInTheDocument();
     expect(screen.getByText('Evolução da Folha de Pagamento')).toBeInTheDocument();
     expect(screen.getByText('001 - Salário')).toBeInTheDocument();
   });
@@ -98,7 +141,7 @@ describe('MeuDashboard shell', () => {
     expect(screen.getByRole('button', { name: 'Restaurar padrão' })).toBeInTheDocument();
   });
 
-  it('renders 11 default widgets with stats parity (DASHC-01, DASHC-02)', async () => {
+  it('renders 11 default widgets with per-widget data (DASHC-01, DASHC-02, DASHC-40)', async () => {
     renderWithProviders(<MeuDashboard />);
     await waitFor(() => expect(screen.getByText('42')).toBeInTheDocument());
     expect(defaultLayout.widgets).toHaveLength(11);
@@ -108,6 +151,20 @@ describe('MeuDashboard shell', () => {
     expect(screen.getByLabelText('Relação P/D')).toBeInTheDocument();
     expect(screen.getByText('R$ 125.000,50')).toBeInTheDocument();
     expect(screen.getByText('80.0%')).toBeInTheDocument();
+    expect(getWidgetData).toHaveBeenCalled();
+  });
+
+  it('shows explicit empty state when competência has no data (DASHC-30)', async () => {
+    vi.mocked(getWidgetData).mockResolvedValue({
+      widgetId: 'kpi-total-funcionarios',
+      competencia: '2026-01',
+      semDados: true,
+    });
+    renderWithProviders(<MeuDashboard />);
+    expect(
+      await screen.findByRole('status', { name: /Sem dados para Total de Funcionários/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 
   it('hides drag, resize and remove controls outside edit mode (DASHC-11)', async () => {

@@ -6,6 +6,7 @@ import { WidgetConfigPanel } from './WidgetConfigPanel';
 import { buildFuncionariosPorCentroPie } from './widgets/chartUtils';
 import type { DashboardStats } from '../../services/dashboardService';
 import { resolveTopN } from './widgetConfigOptions';
+import { criarTema, TEMA_PADRAO } from '../../theme/themes';
 
 vi.mock('../../services/resumoFolhaPagamentoService', () => ({
   resumoFolhaPagamentoService: {
@@ -85,7 +86,7 @@ describe('WidgetConfigPanel', () => {
 });
 
 describe('topN rendering (DASHC-32)', () => {
-  const chartColors = ['#111', '#222', '#333', '#444', '#555', '#666', '#777', '#888', '#999', '#aaa'];
+  const chartColors = criarTema(TEMA_PADRAO).palette.charts;
 
   const statsWithSevenCentros: DashboardStats = {
     totalFuncionarios: 70,

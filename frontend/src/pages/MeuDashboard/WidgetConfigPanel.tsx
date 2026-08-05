@@ -91,7 +91,8 @@ export function WidgetConfigPanel({
 
   const handleTopNChange = (value: string) => {
     if (value === '') {
-      const { topN: _removed, ...rest } = current;
+      const rest = { ...current };
+      delete rest.topN;
       onChange(Object.keys(rest).length > 0 ? rest : null);
       return;
     }
@@ -101,7 +102,8 @@ export function WidgetConfigPanel({
   const handleCompetenciaChange = (event: SelectChangeEvent<string>) => {
     const value = event.target.value;
     if (value === '') {
-      const { competencia: _removed, ...rest } = current;
+      const rest = { ...current };
+      delete rest.competencia;
       onChange(Object.keys(rest).length > 0 ? rest : null);
       return;
     }
