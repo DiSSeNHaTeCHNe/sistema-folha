@@ -5,6 +5,7 @@ import { AlterarSenhaDialog } from '../AlterarSenhaDialog';
 import { AparenciaDialog } from '../AparenciaDialog';
 import { isAdmin, canAccessApiKeysPage } from '../../utils/permissions';
 import { podeAcessarMeuDashboard } from '../../utils/dashboardAccess';
+import { podeAcessarWorkspace } from '../../utils/workspaceAccess';
 import {
   AppBar,
   Box,
@@ -58,6 +59,7 @@ export function Layout() {
   const userIsAdmin = isAdmin(user);
   const showApiKeysMenu = canAccessApiKeysPage(user);
   const showMeuDashboardMenu = podeAcessarMeuDashboard(acessoUsuario);
+  const showWorkspaceMenu = podeAcessarWorkspace(acessoUsuario);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -93,6 +95,7 @@ export function Layout() {
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
     ...(showMeuDashboardMenu ? [{ text: 'Meu Dashboard', icon: <Dashboard />, path: '/meu-dashboard' }] : []),
+    ...(showWorkspaceMenu ? [{ text: 'Workspace', icon: <Dashboard />, path: '/workspace' }] : []),
     { text: 'Funcionários', icon: <People />, path: '/funcionarios' },
     { text: 'Folha de Pagamento', icon: <AttachMoney />, path: '/folha-pagamento' },
     { text: 'Benefícios Mensais', icon: <Redeem />, path: '/beneficios-mensais' },
