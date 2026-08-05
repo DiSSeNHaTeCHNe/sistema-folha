@@ -163,6 +163,65 @@ class ApiKeyWriteGuardFilterTest {
         assertFalse(ApiKeyWriteGuardFilter.isMutatingMethod("GET"));
     }
 
+    @Test
+    void doFilterInternal_postWorkspaceProposalsComApiKeyWorkspace_continuaChain() throws Exception {
+        configurarAuthComMarkerWorkspace();
+        request.setMethod(HttpMethod.POST.name());
+        request.setRequestURI("/workspace/proposals");
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_postWorkspaceDatasetsComApiKeyWorkspace_retorna403() throws Exception {
+        configurarAuthComMarkerWorkspace();
+        request.setMethod(HttpMethod.POST.name());
+        request.setRequestURI("/workspace/datasets");
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(403, response.getStatus());
+        verify(filterChain, never()).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_postWorkspaceProposalsComApiKeyReadOnly_retorna403() throws Exception {
+        configurarAuthComMarkerReadOnly();
+        request.setMethod(HttpMethod.POST.name());
+        request.setRequestURI("/workspace/proposals");
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(403, response.getStatus());
+        verify(filterChain, never()).doFilter(request, response);
+    }
+
+    @Test
+    void isWorkspaceProposalPath_reconhecePrefixo() {
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setRequestURI("/workspace/proposals/1/confirmar");
+        assertTrue(ApiKeyWriteGuardFilter.isWorkspaceProposalPath(req));
+    }
+
+    @Test
+    void isApiKeyWorkspaceAuth_semAutenticacao_retornaFalse() {
+        assertFalse(ApiKeyWriteGuardFilter.isApiKeyWorkspaceAuth());
+    }
+
+    private void configurarAuthComMarkerWorkspace() {
+        var user = User.builder()
+                .username("agent")
+                .password("secret")
+                .authorities(
+                        new SimpleGrantedAuthority("ROLE_USER"),
+                        new SimpleGrantedAuthority(ApiKeySecurity.ROLE_API_KEY_WORKSPACE))
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+    }
+
     private void configurarAuthComMarkerReadOnly() {
         var user = User.builder()
                 .username("admin")

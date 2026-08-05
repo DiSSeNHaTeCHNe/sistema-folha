@@ -7,6 +7,7 @@ public final class ApiKeySecurity {
 
     public static final String CHAVE_PREFIX = "sf_live_";
     public static final String ROLE_API_KEY_READONLY = "ROLE_API_KEY_READONLY";
+    public static final String ROLE_API_KEY_WORKSPACE = "ROLE_API_KEY_WORKSPACE";
 
     private ApiKeySecurity() {
     }
