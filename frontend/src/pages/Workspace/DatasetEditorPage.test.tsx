@@ -1,0 +1,158 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import DatasetEditorPage from './DatasetEditorPage';
+import { renderWithProviders } from '../../test/renderWithProviders';
+import {
+  createDatasetRow,
+  deleteDatasetRow,
+  getDataset,
+  listDatasetRows,
+  updateDatasetRow,
+  updateDatasetSchema,
+  WorkspaceApiError,
+} from '../../services/workspaceService';
+
+vi.mock('../../services/workspaceService', () => ({
+  getDataset: vi.fn(),
+  listDatasetRows: vi.fn(),
+  updateDatasetSchema: vi.fn(),
+  createDatasetRow: vi.fn(),
+  updateDatasetRow: vi.fn(),
+  deleteDatasetRow: vi.fn(),
+  WorkspaceApiError: class WorkspaceApiError extends Error {
+    status: number;
+    errors?: { field: string; message: string }[];
+    constructor(status: number, message: string, errors?: { field: string; message: string }[]) {
+      super(message);
+      this.status = status;
+      this.errors = errors;
+    }
+  },
+}));
+
+const dataset = {
+  id: 1,
+  nome: 'Previsão',
+  campos: [
+    { nome: 'headcount', tipo: 'NUMERO' as const },
+    { nome: 'custo', tipo: 'MOEDA' as const },
+  ],
+  schemaVersion: 1,
+  totalLinhas: 1,
+};
+
+const rows = [{ id: 10, datasetId: 1, valores: { headcount: 5, custo: '1000.50' }, ordem: 0 }];
+
+function renderEditor() {
+  return renderWithProviders(<DatasetEditorPage datasetId={1} />);
+}
+
+describe('DatasetEditorPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getDataset).mockResolvedValue(dataset);
+    vi.mocked(listDatasetRows).mockResolvedValue(rows);
+    vi.mocked(updateDatasetSchema).mockImplementation(async (_id, campos, version) => ({
+      ...dataset,
+      campos,
+      schemaVersion: version + 1,
+    }));
+    vi.mocked(updateDatasetRow).mockImplementation(async (_dsId, rowId, valores) => ({
+      id: rowId,
+      datasetId: 1,
+      valores,
+      ordem: 0,
+    }));
+    vi.mocked(createDatasetRow).mockResolvedValue({ id: 11, datasetId: 1, valores: {}, ordem: 1 });
+    vi.mocked(deleteDatasetRow).mockResolvedValue(undefined);
+  });
+
+  it('loads and displays dataset name', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByRole('heading', { name: /Editor: Previsão/i })).toBeInTheDocument());
+  });
+
+  it('renders schema fields by name', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByDisplayValue('headcount')).toBeInTheDocument());
+    expect(screen.getByDisplayValue('custo')).toBeInTheDocument();
+  });
+
+  it('renders row values in grid', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByDisplayValue('5')).toBeInTheDocument());
+    expect(screen.getByDisplayValue('1000.50')).toBeInTheDocument();
+  });
+
+  it('adds a new schema field row', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByRole('button', { name: /Adicionar campo/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Adicionar campo/i }));
+    expect(screen.getAllByLabelText('Nome do campo')).toHaveLength(3);
+  });
+
+  it('saves schema via API', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Salvar esquema' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar esquema' }));
+    await waitFor(() => expect(updateDatasetSchema).toHaveBeenCalled());
+  });
+
+  it('shows confirm dialog on 409 schema conflict', async () => {
+    vi.mocked(updateDatasetSchema).mockRejectedValue(new WorkspaceApiError(409, 'Campo com dados'));
+    renderEditor();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Salvar esquema' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar esquema' }));
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /Remover campos com dados/i })).toBeInTheDocument(),
+    );
+  });
+
+  it('confirms destructive schema change', async () => {
+    vi.mocked(updateDatasetSchema)
+      .mockRejectedValueOnce(new WorkspaceApiError(409, 'Campo com dados'))
+      .mockResolvedValueOnce({ ...dataset, schemaVersion: 2, campos: [{ nome: 'custo', tipo: 'MOEDA' }] });
+    renderEditor();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Salvar esquema' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar esquema' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar remoção' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar remoção' }));
+    await waitFor(() => expect(updateDatasetSchema).toHaveBeenLastCalledWith(1, expect.any(Array), 1, true));
+  });
+
+  it('shows field-level error on invalid row save', async () => {
+    vi.mocked(updateDatasetRow).mockRejectedValue(
+      new WorkspaceApiError(400, 'Validação', [{ field: 'valores.headcount', message: 'Esperado número' }]),
+    );
+    renderEditor();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Salvar linha' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar linha' }));
+    await waitFor(() => expect(screen.getByText('Esperado número')).toBeInTheDocument());
+  });
+
+  it('adds a new data row', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByRole('button', { name: /Adicionar linha/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Adicionar linha/i }));
+    await waitFor(() => expect(createDatasetRow).toHaveBeenCalled());
+  });
+
+  it('deletes a row', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Excluir linha 10' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir linha 10' }));
+    await waitFor(() => expect(deleteDatasetRow).toHaveBeenCalledWith(1, 10));
+  });
+
+  it('shows not found when dataset missing', async () => {
+    vi.mocked(getDataset).mockRejectedValue(new Error('404'));
+    renderEditor();
+    await waitFor(() => expect(screen.getByText(/Dataset não encontrado/i)).toBeInTheDocument());
+  });
+
+  it('shows loading status initially', () => {
+    vi.mocked(getDataset).mockReturnValue(new Promise(() => {}));
+    renderEditor();
+    expect(screen.getByRole('status')).toHaveTextContent(/Carregando dataset/i);
+  });
+});
