@@ -25,6 +25,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -84,11 +85,16 @@ class DatasetControllerWebMvcTest {
     @WithMockUser(username = "user-a", roles = "USER")
     void listar_comEscopo_retorna200() throws Exception {
         when(datasetService.listar("user-a")).thenReturn(List.of(
-            new DatasetSummaryDTO(1L, "Planilha", 1, 2L, 3)));
+            new DatasetSummaryDTO(
+                1L, "Planilha", 1, 2L, 3,
+                LocalDateTime.parse("2026-08-01T14:30:00"), true, 2)));
 
         mockMvc.perform(get("/workspace/datasets"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].nome").value("Planilha"));
+            .andExpect(jsonPath("$[0].nome").value("Planilha"))
+            .andExpect(jsonPath("$[0].dataAtualizacao").exists())
+            .andExpect(jsonPath("$[0].publicado").value(true))
+            .andExpect(jsonPath("$[0].templateVersaoPublicada").value(2));
     }
 
     @Test

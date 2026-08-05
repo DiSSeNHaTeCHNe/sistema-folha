@@ -16,12 +16,14 @@ import br.com.techne.sistemafolha.workspace.domain.WorkspaceLimits;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceDatasetRepository;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceDatasetRowRepository;
+import br.com.techne.sistemafolha.workspace.infrastructure.DatasetRowMaxUpdateProjection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +54,9 @@ class DatasetServiceTest {
     @Mock
     private WorkspaceDatasetRowRepository rowRepository;
 
+    @Mock
+    private DatasetPublicationLookup publicationLookup;
+
     private DatasetService datasetService;
 
     @BeforeEach
@@ -60,7 +65,8 @@ class DatasetServiceTest {
             workspaceAccessGuard,
             datasetRepository,
             rowRepository,
-            new DatasetQuotaPolicy());
+            new DatasetQuotaPolicy(),
+            publicationLookup);
     }
 
     @Test
@@ -126,7 +132,11 @@ class DatasetServiceTest {
     void listar_retornaResumosDoUsuario() {
         stubAcesso();
         WorkspaceDataset dataset = datasetComSchema("Planilha");
+        LocalDateTime datasetUpdated = LocalDateTime.parse("2026-08-01T10:00:00");
+        dataset.setDataAtualizacao(datasetUpdated);
         when(datasetRepository.findByUsuarioIdOrderByNomeAsc(USUARIO_ID)).thenReturn(List.of(dataset));
+        when(publicationLookup.buildIndex(USUARIO_ID)).thenReturn(Map.of());
+        when(rowRepository.findMaxDataAtualizacaoByDatasetIdIn(List.of(DATASET_ID))).thenReturn(List.of());
         when(rowRepository.countByDatasetId(DATASET_ID)).thenReturn(3L);
 
         List<DatasetSummaryDTO> result = datasetService.listar(LOGIN);
@@ -134,6 +144,41 @@ class DatasetServiceTest {
         assertEquals(1, result.size());
         assertEquals("Planilha", result.get(0).nome());
         assertEquals(3L, result.get(0).totalLinhas());
+        assertEquals(datasetUpdated, result.get(0).dataAtualizacao());
+        assertEquals(false, result.get(0).publicado());
+        assertEquals(null, result.get(0).templateVersaoPublicada());
+    }
+
+    @Test
+    void listar_datasetPublicado_incluiVersaoTemplate() {
+        stubAcesso();
+        WorkspaceDataset dataset = datasetComSchema("Publicado");
+        when(datasetRepository.findByUsuarioIdOrderByNomeAsc(USUARIO_ID)).thenReturn(List.of(dataset));
+        when(publicationLookup.buildIndex(USUARIO_ID)).thenReturn(Map.of(DATASET_ID, 2));
+        when(rowRepository.findMaxDataAtualizacaoByDatasetIdIn(List.of(DATASET_ID))).thenReturn(List.of());
+        when(rowRepository.countByDatasetId(DATASET_ID)).thenReturn(0L);
+
+        List<DatasetSummaryDTO> result = datasetService.listar(LOGIN);
+
+        assertTrue(result.get(0).publicado());
+        assertEquals(2, result.get(0).templateVersaoPublicada());
+    }
+
+    @Test
+    void listar_rowEditPosterior_usaMaxTimestamp() {
+        stubAcesso();
+        WorkspaceDataset dataset = datasetComSchema("Com linhas");
+        dataset.setDataAtualizacao(LocalDateTime.parse("2026-08-01T10:00:00"));
+        LocalDateTime rowUpdated = LocalDateTime.parse("2026-08-02T15:00:00");
+        when(datasetRepository.findByUsuarioIdOrderByNomeAsc(USUARIO_ID)).thenReturn(List.of(dataset));
+        when(publicationLookup.buildIndex(USUARIO_ID)).thenReturn(Map.of());
+        when(rowRepository.findMaxDataAtualizacaoByDatasetIdIn(List.of(DATASET_ID)))
+            .thenReturn(List.of(rowMaxProjection(DATASET_ID, rowUpdated)));
+        when(rowRepository.countByDatasetId(DATASET_ID)).thenReturn(1L);
+
+        List<DatasetSummaryDTO> result = datasetService.listar(LOGIN);
+
+        assertEquals(rowUpdated, result.get(0).dataAtualizacao());
     }
 
     @Test
@@ -264,5 +309,19 @@ class DatasetServiceTest {
         WorkspaceDatasetRow row = new WorkspaceDatasetRow();
         row.setValores(Map.of("valor", "100.00", "descricao", "Item A"));
         return row;
+    }
+
+    private DatasetRowMaxUpdateProjection rowMaxProjection(Long datasetId, LocalDateTime maxUpdate) {
+        return new DatasetRowMaxUpdateProjection() {
+            @Override
+            public Long getDatasetId() {
+                return datasetId;
+            }
+
+            @Override
+            public LocalDateTime getMaxDataAtualizacao() {
+                return maxUpdate;
+            }
+        };
     }
 }

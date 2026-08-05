@@ -21,6 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -81,7 +82,9 @@ class OrcamentoTemplateInstallerTest {
     @Test
     void instalar_reutilizaDatasetExistente() {
         when(datasetService.listar(LOGIN)).thenReturn(List.of(
-            new DatasetSummaryDTO(50L, OrcamentoTemplateInstaller.DATASET_NOME, 1, 0, 3)));
+            new DatasetSummaryDTO(
+                50L, OrcamentoTemplateInstaller.DATASET_NOME, 1, 0, 3,
+                LocalDateTime.now(), false, null)));
         when(datasetService.obter(LOGIN, 50L)).thenReturn(datasetDto(50L));
         when(widgetDefinitionService.listar(LOGIN)).thenReturn(List.of(
             widgetDto(201L, OrcamentoTemplateInstaller.WIDGET_TABELA_NOME),

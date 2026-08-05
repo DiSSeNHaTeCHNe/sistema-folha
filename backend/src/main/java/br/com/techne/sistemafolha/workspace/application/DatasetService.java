@@ -13,10 +13,12 @@ import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetRow;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceDatasetRepository;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceDatasetRowRepository;
+import br.com.techne.sistemafolha.workspace.infrastructure.DatasetRowMaxUpdateProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,13 +34,27 @@ public class DatasetService {
     private final WorkspaceDatasetRepository datasetRepository;
     private final WorkspaceDatasetRowRepository rowRepository;
     private final DatasetQuotaPolicy quotaPolicy;
+    private final DatasetPublicationLookup publicationLookup;
 
     @Transactional(readOnly = true)
     public List<DatasetSummaryDTO> listar(String login) {
         workspaceAccessGuard.assertEscopo(login);
         Long usuarioId = workspaceAccessGuard.resolve(login).usuarioId();
-        return datasetRepository.findByUsuarioIdOrderByNomeAsc(usuarioId).stream()
-            .map(this::toSummary)
+        List<WorkspaceDataset> datasets = datasetRepository.findByUsuarioIdOrderByNomeAsc(usuarioId);
+        if (datasets.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Integer> publicationIndex = publicationLookup.buildIndex(usuarioId);
+        List<Long> datasetIds = datasets.stream().map(WorkspaceDataset::getId).toList();
+        Map<Long, LocalDateTime> rowMaxUpdates = rowRepository.findMaxDataAtualizacaoByDatasetIdIn(datasetIds)
+            .stream()
+            .collect(Collectors.toMap(
+                DatasetRowMaxUpdateProjection::getDatasetId,
+                DatasetRowMaxUpdateProjection::getMaxDataAtualizacao));
+
+        return datasets.stream()
+            .map(dataset -> toSummary(dataset, publicationIndex, rowMaxUpdates))
             .toList();
     }
 
@@ -177,13 +193,35 @@ public class DatasetService {
             rowRepository.countByDatasetId(dataset.getId()));
     }
 
-    private DatasetSummaryDTO toSummary(WorkspaceDataset dataset) {
+    private DatasetSummaryDTO toSummary(
+        WorkspaceDataset dataset,
+        Map<Long, Integer> publicationIndex,
+        Map<Long, LocalDateTime> rowMaxUpdates) {
+        LocalDateTime effectiveUpdate = resolveEffectiveDataAtualizacao(
+            dataset.getDataAtualizacao(),
+            rowMaxUpdates.get(dataset.getId()));
+        Integer publishedVersion = publicationIndex.get(dataset.getId());
         return new DatasetSummaryDTO(
             dataset.getId(),
             dataset.getNome(),
             dataset.getSchemaVersion(),
             rowRepository.countByDatasetId(dataset.getId()),
-            dataset.getSchema().size());
+            dataset.getSchema().size(),
+            effectiveUpdate,
+            publishedVersion != null,
+            publishedVersion);
+    }
+
+    private LocalDateTime resolveEffectiveDataAtualizacao(
+        LocalDateTime datasetUpdated,
+        LocalDateTime rowUpdated) {
+        if (rowUpdated == null) {
+            return datasetUpdated;
+        }
+        if (datasetUpdated == null || rowUpdated.isAfter(datasetUpdated)) {
+            return rowUpdated;
+        }
+        return datasetUpdated;
     }
 
     private List<DatasetFieldSchemaDTO> toFieldSchemaDtos(List<DatasetFieldSchema> schema) {
