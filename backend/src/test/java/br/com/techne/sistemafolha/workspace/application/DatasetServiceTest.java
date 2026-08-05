@@ -29,6 +29,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -93,7 +94,10 @@ class DatasetServiceTest {
         CreateDatasetRequest request = new CreateDatasetRequest("Novo", List.of(
             new DatasetFieldSchemaDTO("campo", DatasetFieldType.TEXTO, null, false)));
 
-        assertThrows(WorkspaceQuotaExceededException.class, () -> datasetService.criar(LOGIN, request));
+        WorkspaceQuotaExceededException ex = assertThrows(WorkspaceQuotaExceededException.class,
+            () -> datasetService.criar(LOGIN, request));
+        assertTrue(ex.getMessage().contains(
+            String.format("Limite de %d datasets", WorkspaceLimits.MAX_DATASETS_PER_USER)));
     }
 
     @Test

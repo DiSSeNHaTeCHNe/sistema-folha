@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DatasetQuotaPolicyTest {
 
@@ -74,5 +75,26 @@ class DatasetQuotaPolicyTest {
     @Test
     void canAddWidgetToWorkspace_atLimit_blocks() {
         assertFalse(policy.canAddWidgetToWorkspace(WorkspaceLimits.MAX_WIDGETS_PER_WORKSPACE));
+    }
+
+    @Test
+    void datasetQuotaMessage_contemLimiteSpecAncorado() {
+        long current = WorkspaceLimits.MAX_DATASETS_PER_USER;
+        String message = policy.datasetQuotaMessage(current);
+
+        assertEquals(
+            String.format("Limite de %d datasets atingido (atual: %d)",
+                WorkspaceLimits.MAX_DATASETS_PER_USER, current),
+            message);
+        assertTrue(message.startsWith("Limite de 20 datasets"));
+    }
+
+    @Test
+    void rowQuotaMessage_contemLimiteSpecAncorado() {
+        long current = WorkspaceLimits.MAX_ROWS_PER_DATASET;
+        String message = policy.rowQuotaMessage(current);
+
+        assertTrue(message.contains(
+            String.format("Limite de %d linhas", WorkspaceLimits.MAX_ROWS_PER_DATASET)));
     }
 }
