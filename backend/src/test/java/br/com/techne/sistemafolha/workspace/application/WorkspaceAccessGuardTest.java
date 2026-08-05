@@ -169,6 +169,46 @@ class WorkspaceAccessGuardTest {
             new AccessContextDTO(true, true, false, Collections.emptySet(), null, 2L, "TI", 1)));
     }
 
+    @Test
+    void podeVerTemplate_acessoTotal_retornaTrue() {
+        AccessContextDTO contexto = contextoAcessoTotal();
+
+        assertTrue(workspaceAccessGuard.podeVerTemplate(contexto, 99L, 1L));
+        verify(organogramaAcessoPort, never()).noEstaNaSubarvore(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void podeVerTemplate_viewerNaSubarvore_retornaTrue() {
+        AccessContextDTO contexto = contextoRestrito(Set.of(10L));
+        when(organogramaAcessoPort.noEstaNaSubarvore(2L, 5L)).thenReturn(true);
+
+        assertTrue(workspaceAccessGuard.podeVerTemplate(contexto, 99L, 5L));
+    }
+
+    @Test
+    void podeVerTemplate_viewerForaSubarvore_retornaFalse() {
+        AccessContextDTO contexto = contextoRestrito(Set.of(10L));
+        when(organogramaAcessoPort.noEstaNaSubarvore(2L, 5L)).thenReturn(false);
+
+        assertFalse(workspaceAccessGuard.podeVerTemplate(contexto, 99L, 5L));
+    }
+
+    @Test
+    void podeVerTemplate_semNoOrganogramaTemplate_retornaFalse() {
+        AccessContextDTO contexto = contextoRestrito(Set.of(10L));
+
+        assertFalse(workspaceAccessGuard.podeVerTemplate(contexto, 99L, null));
+    }
+
+    @Test
+    void assertPodeVerTemplate_foraSubarvore_lanca403() {
+        AccessContextDTO contexto = contextoRestrito(Set.of(10L));
+        when(organogramaAcessoPort.noEstaNaSubarvore(2L, 5L)).thenReturn(false);
+
+        assertThrows(WorkspaceAcessoNegadoException.class,
+            () -> workspaceAccessGuard.assertPodeVerTemplate(contexto, 99L, 5L));
+    }
+
     private void stubUsuario() {
         Usuario usuario = new Usuario();
         usuario.setId(USUARIO_ID);
