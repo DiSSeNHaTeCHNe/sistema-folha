@@ -17,7 +17,14 @@ import br.com.techne.sistemafolha.folha.domain.FichaMensalNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.NoOrganogramaNotFoundException;
 import br.com.techne.sistemafolha.organograma.domain.OrganogramaAtivoConflictException;
 import br.com.techne.sistemafolha.dashboard.domain.DashboardAcessoNegadoException;
+import br.com.techne.sistemafolha.workspace.domain.DatasetRowValidationException;
+import br.com.techne.sistemafolha.workspace.domain.InvalidFormulaException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceAcessoNegadoException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetConflictException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetNotFoundException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetRowNotFoundException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceWidgetDefinitionNotFoundException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioAcessoNegadoException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioGeracaoLimiteException;
 import br.com.techne.sistemafolha.relatorios.domain.RelatorioIndisponivelException;
@@ -163,6 +170,63 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleWorkspaceAcessoNegadoException(WorkspaceAcessoNegadoException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(WorkspaceDatasetNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceDatasetNotFoundException(WorkspaceDatasetNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkspaceDatasetRowNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceDatasetRowNotFoundException(
+            WorkspaceDatasetRowNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkspaceWidgetDefinitionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceWidgetDefinitionNotFoundException(
+            WorkspaceWidgetDefinitionNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkspaceDatasetConflictException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceDatasetConflictException(
+            WorkspaceDatasetConflictException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(WorkspaceQuotaExceededException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceQuotaExceededException(WorkspaceQuotaExceededException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
+            WorkspaceQuotaExceededException.CODE + ": " + ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DatasetRowValidationException.class)
+    public ResponseEntity<ValidationErrorResponse> handleDatasetRowValidationException(
+            DatasetRowValidationException ex) {
+        ValidationErrorResponse error = new ValidationErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            ex.getMessage(),
+            ex.getErrors().stream()
+                .map(fieldError -> new FieldErrorItem(fieldError.field(), fieldError.message()))
+                .collect(Collectors.toList()));
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidFormulaException.class)
+    public ResponseEntity<ValidationErrorResponse> handleInvalidFormulaException(InvalidFormulaException ex) {
+        ValidationErrorResponse error = new ValidationErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            ex.getMessage(),
+            ex.getErrors().stream()
+                .map(formulaError -> new FieldErrorItem("formula", formulaError))
+                .collect(Collectors.toList()));
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(RelatorioAcessoNegadoException.class)
