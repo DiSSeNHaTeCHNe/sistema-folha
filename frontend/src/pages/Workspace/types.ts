@@ -97,6 +97,48 @@ export interface FieldErrorItem {
   message: string;
 }
 
+export type TemplateTipo = 'DATASET' | 'WIDGET' | 'PACOTE';
+
+export interface TemplateCatalogItem {
+  id: number;
+  nome: string;
+  tipo: TemplateTipo;
+  versaoAtual: number;
+  versaoMaisRecente: number;
+  atualizacaoDisponivel: boolean;
+  publicadorUsuarioId: number;
+  installationId: number | null;
+  versaoInstalada: number | null;
+}
+
+export interface TemplatePublishResult {
+  id: number;
+  nome: string;
+  tipo: TemplateTipo;
+  versaoAtual: number;
+  estruturaHash: string;
+  novaVersaoCriada: boolean;
+}
+
+export interface TemplateInstallResult {
+  installationId: number;
+  templateId: number;
+  versaoInstalada: number;
+  workspaceId: number;
+  datasetId: number | null;
+  widgetDefinitionIds: number[];
+}
+
+export interface DatasetRowAuditEntry {
+  id: number;
+  rowId: number;
+  autorUsuarioId: number;
+  acao: 'CREATE' | 'UPDATE' | 'DELETE';
+  valoresAnteriores: Record<string, unknown> | null;
+  valoresNovos: Record<string, unknown> | null;
+  dataEvento: string;
+}
+
 export const MAX_WORKSPACE_WIDGETS = 30;
 
 export const COL_SPAN_PRESETS = {

@@ -3,9 +3,13 @@ import type {
   DatasetDefinition,
   DatasetFieldSchema,
   DatasetRow,
+  DatasetRowAuditEntry,
   DatasetSummary,
   FieldErrorItem,
   OrcamentoInstallResult,
+  TemplateCatalogItem,
+  TemplateInstallResult,
+  TemplatePublishResult,
   UserWidgetDefinition,
   Workspace,
   WorkspaceLayoutWidget,
@@ -191,5 +195,41 @@ export async function getWorkspaceWidgetData(
 export async function installOrcamentoTemplate(workspaceId: number): Promise<OrcamentoInstallResult> {
   return wrapRequest(
     api.post<OrcamentoInstallResult>('/workspace/templates/orcamento-padrao/install', { workspaceId }),
+  );
+}
+
+// --- Template marketplace (P2) ---
+
+export async function listTemplateCatalog(): Promise<TemplateCatalogItem[]> {
+  return wrapRequest(api.get<TemplateCatalogItem[]>('/workspace/templates/catalog'));
+}
+
+export async function publishDatasetTemplate(datasetId: number): Promise<TemplatePublishResult> {
+  return wrapRequest(
+    api.post<TemplatePublishResult>('/workspace/templates/publish', { datasetId }),
+  );
+}
+
+export async function publishWidgetTemplate(widgetDefinitionId: number): Promise<TemplatePublishResult> {
+  return wrapRequest(
+    api.post<TemplatePublishResult>('/workspace/templates/publish', { widgetDefinitionId }),
+  );
+}
+
+export async function installTemplate(templateId: number, workspaceId: number): Promise<TemplateInstallResult> {
+  return wrapRequest(
+    api.post<TemplateInstallResult>(`/workspace/templates/${templateId}/install`, { workspaceId }),
+  );
+}
+
+export async function upgradeTemplateInstallation(installationId: number): Promise<TemplateInstallResult> {
+  return wrapRequest(
+    api.post<TemplateInstallResult>(`/workspace/templates/installations/${installationId}/upgrade`),
+  );
+}
+
+export async function listDatasetRowAudit(datasetId: number, rowId: number): Promise<DatasetRowAuditEntry[]> {
+  return wrapRequest(
+    api.get<DatasetRowAuditEntry[]>(`/workspace/datasets/${datasetId}/rows/${rowId}/audit`),
   );
 }
