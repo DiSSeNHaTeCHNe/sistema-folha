@@ -257,6 +257,18 @@ class TemplatePublishServiceTest {
     }
 
     @Test
+    void listarCatalogo_templateInativo_naoApareceInstalacaoPermanece() {
+        stubAcesso();
+        when(templateRepository.findByAtivoTrueOrderByNomeAsc()).thenReturn(List.of());
+
+        var items = service.listarCatalogo(LOGIN);
+
+        assertEquals(1, items.size());
+        assertEquals(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID, items.get(0).id());
+        verify(installationRepository, never()).deleteById(any());
+    }
+
+    @Test
     void publicar_datasetInexistente_lanca404() {
         stubAcesso();
         when(datasetService.findOwnedDataset(USUARIO_ID, 999L))

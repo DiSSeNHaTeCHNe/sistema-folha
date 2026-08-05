@@ -11,6 +11,7 @@ import br.com.techne.sistemafolha.workspace.domain.WorkspaceDataset;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplate;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateInstallation;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateInstallationNotFoundException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateVersion;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceDatasetRepository;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceTemplateInstallationRepository;
@@ -180,6 +181,25 @@ class TemplateInstallServiceTest {
 
         assertThrows(WorkspaceTemplateInstallationNotFoundException.class,
             () -> service.atualizarVersao(LOGIN, 999L));
+    }
+
+    @Test
+    void atualizarVersao_templateRemovidoDoCatalogo_instalacaoIntacta_lanca404() {
+        stubAcesso();
+        WorkspaceTemplateInstallation installation = new WorkspaceTemplateInstallation();
+        installation.setId(42L);
+        installation.setUsuarioId(USUARIO_ID);
+        installation.setTemplateId(5L);
+        installation.setVersaoInstalada(1);
+        installation.setDatasetIds(Map.of("primary", 88L));
+        when(installationRepository.findByIdAndUsuarioId(42L, USUARIO_ID))
+            .thenReturn(Optional.of(installation));
+        when(templatePublishService.findVisibleTemplate(LOGIN, 5L))
+            .thenThrow(new WorkspaceTemplateNotFoundException(5L));
+
+        assertThrows(WorkspaceTemplateNotFoundException.class,
+            () -> service.atualizarVersao(LOGIN, 42L));
+        verify(installationRepository, never()).delete(any());
     }
 
     @Test
