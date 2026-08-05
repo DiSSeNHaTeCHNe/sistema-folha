@@ -436,8 +436,8 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-01…18, DASHC-21…23, DASHC-27
 
 **Done when**:
-- [ ] Cobertura dos ACs Fase 1 mapeados na matriz
-- [ ] Gate quick FE: `npm test -- src/pages/MeuDashboard src/utils/dashboardAccess`
+- [x] Cobertura dos ACs Fase 1 mapeados na matriz
+- [x] Gate quick FE: `npm test -- src/pages/MeuDashboard src/utils/dashboardAccess`
 
 **Tests**: unit (consolidação — não task separada de prod code)  
 **Gate**: quick FE  
