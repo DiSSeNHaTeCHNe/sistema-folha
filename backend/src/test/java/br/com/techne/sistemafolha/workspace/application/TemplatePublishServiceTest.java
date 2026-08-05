@@ -12,6 +12,7 @@ import br.com.techne.sistemafolha.workspace.domain.WidgetSourceRef;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceDataset;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplate;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateInstallation;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateVersion;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceTemplateInstallationRepository;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceTemplateRepository;
@@ -32,6 +33,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -252,6 +254,16 @@ class TemplatePublishServiceTest {
 
         assertEquals(1, items.size());
         assertEquals(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID, items.get(0).id());
+    }
+
+    @Test
+    void publicar_datasetInexistente_lanca404() {
+        stubAcesso();
+        when(datasetService.findOwnedDataset(USUARIO_ID, 999L))
+            .thenThrow(new WorkspaceDatasetNotFoundException(999L));
+
+        assertThrows(WorkspaceDatasetNotFoundException.class,
+            () -> service.publicar(LOGIN, new PublishTemplateRequest(999L, null)));
     }
 
     @Test

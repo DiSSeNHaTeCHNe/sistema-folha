@@ -11,6 +11,7 @@ import br.com.techne.sistemafolha.workspace.domain.TemplateTipo;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceAcessoNegadoException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateInstallationNotFoundException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,6 +112,18 @@ class TemplateControllerWebMvcTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"datasetId\":5}"))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void publicar_datasetInexistente_retorna404() throws Exception {
+        when(templatePublishService.publicar(eq("user-a"), org.mockito.ArgumentMatchers.any()))
+            .thenThrow(new WorkspaceDatasetNotFoundException(99L));
+
+        mockMvc.perform(post("/workspace/templates/publish")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"datasetId\":99}"))
+            .andExpect(status().isNotFound());
     }
 
     @Test
