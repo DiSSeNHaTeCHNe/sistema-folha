@@ -35,6 +35,9 @@ import java.util.Set;
  *   <li>Funcionário sem nó no organograma → acesso negado</li>
  *   <li>Conjunto vazio de centros nunca implica acesso total</li>
  * </ul>
+ *
+ * <p>Permissões de workspace dedicadas (ex.: {@code WORKSPACE_IA_CRIAR} para propostas IA)
+ * são strings em {@code usuario_permissoes} — ver {@link br.com.techne.sistemafolha.workspace.domain.WorkspacePermissions}.
  */
 @Service
 @RequiredArgsConstructor
