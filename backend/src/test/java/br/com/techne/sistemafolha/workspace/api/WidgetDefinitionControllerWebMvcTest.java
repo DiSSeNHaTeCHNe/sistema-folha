@@ -249,6 +249,27 @@ class WidgetDefinitionControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user-a", roles = "USER")
+    void preview_graficoLinha_retorna200ComLinhasFormatadas() throws Exception {
+        when(widgetQueryService.preview(eq("user-a"), any(CreateWidgetDefinitionRequest.class)))
+            .thenReturn(new WorkspaceWidgetDataDTO(
+                "preview", null, null, "GRAFICO_LINHA", false, false, "2026-06",
+                Map.of(), List.of(Map.of("label", "CC A", "valor", "R$ 5.000,00"))));
+
+        mockMvc.perform(post("/workspace/widget-definitions/preview")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"nome":"Gráfico Preview","tipo":"GRAFICO_LINHA",
+                    "fontes":[{"kind":"SISTEMA","ref":"ORCAMENTO"}]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.instanceId").value("preview"))
+            .andExpect(jsonPath("$.tipo").value("GRAFICO_LINHA"))
+            .andExpect(jsonPath("$.semDados").value(false))
+            .andExpect(jsonPath("$.linhas[0].label").value("CC A"))
+            .andExpect(jsonPath("$.linhas[0].valor").value("R$ 5.000,00"));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
     void preview_formulaInvalida_retorna400() throws Exception {
         when(widgetQueryService.preview(eq("user-a"), any(CreateWidgetDefinitionRequest.class)))
             .thenThrow(new InvalidFormulaException(List.of("Campo inválido: x")));

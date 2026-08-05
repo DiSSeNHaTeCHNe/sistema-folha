@@ -3,6 +3,7 @@ package br.com.techne.sistemafolha.workspace.application;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaResumoSnapshot;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
+import br.com.techne.sistemafolha.workspace.api.CreateWidgetDefinitionRequest;
 import br.com.techne.sistemafolha.workspace.api.WorkspaceWidgetDataDTO;
 import br.com.techne.sistemafolha.workspace.api.WorkspaceWidgetQueryParams;
 import br.com.techne.sistemafolha.workspace.domain.DatasetFieldSchema;
@@ -223,6 +224,49 @@ class WidgetQueryServiceTest {
             LOGIN, WORKSPACE_ID, "tbl", new WorkspaceWidgetQueryParams("2025-06"));
 
         assertTrue(result.semDados());
+    }
+
+    @Test
+    void obterDados_graficoLinha_montaLinhasComRealizado() {
+        stubAcesso(acessoTotal());
+        stubWorkspace(widgetPayload("chart", WIDGET_DEF_ID));
+        WorkspaceWidgetDefinition def = widgetDef("GRAFICO_LINHA", true);
+        def.setFontes(List.of(new WidgetSourceRef(WidgetSourceKind.SISTEMA, "ORCAMENTO")));
+        when(widgetDefinitionRepository.findByUsuarioIdAndId(USUARIO_ID, WIDGET_DEF_ID)).thenReturn(Optional.of(def));
+        when(orcamentoConsultaPort.obterRealizadoPorCentroCusto(any(), any())).thenReturn(List.of(
+            new OrcamentoCentroCustoDTO(10L, "CC A", new BigDecimal("5000"), 2)));
+
+        WorkspaceWidgetDataDTO result = service.obterDados(
+            LOGIN, WORKSPACE_ID, "chart", new WorkspaceWidgetQueryParams("2025-06"));
+
+        assertFalse(result.semDados());
+        assertEquals("GRAFICO_LINHA", result.tipo());
+        assertEquals(1, result.linhas().size());
+        assertEquals("CC A", result.linhas().get(0).get("label"));
+        assertTrue(result.linhas().get(0).get("valor").startsWith("R$"));
+    }
+
+    @Test
+    void preview_graficoBarra_retornaLinhasFormatadasPtBr() {
+        stubAcesso(acessoTotal());
+        stubCompetencia();
+        when(orcamentoConsultaPort.obterRealizadoPorCentroCusto(any(), any())).thenReturn(List.of(
+            new OrcamentoCentroCustoDTO(10L, "CC B", new BigDecimal("1234.56"), 1)));
+
+        CreateWidgetDefinitionRequest request = new CreateWidgetDefinitionRequest(
+            "Gráfico Preview",
+            "GRAFICO_BARRA",
+            List.of(new WidgetSourceRef(WidgetSourceKind.SISTEMA, "ORCAMENTO")),
+            null,
+            Map.of());
+
+        WorkspaceWidgetDataDTO result = service.preview(LOGIN, request);
+
+        assertFalse(result.semDados());
+        assertEquals("GRAFICO_BARRA", result.tipo());
+        assertEquals("preview", result.instanceId());
+        assertEquals("CC B", result.linhas().get(0).get("label"));
+        assertTrue(result.linhas().get(0).get("valor").contains("1.234,56"));
     }
 
     private void stubOrcamentoDataset() {

@@ -106,6 +106,8 @@ public class WidgetQueryService {
         return switch (definition.getTipo()) {
             case "KPI" -> resolverKpi(access, layoutWidget, definition, competencia, competenciaLabel);
             case "TABELA" -> resolverTabela(access, layoutWidget, definition, competencia, competenciaLabel);
+            case "GRAFICO_LINHA", "GRAFICO_BARRA" -> resolverGrafico(
+                access, layoutWidget, definition, competencia, competenciaLabel);
             default -> WorkspaceWidgetDataDTO.semDados(
                 instanceId, definition.getId(), null, definition.getTipo(), competenciaLabel);
         };
@@ -132,6 +134,8 @@ public class WidgetQueryService {
         return switch (definition.getTipo()) {
             case "KPI" -> resolverKpi(access, layoutWidget, definition, competencia, competenciaLabel);
             case "TABELA" -> resolverTabela(access, layoutWidget, definition, competencia, competenciaLabel);
+            case "GRAFICO_LINHA", "GRAFICO_BARRA" -> resolverGrafico(
+                access, layoutWidget, definition, competencia, competenciaLabel);
             default -> WorkspaceWidgetDataDTO.semDados(
                 PREVIEW_INSTANCE_ID, null, null, definition.getTipo(), competenciaLabel);
         };
@@ -188,6 +192,36 @@ public class WidgetQueryService {
             competenciaLabel,
             valores,
             List.of());
+    }
+
+    private WorkspaceWidgetDataDTO resolverGrafico(
+            WorkspaceAccessGuard.ResolvedWorkspaceAccess access,
+            WorkspaceWidgetPayload layoutWidget,
+            WorkspaceWidgetDefinition definition,
+            YearMonth competencia,
+            String competenciaLabel) {
+        List<Map<String, String>> linhas = new ArrayList<>();
+        List<OrcamentoCentroCustoDTO> realizados = orcamentoConsultaPort.obterRealizadoPorCentroCusto(
+            access.contexto(), competencia);
+
+        for (OrcamentoCentroCustoDTO realizado : realizados) {
+            Map<String, String> linha = new LinkedHashMap<>();
+            linha.put("label", realizado.centroCustoDescricao());
+            linha.put("valor", formatMoney(realizado.realizado()));
+            linhas.add(linha);
+        }
+
+        boolean semDados = linhas.isEmpty();
+        return new WorkspaceWidgetDataDTO(
+            layoutWidget.instanceId(),
+            definition.getId(),
+            null,
+            definition.getTipo(),
+            semDados,
+            false,
+            competenciaLabel,
+            Map.of(),
+            linhas);
     }
 
     private WorkspaceWidgetDataDTO resolverTabela(
