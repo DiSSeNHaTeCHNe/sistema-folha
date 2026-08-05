@@ -56,11 +56,19 @@ describe('WorkspaceHubPage', () => {
     vi.mocked(createWorkspace).mockResolvedValue({ id: 3, nome: 'Novo', widgets: [] });
   });
 
-  it('renders workspace cards with name and widget count (WKS2-01)', async () => {
+  it('renders workspace cards with name, widget count and last edit (WKS2-01)', async () => {
     renderWithProviders(<WorkspaceHubPage />);
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Planejamento', level: 2 })).toBeInTheDocument());
     expect(screen.getByText('3 widgets')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'RH', level: 2 })).toBeInTheDocument();
+    expect(screen.getAllByText(/Última edição/i)).toHaveLength(2);
+  });
+
+  it('shows Novo workspace action and opens create dialog (WKS2-01)', async () => {
+    renderWithProviders(<WorkspaceHubPage />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Novo workspace' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Novo workspace' }));
+    expect(screen.getByRole('heading', { name: 'Novo workspace', level: 2 })).toBeInTheDocument();
   });
 
   it('renders datasets summary table with spec columns (WKS2-02)', async () => {
@@ -69,6 +77,8 @@ describe('WorkspaceHubPage', () => {
     expect(screen.getByRole('columnheader', { name: 'Campos' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Linhas' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Usado por' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Publicado' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Última alteração' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '4' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '1 widget' })).toBeInTheDocument();
   });

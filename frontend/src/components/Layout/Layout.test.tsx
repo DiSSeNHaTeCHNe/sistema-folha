@@ -148,6 +148,29 @@ describe('Layout', () => {
     expect(screen.getAllByText('Catálogo de templates').length).toBeGreaterThan(0);
   });
 
+  it('highlights active sub-nav item per workspace route (WKS2-06)', () => {
+    mockAcessoUsuario = {
+      temFuncionarioVinculado: true,
+      temNoOrganograma: true,
+      acessoTotal: false,
+      centrosCustoIds: [1],
+      quantidadeCentrosAcessiveis: 1,
+    };
+
+    const routes = [
+      { path: '/workspace', label: 'Meus workspaces' },
+      { path: '/workspace/datasets', label: 'Meus dados' },
+      { path: '/workspace/templates', label: 'Catálogo de templates' },
+    ] as const;
+
+    for (const { path, label } of routes) {
+      const { unmount } = renderLayout(path);
+      const buttons = screen.getAllByRole('button', { name: label });
+      expect(buttons.some((button) => button.classList.contains('Mui-selected'))).toBe(true);
+      unmount();
+    }
+  });
+
   it('highlights Meus dados on dataset child routes (WKS2-07)', () => {
     mockAcessoUsuario = {
       temFuncionarioVinculado: true,

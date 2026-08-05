@@ -75,10 +75,14 @@ describe('DatasetEditorPage', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: /Editor: Previsão/i })).toBeInTheDocument());
   });
 
-  it('renders schema fields by name', async () => {
+  it('renders schema fields by name with spec column headers (WKS2-12)', async () => {
     renderEditor();
     await waitFor(() => expect(screen.getByDisplayValue('headcount')).toBeInTheDocument());
     expect(screen.getByDisplayValue('custo')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Campo' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Tipo' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Obrigatório' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Observação' })).toBeInTheDocument();
   });
 
   it('renders row values after switching to Linhas tab', async () => {
