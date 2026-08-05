@@ -139,6 +139,31 @@ export interface DatasetRowAuditEntry {
   dataEvento: string;
 }
 
+export interface FormulaValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+export interface DatasetAuditTimelineEntry {
+  rowId: number;
+  acao: 'CREATE' | 'UPDATE' | 'DELETE';
+  autorUsuarioId: number;
+  dataEvento: string;
+  resumo?: string | null;
+}
+
+export interface TemplateStructureResumo {
+  campos?: string[];
+  widgets?: string[];
+  formulas?: string[];
+}
+
+export interface TemplateVersionSummary {
+  versao: number;
+  dataPublicacao: string;
+  estruturaResumo: TemplateStructureResumo;
+}
+
 export type ProposalStatus = 'PENDENTE' | 'APLICADA' | 'DESCARTADA' | 'EXPIRADA';
 
 export interface ProposalPayload {

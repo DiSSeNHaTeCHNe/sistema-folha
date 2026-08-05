@@ -479,10 +479,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] `POST /workspace/formulas/validate` retorna `{ valid, errors[] }`
-- [ ] ACL 403 fora de escopo; 400 fórmula inválida
-- [ ] Gate check passes: `cd backend && mvn test -Dtest=FormulaValidationControllerWebMvcTest`
-- [ ] Test count: WebMvcTest ≥4 pass
+- [x] `POST /workspace/formulas/validate` retorna `{ valid, errors[] }`
+- [x] ACL 403 fora de escopo; 400 fórmula inválida
+- [x] Gate check passes: `cd backend && mvn test -Dtest=FormulaValidationControllerWebMvcTest`
+- [x] Test count: WebMvcTest ≥4 pass
 
 **Tests**: integration (WebMvcTest)  
 **Gate**: quick BE
@@ -506,10 +506,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Preview retorna `WorkspaceWidgetDataDTO` formatado
-- [ ] Nada persistido no banco após preview
-- [ ] Gate check passes: `cd backend && mvn test -Dtest=WidgetDefinitionControllerWebMvcTest`
-- [ ] Test count: preview tests ≥3 pass
+- [x] Preview retorna `WorkspaceWidgetDataDTO` formatado
+- [x] Nada persistido no banco após preview
+- [x] Gate check passes: `cd backend && mvn test -Dtest=WidgetDefinitionControllerWebMvcTest`
+- [x] Test count: preview tests ≥3 pass
 
 **Tests**: integration (WebMvcTest)  
 **Gate**: quick BE
@@ -531,10 +531,10 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Lista cronológica CREATE/UPDATE/DELETE com autor e timestamp
-- [ ] 404 dataset inexistente; 403 ACL
-- [ ] Gate check passes: `cd backend && mvn test -Dtest=DatasetControllerWebMvcTest`
-- [ ] Test count: audit agregado tests ≥3 pass
+- [x] Lista cronológica CREATE/UPDATE/DELETE com autor e timestamp
+- [x] 404 dataset inexistente; 403 ACL
+- [x] Gate check passes: `cd backend && mvn test -Dtest=DatasetControllerWebMvcTest`
+- [x] Test count: audit agregado tests ≥3 pass
 
 **Tests**: integration (WebMvcTest)  
 **Gate**: quick BE
@@ -556,9 +556,9 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Retorna `{ versao, estruturaResumo, dataPublicacao }[]` ordenado desc
-- [ ] Gate check passes: `cd backend && mvn test -Dtest=TemplateControllerWebMvcTest`
-- [ ] Test count: versions tests ≥3 pass
+- [x] Retorna `{ versao, estruturaResumo, dataPublicacao }[]` ordenado desc
+- [x] Gate check passes: `cd backend && mvn test -Dtest=TemplateControllerWebMvcTest`
+- [x] Test count: versions tests ≥3 pass
 
 **Tests**: integration (WebMvcTest)  
 **Gate**: quick BE
@@ -580,9 +580,9 @@ T25 → T26 → T27 → T28
 
 **Done when**:
 
-- [ ] Quatro métodos implementados com tipos corretos
-- [ ] Gate check passes: `cd frontend && npm test -- workspaceService`
-- [ ] Test count: ≥4 tests pass (um por método)
+- [x] Quatro métodos implementados com tipos corretos
+- [x] Gate check passes: `cd frontend && npm test -- workspaceService`
+- [x] Test count: ≥4 tests pass (um por método)
 
 **Tests**: unit  
 **Gate**: quick FE

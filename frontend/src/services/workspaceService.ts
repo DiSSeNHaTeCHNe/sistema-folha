@@ -1,15 +1,18 @@
 import api from './api';
 import type {
+  DatasetAuditTimelineEntry,
   DatasetDefinition,
   DatasetFieldSchema,
   DatasetRow,
   DatasetRowAuditEntry,
   DatasetSummary,
   FieldErrorItem,
+  FormulaValidationResult,
   OrcamentoInstallResult,
   TemplateCatalogItem,
   TemplateInstallResult,
   TemplatePublishResult,
+  TemplateVersionSummary,
   UserWidgetDefinition,
   Workspace,
   WorkspaceLayoutWidget,
@@ -153,6 +156,23 @@ export async function deleteWidgetDefinition(id: number): Promise<void> {
   await wrapRequest(api.delete(`/workspace/widget-definitions/${id}`));
 }
 
+export async function validateFormula(
+  formula: string,
+  fontes: UserWidgetDefinition['fontes'],
+): Promise<FormulaValidationResult> {
+  return wrapRequest(
+    api.post<FormulaValidationResult>('/workspace/formulas/validate', { formula, fontes }),
+  );
+}
+
+export async function previewWidgetDefinition(
+  payload: Omit<UserWidgetDefinition, 'id' | 'invalido'>,
+): Promise<WorkspaceWidgetData> {
+  return wrapRequest(
+    api.post<WorkspaceWidgetData>('/workspace/widget-definitions/preview', payload),
+  );
+}
+
 // --- Workspaces ---
 
 export async function listWorkspaces(): Promise<WorkspaceSummary[]> {
@@ -232,6 +252,18 @@ export async function upgradeTemplateInstallation(installationId: number): Promi
 export async function listDatasetRowAudit(datasetId: number, rowId: number): Promise<DatasetRowAuditEntry[]> {
   return wrapRequest(
     api.get<DatasetRowAuditEntry[]>(`/workspace/datasets/${datasetId}/rows/${rowId}/audit`),
+  );
+}
+
+export async function listDatasetAudit(datasetId: number): Promise<DatasetAuditTimelineEntry[]> {
+  return wrapRequest(
+    api.get<DatasetAuditTimelineEntry[]>(`/workspace/datasets/${datasetId}/audit`),
+  );
+}
+
+export async function listTemplateVersions(templateId: number): Promise<TemplateVersionSummary[]> {
+  return wrapRequest(
+    api.get<TemplateVersionSummary[]>(`/workspace/templates/${templateId}/versions`),
   );
 }
 

@@ -10,11 +10,15 @@ import {
   getDataset,
   getWorkspace,
   getWorkspaceWidgetData,
+  listDatasetAudit,
   listDatasets,
+  listTemplateVersions,
   listWorkspaces,
   listWidgetDefinitions,
+  previewWidgetDefinition,
   saveWorkspaceLayout,
   updateDatasetSchema,
+  validateFormula,
 } from './workspaceService';
 
 vi.mock('./api', () => ({
@@ -198,5 +202,73 @@ describe('workspaceService', () => {
     mockedApi.get.mockResolvedValue({ data: { id: 7, nome: 'Trimestral', widgets: [] } });
     await getWorkspace(7);
     expect(mockedApi.get).toHaveBeenCalledWith('/workspace/workspaces/7');
+  });
+
+  it('validateFormula posts formula and fontes', async () => {
+    const result = { valid: true, errors: [] as string[] };
+    mockedApi.post.mockResolvedValue({ data: result });
+
+    await expect(
+      validateFormula('SOMA(valor)', [{ kind: 'DATASET', ref: '1' }]),
+    ).resolves.toEqual(result);
+    expect(mockedApi.post).toHaveBeenCalledWith('/workspace/formulas/validate', {
+      formula: 'SOMA(valor)',
+      fontes: [{ kind: 'DATASET', ref: '1' }],
+    });
+  });
+
+  it('previewWidgetDefinition posts draft definition payload', async () => {
+    const payload = {
+      nome: 'KPI Preview',
+      tipo: 'KPI' as const,
+      fontes: [{ kind: 'SISTEMA' as const, ref: 'FOLHA' }],
+      formula: 'SOMA(total_proventos)',
+      config: {},
+    };
+    const preview = {
+      instanceId: 'preview',
+      userWidgetDefinitionId: null,
+      widgetId: null,
+      tipo: 'KPI',
+      semDados: false,
+      invalido: false,
+      competencia: '2026-06',
+      valores: { valor: 'R$ 1.234,56' },
+      linhas: [],
+    };
+    mockedApi.post.mockResolvedValue({ data: preview });
+
+    await expect(previewWidgetDefinition(payload)).resolves.toEqual(preview);
+    expect(mockedApi.post).toHaveBeenCalledWith('/workspace/widget-definitions/preview', payload);
+  });
+
+  it('listDatasetAudit fetches aggregated timeline', async () => {
+    const timeline = [
+      {
+        rowId: 10,
+        acao: 'UPDATE' as const,
+        autorUsuarioId: 5,
+        dataEvento: '2026-01-01T11:00:00',
+        resumo: 'Campos alterados: valor',
+      },
+    ];
+    mockedApi.get.mockResolvedValue({ data: timeline });
+
+    await expect(listDatasetAudit(1)).resolves.toEqual(timeline);
+    expect(mockedApi.get).toHaveBeenCalledWith('/workspace/datasets/1/audit');
+  });
+
+  it('listTemplateVersions fetches version summaries', async () => {
+    const versions = [
+      {
+        versao: 2,
+        dataPublicacao: '2026-02-01T10:00:00',
+        estruturaResumo: { campos: ['valor'], widgets: [], formulas: [] },
+      },
+    ];
+    mockedApi.get.mockResolvedValue({ data: versions });
+
+    await expect(listTemplateVersions(3)).resolves.toEqual(versions);
+    expect(mockedApi.get).toHaveBeenCalledWith('/workspace/templates/3/versions');
   });
 });
