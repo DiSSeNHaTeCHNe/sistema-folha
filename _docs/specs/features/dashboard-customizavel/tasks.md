@@ -562,9 +562,9 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-28, DASHC-31
 
 **Done when**:
-- [ ] Selecionar competência refetch widgets sem override
-- [ ] Default = folha mais recente (comportamento atual)
-- [ ] Competência global **não** incluída no PUT layout
+- [x] Selecionar competência refetch widgets sem override
+- [x] Default = folha mais recente (comportamento atual)
+- [x] Competência global **não** incluída no PUT layout
 
 **Tests**: unit  
 **Gate**: quick FE  

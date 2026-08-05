@@ -9,6 +9,7 @@ import type { ComponentType } from 'react';
 import type { DashboardStats } from '../../../services/dashboardService';
 import { formatMoneyDisplay } from '../../../utils/money';
 import type { WidgetCategoria, WidgetInstance } from '../types';
+import { resolveTopN } from '../widgetConfigOptions';
 import {
   buildCustoPorCentroPie,
   buildCustoPorLinhaPie,
@@ -92,26 +93,56 @@ function KpiRelacaoPd(props: WidgetProps) {
 
 function GraficoFuncionariosPorCc(props: WidgetProps) {
   const theme = useTheme();
-  const data = props.stats ? buildFuncionariosPorCentroPie(props.stats, theme.palette.charts) : [];
-  return <DistribuicaoWidget title="Funcionários por Centro de Custo" data={data} />;
+  const topN = resolveTopN(props.instance.widgetId, props.instance.config);
+  const data = props.stats ? buildFuncionariosPorCentroPie(props.stats, theme.palette.charts, topN) : [];
+  return (
+    <DistribuicaoWidget
+      title="Funcionários por Centro de Custo"
+      data={data}
+      tipoVisualizacao={props.instance.config?.tipoVisualizacao}
+    />
+  );
 }
 
 function GraficoFuncionariosPorLinha(props: WidgetProps) {
   const theme = useTheme();
-  const data = props.stats ? buildFuncionariosPorLinhaPie(props.stats, theme.palette.charts) : [];
-  return <DistribuicaoWidget title="Funcionários por Linha de Negócio" data={data} />;
+  const topN = resolveTopN(props.instance.widgetId, props.instance.config);
+  const data = props.stats ? buildFuncionariosPorLinhaPie(props.stats, theme.palette.charts, topN) : [];
+  return (
+    <DistribuicaoWidget
+      title="Funcionários por Linha de Negócio"
+      data={data}
+      tipoVisualizacao={props.instance.config?.tipoVisualizacao}
+    />
+  );
 }
 
 function GraficoCustoPorCc(props: WidgetProps) {
   const theme = useTheme();
-  const data = props.stats ? buildCustoPorCentroPie(props.stats, theme.palette.charts) : [];
-  return <DistribuicaoWidget title="Custo Folha por Centro de Custo" data={data} currency />;
+  const topN = resolveTopN(props.instance.widgetId, props.instance.config);
+  const data = props.stats ? buildCustoPorCentroPie(props.stats, theme.palette.charts, topN) : [];
+  return (
+    <DistribuicaoWidget
+      title="Custo Folha por Centro de Custo"
+      data={data}
+      currency
+      tipoVisualizacao={props.instance.config?.tipoVisualizacao}
+    />
+  );
 }
 
 function GraficoCustoPorLinha(props: WidgetProps) {
   const theme = useTheme();
-  const data = props.stats ? buildCustoPorLinhaPie(props.stats, theme.palette.charts) : [];
-  return <DistribuicaoWidget title="Custo Folha por Linha de Negócio" data={data} currency />;
+  const topN = resolveTopN(props.instance.widgetId, props.instance.config);
+  const data = props.stats ? buildCustoPorLinhaPie(props.stats, theme.palette.charts, topN) : [];
+  return (
+    <DistribuicaoWidget
+      title="Custo Folha por Linha de Negócio"
+      data={data}
+      currency
+      tipoVisualizacao={props.instance.config?.tipoVisualizacao}
+    />
+  );
 }
 
 function ListaTopProventos(props: WidgetProps) {

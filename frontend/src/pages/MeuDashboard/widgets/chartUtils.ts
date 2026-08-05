@@ -25,22 +25,42 @@ export function buildPieData(
   }));
 }
 
-export function buildFuncionariosPorCentroPie(stats: DashboardStats, chartColors: readonly string[]) {
-  return buildPieData(stats.porCentroCusto, 'quantidadeFuncionarios', chartColors, 5, 15);
+export function buildFuncionariosPorCentroPie(
+  stats: DashboardStats,
+  chartColors: readonly string[],
+  maxItems = 5,
+) {
+  return buildPieData(stats.porCentroCusto, 'quantidadeFuncionarios', chartColors, maxItems, 15);
 }
 
-export function buildFuncionariosPorLinhaPie(stats: DashboardStats, chartColors: readonly string[]) {
-  return buildPieData(stats.porLinhaNegocio, 'quantidadeFuncionarios', chartColors, 6, 12);
+export function buildFuncionariosPorLinhaPie(
+  stats: DashboardStats,
+  chartColors: readonly string[],
+  maxItems = 6,
+) {
+  return buildPieData(stats.porLinhaNegocio, 'quantidadeFuncionarios', chartColors, maxItems, 12);
 }
 
-export function buildCustoPorCentroPie(stats: DashboardStats, chartColors: readonly string[]) {
-  return buildPieData(stats.porCentroCusto, 'valorTotal', chartColors, 6, 12);
+export function buildCustoPorCentroPie(
+  stats: DashboardStats,
+  chartColors: readonly string[],
+  maxItems = 6,
+) {
+  return buildPieData(stats.porCentroCusto, 'valorTotal', chartColors, maxItems, 12);
 }
 
-export function buildCustoPorLinhaPie(stats: DashboardStats, chartColors: readonly string[]) {
-  return buildPieData(stats.porLinhaNegocio, 'valorTotal', chartColors, 6, 12);
+export function buildCustoPorLinhaPie(
+  stats: DashboardStats,
+  chartColors: readonly string[],
+  maxItems = 6,
+) {
+  return buildPieData(stats.porLinhaNegocio, 'valorTotal', chartColors, maxItems, 12);
 }
 
-export function buildFuncionariosPorCargoPie(stats: DashboardStats, chartColors: readonly string[]) {
-  return buildPieData(stats.porCargo ?? [], 'quantidadeFuncionarios', chartColors, 6, 12);
+export function buildFuncionariosPorCargoPie(
+  stats: DashboardStats,
+  chartColors: readonly string[],
+  maxItems = 6,
+) {
+  return buildPieData(stats.porCargo ?? [], 'quantidadeFuncionarios', chartColors, maxItems, 12);
 }

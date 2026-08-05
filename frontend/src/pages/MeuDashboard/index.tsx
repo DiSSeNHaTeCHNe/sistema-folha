@@ -25,6 +25,7 @@ import { criarWidgetFromCatalog } from './widgetUtils';
 import { createDashboardQueryClient } from './queryClient';
 import { CompetenciaSelector } from './CompetenciaSelector';
 import { useCompetenciaGlobal } from './hooks/useCompetenciaGlobal';
+import { validateLayoutConfigs } from './widgetConfigValidation';
 
 function MeuDashboardContent() {
   const { competenciaGlobal, setCompetenciaGlobal } = useCompetenciaGlobal();
@@ -112,6 +113,13 @@ function MeuDashboardContent() {
   };
 
   const handleSave = async () => {
+    if (draftLayout) {
+      const validation = validateLayoutConfigs(draftLayout.widgets);
+      if (!validation.valid) {
+        showNotification(`Configuração inválida: ${validation.errors[0]}`, 'error');
+        return;
+      }
+    }
     const ok = await save();
     if (ok) {
       showNotification('Layout salvo com sucesso', 'success');

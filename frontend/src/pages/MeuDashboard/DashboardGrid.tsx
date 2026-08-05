@@ -22,6 +22,8 @@ import type { DashboardStats } from '../../services/dashboardService';
 import type { WidgetInstance } from './types';
 import { COL_SPAN_PRESETS, type ColSpanPreset } from './types';
 import { WidgetFrame } from './WidgetFrame';
+import { WidgetConfigPanel } from './WidgetConfigPanel';
+import { validateWidgetConfig } from './widgetConfigValidation';
 import { getWidgetDefinition } from './widgets/registry';
 
 interface DashboardGridProps {
@@ -41,12 +43,14 @@ function SortableWidgetItem({
   stats,
   editMode,
   onColSpanChange,
+  onConfigChange,
   onRemoveWidget,
 }: {
   instance: WidgetInstance;
   stats: DashboardStats;
   editMode: boolean;
   onColSpanChange: (instanceId: string, colSpan: number) => void;
+  onConfigChange?: (instanceId: string, config: WidgetInstance['config']) => void;
   onRemoveWidget?: (instanceId: string) => void;
 }) {
   const definition = getWidgetDefinition(instance.widgetId);
@@ -68,6 +72,8 @@ function SortableWidgetItem({
 
   const presetValue = (Object.entries(COL_SPAN_PRESETS).find(([, span]) => span === instance.colSpan)?.[0] ??
     'M') as ColSpanPreset;
+
+  const configValidation = validateWidgetConfig(instance.widgetId, instance.config);
 
   return (
     <Box
@@ -115,6 +121,14 @@ function SortableWidgetItem({
           ) : undefined
         }
       >
+        {editMode && onConfigChange && (
+          <WidgetConfigPanel
+            widgetId={instance.widgetId}
+            config={instance.config}
+            validationErrors={configValidation.valid ? [] : configValidation.errors}
+            onChange={(config) => onConfigChange(instance.instanceId, config)}
+          />
+        )}
         <Component instance={instance} stats={stats} editMode={editMode} />
       </WidgetFrame>
     </Box>
@@ -156,6 +170,15 @@ export function DashboardGrid({ widgets, stats, editMode, onWidgetsChange, onRem
     );
   };
 
+  const handleConfigChange = (instanceId: string, config: WidgetInstance['config']) => {
+    if (!onWidgetsChange) {
+      return;
+    }
+    onWidgetsChange(
+      sorted.map((widget) => (widget.instanceId === instanceId ? { ...widget, config } : widget)),
+    );
+  };
+
   const grid = (
     <Box
       sx={{
@@ -171,6 +194,7 @@ export function DashboardGrid({ widgets, stats, editMode, onWidgetsChange, onRem
           stats={stats}
           editMode={editMode}
           onColSpanChange={handleColSpanChange}
+          onConfigChange={editMode ? handleConfigChange : undefined}
           onRemoveWidget={onRemoveWidget}
         />
       ))}

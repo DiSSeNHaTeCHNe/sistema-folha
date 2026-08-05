@@ -3,18 +3,21 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { TrendingDown, TrendingUp } from '@mui/icons-material';
 import type { RubricaStats } from '../../../services/dashboardService';
 import type { WidgetProps } from './registry';
+import { resolveTopN } from '../widgetConfigOptions';
 import { widgetCardSx } from './cardStyles';
 
 interface TopRubricasWidgetProps extends WidgetProps {
   variant: 'proventos' | 'descontos';
 }
 
-export function TopRubricasWidget({ stats, variant }: TopRubricasWidgetProps) {
+export function TopRubricasWidget({ instance, stats, variant }: TopRubricasWidgetProps) {
   const theme = useTheme();
   const chartColors = theme.palette.charts;
-  const items: RubricaStats[] =
+  const topN = resolveTopN(instance.widgetId, instance.config);
+  const rawItems: RubricaStats[] =
     variant === 'proventos' ? stats?.topProventos ?? [] : stats?.topDescontos ?? [];
-  const title = variant === 'proventos' ? 'Top 5 Proventos' : 'Top 5 Descontos';
+  const items = rawItems.slice(0, topN);
+  const title = variant === 'proventos' ? `Top ${topN} Proventos` : `Top ${topN} Descontos`;
   const avatarColor = variant === 'proventos' ? 'success' : 'error';
   const valueColor = variant === 'proventos' ? 'success.main' : 'error.main';
   const Icon = variant === 'proventos' ? TrendingUp : TrendingDown;
