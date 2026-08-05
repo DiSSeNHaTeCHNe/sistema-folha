@@ -3,7 +3,7 @@
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
 **Last Updated:** 2026-08-05  
-**Current Work:** `workspace-usuario` — **P1 complete** (T1–T30, Batch 5); release gate green; próximo: P2 Batch 6 (T31–T39 marketplace + audit)
+**Current Work:** `workspace-usuario` — **P3 complete** (T1–T48); release + security + MCP gates green; ready for Verifier
 
 ---
 
@@ -149,8 +149,8 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 
 ## Handoff
 
-- **Branch:** `feat/temas-visuais` (HEAD `ab2cf01`, base `a16f25f`; 25 commits; Verifier PASS)
-- **Feature (execute complete, not merged)**: `temas-visuais` — 5 temas; Techne padrão (AD-016); 559 tests; gaps P2 abertos (TEMA-14/10 test depth)
+- **Branch:** `feat/workspace-usuario` (HEAD after Batch 7 / T48)
+- **Feature (execute complete, not merged)**: `workspace-usuario` — P1+P2+P3 done (T1–T48); IA propor-e-confirmar end-to-end; WKS-24…32 implemented; dispatch Verifier
 - **Feature (closed on main)**: `relatorios-executivos` + `relatorios-executivos-fix1` → mergeados (2026-08-03); AD-015 active; validation PASS / PASS com ressalvas
 - **Feature (closed on main)**: `auth-api-keys` + fix1 + fix2 → mergeados; AD-013 active; PAT `sf_live_`, UI `/api-keys`
 - **Quick task (done)**: `011-repo-limpo-atualizado` — sync governança, README, specs pendentes, higiene git
