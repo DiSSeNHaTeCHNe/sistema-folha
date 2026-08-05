@@ -9,4 +9,9 @@ public interface OrganogramaAcessoPort {
     boolean usuarioPodeAcessarCentroCusto(Long usuarioId, Long centroCustoId);
 
     AccessContextDTO obterContextoAcesso(Long usuarioId);
+
+    /**
+     * Verifica se {@code noDescendenteId} é o nó {@code noRaizId} ou um descendente dele na árvore ativa.
+     */
+    boolean noEstaNaSubarvore(Long noDescendenteId, Long noRaizId);
 }

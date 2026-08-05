@@ -28,14 +28,19 @@ vi.mock('../AparenciaDialog', () => ({
     open ? <div role="dialog" aria-label="aparencia">Aparência</div> : null,
 }));
 
-function renderLayout() {
+function renderLayout(route = '/') {
   return renderWithProviders(
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<div>Page content</div>} />
+        <Route path="workspace" element={<div>Workspace hub</div>} />
+        <Route path="workspace/datasets" element={<div>Datasets list</div>} />
+        <Route path="workspace/datasets/:id" element={<div>Dataset editor</div>} />
+        <Route path="workspace/templates" element={<div>Template catalog</div>} />
+        <Route path="workspace/:workspaceId" element={<div>Workspace detail</div>} />
       </Route>
     </Routes>,
-    { route: '/' },
+    { route },
   );
 }
 
@@ -124,5 +129,73 @@ describe('Layout', () => {
     renderLayout();
 
     expect(screen.getByText('Page content')).toBeInTheDocument();
+  });
+
+  it('shows Meu Workspace section with three sub-items for scoped users (WKS2-05)', () => {
+    mockAcessoUsuario = {
+      temFuncionarioVinculado: true,
+      temNoOrganograma: true,
+      acessoTotal: false,
+      centrosCustoIds: [1],
+      quantidadeCentrosAcessiveis: 1,
+    };
+    renderLayout('/workspace');
+
+    expect(screen.getAllByText('Meu Workspace').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Workspace')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Meus workspaces').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Meus dados').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Catálogo de templates').length).toBeGreaterThan(0);
+  });
+
+  it('highlights active sub-nav item per workspace route (WKS2-06)', () => {
+    mockAcessoUsuario = {
+      temFuncionarioVinculado: true,
+      temNoOrganograma: true,
+      acessoTotal: false,
+      centrosCustoIds: [1],
+      quantidadeCentrosAcessiveis: 1,
+    };
+
+    const routes = [
+      { path: '/workspace', label: 'Meus workspaces' },
+      { path: '/workspace/datasets', label: 'Meus dados' },
+      { path: '/workspace/templates', label: 'Catálogo de templates' },
+    ] as const;
+
+    for (const { path, label } of routes) {
+      const { unmount } = renderLayout(path);
+      const buttons = screen.getAllByRole('button', { name: label });
+      expect(buttons.some((button) => button.classList.contains('Mui-selected'))).toBe(true);
+      unmount();
+    }
+  });
+
+  it('highlights Meus dados on dataset child routes (WKS2-07)', () => {
+    mockAcessoUsuario = {
+      temFuncionarioVinculado: true,
+      temNoOrganograma: true,
+      acessoTotal: false,
+      centrosCustoIds: [1],
+      quantidadeCentrosAcessiveis: 1,
+    };
+    renderLayout('/workspace/datasets/42');
+
+    const datasetsButtons = screen.getAllByRole('button', { name: 'Meus dados' });
+    expect(datasetsButtons.some((button) => button.classList.contains('Mui-selected'))).toBe(true);
+  });
+
+  it('highlights Meus workspaces on workspace detail routes (WKS2-07)', () => {
+    mockAcessoUsuario = {
+      temFuncionarioVinculado: true,
+      temNoOrganograma: true,
+      acessoTotal: false,
+      centrosCustoIds: [1],
+      quantidadeCentrosAcessiveis: 1,
+    };
+    renderLayout('/workspace/7');
+
+    const hubButtons = screen.getAllByRole('button', { name: 'Meus workspaces' });
+    expect(hubButtons.some((button) => button.classList.contains('Mui-selected'))).toBe(true);
   });
 });

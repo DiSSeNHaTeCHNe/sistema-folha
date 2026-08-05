@@ -35,6 +35,9 @@ import java.util.Set;
  *   <li>Funcionário sem nó no organograma → acesso negado</li>
  *   <li>Conjunto vazio de centros nunca implica acesso total</li>
  * </ul>
+ *
+ * <p>Permissões de workspace dedicadas (ex.: {@code WORKSPACE_IA_CRIAR} para propostas IA)
+ * são strings em {@code usuario_permissoes} — ver {@link br.com.techne.sistemafolha.workspace.domain.WorkspacePermissions}.
  */
 @Service
 @RequiredArgsConstructor
@@ -175,6 +178,25 @@ public class OrganogramaAcessoService implements OrganogramaAcessoPort {
             null,
             null
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean noEstaNaSubarvore(Long noDescendenteId, Long noRaizId) {
+        if (noDescendenteId == null || noRaizId == null) {
+            return false;
+        }
+        if (noDescendenteId.equals(noRaizId)) {
+            return true;
+        }
+        NoOrganograma atual = noOrganogramaRepository.findByIdAndAtivoTrue(noDescendenteId).orElse(null);
+        while (atual != null && atual.getParent() != null) {
+            if (atual.getParent().getId().equals(noRaizId)) {
+                return true;
+            }
+            atual = noOrganogramaRepository.findByIdAndAtivoTrue(atual.getParent().getId()).orElse(null);
+        }
+        return false;
     }
 
     private void coletarCentrosCustoRecursivo(NoOrganograma no, Set<Long> centrosAcessiveis) {

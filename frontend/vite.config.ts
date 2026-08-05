@@ -9,6 +9,8 @@ export default defineConfig({
     globals: false,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    pool: 'forks',
+    fileParallelism: false,
     exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
     coverage: {
       provider: 'v8',

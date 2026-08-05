@@ -6,6 +6,8 @@ import { describe, expect, it } from 'vitest';
 
 const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCAN_DIRS = ['pages', 'components'].map((dir) => join(SRC_ROOT, dir));
+/** WKS2-35 canonical token module — hex literals are intentional here. */
+const ALLOWLIST = new Set(['pages/Workspace/workspaceTheme.ts']);
 const COLOR_PATTERN = /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/;
 
 /**
@@ -39,8 +41,12 @@ describe('no color literals in pages/components', () => {
 
     for (const dir of SCAN_DIRS) {
       for (const file of collectSourceFiles(dir)) {
+        const relative = file.replace(`${SRC_ROOT}/`, '');
+        if (ALLOWLIST.has(relative)) {
+          continue;
+        }
         if (COLOR_PATTERN.test(readFileSync(file, 'utf-8'))) {
-          violations.push(file.replace(`${SRC_ROOT}/`, ''));
+          violations.push(relative);
         }
       }
     }

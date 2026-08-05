@@ -2,6 +2,7 @@ package br.com.techne.sistemafolha.security;
 
 import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 import br.com.techne.sistemafolha.auth.domain.Usuario;
+import br.com.techne.sistemafolha.workspace.domain.WorkspacePermissions;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -152,6 +153,20 @@ class JwtAuthenticationFilterTest {
         assertNull(SecurityContextHolder.getContext().getAuthentication());
         verify(filterChain).doFilter(request, response);
         verify(jwtService, never()).extractLogin(anyString());
+    }
+
+    @Test
+    void doFilterInternal_apiKeyComPermissaoWorkspace_configuraMarkerWorkspace() throws Exception {
+        Usuario usuario = usuarioComPermissaoApiKey();
+        usuario.setPermissoes(List.of("API_KEY", WorkspacePermissions.WORKSPACE_IA_CRIAR));
+        request.addHeader("Authorization", "Bearer " + API_KEY);
+        when(apiKeyService.autenticarPorChave(API_KEY)).thenReturn(Optional.of(usuario));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertTrue(SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+            .anyMatch(a -> ApiKeySecurity.ROLE_API_KEY_WORKSPACE.equals(a.getAuthority())));
+        assertFalse(temMarkerReadOnly());
     }
 
     @Test

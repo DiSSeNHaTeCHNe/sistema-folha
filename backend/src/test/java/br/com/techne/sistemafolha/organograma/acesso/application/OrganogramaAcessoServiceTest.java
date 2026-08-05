@@ -270,6 +270,36 @@ class OrganogramaAcessoServiceTest {
         assertEquals(MotivoNegacaoAcesso.SEM_FUNCIONARIO, contexto.motivoNegacao());
     }
 
+    @Test
+    void noEstaNaSubarvore_mesmoNo_retornaTrue() {
+        assertTrue(service.noEstaNaSubarvore(5L, 5L));
+    }
+
+    @Test
+    void noEstaNaSubarvore_descendenteDireto_retornaTrue() {
+        NoOrganograma filho = no(6L, "Gerência", 2);
+        NoOrganograma pai = no(5L, "Diretoria", 1);
+        filho.setParent(pai);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(6L)).thenReturn(Optional.of(filho));
+
+        assertTrue(service.noEstaNaSubarvore(6L, 5L));
+    }
+
+    @Test
+    void noEstaNaSubarvore_foraDaSubarvore_retornaFalse() {
+        NoOrganograma noA = no(7L, "A", 1);
+        NoOrganograma noB = no(8L, "B", 1);
+        when(noOrganogramaRepository.findByIdAndAtivoTrue(7L)).thenReturn(Optional.of(noA));
+
+        assertFalse(service.noEstaNaSubarvore(7L, 8L));
+    }
+
+    @Test
+    void noEstaNaSubarvore_idsNulos_retornaFalse() {
+        assertFalse(service.noEstaNaSubarvore(null, 5L));
+        assertFalse(service.noEstaNaSubarvore(5L, null));
+    }
+
     private Usuario usuario(Long id, Funcionario funcionario) {
         return usuario(id, funcionario, Collections.emptyList());
     }

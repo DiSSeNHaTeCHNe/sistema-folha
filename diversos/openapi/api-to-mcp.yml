@@ -16,3 +16,9 @@ options:
     - resumoPorCompetencia
     - listar_2
     - listar
+    - listarTemplatesVisiveis
+    - listarCamposSistema
+    - criarPropostaWorkspace
+    - obterPropostaWorkspace
+    - confirmarPropostaWorkspace
+    - descartarPropostaWorkspace

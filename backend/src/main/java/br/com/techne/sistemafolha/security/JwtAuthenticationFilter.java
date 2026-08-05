@@ -6,6 +6,8 @@ import br.com.techne.sistemafolha.auth.application.ApiKeyService;
 
 import br.com.techne.sistemafolha.auth.domain.Usuario;
 
+import br.com.techne.sistemafolha.workspace.domain.WorkspacePermissions;
+
 import jakarta.servlet.FilterChain;
 
 import jakarta.servlet.ServletException;
@@ -152,7 +154,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     null,
 
-                    authoritiesComMarkerReadOnly(usuario)
+                    authoritiesParaApiKey(usuario)
 
             );
 
@@ -222,13 +224,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
 
-    static List<GrantedAuthority> authoritiesComMarkerReadOnly(Usuario usuario) {
+    static List<GrantedAuthority> authoritiesParaApiKey(Usuario usuario) {
 
         List<GrantedAuthority> authorities = new ArrayList<>(usuario.getAuthorities());
 
-        authorities.add(new SimpleGrantedAuthority(ApiKeySecurity.ROLE_API_KEY_READONLY));
+        List<String> permissoes = usuario.getPermissoes();
+
+        if (permissoes != null && permissoes.contains(WorkspacePermissions.WORKSPACE_IA_CRIAR)) {
+
+            authorities.add(new SimpleGrantedAuthority(ApiKeySecurity.ROLE_API_KEY_WORKSPACE));
+
+        } else {
+
+            authorities.add(new SimpleGrantedAuthority(ApiKeySecurity.ROLE_API_KEY_READONLY));
+
+        }
 
         return authorities;
+
+    }
+
+
+
+    static List<GrantedAuthority> authoritiesComMarkerReadOnly(Usuario usuario) {
+
+        return authoritiesParaApiKey(usuario);
 
     }
 

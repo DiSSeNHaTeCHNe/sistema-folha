@@ -88,7 +88,8 @@ class ModularArchitectureTest {
                 "..organograma.infrastructure..",
                 "..auth.infrastructure..",
                 "..importacao.infrastructure..",
-                "..dashboard.infrastructure.."
+                "..dashboard.infrastructure..",
+                "..workspace.infrastructure.."
             )
             .because("Domain layer must not depend on infrastructure (own or foreign)");
 
@@ -116,7 +117,8 @@ class ModularArchitectureTest {
                 "..dashboard..",
                 "..importacao..",
                 "..auth..",
-                "..security.."
+                "..security..",
+                "..workspace.."
             )
             .should().dependOnClassesThat()
             .resideInAnyPackage("..organograma.infrastructure..", "..organograma.application..")
@@ -230,4 +232,34 @@ class ModularArchitectureTest {
                 "..dashboard.infrastructure.."
             )
             .because("relatorios.application must not depend on foreign infrastructure (same-domain OK)");
+
+    @ArchTest
+    static final ArchRule workspace_application_must_not_access_foreign_infrastructure =
+        noClasses()
+            .that().resideInAnyPackage("..workspace..application..")
+            .should().dependOnClassesThat()
+            .resideInAnyPackage(
+                "..beneficios.infrastructure..",
+                "..folha.infrastructure..",
+                "..cadastros.infrastructure..",
+                "..organograma.infrastructure..",
+                "..auth.infrastructure..",
+                "..dashboard.infrastructure.."
+            )
+            .because("workspace.application must not depend on foreign infrastructure (same-domain OK)");
+
+    @ArchTest
+    static final ArchRule workspace_api_must_not_access_foreign_infrastructure =
+        noClasses()
+            .that().resideInAnyPackage("..workspace..api..")
+            .should().dependOnClassesThat()
+            .resideInAnyPackage(
+                "..beneficios.infrastructure..",
+                "..folha.infrastructure..",
+                "..cadastros.infrastructure..",
+                "..organograma.infrastructure..",
+                "..auth.infrastructure..",
+                "..dashboard.infrastructure.."
+            )
+            .because("workspace.api must not depend on foreign infrastructure");
 }
