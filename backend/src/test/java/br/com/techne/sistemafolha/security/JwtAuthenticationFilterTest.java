@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.security;
 
 import br.com.techne.sistemafolha.auth.application.ApiKeyService;
+import br.com.techne.sistemafolha.auth.domain.Usuario;
 import br.com.techne.sistemafolha.workspace.domain.WorkspacePermissions;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;

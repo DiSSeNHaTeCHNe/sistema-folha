@@ -25,6 +25,10 @@ import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetNotFoundExcep
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceDatasetRowNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceNameConflictException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceNotFoundException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceIaPermissaoNegadaException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceProposalAlreadyAppliedException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceProposalExpiredException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceProposalNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
 import br.com.techne.sistemafolha.workspace.domain.TemplatePublishException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceTemplateInstallationNotFoundException;
@@ -212,6 +216,34 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(WorkspaceDatasetConflictException.class)
     public ResponseEntity<ErrorResponse> handleWorkspaceDatasetConflictException(
             WorkspaceDatasetConflictException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(WorkspaceIaPermissaoNegadaException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceIaPermissaoNegadaException(
+            WorkspaceIaPermissaoNegadaException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(WorkspaceProposalNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceProposalNotFoundException(
+            WorkspaceProposalNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkspaceProposalExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceProposalExpiredException(
+            WorkspaceProposalExpiredException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.GONE.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.GONE);
+    }
+
+    @ExceptionHandler(WorkspaceProposalAlreadyAppliedException.class)
+    public ResponseEntity<ErrorResponse> handleWorkspaceProposalAlreadyAppliedException(
+            WorkspaceProposalAlreadyAppliedException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
