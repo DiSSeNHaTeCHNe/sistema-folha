@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom';
 import WorkspaceDetailPage from './WorkspaceDetailPage';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { getWorkspace, listWorkspaces, listWidgetDefinitions } from '../../services/workspaceService';
+import { colors } from './workspaceTheme';
 
 vi.mock('./hooks/useUnsavedChangesGuard', () => ({
   useUnsavedChangesGuard: vi.fn(),
@@ -85,5 +86,17 @@ describe('WorkspaceDetailPage', () => {
     await waitFor(() => expect(screen.getByRole('status', { name: 'Workspace vazio' })).toBeInTheDocument());
     expect(screen.getAllByRole('button', { name: 'Adicionar widget' }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByRole('button', { name: 'Instalar template' }).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('applies Techne page and navy tokens from workspaceTheme (WKS2F1-16)', async () => {
+    const { container } = renderDetail('/workspace/1');
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Planejamento', level: 1 })).toBeInTheDocument(),
+    );
+    const shell = container.firstElementChild as HTMLElement;
+    expect(shell).toHaveStyle({ backgroundColor: colors.page });
+    expect(screen.getByRole('heading', { name: 'Planejamento', level: 1 })).toHaveStyle({
+      color: colors.navy,
+    });
   });
 });

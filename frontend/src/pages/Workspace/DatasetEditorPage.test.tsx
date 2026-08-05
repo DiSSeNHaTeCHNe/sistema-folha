@@ -12,6 +12,7 @@ import {
   updateDatasetSchema,
   WorkspaceApiError,
 } from '../../services/workspaceService';
+import { colors } from './workspaceTheme';
 
 vi.mock('../../services/workspaceService', () => ({
   getDataset: vi.fn(),
@@ -224,5 +225,17 @@ describe('DatasetEditorPage', () => {
     vi.mocked(getDataset).mockReturnValue(new Promise(() => {}));
     renderEditor();
     expect(screen.getByRole('status')).toHaveTextContent(/Carregando dataset/i);
+  });
+
+  it('applies Techne page and navy tokens from workspaceTheme (WKS2F1-16)', async () => {
+    const { container } = renderEditor();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /Editor: Previsão/i, level: 1 })).toBeInTheDocument(),
+    );
+    const shell = container.firstElementChild as HTMLElement;
+    expect(shell).toHaveStyle({ backgroundColor: colors.page });
+    expect(screen.getByRole('heading', { name: /Editor: Previsão/i, level: 1 })).toHaveStyle({
+      color: colors.navy,
+    });
   });
 });

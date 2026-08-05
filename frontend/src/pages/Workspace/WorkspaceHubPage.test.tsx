@@ -9,6 +9,7 @@ import {
   listWidgetDefinitions,
   listWorkspaces,
 } from '../../services/workspaceService';
+import { colors } from './workspaceTheme';
 
 const mockNavigate = vi.fn();
 
@@ -152,5 +153,17 @@ describe('WorkspaceHubPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Novo dataset' })).toBeDisabled());
     fireEvent.mouseOver(screen.getByRole('button', { name: 'Novo dataset' }));
     expect(await screen.findByRole('tooltip')).toHaveTextContent(/Limite atingido/i);
+  });
+
+  it('applies Techne page and navy tokens from workspaceTheme (WKS2F1-16)', async () => {
+    const { container } = renderWithProviders(<WorkspaceHubPage />);
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Meus workspaces', level: 1 })).toBeInTheDocument(),
+    );
+    const shell = container.firstElementChild as HTMLElement;
+    expect(shell).toHaveStyle({ backgroundColor: colors.page });
+    expect(screen.getByRole('heading', { name: 'Meus workspaces', level: 1 })).toHaveStyle({
+      color: colors.navy,
+    });
   });
 });
