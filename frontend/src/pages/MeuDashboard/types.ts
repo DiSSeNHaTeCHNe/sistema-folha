@@ -1,4 +1,29 @@
+import type {
+  CargoStats,
+  CentroCustoStats,
+  EvolucaoMensal,
+  LinhaNegocioStats,
+  RubricaStats,
+} from '../../services/dashboardService';
+
 export type WidgetCategoria = 'KPI' | 'GRAFICO' | 'LISTA';
+
+export interface WidgetData {
+  widgetId: string;
+  competencia: string;
+  semDados: boolean;
+  totalFuncionarios?: number | null;
+  custoMensalFolha?: string | number | null;
+  totalBeneficiosAtivos?: number | null;
+  totalProventos?: number | null;
+  totalDescontos?: number | null;
+  porLinhaNegocio?: LinhaNegocioStats[] | null;
+  porCentroCusto?: CentroCustoStats[] | null;
+  porCargo?: CargoStats[] | null;
+  topProventos?: RubricaStats[] | null;
+  topDescontos?: RubricaStats[] | null;
+  evolucaoMensal?: EvolucaoMensal[] | null;
+}
 
 export interface WidgetConfig {
   competencia?: string;

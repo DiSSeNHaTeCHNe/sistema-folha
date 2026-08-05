@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import {
   Alert,
   Box,
@@ -21,8 +22,9 @@ import { DashboardEmptyState, WidgetCatalogDrawer } from './WidgetCatalogDrawer'
 import { useDashboardLayout } from './hooks/useDashboardLayout';
 import type { WidgetCatalogItem } from './types';
 import { criarWidgetFromCatalog } from './widgetUtils';
+import { createDashboardQueryClient } from './queryClient';
 
-export default function MeuDashboard() {
+function MeuDashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -220,5 +222,14 @@ export default function MeuDashboard() {
         onClose={hideNotification}
       />
     </>
+  );
+}
+
+export default function MeuDashboard() {
+  const queryClient = useMemo(() => createDashboardQueryClient(), []);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MeuDashboardContent />
+    </QueryClientProvider>
   );
 }
