@@ -7,6 +7,7 @@ import {
   deleteDatasetRow,
   getDataset,
   listDatasetRows,
+  listDatasets,
   updateDatasetRow,
   updateDatasetSchema,
   WorkspaceApiError,
@@ -15,6 +16,7 @@ import {
 vi.mock('../../services/workspaceService', () => ({
   getDataset: vi.fn(),
   listDatasetRows: vi.fn(),
+  listDatasets: vi.fn(),
   updateDatasetSchema: vi.fn(),
   createDatasetRow: vi.fn(),
   updateDatasetRow: vi.fn(),
@@ -52,6 +54,7 @@ describe('DatasetEditorPage', () => {
     vi.clearAllMocks();
     vi.mocked(getDataset).mockResolvedValue(dataset);
     vi.mocked(listDatasetRows).mockResolvedValue(rows);
+    vi.mocked(listDatasets).mockResolvedValue([dataset, { id: 2, nome: 'Outro', schemaVersion: 1, totalLinhas: 0, totalCampos: 1 }]);
     vi.mocked(updateDatasetSchema).mockImplementation(async (_id, campos, version) => ({
       ...dataset,
       campos,
@@ -78,8 +81,10 @@ describe('DatasetEditorPage', () => {
     expect(screen.getByDisplayValue('custo')).toBeInTheDocument();
   });
 
-  it('renders row values in grid', async () => {
+  it('renders row values after switching to Linhas tab', async () => {
     renderEditor();
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Linhas' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('tab', { name: 'Linhas' }));
     await waitFor(() => expect(screen.getByDisplayValue('5')).toBeInTheDocument());
     expect(screen.getByDisplayValue('1000.50')).toBeInTheDocument();
   });
@@ -88,7 +93,21 @@ describe('DatasetEditorPage', () => {
     renderEditor();
     await waitFor(() => expect(screen.getByRole('button', { name: /Adicionar campo/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /Adicionar campo/i }));
-    expect(screen.getAllByLabelText('Nome do campo')).toHaveLength(3);
+    expect(screen.getAllByLabelText('Campo')).toHaveLength(3);
+  });
+
+  it('shows field type panel with Referência description (WKS2-13)', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByText(/Tipos de campo/i)).toBeInTheDocument());
+    expect(screen.getByText(/Vincula a entidades do sistema/i)).toBeInTheDocument();
+  });
+
+  it('shows dataset and row quota bars (WKS2-14)', async () => {
+    renderEditor();
+    await waitFor(() =>
+      expect(screen.getByRole('progressbar', { name: 'Datasets do usuário: 2 de 20' })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('progressbar', { name: 'Linhas deste dataset: 1 de 500' })).toBeInTheDocument();
   });
 
   it('saves schema via API', async () => {
@@ -120,18 +139,22 @@ describe('DatasetEditorPage', () => {
     await waitFor(() => expect(updateDatasetSchema).toHaveBeenLastCalledWith(1, expect.any(Array), 1, true));
   });
 
-  it('shows field-level error on invalid row save', async () => {
+  it('shows field-level inline error on invalid row save (WKS2-15)', async () => {
     vi.mocked(updateDatasetRow).mockRejectedValue(
       new WorkspaceApiError(400, 'Validação', [{ field: 'valores.headcount', message: 'Esperado número' }]),
     );
     renderEditor();
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Linhas' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('tab', { name: 'Linhas' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Salvar linha' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Salvar linha' }));
-    await waitFor(() => expect(screen.getByText('Esperado número')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Esperado número'));
   });
 
   it('adds a new data row', async () => {
     renderEditor();
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Linhas' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('tab', { name: 'Linhas' }));
     await waitFor(() => expect(screen.getByRole('button', { name: /Adicionar linha/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /Adicionar linha/i }));
     await waitFor(() => expect(createDatasetRow).toHaveBeenCalled());
@@ -139,6 +162,8 @@ describe('DatasetEditorPage', () => {
 
   it('deletes a row', async () => {
     renderEditor();
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Linhas' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('tab', { name: 'Linhas' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Excluir linha 10' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Excluir linha 10' }));
     await waitFor(() => expect(deleteDatasetRow).toHaveBeenCalledWith(1, 10));
