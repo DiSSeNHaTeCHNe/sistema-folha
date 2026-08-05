@@ -27,6 +27,7 @@ import WorkspaceDetailPage from '../pages/Workspace/WorkspaceDetailPage';
 import DatasetListPage from '../pages/Workspace/DatasetListPage';
 import DatasetEditorPage from '../pages/Workspace/DatasetEditorPage';
 import TemplateCatalogPage from '../pages/Workspace/TemplateCatalogPage';
+import WidgetBuilderPage from '../pages/Workspace/WidgetBuilderPage';
 import { DashboardCustomRoute } from './DashboardCustomRoute';
 import { WorkspaceRoute } from './WorkspaceRoute';
 
@@ -67,6 +68,7 @@ export function RouterWithAuth() {
                 <Route path="/workspace/datasets" element={<DatasetListPage />} />
                 <Route path="/workspace/datasets/:id" element={<DatasetEditorPage />} />
                 <Route path="/workspace/templates" element={<TemplateCatalogPage />} />
+                <Route path="/workspace/:workspaceId/widgets/novo" element={<WidgetBuilderPage />} />
                 <Route path="/workspace/:workspaceId" element={<WorkspaceDetailPage />} />
               </Route>
               <Route path="/funcionarios" element={<Funcionarios />} />

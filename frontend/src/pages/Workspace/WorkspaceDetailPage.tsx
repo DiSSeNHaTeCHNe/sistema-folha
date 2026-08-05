@@ -15,7 +15,6 @@ import { createDashboardQueryClient } from '../MeuDashboard/queryClient';
 import { useWorkspaceLayout } from './hooks/useWorkspaceLayout';
 import { useUnsavedChangesGuard } from './hooks/useUnsavedChangesGuard';
 import { WorkspaceGrid } from './WorkspaceGrid';
-import { WidgetBuilderDrawer } from './WidgetBuilderDrawer';
 import { WorkspacePageShell } from './components/WorkspacePageShell';
 import { StatusChip } from './components/StatusChip';
 import {
@@ -69,7 +68,6 @@ function WorkspaceDetailContent() {
   const invalidId = Number.isNaN(workspaceId);
   const { showNotification, notification, hideNotification } = useNotification();
   const [userDefinitions, setUserDefinitions] = useState<UserWidgetDefinition[]>([]);
-  const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false);
   const [installingOrcamento, setInstallingOrcamento] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -142,17 +140,6 @@ function WorkspaceDetailContent() {
     updateDraftWidgets(next);
   };
 
-  const handleWidgetSaved = (definition: UserWidgetDefinition) => {
-    setUserDefinitions((current) => {
-      const exists = current.some((item) => item.id === definition.id);
-      if (exists) {
-        return current.map((item) => (item.id === definition.id ? definition : item));
-      }
-      return [...current, definition];
-    });
-    showNotification('Widget salvo', 'success');
-  };
-
   const handleInstallOrcamento = async () => {
     setInstallingOrcamento(true);
     try {
@@ -200,7 +187,7 @@ function WorkspaceDetailContent() {
             {editMode ? <StatusChip variant="warn" label="editando" /> : null}
             {!editMode && (
               <>
-                <Button variant="outlined" onClick={() => setWidgetBuilderOpen(true)}>
+                <Button variant="outlined" onClick={() => navigate(`/workspace/${workspaceId}/widgets/novo`)}>
                   Adicionar widget
                 </Button>
                 <Button
@@ -230,7 +217,7 @@ function WorkspaceDetailContent() {
       >
         {widgets.length === 0 ? (
           <WorkspaceDetailEmptyState
-            onAddWidget={() => setWidgetBuilderOpen(true)}
+            onAddWidget={() => navigate(`/workspace/${workspaceId}/widgets/novo`)}
             onInstallTemplate={() => void handleInstallOrcamento()}
             installing={installingOrcamento}
           />
@@ -245,12 +232,6 @@ function WorkspaceDetailContent() {
           />
         )}
       </WorkspacePageShell>
-
-      <WidgetBuilderDrawer
-        open={widgetBuilderOpen}
-        onClose={() => setWidgetBuilderOpen(false)}
-        onSaved={handleWidgetSaved}
-      />
 
       <Notification
         open={notification.open}
