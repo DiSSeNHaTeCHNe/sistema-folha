@@ -7,7 +7,7 @@ import br.com.techne.sistemafolha.workspace.api.WorkspaceDTO;
 import br.com.techne.sistemafolha.workspace.api.WorkspaceSummaryDTO;
 import br.com.techne.sistemafolha.workspace.api.WorkspaceWidgetDTO;
 import br.com.techne.sistemafolha.workspace.domain.Workspace;
-import br.com.techne.sistemafolha.workspace.domain.WorkspaceConflictException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceNameConflictException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceWidgetPayload;
@@ -106,7 +106,7 @@ public class WorkspaceService {
                 .findFirst()
                 .orElse(null);
             if (existing != null && (ignoreId == null || !ignoreId.equals(existing.getId()))) {
-                throw new WorkspaceConflictException("Já existe workspace com o nome: " + nome);
+                throw new WorkspaceNameConflictException(nome);
             }
         }
     }

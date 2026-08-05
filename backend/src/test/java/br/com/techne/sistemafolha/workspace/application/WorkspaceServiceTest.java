@@ -8,7 +8,7 @@ import br.com.techne.sistemafolha.workspace.api.WorkspaceSummaryDTO;
 import br.com.techne.sistemafolha.workspace.api.WorkspaceWidgetDTO;
 import br.com.techne.sistemafolha.workspace.domain.Workspace;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceAcessoNegadoException;
-import br.com.techne.sistemafolha.workspace.domain.WorkspaceConflictException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceNameConflictException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceWidgetPayload;
@@ -100,7 +100,7 @@ class WorkspaceServiceTest {
         existing.setId(99L);
         when(workspaceRepository.findByUsuarioIdOrderByNomeAsc(USUARIO_ID)).thenReturn(List.of(existing));
 
-        assertThrows(WorkspaceConflictException.class,
+        assertThrows(WorkspaceNameConflictException.class,
             () -> workspaceService.criar(LOGIN, new CreateWorkspaceRequest("Anual")));
     }
 
