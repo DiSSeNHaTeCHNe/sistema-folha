@@ -1,20 +1,22 @@
 package br.com.techne.sistemafolha.workspace.application;
 
-import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import br.com.techne.sistemafolha.workspace.api.CreateWorkspaceRequest;
 import br.com.techne.sistemafolha.workspace.api.SaveWorkspaceLayoutRequest;
+import br.com.techne.sistemafolha.workspace.api.UpdateWorkspaceRequest;
+import br.com.techne.sistemafolha.workspace.api.WorkspaceDTO;
+import br.com.techne.sistemafolha.workspace.api.WorkspaceSummaryDTO;
 import br.com.techne.sistemafolha.workspace.api.WorkspaceWidgetDTO;
 import br.com.techne.sistemafolha.workspace.domain.Workspace;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceAcessoNegadoException;
-import br.com.techne.sistemafolha.workspace.domain.WorkspaceNameConflictException;
+import br.com.techne.sistemafolha.workspace.domain.WorkspaceConflictException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceNotFoundException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceQuotaExceededException;
 import br.com.techne.sistemafolha.workspace.domain.WorkspaceWidgetPayload;
 import br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -22,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,8 +38,8 @@ import static org.mockito.Mockito.when;
 class WorkspaceServiceTest {
 
     private static final String LOGIN = "gestor";
-    private static final Long USUARIO_ID = 1L;
-    private static final Long WORKSPACE_ID = 10L;
+    private static final Long USUARIO_ID = 10L;
+    private static final Long WORKSPACE_ID = 5L;
 
     @Mock
     private WorkspaceAccessGuard workspaceAccessGuard;
@@ -46,169 +47,177 @@ class WorkspaceServiceTest {
     @Mock
     private WorkspaceRepository workspaceRepository;
 
-    @Mock
-    private DatasetQuotaPolicy quotaPolicy;
-
-    @org.mockito.Spy
-    private WorkspaceLayoutValidator layoutValidator = new WorkspaceLayoutValidator();
-
-    @InjectMocks
+    private WorkspaceLayoutValidator layoutValidator;
     private WorkspaceService workspaceService;
 
+    @BeforeEach
+    void setUp() {
+        layoutValidator = new WorkspaceLayoutValidator();
+        workspaceService = new WorkspaceService(
+            workspaceAccessGuard,
+            workspaceRepository,
+            layoutValidator,
+            new DatasetQuotaPolicy());
+    }
+
     @Test
-    void criar_primeiroWorkspace_persiste() {
-        stubAccess();
+    void listar_retornaWorkspacesDoUsuario() {
+        stubAcesso();
+        Workspace ws = workspaceEntity("Planejamento", List.of());
+        when(workspaceRepository.findByUsuarioIdOrderByNomeAsc(USUARIO_ID)).thenReturn(List.of(ws));
+
+        List<WorkspaceSummaryDTO> result = workspaceService.listar(LOGIN);
+
+        assertEquals(1, result.size());
+        assertEquals("Planejamento", result.get(0).nome());
+        assertEquals(0, result.get(0).totalWidgets());
+    }
+
+    @Test
+    void criar_persisteWorkspaceVazio() {
+        stubAcesso();
         when(workspaceRepository.countByUsuarioId(USUARIO_ID)).thenReturn(0L);
-        when(quotaPolicy.canCreateWorkspace(0L)).thenReturn(true);
-        when(workspaceRepository.existsByUsuarioIdAndNome(USUARIO_ID, "Financeiro")).thenReturn(false);
-        when(workspaceRepository.save(any(Workspace.class))).thenAnswer(inv -> {
-            Workspace w = inv.getArgument(0);
-            w.setId(WORKSPACE_ID);
-            return w;
+        when(workspaceRepository.existsByUsuarioIdAndNome(USUARIO_ID, "Anual")).thenReturn(false);
+        when(workspaceRepository.save(any())).thenAnswer(inv -> {
+            Workspace ws = inv.getArgument(0);
+            ws.setId(WORKSPACE_ID);
+            return ws;
         });
 
-        var dto = workspaceService.criar(LOGIN, new CreateWorkspaceRequest("Financeiro"));
+        WorkspaceDTO result = workspaceService.criar(LOGIN, new CreateWorkspaceRequest("Anual"));
 
-        assertEquals(WORKSPACE_ID, dto.id());
-        assertEquals("Financeiro", dto.nome());
-        assertTrue(dto.widgets().isEmpty());
+        assertEquals(WORKSPACE_ID, result.id());
+        assertEquals("Anual", result.nome());
+        assertTrue(result.widgets().isEmpty());
     }
 
     @Test
     void criar_nomeDuplicado_lanca409() {
-        stubAccess();
+        stubAcesso();
         when(workspaceRepository.countByUsuarioId(USUARIO_ID)).thenReturn(1L);
-        when(quotaPolicy.canCreateWorkspace(1L)).thenReturn(true);
-        when(workspaceRepository.existsByUsuarioIdAndNome(USUARIO_ID, "Financeiro")).thenReturn(true);
+        when(workspaceRepository.existsByUsuarioIdAndNome(USUARIO_ID, "Anual")).thenReturn(true);
+        Workspace existing = workspaceEntity("Anual", List.of());
+        existing.setId(99L);
+        when(workspaceRepository.findByUsuarioIdOrderByNomeAsc(USUARIO_ID)).thenReturn(List.of(existing));
 
-        assertThrows(WorkspaceNameConflictException.class,
-            () -> workspaceService.criar(LOGIN, new CreateWorkspaceRequest("Financeiro")));
+        assertThrows(WorkspaceConflictException.class,
+            () -> workspaceService.criar(LOGIN, new CreateWorkspaceRequest("Anual")));
     }
 
     @Test
     void criar_quotaExcedida_lanca400() {
-        stubAccess();
+        stubAcesso();
         when(workspaceRepository.countByUsuarioId(USUARIO_ID)).thenReturn(10L);
-        when(quotaPolicy.canCreateWorkspace(10L)).thenReturn(false);
-        when(quotaPolicy.workspaceQuotaMessage(10L)).thenReturn("Limite workspaces");
 
         assertThrows(WorkspaceQuotaExceededException.class,
             () -> workspaceService.criar(LOGIN, new CreateWorkspaceRequest("Novo")));
     }
 
     @Test
-    void criar_semEscopo_lanca403() {
-        doThrow(new WorkspaceAcessoNegadoException()).when(workspaceAccessGuard).assertEscopo(LOGIN);
-
-        assertThrows(WorkspaceAcessoNegadoException.class,
-            () -> workspaceService.criar(LOGIN, new CreateWorkspaceRequest("X")));
-    }
-
-    @Test
     void obter_workspaceDeOutroUsuario_lanca404() {
-        stubAccess();
-        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, 99L)).thenReturn(Optional.empty());
+        stubAcesso();
+        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.empty());
 
-        assertThrows(WorkspaceNotFoundException.class, () -> workspaceService.obter(LOGIN, 99L));
+        assertThrows(WorkspaceNotFoundException.class,
+            () -> workspaceService.obter(LOGIN, WORKSPACE_ID));
     }
 
     @Test
-    void listar_retornaResumoComContagemWidgets() {
-        stubAccess();
-        Workspace ws = workspace(WORKSPACE_ID, "A", List.of(
-            new WorkspaceWidgetPayload("i1", 0, 3, 1, null, 1L, Map.of())));
-        when(workspaceRepository.findByUsuarioIdOrderByNomeAsc(USUARIO_ID)).thenReturn(List.of(ws));
+    void salvarLayout_normalizaOrdemEPersiste() {
+        stubAcesso();
+        Workspace workspace = workspaceEntity("Main", new ArrayList<>());
+        workspace.setId(WORKSPACE_ID);
+        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        var list = workspaceService.listar(LOGIN);
+        SaveWorkspaceLayoutRequest request = new SaveWorkspaceLayoutRequest(List.of(
+            new WorkspaceWidgetDTO("b", 5, 3, 1, null, 2L, Map.of()),
+            new WorkspaceWidgetDTO("a", 1, 6, 2, "kpi-total-funcionarios", null, Map.of())));
 
-        assertEquals(1, list.size());
-        assertEquals(1, list.get(0).widgetCount());
+        WorkspaceDTO result = workspaceService.salvarLayout(LOGIN, WORKSPACE_ID, request);
+
+        assertEquals(2, result.widgets().size());
+        assertEquals("a", result.widgets().get(0).instanceId());
+        assertEquals(0, result.widgets().get(0).ordem());
+        assertEquals("b", result.widgets().get(1).instanceId());
+        assertEquals(1, result.widgets().get(1).ordem());
     }
 
     @Test
-    void salvarLayout_normalizaOrdem() {
-        stubAccess();
-        Workspace ws = workspace(WORKSPACE_ID, "A", new ArrayList<>());
-        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(ws));
-        when(workspaceRepository.save(any(Workspace.class))).thenAnswer(inv -> inv.getArgument(0));
+    void salvarLayout_layoutInvalido_propagaErro() {
+        stubAcesso();
+        Workspace workspace = workspaceEntity("Main", new ArrayList<>());
+        workspace.setId(WORKSPACE_ID);
+        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(workspace));
 
-        var request = new SaveWorkspaceLayoutRequest(List.of(
-            widgetDto("b", 5, 3, 1, null, 2L),
-            widgetDto("a", 2, 3, 1, null, 1L)));
-
-        var salvo = workspaceService.salvarLayout(LOGIN, WORKSPACE_ID, request);
-
-        assertEquals("a", salvo.widgets().get(0).instanceId());
-        assertEquals(0, salvo.widgets().get(0).ordem());
-        assertEquals("b", salvo.widgets().get(1).instanceId());
-        assertEquals(1, salvo.widgets().get(1).ordem());
-    }
-
-    @Test
-    void salvarLayout_maisDe30Widgets_lanca400() {
-        stubAccess();
-        Workspace ws = workspace(WORKSPACE_ID, "A", new ArrayList<>());
-        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(ws));
-
-        List<WorkspaceWidgetDTO> widgets = java.util.stream.IntStream.range(0, 31)
-            .mapToObj(i -> widgetDto("w" + i, i, 3, 1, null, (long) i))
-            .toList();
+        SaveWorkspaceLayoutRequest request = new SaveWorkspaceLayoutRequest(List.of(
+            new WorkspaceWidgetDTO("a", 0, 13, 1, null, 1L, Map.of())));
 
         assertThrows(IllegalArgumentException.class,
-            () -> workspaceService.salvarLayout(LOGIN, WORKSPACE_ID, new SaveWorkspaceLayoutRequest(widgets)));
+            () -> workspaceService.salvarLayout(LOGIN, WORKSPACE_ID, request));
     }
 
     @Test
-    void excluir_workspace_naoExcluiDatasets() {
-        stubAccess();
-        Workspace ws = workspace(WORKSPACE_ID, "A", new ArrayList<>());
-        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(ws));
+    void atualizarNome_alteraNomeUnico() {
+        stubAcesso();
+        Workspace workspace = workspaceEntity("Antigo", List.of());
+        workspace.setId(WORKSPACE_ID);
+        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.existsByUsuarioIdAndNome(USUARIO_ID, "Novo")).thenReturn(false);
+        when(workspaceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        WorkspaceDTO result = workspaceService.atualizarNome(LOGIN, WORKSPACE_ID, new UpdateWorkspaceRequest("Novo"));
+
+        assertEquals("Novo", result.nome());
+    }
+
+    @Test
+    void excluir_removeSomenteWorkspace() {
+        stubAcesso();
+        Workspace workspace = workspaceEntity("Temp", List.of(widgetPayload("x", 0)));
+        workspace.setId(WORKSPACE_ID);
+        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(workspace));
 
         workspaceService.excluir(LOGIN, WORKSPACE_ID);
 
-        verify(workspaceRepository).delete(ws);
+        verify(workspaceRepository).delete(workspace);
     }
 
     @Test
-    void excluir_naoEncontrado_lanca404() {
-        stubAccess();
-        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, 99L)).thenReturn(Optional.empty());
+    void excluir_semAcesso_lanca403() {
+        doThrow(new WorkspaceAcessoNegadoException()).when(workspaceAccessGuard).assertEscopo(LOGIN);
 
-        assertThrows(WorkspaceNotFoundException.class, () -> workspaceService.excluir(LOGIN, 99L));
+        assertThrows(WorkspaceAcessoNegadoException.class,
+            () -> workspaceService.excluir(LOGIN, WORKSPACE_ID));
+        verify(workspaceRepository, never()).delete(any());
     }
 
     @Test
-    void findOwned_porUsuarioId_retornaEntidade() {
-        Workspace ws = workspace(WORKSPACE_ID, "A", new ArrayList<>());
-        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(ws));
+    void findOwnedWorkspace_retornaEntidadeDoUsuario() {
+        Workspace workspace = workspaceEntity("Owned", List.of());
+        workspace.setId(WORKSPACE_ID);
+        when(workspaceRepository.findByUsuarioIdAndId(USUARIO_ID, WORKSPACE_ID)).thenReturn(Optional.of(workspace));
 
-        Workspace found = workspaceService.findOwned(USUARIO_ID, WORKSPACE_ID);
+        Workspace result = workspaceService.findOwnedWorkspace(USUARIO_ID, WORKSPACE_ID);
 
-        assertEquals(WORKSPACE_ID, found.getId());
+        assertEquals(WORKSPACE_ID, result.getId());
     }
 
-    private void stubAccess() {
-        when(workspaceAccessGuard.resolve(LOGIN)).thenReturn(
-            new WorkspaceAccessGuard.ResolvedWorkspaceAccess(
-                false, USUARIO_ID, contextoTotal(), Set.of()));
+    private void stubAcesso() {
+        when(workspaceAccessGuard.resolve(LOGIN))
+            .thenReturn(new WorkspaceAccessGuard.ResolvedWorkspaceAccess(
+                false, USUARIO_ID, null, null));
     }
 
-    private AccessContextDTO contextoTotal() {
-        return new AccessContextDTO(true, true, true, Set.of(), null, 1L, "Raiz", 0);
-    }
-
-    private Workspace workspace(Long id, String nome, List<WorkspaceWidgetPayload> widgets) {
+    private Workspace workspaceEntity(String nome, List<WorkspaceWidgetPayload> widgets) {
         Workspace ws = new Workspace();
-        ws.setId(id);
         ws.setUsuarioId(USUARIO_ID);
         ws.setNome(nome);
         ws.setWidgets(new ArrayList<>(widgets));
         return ws;
     }
 
-    private WorkspaceWidgetDTO widgetDto(
-            String instanceId, int ordem, int colSpan, int rowSpan,
-            String widgetId, Long userWidgetDefinitionId) {
-        return new WorkspaceWidgetDTO(instanceId, ordem, colSpan, rowSpan, widgetId, userWidgetDefinitionId, Map.of());
+    private WorkspaceWidgetPayload widgetPayload(String instanceId, int ordem) {
+        return new WorkspaceWidgetPayload(instanceId, ordem, 3, 1, null, 1L, Map.of());
     }
 }
