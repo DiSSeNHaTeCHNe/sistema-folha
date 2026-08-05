@@ -134,6 +134,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: SPEC_DEVIATION em frontend/src/theme/themes.ts:134 (docs)
 - last seen: 2026-08-04T14:25:10Z
 
+### L-021 — Include npm run build in release gate; Vitest alone does not catch broken TypeScript imports under MeuDashboard/widgets.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `frontend/build` · harmful: 0
+- features: dashboard-customizavel
+- evidence: validation.md Gate Check: widgetDataUtils.ts:5-6, DistribuicaoWidget.tsx:57 (frontend/build)
+- last seen: 2026-08-05T01:47:28Z
+
+### L-022 — Dual-menu convivência ACs require Layout nav test asserting both Dashboard and Meu Dashboard links when access helper returns true.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `frontend/navigation` · harmful: 0
+- features: dashboard-customizavel
+- evidence: DASHC-05 (frontend/navigation)
+- last seen: 2026-08-05T01:47:28Z
+
+### L-023 — Responsive grid ACs need breakpoint test asserting rendered span 12 on xs without mutating persisted colSpan.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `frontend/grid` · harmful: 0
+- features: dashboard-customizavel
+- evidence: DASHC-12 (frontend/grid)
+- last seen: 2026-08-05T01:47:28Z
+
 ## Quarantined (failed when applied — ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

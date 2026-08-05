@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 21,
+  "next_id": 24,
   "lessons": [
     {
       "id": "L-001",
@@ -364,6 +364,60 @@
       ],
       "created": "2026-08-04T14:25:10Z",
       "last_seen": "2026-08-04T14:25:10Z"
+    },
+    {
+      "id": "L-021",
+      "key": "gate_fail::include npm run build in release gate vitest alone does not catch broken typescript imports under meudashboard widgets",
+      "text": "Include npm run build in release gate; Vitest alone does not catch broken TypeScript imports under MeuDashboard/widgets.",
+      "signal": "gate_fail",
+      "scope": "frontend/build",
+      "status": "candidate",
+      "features": [
+        "dashboard-customizavel"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md Gate Check: widgetDataUtils.ts:5-6, DistribuicaoWidget.tsx:57 (frontend/build)"
+      ],
+      "created": "2026-08-05T01:47:28Z",
+      "last_seen": "2026-08-05T01:47:28Z"
+    },
+    {
+      "id": "L-022",
+      "key": "ac_gap::dual menu conviv ncia acs require layout nav test asserting both dashboard and meu dashboard links when access helper returns true",
+      "text": "Dual-menu convivência ACs require Layout nav test asserting both Dashboard and Meu Dashboard links when access helper returns true.",
+      "signal": "ac_gap",
+      "scope": "frontend/navigation",
+      "status": "candidate",
+      "features": [
+        "dashboard-customizavel"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "DASHC-05 (frontend/navigation)"
+      ],
+      "created": "2026-08-05T01:47:28Z",
+      "last_seen": "2026-08-05T01:47:28Z"
+    },
+    {
+      "id": "L-023",
+      "key": "ac_gap::responsive grid acs need breakpoint test asserting rendered span 12 on xs without mutating persisted colspan",
+      "text": "Responsive grid ACs need breakpoint test asserting rendered span 12 on xs without mutating persisted colSpan.",
+      "signal": "ac_gap",
+      "scope": "frontend/grid",
+      "status": "candidate",
+      "features": [
+        "dashboard-customizavel"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "DASHC-12 (frontend/grid)"
+      ],
+      "created": "2026-08-05T01:47:28Z",
+      "last_seen": "2026-08-05T01:47:28Z"
     }
   ]
 }

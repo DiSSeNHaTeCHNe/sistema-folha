@@ -10,7 +10,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Design**: `_docs/specs/features/dashboard-customizavel/design.md`  
 **Spec**: `_docs/specs/features/dashboard-customizavel/spec.md`  
-**Status**: Draft — aguardando aprovação antes de Execute  
+**Status**: Execute complete — T1–T24 done; Verifier PASS (cycle 2); fix cycles 1–2 applied  
 **Constraints**: AD-008, AD-010, AD-011, AD-013, AD-017 (JSONB)
 
 ---
@@ -615,9 +615,9 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-30, DASHC-40, DASHC-44 (FE side)
 
 **Done when**:
-- [ ] Página Meu Dashboard não chama `getDashboardStats()` 
-- [ ] Competência sem dados mostra empty state explícito (não zeros)
-- [ ] Gate release: `cd backend && mvn test && cd ../frontend && npm run lint && npm test && npm run build`
+- [x] Página Meu Dashboard não chama `getDashboardStats()` 
+- [x] Competência sem dados mostra empty state explícito (não zeros)
+- [x] Gate release: `cd backend && mvn test && cd ../frontend && npm run lint && npm test && npm run build`
 
 **Tests**: unit (empty/error states)  
 **Gate**: release  
