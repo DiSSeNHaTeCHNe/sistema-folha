@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Outlet } from 'react-router-dom';
+import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AlterarSenhaDialog } from '../AlterarSenhaDialog';
 import { AparenciaDialog } from '../AparenciaDialog';
@@ -44,16 +44,50 @@ import {
   ManageAccounts,
   Category,
   VpnKey,
+  DashboardCustomize,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
 
+const workspaceItems = [
+  { text: 'Meus workspaces', path: '/workspace' },
+  { text: 'Meus dados', path: '/workspace/datasets' },
+  { text: 'Catálogo de templates', path: '/workspace/templates' },
+] as const;
+
+function isWorkspaceActive(path: string, pathname: string): boolean {
+  if (path === '/workspace') {
+    if (pathname === '/workspace') {
+      return true;
+    }
+    if (
+      pathname.startsWith('/workspace/datasets')
+      || pathname.startsWith('/workspace/templates')
+      || pathname.startsWith('/workspace/assistente')
+    ) {
+      return false;
+    }
+    return /^\/workspace\/[^/]+(\/.*)?$/.test(pathname);
+  }
+  if (path === '/workspace/datasets') {
+    return pathname.startsWith('/workspace/datasets');
+  }
+  if (path === '/workspace/templates') {
+    return pathname.startsWith('/workspace/templates');
+  }
+  return false;
+}
+
 export function Layout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, acessoUsuario } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [cadastroOpen, setCadastroOpen] = useState(false);
+  const [workspaceOpen, setWorkspaceOpen] = useState(() =>
+    workspaceItems.some((item) => isWorkspaceActive(item.path, location.pathname)),
+  );
   const [alterarSenhaOpen, setAlterarSenhaOpen] = useState(false);
   const [aparenciaOpen, setAparenciaOpen] = useState(false);
   const userIsAdmin = isAdmin(user);
@@ -92,10 +126,13 @@ export function Layout() {
     setCadastroOpen(!cadastroOpen);
   };
 
+  const handleWorkspaceClick = () => {
+    setWorkspaceOpen(!workspaceOpen);
+  };
+
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
     ...(showMeuDashboardMenu ? [{ text: 'Meu Dashboard', icon: <Dashboard />, path: '/meu-dashboard' }] : []),
-    ...(showWorkspaceMenu ? [{ text: 'Workspace', icon: <Dashboard />, path: '/workspace' }] : []),
     { text: 'Funcionários', icon: <People />, path: '/funcionarios' },
     { text: 'Folha de Pagamento', icon: <AttachMoney />, path: '/folha-pagamento' },
     { text: 'Benefícios Mensais', icon: <Redeem />, path: '/beneficios-mensais' },
@@ -133,6 +170,32 @@ export function Layout() {
             </ListItemButton>
           </ListItem>
         ))}
+        {showWorkspaceMenu && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleWorkspaceClick}>
+                <ListItemIcon><DashboardCustomize /></ListItemIcon>
+                <ListItemText primary="Meu Workspace" />
+                {workspaceOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+            <Collapse in={workspaceOpen} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {workspaceItems.map((item) => (
+                  <ListItem key={item.text} disablePadding>
+                    <ListItemButton
+                      sx={{ pl: 4 }}
+                      selected={isWorkspaceActive(item.path, location.pathname)}
+                      onClick={() => navigate(item.path)}
+                    >
+                      <ListItemText primary={item.text} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+            </Collapse>
+          </>
+        )}
         {showApiKeysMenu && (
           <ListItem disablePadding>
             <ListItemButton onClick={() => navigate(apiKeysMenuItem.path)}>
