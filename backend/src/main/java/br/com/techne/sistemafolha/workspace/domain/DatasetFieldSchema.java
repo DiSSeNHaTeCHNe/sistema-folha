@@ -4,5 +4,6 @@ public record DatasetFieldSchema(
     String nome,
     DatasetFieldType tipo,
     ReferenciaEntidade referenciaEntidade,
-    Boolean obrigatorio
+    Boolean obrigatorio,
+    String observacao
 ) {}

@@ -272,8 +272,8 @@ class WidgetQueryServiceTest {
     private void stubOrcamentoDataset() {
         WorkspaceDataset dataset = new WorkspaceDataset();
         dataset.setSchema(List.of(
-            new DatasetFieldSchema("centro_custo_id", DatasetFieldType.REFERENCIA, null, true),
-            new DatasetFieldSchema("valor_orcado", DatasetFieldType.MOEDA, null, true)));
+            new DatasetFieldSchema("centro_custo_id", DatasetFieldType.REFERENCIA, null, true, null),
+            new DatasetFieldSchema("valor_orcado", DatasetFieldType.MOEDA, null, true, null)));
         when(datasetService.findOwnedDataset(eq(USUARIO_ID), eq(5L))).thenReturn(dataset);
     }
 
@@ -323,7 +323,7 @@ class WidgetQueryServiceTest {
 
     private void stubDatasetSeries() {
         WorkspaceDataset dataset = new WorkspaceDataset();
-        dataset.setSchema(List.of(new DatasetFieldSchema("valor_orcado", DatasetFieldType.MOEDA, null, true)));
+        dataset.setSchema(List.of(new DatasetFieldSchema("valor_orcado", DatasetFieldType.MOEDA, null, true, null)));
         when(datasetService.findOwnedDataset(eq(USUARIO_ID), eq(5L))).thenReturn(dataset);
         when(rowRepository.findByDatasetIdOrderByOrdemAscIdAsc(5L)).thenReturn(List.of());
     }

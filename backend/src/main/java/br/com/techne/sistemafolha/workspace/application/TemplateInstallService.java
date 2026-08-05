@@ -111,7 +111,7 @@ public class TemplateInstallService {
         if ("DATASET".equals(estrutura.getKind()) || tipo == TemplateTipo.DATASET) {
             List<DatasetFieldSchemaDTO> campos = estrutura.getSchema().stream()
                 .map(f -> new DatasetFieldSchemaDTO(
-                    f.nome(), f.tipo(), f.referenciaEntidade(), f.obrigatorio()))
+                    f.nome(), f.tipo(), f.referenciaEntidade(), f.obrigatorio(), f.observacao()))
                 .toList();
             var created = datasetService.criar(login, new CreateDatasetRequest(estrutura.getNome(), campos));
             result.put("datasetId", created.id());
@@ -166,7 +166,7 @@ public class TemplateInstallService {
         }
         return merged.values().stream()
             .map(f -> new DatasetFieldSchemaDTO(
-                f.nome(), f.tipo(), f.referenciaEntidade(), f.obrigatorio()))
+                f.nome(), f.tipo(), f.referenciaEntidade(), f.obrigatorio(), f.observacao()))
             .toList();
     }
 

@@ -81,7 +81,7 @@ class DatasetServiceTest {
         when(rowRepository.countByDatasetId(DATASET_ID)).thenReturn(0L);
 
         CreateDatasetRequest request = new CreateDatasetRequest("Orçamento", List.of(
-            new DatasetFieldSchemaDTO("valor", DatasetFieldType.MOEDA, null, true)));
+            new DatasetFieldSchemaDTO("valor", DatasetFieldType.MOEDA, null, true, null)));
 
         DatasetDTO result = datasetService.criar(LOGIN, request);
 
@@ -98,7 +98,7 @@ class DatasetServiceTest {
             .thenReturn((long) WorkspaceLimits.MAX_DATASETS_PER_USER);
 
         CreateDatasetRequest request = new CreateDatasetRequest("Novo", List.of(
-            new DatasetFieldSchemaDTO("campo", DatasetFieldType.TEXTO, null, false)));
+            new DatasetFieldSchemaDTO("campo", DatasetFieldType.TEXTO, null, false, null)));
 
         WorkspaceQuotaExceededException ex = assertThrows(WorkspaceQuotaExceededException.class,
             () -> datasetService.criar(LOGIN, request));
@@ -112,7 +112,7 @@ class DatasetServiceTest {
         when(datasetRepository.countByUsuarioId(USUARIO_ID)).thenReturn(0L);
         List<DatasetFieldSchemaDTO> campos = new ArrayList<>();
         for (int i = 0; i <= WorkspaceLimits.MAX_FIELDS_PER_DATASET; i++) {
-            campos.add(new DatasetFieldSchemaDTO("campo" + i, DatasetFieldType.TEXTO, null, false));
+            campos.add(new DatasetFieldSchemaDTO("campo" + i, DatasetFieldType.TEXTO, null, false, null));
         }
 
         assertThrows(WorkspaceQuotaExceededException.class, () ->
@@ -125,7 +125,7 @@ class DatasetServiceTest {
 
         assertThrows(WorkspaceAcessoNegadoException.class, () ->
             datasetService.criar(LOGIN, new CreateDatasetRequest("X", List.of(
-                new DatasetFieldSchemaDTO("a", DatasetFieldType.TEXTO, null, false)))));
+                new DatasetFieldSchemaDTO("a", DatasetFieldType.TEXTO, null, false, null)))));
     }
 
     @Test
@@ -196,7 +196,7 @@ class DatasetServiceTest {
             .thenReturn(Optional.of(datasetComSchema("Atual")));
 
         UpdateDatasetSchemaRequest request = new UpdateDatasetSchemaRequest(
-            List.of(new DatasetFieldSchemaDTO("valor", DatasetFieldType.MOEDA, null, true)),
+            List.of(new DatasetFieldSchemaDTO("valor", DatasetFieldType.MOEDA, null, true, null)),
             99,
             false);
 
@@ -209,14 +209,14 @@ class DatasetServiceTest {
         stubAcesso();
         WorkspaceDataset dataset = datasetComSchema("Com dados");
         dataset.setSchema(List.of(
-            new DatasetFieldSchema("valor", DatasetFieldType.MOEDA, null, true),
-            new DatasetFieldSchema("descricao", DatasetFieldType.TEXTO, null, false)));
+            new DatasetFieldSchema("valor", DatasetFieldType.MOEDA, null, true, null),
+            new DatasetFieldSchema("descricao", DatasetFieldType.TEXTO, null, false, null)));
         when(datasetRepository.findByUsuarioIdAndId(USUARIO_ID, DATASET_ID)).thenReturn(Optional.of(dataset));
         when(rowRepository.findByDatasetIdOrderByOrdemAscIdAsc(DATASET_ID))
             .thenReturn(List.of(rowComValor()));
 
         UpdateDatasetSchemaRequest request = new UpdateDatasetSchemaRequest(
-            List.of(new DatasetFieldSchemaDTO("descricao", DatasetFieldType.TEXTO, null, false)),
+            List.of(new DatasetFieldSchemaDTO("descricao", DatasetFieldType.TEXTO, null, false, null)),
             1,
             false);
 
@@ -229,15 +229,15 @@ class DatasetServiceTest {
         stubAcesso();
         WorkspaceDataset dataset = datasetComSchema("Com dados");
         dataset.setSchema(List.of(
-            new DatasetFieldSchema("valor", DatasetFieldType.MOEDA, null, true),
-            new DatasetFieldSchema("descricao", DatasetFieldType.TEXTO, null, false)));
+            new DatasetFieldSchema("valor", DatasetFieldType.MOEDA, null, true, null),
+            new DatasetFieldSchema("descricao", DatasetFieldType.TEXTO, null, false, null)));
         when(datasetRepository.findByUsuarioIdAndId(USUARIO_ID, DATASET_ID)).thenReturn(Optional.of(dataset));
         when(rowRepository.findByDatasetIdOrderByOrdemAscIdAsc(DATASET_ID)).thenReturn(List.of(rowComValor()));
         when(datasetRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(rowRepository.countByDatasetId(DATASET_ID)).thenReturn(1L);
 
         DatasetDTO result = datasetService.atualizarSchema(LOGIN, DATASET_ID, new UpdateDatasetSchemaRequest(
-            List.of(new DatasetFieldSchemaDTO("descricao", DatasetFieldType.TEXTO, null, false)),
+            List.of(new DatasetFieldSchemaDTO("descricao", DatasetFieldType.TEXTO, null, false, null)),
             1,
             true));
 
@@ -256,13 +256,57 @@ class DatasetServiceTest {
 
         DatasetDTO result = datasetService.atualizarSchema(LOGIN, DATASET_ID, new UpdateDatasetSchemaRequest(
             List.of(
-                new DatasetFieldSchemaDTO("valor", DatasetFieldType.MOEDA, null, true),
-                new DatasetFieldSchemaDTO("obs", DatasetFieldType.TEXTO, null, false)),
+                new DatasetFieldSchemaDTO("valor", DatasetFieldType.MOEDA, null, true, null),
+                new DatasetFieldSchemaDTO("obs", DatasetFieldType.TEXTO, null, false, null)),
             1,
             false));
 
         assertEquals(2, result.schemaVersion());
         assertEquals(2, result.campos().size());
+    }
+
+    @Test
+    void atualizarSchema_persisteObservacao() {
+        stubAcesso();
+        when(datasetRepository.findByUsuarioIdAndId(USUARIO_ID, DATASET_ID))
+            .thenReturn(Optional.of(datasetComSchema("Com obs")));
+        when(datasetRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(rowRepository.countByDatasetId(DATASET_ID)).thenReturn(0L);
+
+        DatasetDTO result = datasetService.atualizarSchema(LOGIN, DATASET_ID, new UpdateDatasetSchemaRequest(
+            List.of(new DatasetFieldSchemaDTO("valor", DatasetFieldType.MOEDA, null, true, "Nota fiscal")),
+            1,
+            false));
+
+        assertEquals("Nota fiscal", result.campos().get(0).observacao());
+    }
+
+    @Test
+    void atualizarSchema_observacaoSomenteEspacos_normalizaParaNull() {
+        stubAcesso();
+        when(datasetRepository.findByUsuarioIdAndId(USUARIO_ID, DATASET_ID))
+            .thenReturn(Optional.of(datasetComSchema("Espacos")));
+        when(datasetRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(rowRepository.countByDatasetId(DATASET_ID)).thenReturn(0L);
+
+        DatasetDTO result = datasetService.atualizarSchema(LOGIN, DATASET_ID, new UpdateDatasetSchemaRequest(
+            List.of(new DatasetFieldSchemaDTO("valor", DatasetFieldType.MOEDA, null, true, "   ")),
+            1,
+            false));
+
+        assertEquals(null, result.campos().get(0).observacao());
+    }
+
+    @Test
+    void obter_schemaLegadoSemObservacao_deserializaComNull() {
+        stubAcesso();
+        WorkspaceDataset dataset = datasetComSchema("Legado");
+        when(datasetRepository.findByUsuarioIdAndId(USUARIO_ID, DATASET_ID)).thenReturn(Optional.of(dataset));
+        when(rowRepository.countByDatasetId(DATASET_ID)).thenReturn(0L);
+
+        DatasetDTO result = datasetService.obter(LOGIN, DATASET_ID);
+
+        assertEquals(null, result.campos().get(0).observacao());
     }
 
     @Test
@@ -284,8 +328,8 @@ class DatasetServiceTest {
         assertThrows(IllegalArgumentException.class, () -> datasetService.criar(LOGIN, new CreateDatasetRequest(
             "Dup",
             List.of(
-                new DatasetFieldSchemaDTO("a", DatasetFieldType.TEXTO, null, false),
-                new DatasetFieldSchemaDTO("a", DatasetFieldType.NUMERO, null, false)))));
+                new DatasetFieldSchemaDTO("a", DatasetFieldType.TEXTO, null, false, null),
+                new DatasetFieldSchemaDTO("a", DatasetFieldType.NUMERO, null, false, null)))));
         verify(datasetRepository, never()).save(any());
     }
 
@@ -301,7 +345,7 @@ class DatasetServiceTest {
         dataset.setNome(nome);
         dataset.setSchemaVersion(1);
         dataset.setSchema(new ArrayList<>(List.of(
-            new DatasetFieldSchema("valor", DatasetFieldType.MOEDA, null, true))));
+            new DatasetFieldSchema("valor", DatasetFieldType.MOEDA, null, true, null))));
         return dataset;
     }
 

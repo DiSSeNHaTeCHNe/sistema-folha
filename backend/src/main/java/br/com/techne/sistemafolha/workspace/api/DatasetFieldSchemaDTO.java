@@ -12,5 +12,6 @@ public record DatasetFieldSchemaDTO(
     @NotBlank @Size(max = 120) String nome,
     @NotNull DatasetFieldType tipo,
     ReferenciaEntidade referenciaEntidade,
-    Boolean obrigatorio
+    Boolean obrigatorio,
+    @Size(max = 500) String observacao
 ) {}

@@ -103,7 +103,7 @@ public class ProposalContentBuilder {
     public List<DatasetFieldSchemaDTO> toFieldDtos(List<DatasetFieldSchema> campos) {
         return campos.stream()
             .map(c -> new DatasetFieldSchemaDTO(
-                c.nome(), c.tipo(), c.referenciaEntidade(), c.obrigatorio()))
+                c.nome(), c.tipo(), c.referenciaEntidade(), c.obrigatorio(), c.observacao()))
             .toList();
     }
 
@@ -164,7 +164,7 @@ public class ProposalContentBuilder {
     }
 
     private DatasetFieldSchema campo(String nome, DatasetFieldType tipo, ReferenciaEntidade ref) {
-        return new DatasetFieldSchema(nome, tipo, ref, true);
+        return new DatasetFieldSchema(nome, tipo, ref, true, null);
     }
 
     private String nullSafe(Object value) {

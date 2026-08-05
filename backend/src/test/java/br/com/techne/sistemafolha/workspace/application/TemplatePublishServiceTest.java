@@ -380,7 +380,7 @@ class TemplatePublishServiceTest {
         ds.setId(1L);
         ds.setNome("Vendas");
         ds.setSchema(new ArrayList<>(List.of(
-            new DatasetFieldSchema("valor", DatasetFieldType.NUMERO, null, true))));
+            new DatasetFieldSchema("valor", DatasetFieldType.NUMERO, null, true, null))));
         return ds;
     }
 

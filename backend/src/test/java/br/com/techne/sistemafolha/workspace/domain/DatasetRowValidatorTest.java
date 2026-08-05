@@ -116,7 +116,7 @@ class DatasetRowValidatorTest {
     @Test
     void validate_campoObrigatorioAusente_rejeita() {
         List<DatasetFieldSchema> schema = List.of(
-            new DatasetFieldSchema("nome", DatasetFieldType.TEXTO, null, true));
+            new DatasetFieldSchema("nome", DatasetFieldType.TEXTO, null, true, null));
         List<FieldValidationError> errors = validator.validate(schema, Map.of());
 
         assertEquals(1, errors.size());
@@ -136,6 +136,6 @@ class DatasetRowValidatorTest {
     }
 
     private DatasetFieldSchema field(String nome, DatasetFieldType tipo) {
-        return new DatasetFieldSchema(nome, tipo, null, false);
+        return new DatasetFieldSchema(nome, tipo, null, false, null);
     }
 }

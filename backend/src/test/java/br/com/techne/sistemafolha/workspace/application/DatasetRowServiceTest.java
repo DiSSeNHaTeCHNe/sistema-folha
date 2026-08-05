@@ -214,7 +214,7 @@ class DatasetRowServiceTest {
         ds.setId(DATASET_ID);
         ds.setUsuarioId(USUARIO_ID);
         ds.setSchema(new ArrayList<>(List.of(
-            new DatasetFieldSchema("quantidade", DatasetFieldType.NUMERO, null, true)
+            new DatasetFieldSchema("quantidade", DatasetFieldType.NUMERO, null, true, null)
         )));
         return ds;
     }

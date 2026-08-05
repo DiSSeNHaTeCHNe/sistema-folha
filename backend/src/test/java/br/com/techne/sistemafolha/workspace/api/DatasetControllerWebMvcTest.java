@@ -125,7 +125,7 @@ class DatasetControllerWebMvcTest {
     void criar_valido_retorna201() throws Exception {
         when(datasetService.criar(eq("user-a"), any(CreateDatasetRequest.class)))
             .thenReturn(new DatasetDTO(1L, "Novo", List.of(
-                new DatasetFieldSchemaDTO("a", DatasetFieldType.TEXTO, null, false)), 1, 0L));
+                new DatasetFieldSchemaDTO("a", DatasetFieldType.TEXTO, null, false, null)), 1, 0L));
 
         mockMvc.perform(post("/workspace/datasets")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -155,6 +155,19 @@ class DatasetControllerWebMvcTest {
                 .content("{\"campos\":[{\"nome\":\"a\",\"tipo\":\"TEXTO\"}],\"schemaVersion\":1}"))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void atualizarSchema_observacaoExcedeLimite_retorna400() throws Exception {
+        String observacaoLonga = "x".repeat(501);
+        mockMvc.perform(put("/workspace/datasets/1/schema")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"campos":[{"nome":"a","tipo":"TEXTO","observacao":"%s"}],"schemaVersion":1}"""
+                    .formatted(observacaoLonga)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test

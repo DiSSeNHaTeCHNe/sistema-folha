@@ -177,10 +177,10 @@ class OrcamentoTemplateInstallerTest {
 
     private DatasetDTO datasetDto(Long id) {
         return new DatasetDTO(id, OrcamentoTemplateInstaller.DATASET_NOME, List.of(
-            new DatasetFieldSchemaDTO("competencia", DatasetFieldType.DATA, null, true),
+            new DatasetFieldSchemaDTO("competencia", DatasetFieldType.DATA, null, true, null),
             new DatasetFieldSchemaDTO(
-                "centro_custo_id", DatasetFieldType.REFERENCIA, ReferenciaEntidade.CENTRO_CUSTO, true),
-            new DatasetFieldSchemaDTO("valor_orcado", DatasetFieldType.MOEDA, null, true)), 1, 0L);
+                "centro_custo_id", DatasetFieldType.REFERENCIA, ReferenciaEntidade.CENTRO_CUSTO, true, null),
+            new DatasetFieldSchemaDTO("valor_orcado", DatasetFieldType.MOEDA, null, true, null)), 1, 0L);
     }
 
     private WidgetDefinitionDTO widgetDto(Long id, String nome) {

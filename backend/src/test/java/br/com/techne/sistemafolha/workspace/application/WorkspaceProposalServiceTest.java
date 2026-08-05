@@ -348,7 +348,7 @@ class WorkspaceProposalServiceTest {
 
         ConfirmProposalRequest ajustes = new ConfirmProposalRequest(
             "Renomeado",
-            List.of(new DatasetFieldSchemaDTO("campo1", DatasetFieldType.TEXTO, null, true)),
+            List.of(new DatasetFieldSchemaDTO("campo1", DatasetFieldType.TEXTO, null, true, null)),
             null, null, null, null, null);
 
         service.confirmar(LOGIN, 13L, ajustes);

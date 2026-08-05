@@ -180,8 +180,17 @@ public class DatasetService {
                 c.nome().trim(),
                 c.tipo(),
                 c.referenciaEntidade(),
-                c.obrigatorio()))
+                c.obrigatorio(),
+                normalizeObservacao(c.observacao())))
             .toList();
+    }
+
+    private String normalizeObservacao(String observacao) {
+        if (observacao == null) {
+            return null;
+        }
+        String trimmed = observacao.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private DatasetDTO toDto(WorkspaceDataset dataset) {
@@ -230,7 +239,8 @@ public class DatasetService {
                 f.nome(),
                 f.tipo(),
                 f.referenciaEntidade(),
-                f.obrigatorio()))
+                f.obrigatorio(),
+                f.observacao()))
             .toList();
     }
 }

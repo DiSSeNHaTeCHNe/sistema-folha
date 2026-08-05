@@ -146,9 +146,9 @@ class TemplateInstallServiceTest {
         estrutura.setKind("DATASET");
         estrutura.setSchema(new ArrayList<>(List.of(
             new br.com.techne.sistemafolha.workspace.domain.DatasetFieldSchema(
-                "valor", DatasetFieldType.NUMERO, null, true),
+                "valor", DatasetFieldType.NUMERO, null, true, null),
             new br.com.techne.sistemafolha.workspace.domain.DatasetFieldSchema(
-                "novoCampo", DatasetFieldType.TEXTO, null, false))));
+                "novoCampo", DatasetFieldType.TEXTO, null, false, null))));
         WorkspaceTemplateVersion v2 = new WorkspaceTemplateVersion();
         v2.setVersao(2);
         v2.setEstrutura(estrutura);
@@ -160,7 +160,7 @@ class TemplateInstallServiceTest {
         dataset.setSchemaVersion(1);
         dataset.setSchema(new ArrayList<>(List.of(
             new br.com.techne.sistemafolha.workspace.domain.DatasetFieldSchema(
-                "valor", DatasetFieldType.NUMERO, null, true))));
+                "valor", DatasetFieldType.NUMERO, null, true, null))));
         when(datasetRepository.findById(88L)).thenReturn(Optional.of(dataset));
         when(installationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -354,7 +354,7 @@ class TemplateInstallServiceTest {
         estrutura.setNome("Vendas");
         estrutura.setSchema(new ArrayList<>(List.of(
             new br.com.techne.sistemafolha.workspace.domain.DatasetFieldSchema(
-                "valor", DatasetFieldType.NUMERO, null, true))));
+                "valor", DatasetFieldType.NUMERO, null, true, null))));
         WorkspaceTemplateVersion v = new WorkspaceTemplateVersion();
         v.setVersao(1);
         v.setEstrutura(estrutura);

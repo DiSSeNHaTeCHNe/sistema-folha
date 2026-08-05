@@ -264,7 +264,7 @@ class WidgetDefinitionServiceTest {
         WorkspaceDataset ds = new WorkspaceDataset();
         ds.setId(DATASET_ID);
         ds.setSchema(new ArrayList<>(List.of(
-            new DatasetFieldSchema("quantidade", DatasetFieldType.NUMERO, null, true)
+            new DatasetFieldSchema("quantidade", DatasetFieldType.NUMERO, null, true, null)
         )));
         return ds;
     }
