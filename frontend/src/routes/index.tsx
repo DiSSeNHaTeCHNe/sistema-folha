@@ -31,6 +31,8 @@ import TemplateCatalogPage from '../pages/Workspace/TemplateCatalogPage';
 import TemplatePublishPage from '../pages/Workspace/TemplatePublishPage';
 import TemplateUpgradePage from '../pages/Workspace/TemplateUpgradePage';
 import WidgetBuilderPage from '../pages/Workspace/WidgetBuilderPage';
+import WorkspaceAssistantPage from '../pages/Workspace/WorkspaceAssistantPage';
+import WorkspaceSuggestionsPage from '../pages/Workspace/WorkspaceSuggestionsPage';
 import { DashboardCustomRoute } from './DashboardCustomRoute';
 import { WorkspaceRoute } from './WorkspaceRoute';
 
@@ -74,7 +76,9 @@ export function RouterWithAuth() {
                 <Route path="/workspace/templates/publish" element={<TemplatePublishPage />} />
                 <Route path="/workspace/templates/:templateId/upgrade" element={<TemplateUpgradePage />} />
                 <Route path="/workspace/templates" element={<TemplateCatalogPage />} />
+                <Route path="/workspace/assistente" element={<WorkspaceAssistantPage />} />
                 <Route path="/workspace/:workspaceId/widgets/novo" element={<WidgetBuilderPage />} />
+                <Route path="/workspace/:workspaceId/sugestoes" element={<WorkspaceSuggestionsPage />} />
                 <Route path="/workspace/:workspaceId" element={<WorkspaceDetailPage />} />
               </Route>
               <Route path="/funcionarios" element={<Funcionarios />} />
