@@ -182,8 +182,24 @@ class TemplatePublishServiceTest {
 
         var items = service.listarCatalogo(LOGIN);
 
+        assertEquals(2, items.size());
+        assertEquals(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID, items.get(0).id());
+        assertEquals(OrcamentoTemplateInstaller.DATASET_NOME, items.get(0).nome());
+        assertEquals(TemplateTipo.PACOTE, items.get(0).tipo());
+        assertEquals(50L, items.get(1).id());
+    }
+
+    @Test
+    void listarCatalogo_semTemplatesDb_incluiOrcamentoNativo() {
+        stubAcesso();
+        when(templateRepository.findByAtivoTrueOrderByNomeAsc()).thenReturn(List.of());
+
+        var items = service.listarCatalogo(LOGIN);
+
         assertEquals(1, items.size());
-        assertEquals(50L, items.get(0).id());
+        assertEquals(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID, items.get(0).id());
+        assertEquals(OrcamentoTemplateInstaller.DATASET_NOME, items.get(0).nome());
+        assertEquals(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_SLUG, "orcamento-padrao");
     }
 
     @Test
@@ -197,7 +213,8 @@ class TemplatePublishServiceTest {
 
         var items = service.listarCatalogo(LOGIN);
 
-        assertTrue(items.isEmpty());
+        assertEquals(1, items.size());
+        assertEquals(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID, items.get(0).id());
     }
 
     @Test
@@ -218,8 +235,9 @@ class TemplatePublishServiceTest {
 
         var items = service.listarCatalogo(LOGIN);
 
-        assertTrue(items.get(0).atualizacaoDisponivel());
-        assertEquals(1, items.get(0).versaoInstalada());
+        assertEquals(2, items.size());
+        assertTrue(items.get(1).atualizacaoDisponivel());
+        assertEquals(1, items.get(1).versaoInstalada());
     }
 
     @Test
@@ -230,7 +248,10 @@ class TemplatePublishServiceTest {
         when(versionRepository.findFirstByTemplateIdOrderByVersaoDesc(53L)).thenReturn(Optional.empty());
         when(workspaceAccessGuard.podeVerTemplate(any(), any(), any())).thenReturn(true);
 
-        assertTrue(service.listarCatalogo(LOGIN).isEmpty());
+        var items = service.listarCatalogo(LOGIN);
+
+        assertEquals(1, items.size());
+        assertEquals(TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID, items.get(0).id());
     }
 
     @Test

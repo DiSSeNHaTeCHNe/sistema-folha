@@ -28,6 +28,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TemplatePublishService {
 
+    /** Sentinel id for platform-native orçamento template (WKS-14). */
+    public static final long NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID = 0L;
+    public static final String NATIVE_ORCAMENTO_PADRAO_SLUG = "orcamento-padrao";
+
     private final WorkspaceAccessGuard workspaceAccessGuard;
     private final DatasetService datasetService;
     private final WidgetDefinitionService widgetDefinitionService;
@@ -130,7 +134,22 @@ public class TemplatePublishService {
                 versaoInstalada
             ));
         }
+        items.add(0, nativeOrcamentoCatalogItem());
         return items;
+    }
+
+    private TemplateCatalogItemDTO nativeOrcamentoCatalogItem() {
+        return new TemplateCatalogItemDTO(
+            NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID,
+            OrcamentoTemplateInstaller.DATASET_NOME,
+            TemplateTipo.PACOTE,
+            1,
+            1,
+            false,
+            null,
+            null,
+            null
+        );
     }
 
     @Transactional(readOnly = true)

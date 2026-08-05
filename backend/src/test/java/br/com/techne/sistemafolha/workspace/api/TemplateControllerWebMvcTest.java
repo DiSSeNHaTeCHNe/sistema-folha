@@ -115,6 +115,23 @@ class TemplateControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user-a", roles = "USER")
+    void listarCatalogo_incluiOrcamentoNativo() throws Exception {
+        when(templatePublishService.listarCatalogo("user-a")).thenReturn(List.of(
+            new TemplateCatalogItemDTO(
+                TemplatePublishService.NATIVE_ORCAMENTO_PADRAO_TEMPLATE_ID,
+                "Orçamento por CC",
+                TemplateTipo.PACOTE,
+                1, 1, false, 0L, null, null)));
+
+        mockMvc.perform(get("/workspace/templates/catalog"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id").value(0))
+            .andExpect(jsonPath("$[0].nome").value("Orçamento por CC"))
+            .andExpect(jsonPath("$[0].tipo").value("PACOTE"));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
     void listarCatalogo_retornaItensVisiveisNaHierarquia() throws Exception {
         when(templatePublishService.listarCatalogo("user-a")).thenReturn(List.of(
             new TemplateCatalogItemDTO(1L, "Vendas", TemplateTipo.DATASET, 2, 2, false, 10L, null, null)));
