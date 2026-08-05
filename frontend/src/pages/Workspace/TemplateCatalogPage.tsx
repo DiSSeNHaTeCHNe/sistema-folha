@@ -256,7 +256,7 @@ export default function TemplateCatalogPage() {
                     {item.atualizacaoDisponivel && item.installationId != null ? (
                       <Button
                         component={RouterLink}
-                        to={`/workspace/templates/${item.id}/upgrade?installationId=${item.installationId}`}
+                        to={`/workspace/templates/${item.id}/upgrade?installationId=${item.installationId}&versaoInstalada=${item.versaoInstalada}`}
                         aria-label={`Ver diferenças de ${item.nome}`}
                       >
                         Ver diferenças

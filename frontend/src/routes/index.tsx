@@ -26,8 +26,10 @@ import WorkspaceHubPage from '../pages/Workspace/WorkspaceHubPage';
 import WorkspaceDetailPage from '../pages/Workspace/WorkspaceDetailPage';
 import DatasetListPage from '../pages/Workspace/DatasetListPage';
 import DatasetEditorPage from '../pages/Workspace/DatasetEditorPage';
+import DatasetHistoryPage from '../pages/Workspace/DatasetHistoryPage';
 import TemplateCatalogPage from '../pages/Workspace/TemplateCatalogPage';
 import TemplatePublishPage from '../pages/Workspace/TemplatePublishPage';
+import TemplateUpgradePage from '../pages/Workspace/TemplateUpgradePage';
 import WidgetBuilderPage from '../pages/Workspace/WidgetBuilderPage';
 import { DashboardCustomRoute } from './DashboardCustomRoute';
 import { WorkspaceRoute } from './WorkspaceRoute';
@@ -67,8 +69,10 @@ export function RouterWithAuth() {
               <Route element={<WorkspaceRoute />}>
                 <Route path="/workspace" element={<WorkspaceHubPage />} />
                 <Route path="/workspace/datasets" element={<DatasetListPage />} />
+                <Route path="/workspace/datasets/:id/historico" element={<DatasetHistoryPage />} />
                 <Route path="/workspace/datasets/:id" element={<DatasetEditorPage />} />
                 <Route path="/workspace/templates/publish" element={<TemplatePublishPage />} />
+                <Route path="/workspace/templates/:templateId/upgrade" element={<TemplateUpgradePage />} />
                 <Route path="/workspace/templates" element={<TemplateCatalogPage />} />
                 <Route path="/workspace/:workspaceId/widgets/novo" element={<WidgetBuilderPage />} />
                 <Route path="/workspace/:workspaceId" element={<WorkspaceDetailPage />} />

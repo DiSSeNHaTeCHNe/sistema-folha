@@ -104,7 +104,7 @@ describe('TemplateCatalogPage', () => {
     await waitFor(() =>
       expect(screen.getByRole('link', { name: 'Ver diferenças de KPI Folha' })).toHaveAttribute(
         'href',
-        '/workspace/templates/2/upgrade?installationId=10',
+        '/workspace/templates/2/upgrade?installationId=10&versaoInstalada=3',
       ),
     );
   });
