@@ -14,8 +14,9 @@ import {
 import { criarTema, TEMA_PADRAO } from '../theme/themes';
 import type { AcessoUsuario, Usuario } from '../types';
 
-const { createBrowserRouterMock } = vi.hoisted(() => ({
+const { createBrowserRouterMock, useTestAuthHarness } = vi.hoisted(() => ({
   createBrowserRouterMock: vi.fn(),
+  useTestAuthHarness: { enabled: true },
 }));
 
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -43,7 +44,8 @@ vi.mock('../pages/Dashboard', () => ({
 }));
 
 vi.mock('../services/workspaceService', () => ({
-  listWorkspaces: vi.fn().mockResolvedValue([]),
+  listWorkspaces: vi.fn().mockResolvedValue([{ id: 1, nome: 'Planejamento', totalWidgets: 0 }]),
+  getWorkspace: vi.fn().mockResolvedValue({ id: 1, nome: 'Planejamento', widgets: [] }),
   listDatasets: vi.fn().mockResolvedValue([]),
   listWidgetDefinitions: vi.fn().mockResolvedValue([]),
   createWorkspace: vi.fn(),
@@ -60,12 +62,16 @@ vi.mock('../services/usuarioService', () => ({
 }));
 
 vi.mock('../contexts/AuthContext', async () => {
+  const actual = await vi.importActual<typeof import('../contexts/AuthContext')>('../contexts/AuthContext');
   const testModule = await vi.importActual<typeof import('../test/renderWithProviders')>(
     '../test/renderWithProviders',
   );
   return {
-    AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    ...actual,
     useAuth: () => {
+      if (!useTestAuthHarness.enabled) {
+        return actual.useAuth();
+      }
       const ctx = testModule.useTestAuth();
       return {
         ...ctx,
@@ -108,12 +114,20 @@ function renderRoutes(initialEntry: string, authContext: Partial<MockAuthContext
 describe('RouterWithAuth production data router (WKS2F2-04)', () => {
   beforeEach(() => {
     createBrowserRouterMock.mockClear();
+    useTestAuthHarness.enabled = true;
   });
 
   it('wires routeObjects through createBrowserRouter in production module', () => {
     expect(routesModuleSource).toMatch(/createBrowserRouter\s*\(\s*routeObjects\s*\)/);
     expect(routesModuleSource).not.toMatch(/<\s*BrowserRouter/);
     expect(routesModuleSource).not.toMatch(/import\s*{[^}]*\bBrowserRouter\b/);
+    expect(routesModuleSource).toMatch(/element:\s*<\s*AuthLayout\s*\/>/);
+    expect(routesModuleSource).toMatch(
+      /export function RouterWithAuth\(\)[\s\S]*return\s*<\s*RouterProvider/,
+    );
+    expect(routesModuleSource).not.toMatch(
+      /export function RouterWithAuth\(\)[\s\S]*<\s*AuthProvider/,
+    );
   });
 
   it('mounts RouterProvider with router from createBrowserRouter (not BrowserRouter)', async () => {
@@ -137,11 +151,28 @@ describe('RouterWithAuth production data router (WKS2F2-04)', () => {
       await screen.findByRole('heading', { name: 'Dashboard Gerencial', level: 1 }),
     ).toBeInTheDocument();
   });
+
+  it('boots with real AuthProvider inside RouterProvider (WKS2F2-06 auth parity)', async () => {
+    useTestAuthHarness.enabled = false;
+    localStorage.clear();
+
+    render(
+      <ThemeProvider theme={criarTema(TEMA_PADRAO)}>
+        <RouterWithAuth />
+      </ThemeProvider>,
+    );
+
+    expect(createBrowserRouterMock).toHaveBeenCalledWith(routeObjects);
+    expect(
+      await screen.findByRole('heading', { name: 'Sistema de Folha', level: 1 }),
+    ).toBeInTheDocument();
+  });
 });
 
 describe('routeObjects data router smoke (WKS2F2-05)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useTestAuthHarness.enabled = true;
   });
 
   it('renders dashboard at /dashboard for authenticated user', async () => {
@@ -164,6 +195,14 @@ describe('routeObjects data router smoke (WKS2F2-05)', () => {
     expect(await screen.findByRole('heading', { name: 'Datasets', level: 1 })).toBeInTheDocument();
   });
 
+  it('renders workspace detail at /workspace/1 without useBlocker error (WKS2F2-06)', async () => {
+    renderRoutes('/workspace/1');
+    expect(
+      await screen.findByRole('heading', { name: 'Planejamento', level: 1 }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/useBlocker must be used within a data router/i)).not.toBeInTheDocument();
+  });
+
   it('renders usuarios admin page at /usuarios for admin user', async () => {
     renderRoutes('/usuarios', { user: adminUser });
     expect(
@@ -173,6 +212,10 @@ describe('routeObjects data router smoke (WKS2F2-05)', () => {
 });
 
 describe('routeObjects auth parity (WKS2F2-06)', () => {
+  beforeEach(() => {
+    useTestAuthHarness.enabled = true;
+  });
+
   it('redirects unauthenticated private route access to login', async () => {
     renderRoutes('/dashboard', { user: null, isAuthenticated: false, acessoUsuario: null });
     expect(await screen.findByRole('heading', { name: 'Sistema de Folha', level: 1 })).toBeInTheDocument();
@@ -180,6 +223,10 @@ describe('routeObjects auth parity (WKS2F2-06)', () => {
 });
 
 describe('routeObjects workspace ACL parity (WKS2F2-07)', () => {
+  beforeEach(() => {
+    useTestAuthHarness.enabled = true;
+  });
+
   it('shows access denied alert when user lacks workspace scope', async () => {
     renderRoutes('/workspace', {
       acessoUsuario: { ...acessoValido, centrosCustoIds: [], quantidadeCentrosAcessiveis: 0 },

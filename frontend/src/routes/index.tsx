@@ -43,6 +43,14 @@ import WorkspaceSuggestionsPage from '../pages/Workspace/WorkspaceSuggestionsPag
 import { DashboardCustomRoute } from './DashboardCustomRoute';
 import { WorkspaceRoute } from './WorkspaceRoute';
 
+function AuthLayout() {
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  );
+}
+
 function PrivateRoute() {
   const { user, loading } = useAuth();
   console.log('PrivateRoute - Estado:', { user, loading });
@@ -62,7 +70,7 @@ function PrivateRoute() {
   return <Outlet />;
 }
 
-export const routeObjects: RouteObject[] = [
+const appRouteObjects: RouteObject[] = [
   { path: '/login', element: <Login /> },
   {
     element: <PrivateRoute />,
@@ -122,14 +130,17 @@ export const routeObjects: RouteObject[] = [
   { path: '*', element: <Navigate to="/dashboard" replace /> },
 ];
 
+export const routeObjects: RouteObject[] = [
+  {
+    element: <AuthLayout />,
+    children: appRouteObjects,
+  },
+];
+
 export function RouterWithAuth() {
   const router = useMemo(() => createBrowserRouter(routeObjects), []);
 
-  return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
-  );
+  return <RouterProvider router={router} />;
 }
 
 // Mantendo o AppRoutes para compatibilidade
