@@ -50,4 +50,11 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // WKS2-35 canonical token module — hex literals intentional (see noColorLiterals.test.ts ALLOWLIST).
+    files: ['src/pages/Workspace/workspaceTheme.ts'],
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
+  },
 )
