@@ -7,6 +7,7 @@ export interface DatasetFieldSchema {
   tipo: DatasetFieldType;
   referenciaEntidade?: ReferenciaEntidade | null;
   obrigatorio?: boolean | null;
+  observacao?: string | null;
 }
 
 export interface DatasetSummary {
@@ -15,6 +16,9 @@ export interface DatasetSummary {
   schemaVersion: number;
   totalLinhas: number;
   totalCampos: number;
+  dataAtualizacao?: string | null;
+  publicado?: boolean;
+  templateVersaoPublicada?: number | null;
 }
 
 export interface DatasetDefinition {
@@ -65,6 +69,7 @@ export interface WorkspaceSummary {
   id: number;
   nome: string;
   totalWidgets: number;
+  dataAtualizacao?: string | null;
 }
 
 export interface Workspace {

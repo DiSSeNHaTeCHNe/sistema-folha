@@ -38,10 +38,21 @@ import { InfoBanner } from './components/InfoBanner';
 import { WorkspaceEmptyState } from './WorkspaceSwitcher';
 import { WORKSPACE_LIMITS } from './workspaceLimits';
 import { colors } from './workspaceTheme';
+import { formatWorkspaceDateTime } from './utils/formatWorkspaceDateTime';
+import type { DatasetSummary, UserWidgetDefinition, WorkspaceSummary } from './types';
 
 const DATASET_QUOTA_TOOLTIP =
   'Limite atingido. Remova itens ou entre em contato com o administrador.';
-import type { DatasetSummary, UserWidgetDefinition, WorkspaceSummary } from './types';
+
+function formatPublishedLabel(dataset: DatasetSummary): string {
+  if (!dataset.publicado) {
+    return 'Não';
+  }
+  if (dataset.templateVersaoPublicada != null) {
+    return `Sim v${dataset.templateVersaoPublicada}`;
+  }
+  return 'Sim';
+}
 
 function countWidgetsUsingDataset(datasetId: number, definitions: UserWidgetDefinition[]): number {
   const idStr = String(datasetId);
@@ -188,7 +199,7 @@ function WorkspaceHubContent() {
                   {workspace.totalWidgets} widget{workspace.totalWidgets !== 1 ? 's' : ''}
                 </Typography>
                 <Typography variant="caption" sx={{ color: colors.soft, display: 'block', mt: 0.5 }}>
-                  Última edição: —
+                  Última edição: {formatWorkspaceDateTime(workspace.dataAtualizacao)}
                 </Typography>
               </CardContent>
               <CardActions>
@@ -272,8 +283,8 @@ function WorkspaceHubContent() {
                     {datasetUsageById[dataset.id] ?? 0} widget
                     {(datasetUsageById[dataset.id] ?? 0) !== 1 ? 's' : ''}
                   </TableCell>
-                  <TableCell>—</TableCell>
-                  <TableCell>—</TableCell>
+                  <TableCell>{formatPublishedLabel(dataset)}</TableCell>
+                  <TableCell>{formatWorkspaceDateTime(dataset.dataAtualizacao)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

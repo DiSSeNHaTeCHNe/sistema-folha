@@ -28,13 +28,31 @@ vi.mock('../../services/workspaceService', () => ({
 }));
 
 const workspaces = [
-  { id: 1, nome: 'Planejamento', totalWidgets: 3 },
-  { id: 2, nome: 'RH', totalWidgets: 1 },
+  { id: 1, nome: 'Planejamento', totalWidgets: 3, dataAtualizacao: '2026-08-01T14:30:00Z' },
+  { id: 2, nome: 'RH', totalWidgets: 1, dataAtualizacao: '2026-07-15T09:00:00Z' },
 ];
 
 const datasets = [
-  { id: 10, nome: 'Headcount', schemaVersion: 1, totalLinhas: 12, totalCampos: 4 },
-  { id: 11, nome: 'Custos', schemaVersion: 2, totalLinhas: 5, totalCampos: 3 },
+  {
+    id: 10,
+    nome: 'Headcount',
+    schemaVersion: 1,
+    totalLinhas: 12,
+    totalCampos: 4,
+    dataAtualizacao: '2026-08-02T16:45:00Z',
+    publicado: true,
+    templateVersaoPublicada: 2,
+  },
+  {
+    id: 11,
+    nome: 'Custos',
+    schemaVersion: 2,
+    totalLinhas: 5,
+    totalCampos: 3,
+    dataAtualizacao: '2026-07-20T11:15:00Z',
+    publicado: false,
+    templateVersaoPublicada: null,
+  },
 ];
 
 describe('WorkspaceHubPage', () => {
@@ -61,8 +79,8 @@ describe('WorkspaceHubPage', () => {
     renderWithProviders(<WorkspaceHubPage />);
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Planejamento', level: 2 })).toBeInTheDocument());
     expect(screen.getByText('3 widgets')).toBeInTheDocument();
+    expect(screen.getByText(/Última edição: 01\/08\/2026/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'RH', level: 2 })).toBeInTheDocument();
-    expect(screen.getAllByText(/Última edição/i)).toHaveLength(2);
   });
 
   it('shows Novo workspace action and opens create dialog (WKS2-01)', async () => {
@@ -82,6 +100,9 @@ describe('WorkspaceHubPage', () => {
     expect(screen.getByRole('columnheader', { name: 'Última alteração' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '4' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '1 widget' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Sim v2' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Não' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: /02\/08\/2026/i })).toBeInTheDocument();
   });
 
   it('shows dataset quota progress bar (WKS2-04)', async () => {
