@@ -3298,6 +3298,123 @@
           }
         }
       }
+    },
+    "/workspace/metadata/templates": {
+      "get": {
+        "tags": [
+          "Workspace Metadata"
+        ],
+        "summary": "Lista templates visíveis ao usuário",
+        "operationId": "listarTemplatesVisiveis",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/workspace/metadata/system-fields": {
+      "get": {
+        "tags": [
+          "Workspace Metadata"
+        ],
+        "summary": "Lista campos de fontes sistema acessíveis",
+        "operationId": "listarCamposSistema",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/workspace/proposals": {
+      "post": {
+        "tags": [
+          "Workspace Proposals"
+        ],
+        "summary": "Cria proposta IA pendente",
+        "operationId": "criarPropostaWorkspace",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/workspace/proposals/{id}": {
+      "get": {
+        "tags": [
+          "Workspace Proposals"
+        ],
+        "summary": "Obtém proposta para revisão",
+        "operationId": "obterPropostaWorkspace",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/workspace/proposals/{id}/confirmar": {
+      "post": {
+        "tags": [
+          "Workspace Proposals"
+        ],
+        "summary": "Confirma e persiste proposta",
+        "operationId": "confirmarPropostaWorkspace",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/workspace/proposals/{id}/descartar": {
+      "post": {
+        "tags": [
+          "Workspace Proposals"
+        ],
+        "summary": "Descarta proposta pendente",
+        "operationId": "descartarPropostaWorkspace",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
     }
   },
   "components": {

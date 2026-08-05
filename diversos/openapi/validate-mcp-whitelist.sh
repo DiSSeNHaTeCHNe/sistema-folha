@@ -74,6 +74,12 @@ MUTABLE_IDS = {
     "desassociarCentroCusto",
 }
 
+WORKSPACE_POST_IDS = {
+    "criarPropostaWorkspace",
+    "confirmarPropostaWorkspace",
+    "descartarPropostaWorkspace",
+}
+
 FORBIDDEN_PATH_PREFIXES = (
     "/organograma",
     "/importacao",
@@ -153,8 +159,8 @@ except ValueError as exc:
     fail(f"[validate-mcp-whitelist] {exc}")
 
 count = len(only_ids)
-if count < 10 or count > 15:
-    fail(f"[validate-mcp-whitelist] options.only count must be between 10 and 15 (got {count})")
+if count < 10 or count > 20:
+    fail(f"[validate-mcp-whitelist] options.only count must be between 10 and 20 (got {count})")
 
 missing_mandatory = sorted(MANDATORY_IDS - set(only_ids))
 if missing_mandatory:
@@ -186,8 +192,12 @@ non_get = []
 forbidden_paths = []
 for op_id in only_ids:
     method, path = operation_map[op_id]
-    if method != "GET":
+    if method != "GET" and op_id not in WORKSPACE_POST_IDS:
         non_get.append(f"{op_id} ({method} {path})")
+    if method == "POST" and op_id in WORKSPACE_POST_IDS:
+        normalized = path if path.startswith("/") else f"/{path}"
+        if not normalized.startswith("/workspace/proposals"):
+            non_get.append(f"{op_id} ({method} {path}) — workspace POST outside /workspace/proposals")
     normalized = path if path.startswith("/") else f"/{path}"
     for prefix in FORBIDDEN_PATH_PREFIXES:
         if normalized.startswith(prefix):
@@ -196,7 +206,8 @@ for op_id in only_ids:
 
 if non_get:
     fail(
-        "[validate-mcp-whitelist] whitelisted operations must be GET:\n  "
+        "[validate-mcp-whitelist] whitelisted operations must be GET "
+        "(except workspace proposal POST):\n  "
         + "\n  ".join(non_get)
     )
 
