@@ -17,9 +17,14 @@ function emptyLayoutState(): WorkspaceLayoutState {
   return { saved: null, draft: null };
 }
 
-export function useWorkspaceLayout() {
+export interface UseWorkspaceLayoutOptions {
+  fixedWorkspaceId?: number | null;
+}
+
+export function useWorkspaceLayout(options: UseWorkspaceLayoutOptions = {}) {
+  const fixedWorkspaceId = options.fixedWorkspaceId ?? null;
   const [summaries, setSummaries] = useState<WorkspaceSummary[]>([]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<number | null>(null);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<number | null>(fixedWorkspaceId);
   const [layoutsById, setLayoutsById] = useState<Record<number, WorkspaceLayoutState>>({});
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -44,14 +49,19 @@ export function useWorkspaceLayout() {
     try {
       const list = await listWorkspaces();
       setSummaries(list);
-      setActiveWorkspaceId((current) => current ?? list[0]?.id ?? null);
+      setActiveWorkspaceId((current) => {
+        if (fixedWorkspaceId != null) {
+          return fixedWorkspaceId;
+        }
+        return current ?? list[0]?.id ?? null;
+      });
     } catch {
       setError('Erro ao carregar workspaces');
       throw new Error('Erro ao carregar workspaces');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fixedWorkspaceId]);
 
   const loadWorkspaceLayout = useCallback(async (workspaceId: number) => {
     setError(null);
