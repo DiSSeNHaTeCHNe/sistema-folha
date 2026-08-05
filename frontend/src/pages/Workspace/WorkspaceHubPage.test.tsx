@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import WorkspaceHubPage from './WorkspaceHubPage';
 import { renderWithProviders } from '../../test/renderWithProviders';
+import { WORKSPACE_LIMITS } from './workspaceLimits';
 import {
   createWorkspace,
   listDatasets,
@@ -115,5 +116,20 @@ describe('WorkspaceHubPage', () => {
   it('shows Novo dataset action in datasets section', async () => {
     renderWithProviders(<WorkspaceHubPage />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Novo dataset' })).toBeInTheDocument());
+  });
+
+  it('disables Novo dataset with tooltip when quota at limit', async () => {
+    const atLimit = Array.from({ length: WORKSPACE_LIMITS.MAX_DATASETS_PER_USER }, (_, index) => ({
+      id: index + 1,
+      nome: `Dataset ${index + 1}`,
+      schemaVersion: 1,
+      totalLinhas: 0,
+      totalCampos: 1,
+    }));
+    vi.mocked(listDatasets).mockResolvedValue(atLimit);
+    renderWithProviders(<WorkspaceHubPage />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Novo dataset' })).toBeDisabled());
+    fireEvent.mouseOver(screen.getByRole('button', { name: 'Novo dataset' }));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/Limite atingido/i);
   });
 });

@@ -19,6 +19,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -37,6 +38,9 @@ import { InfoBanner } from './components/InfoBanner';
 import { WorkspaceEmptyState } from './WorkspaceSwitcher';
 import { WORKSPACE_LIMITS } from './workspaceLimits';
 import { colors } from './workspaceTheme';
+
+const DATASET_QUOTA_TOOLTIP =
+  'Limite atingido. Remova itens ou entre em contato com o administrador.';
 import type { DatasetSummary, UserWidgetDefinition, WorkspaceSummary } from './types';
 
 function countWidgetsUsingDataset(datasetId: number, definitions: UserWidgetDefinition[]): number {
@@ -206,14 +210,28 @@ function WorkspaceHubContent() {
           <Typography variant="h6" component="h2" sx={{ color: colors.navy }}>
             Meus datasets
           </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/workspace/datasets')}
-            disabled={datasetQuotaAtLimit}
-          >
-            Novo dataset
-          </Button>
+          {datasetQuotaAtLimit ? (
+            <Tooltip title={DATASET_QUOTA_TOOLTIP} arrow>
+              <span>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={() => navigate('/workspace/datasets')}
+                  disabled
+                >
+                  Novo dataset
+                </Button>
+              </span>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={() => navigate('/workspace/datasets')}
+            >
+              Novo dataset
+            </Button>
+          )}
         </Stack>
 
         <Box mb={2} maxWidth={360}>
