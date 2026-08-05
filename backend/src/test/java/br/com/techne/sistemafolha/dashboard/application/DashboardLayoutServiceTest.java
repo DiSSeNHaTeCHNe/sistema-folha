@@ -53,6 +53,9 @@ class DashboardLayoutServiceTest {
     @Mock
     private DashboardWidgetConfigValidator dashboardWidgetConfigValidator;
 
+    @org.mockito.Spy
+    private LayoutValidator layoutValidator = new LayoutValidator();
+
     @InjectMocks
     private DashboardLayoutService dashboardLayoutService;
 
