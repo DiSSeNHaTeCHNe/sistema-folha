@@ -29,7 +29,23 @@ const widgets: WidgetInstance[] = [
 ];
 
 describe('WidgetCatalogDrawer', () => {
-  it('marks already added widgets as unavailable', () => {
+  it('allows adding duplicate widget types as new instances (DASHC-37)', () => {
+    const onAddWidget = vi.fn();
+    renderWithProviders(
+      <WidgetCatalogDrawer
+        open
+        onClose={() => {}}
+        catalog={catalog}
+        widgets={widgets}
+        onAddWidget={onAddWidget}
+      />,
+    );
+    expect(screen.getByText(/1 instância no layout/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar Total de Funcionários' }));
+    expect(onAddWidget).toHaveBeenCalledWith(catalog[0]);
+  });
+
+  it('shows instance count for widgets already in layout', () => {
     renderWithProviders(
       <WidgetCatalogDrawer
         open
@@ -39,9 +55,8 @@ describe('WidgetCatalogDrawer', () => {
         onAddWidget={() => {}}
       />,
     );
-    expect(screen.getByText('Já adicionado')).toBeInTheDocument();
+    expect(screen.getByText(/1 instância no layout/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Adicionar Custo Empresa' })).not.toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('button', { name: 'Adicionar Total de Funcionários' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('adds widget via callback', () => {

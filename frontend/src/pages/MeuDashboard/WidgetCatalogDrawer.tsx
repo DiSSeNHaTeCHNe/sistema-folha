@@ -31,15 +31,15 @@ export function WidgetCatalogDrawer({
   onAddWidget,
   onLimitReached,
 }: WidgetCatalogDrawerProps) {
-  const addedIds = new Set(widgets.map((widget) => widget.widgetId));
+  const instanceCountByWidgetId = widgets.reduce<Record<string, number>>((acc, widget) => {
+    acc[widget.widgetId] = (acc[widget.widgetId] ?? 0) + 1;
+    return acc;
+  }, {});
   const atLimit = widgets.length >= MAX_WIDGETS;
 
   const handleAdd = (item: WidgetCatalogItem) => {
     if (atLimit) {
       onLimitReached?.('Limite de 30 widgets atingido');
-      return;
-    }
-    if (addedIds.has(item.widgetId)) {
       return;
     }
     onAddWidget(item);
@@ -61,18 +61,19 @@ export function WidgetCatalogDrawer({
         )}
         <List>
           {catalog.map((item) => {
-            const alreadyAdded = addedIds.has(item.widgetId);
+            const instanceCount = instanceCountByWidgetId[item.widgetId] ?? 0;
+            const secondary =
+              instanceCount > 0
+                ? `${instanceCount} instância${instanceCount > 1 ? 's' : ''} no layout — clique para adicionar outra`
+                : item.descricao;
             return (
               <ListItem key={item.widgetId} disablePadding>
                 <ListItemButton
-                  disabled={alreadyAdded || atLimit}
+                  disabled={atLimit}
                   onClick={() => handleAdd(item)}
                   aria-label={`Adicionar ${item.titulo}`}
                 >
-                  <ListItemText
-                    primary={item.titulo}
-                    secondary={alreadyAdded ? 'Já adicionado' : item.descricao}
-                  />
+                  <ListItemText primary={item.titulo} secondary={secondary} />
                 </ListItemButton>
               </ListItem>
             );

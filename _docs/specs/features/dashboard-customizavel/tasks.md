@@ -580,9 +580,9 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-29, DASHC-32…35
 
 **Done when**:
-- [ ] Override competência persiste após reload
-- [ ] topN=10 mostra 7º CC (DASHC-32 acceptance scenario)
-- [ ] Config inválida bloqueada antes do save
+- [x] Override competência persiste após reload
+- [x] topN=10 mostra 7º CC (DASHC-32 acceptance scenario)
+- [x] Config inválida bloqueada antes do save
 
 **Tests**: unit  
 **Gate**: quick FE  
