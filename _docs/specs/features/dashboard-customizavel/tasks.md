@@ -498,10 +498,10 @@ Batches run **sequentially**. Offer sub-agents at Execute start; default inline 
 **Requirements**: DASHC-41…44
 
 **Done when**:
-- [ ] Chamada direta a widget não no catálogo do usuário → negada
-- [ ] Escopo restrito não retorna CC fora do conjunto
-- [ ] `GET /dashboard/stats` inalterado (regressão zero)
-- [ ] Gate full: `mvn test -Dtest=DashboardWidgetControllerWebMvcTest`
+- [x] Chamada direta a widget não no catálogo do usuário → negada
+- [x] Escopo restrito não retorna CC fora do conjunto
+- [x] `GET /dashboard/stats` inalterado (regressão zero)
+- [x] Gate full: `mvn test -Dtest=DashboardWidgetControllerWebMvcTest`
 
 **Tests**: WebMvcTest  
 **Gate**: full (backend)  
