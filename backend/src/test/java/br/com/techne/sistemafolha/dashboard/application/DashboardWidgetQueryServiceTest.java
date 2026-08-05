@@ -5,6 +5,7 @@ import br.com.techne.sistemafolha.dashboard.api.DashboardStatsDTO;
 import br.com.techne.sistemafolha.dashboard.api.WidgetDataDTO;
 import br.com.techne.sistemafolha.dashboard.api.WidgetQueryParams;
 import br.com.techne.sistemafolha.dashboard.domain.DashboardAcessoNegadoException;
+import br.com.techne.sistemafolha.dashboard.domain.WidgetCatalog;
 import br.com.techne.sistemafolha.folha.port.FolhaConsultaPort;
 import br.com.techne.sistemafolha.folha.port.FolhaResumoSnapshot;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
@@ -44,6 +45,9 @@ class DashboardWidgetQueryServiceTest {
     private DashboardWidgetCatalogService dashboardWidgetCatalogService;
 
     @Mock
+    private DashboardWidgetConfigValidator dashboardWidgetConfigValidator;
+
+    @Mock
     private DashboardStatsAggregator dashboardStatsAggregator;
 
     @Mock
@@ -56,6 +60,7 @@ class DashboardWidgetQueryServiceTest {
         service = new DashboardWidgetQueryService(
             dashboardAccessGuard,
             dashboardWidgetCatalogService,
+            dashboardWidgetConfigValidator,
             dashboardStatsAggregator,
             folhaConsultaPort
         );
@@ -70,6 +75,9 @@ class DashboardWidgetQueryServiceTest {
     @Test
     void consultar_topNForaDoIntervalo_retorna400() {
         when(dashboardWidgetCatalogService.isWidgetPermitido("gestor", "lista-top-proventos")).thenReturn(true);
+        doThrow(new IllegalArgumentException("topN deve estar entre 1 e 50"))
+            .when(dashboardWidgetConfigValidator)
+            .validarParamsPorWidget(eq(WidgetCatalog.LISTA_TOP_PROVENTOS), any());
 
         WidgetQueryParams params = WidgetQueryParams.fromQueryMap(Map.of("topN", "99"));
 
@@ -80,6 +88,9 @@ class DashboardWidgetQueryServiceTest {
     @Test
     void consultar_paramNaoPermitidoParaWidget_retorna400() {
         when(dashboardWidgetCatalogService.isWidgetPermitido("gestor", "kpi-total-funcionarios")).thenReturn(true);
+        doThrow(new IllegalArgumentException("Parâmetro não permitido para widget: topN"))
+            .when(dashboardWidgetConfigValidator)
+            .validarParamsPorWidget(eq(WidgetCatalog.KPI_TOTAL_FUNCIONARIOS), any());
 
         WidgetQueryParams params = WidgetQueryParams.fromQueryMap(Map.of("topN", "5"));
 
@@ -104,6 +115,9 @@ class DashboardWidgetQueryServiceTest {
         when(dashboardAccessGuard.resolve("scoped")).thenReturn(
             new DashboardAccessGuard.ResolvedDashboardAccess(false, 2L, contexto, Set.of(10L)));
         when(dashboardWidgetCatalogService.isWidgetPermitido("scoped", "kpi-total-funcionarios")).thenReturn(true);
+        doThrow(new DashboardAcessoNegadoException())
+            .when(dashboardWidgetConfigValidator)
+            .validarEscopoFiltros(any(), any());
 
         WidgetQueryParams params = WidgetQueryParams.fromQueryMap(Map.of("centroCustoId", "99"));
 

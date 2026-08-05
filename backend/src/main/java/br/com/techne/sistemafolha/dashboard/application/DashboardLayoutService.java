@@ -33,6 +33,7 @@ public class DashboardLayoutService {
     private final DashboardLayoutRepository dashboardLayoutRepository;
     private final DashboardAccessGuard dashboardAccessGuard;
     private final DashboardWidgetCatalogService dashboardWidgetCatalogService;
+    private final DashboardWidgetConfigValidator dashboardWidgetConfigValidator;
 
     @Transactional
     public DashboardLayoutDTO obterOuCriarPadrao(String login) {
@@ -52,10 +53,11 @@ public class DashboardLayoutService {
     @Transactional
     public DashboardLayoutDTO salvar(String login, DashboardLayoutDTO dto) {
         dashboardAccessGuard.assertEscopo(login);
-        Long usuarioId = dashboardAccessGuard.resolve(login).usuarioId();
+        DashboardAccessGuard.ResolvedDashboardAccess access = dashboardAccessGuard.resolve(login);
+        Long usuarioId = access.usuarioId();
         Set<String> widgetIdsValidos = dashboardWidgetCatalogService.widgetIdsValidos(login);
 
-        validarWidgets(dto.widgets(), widgetIdsValidos);
+        validarWidgets(dto.widgets(), widgetIdsValidos, access);
 
         List<WidgetInstancePayload> normalizados = normalizarOrdem(toPayloads(dto.widgets()));
         DashboardLayout layout = dashboardLayoutRepository.findByUsuarioId(usuarioId)
@@ -108,7 +110,10 @@ public class DashboardLayoutService {
         return layout;
     }
 
-    private void validarWidgets(List<WidgetInstanceDTO> widgets, Set<String> widgetIdsValidos) {
+    private void validarWidgets(
+            List<WidgetInstanceDTO> widgets,
+            Set<String> widgetIdsValidos,
+            DashboardAccessGuard.ResolvedDashboardAccess access) {
         if (widgets == null) {
             throw new IllegalArgumentException("widgets: obrigatório");
         }
@@ -133,6 +138,7 @@ public class DashboardLayoutService {
             if (!instanceIds.add(widget.instanceId())) {
                 throw new IllegalArgumentException("instanceId duplicado: " + widget.instanceId());
             }
+            dashboardWidgetConfigValidator.validar(widget.widgetId(), widget.config(), access);
         }
     }
 

@@ -18,10 +18,8 @@ public class DashboardWidgetCatalogService {
     private final DashboardAccessGuard dashboardAccessGuard;
 
     public List<WidgetCatalogItemDTO> listarParaUsuario(String login) {
+        dashboardAccessGuard.assertEscopo(login);
         DashboardAccessGuard.ResolvedDashboardAccess access = dashboardAccessGuard.resolve(login);
-        if (access.denied()) {
-            return List.of();
-        }
         return Arrays.stream(WidgetCatalog.values())
             .filter(entry -> isPermitidoParaContexto(entry, access.contexto()))
             .map(this::toDto)

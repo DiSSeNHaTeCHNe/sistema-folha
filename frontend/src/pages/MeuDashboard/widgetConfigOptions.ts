@@ -5,21 +5,25 @@ export type ConfigField =
   | 'topN'
   | 'dimensao'
   | 'metrica'
-  | 'tipoVisualizacao';
+  | 'tipoVisualizacao'
+  | 'centroCustoId'
+  | 'linhaNegocioId';
+
+const CC_LN_FIELDS: ConfigField[] = ['centroCustoId', 'linhaNegocioId'];
 
 const WIDGET_CONFIG_FIELDS: Record<string, ConfigField[]> = {
-  'kpi-total-funcionarios': ['competencia'],
-  'kpi-custo-empresa': ['competencia'],
-  'kpi-beneficios-ativos': ['competencia'],
-  'kpi-relacao-pd': ['competencia'],
-  'grafico-evolucao-mensal': ['competencia'],
-  'grafico-funcionarios-por-cc': ['competencia', 'topN', 'tipoVisualizacao'],
-  'grafico-funcionarios-por-linha': ['competencia', 'topN', 'tipoVisualizacao'],
-  'grafico-custo-por-cc': ['competencia', 'topN', 'tipoVisualizacao'],
-  'grafico-custo-por-linha': ['competencia', 'topN', 'tipoVisualizacao'],
-  'lista-top-proventos': ['competencia', 'topN'],
-  'lista-top-descontos': ['competencia', 'topN'],
-  'grafico-funcionarios-por-cargo': ['competencia', 'topN', 'tipoVisualizacao'],
+  'kpi-total-funcionarios': ['competencia', ...CC_LN_FIELDS],
+  'kpi-custo-empresa': ['competencia', ...CC_LN_FIELDS],
+  'kpi-beneficios-ativos': ['competencia', ...CC_LN_FIELDS],
+  'kpi-relacao-pd': ['competencia', ...CC_LN_FIELDS],
+  'grafico-evolucao-mensal': ['competencia', ...CC_LN_FIELDS],
+  'grafico-funcionarios-por-cc': ['competencia', 'topN', 'tipoVisualizacao', ...CC_LN_FIELDS],
+  'grafico-funcionarios-por-linha': ['competencia', 'topN', 'tipoVisualizacao', ...CC_LN_FIELDS],
+  'grafico-custo-por-cc': ['competencia', 'topN', 'tipoVisualizacao', ...CC_LN_FIELDS],
+  'grafico-custo-por-linha': ['competencia', 'topN', 'tipoVisualizacao', ...CC_LN_FIELDS],
+  'lista-top-proventos': ['competencia', 'topN', ...CC_LN_FIELDS],
+  'lista-top-descontos': ['competencia', 'topN', ...CC_LN_FIELDS],
+  'grafico-funcionarios-por-cargo': ['competencia', 'topN', 'tipoVisualizacao', ...CC_LN_FIELDS],
 };
 
 export function getConfigFieldsForWidget(widgetId: string): ConfigField[] {

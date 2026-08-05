@@ -89,6 +89,17 @@ class DashboardLayoutControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user-a", roles = "USER")
+    void getCatalog_semEscopo_retorna403() throws Exception {
+        when(dashboardWidgetCatalogService.listarParaUsuario("user-a"))
+            .thenThrow(new DashboardAcessoNegadoException());
+
+        mockMvc.perform(get("/dashboard/widgets/catalog"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status").value(403));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
     void getCatalog_comEscopo_retorna200() throws Exception {
         when(dashboardWidgetCatalogService.listarParaUsuario("user-a")).thenReturn(List.of(
             new WidgetCatalogItemDTO("kpi-total-funcionarios", "Total", "Desc", "KPI", 3, 1)));

@@ -7,6 +7,6 @@ import java.util.List;
 
 public record DashboardLayoutDTO(
     Long id,
-    String nome,
+    @Size(max = 100) String nome,
     @Size(max = 30) List<@Valid WidgetInstanceDTO> widgets
 ) {}

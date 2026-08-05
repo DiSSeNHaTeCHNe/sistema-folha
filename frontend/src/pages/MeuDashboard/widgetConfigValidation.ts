@@ -59,6 +59,18 @@ function validateField(widgetId: string, config: WidgetConfig): string[] {
     }
   }
 
+  if (config.centroCustoId != null) {
+    if (!allowed.has('centroCustoId')) {
+      errors.push('centroCustoId não permitido para este widget');
+    }
+  }
+
+  if (config.linhaNegocioId != null) {
+    if (!allowed.has('linhaNegocioId')) {
+      errors.push('linhaNegocioId não permitido para este widget');
+    }
+  }
+
   return errors;
 }
 

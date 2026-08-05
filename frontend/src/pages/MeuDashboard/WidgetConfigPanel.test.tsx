@@ -7,6 +7,25 @@ import { buildFuncionariosPorCentroPie } from './widgets/chartUtils';
 import type { DashboardStats } from '../../services/dashboardService';
 import { resolveTopN } from './widgetConfigOptions';
 import { criarTema, TEMA_PADRAO } from '../../theme/themes';
+import { useScopedFilterOptions } from './hooks/useScopedFilterOptions';
+
+const mockScopedCentros = [
+  { id: 1, descricao: 'TI', ativo: true, linhaNegocioId: 10 },
+  { id: 2, descricao: 'RH', ativo: true, linhaNegocioId: 20 },
+];
+
+const mockScopedLinhas = [
+  { id: 10, descricao: 'Tecnologia', ativo: true },
+  { id: 20, descricao: 'Administrativo', ativo: true },
+];
+
+vi.mock('./hooks/useScopedFilterOptions', () => ({
+  useScopedFilterOptions: vi.fn(() => ({
+    centrosCusto: mockScopedCentros,
+    linhasNegocio: mockScopedLinhas,
+    loading: false,
+  })),
+}));
 
 vi.mock('../../services/resumoFolhaPagamentoService', () => ({
   resumoFolhaPagamentoService: {
@@ -36,6 +55,11 @@ describe('WidgetConfigPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(resumoFolhaPagamentoService.listarMaisRecentes).mockResolvedValue(mockResumos);
+    vi.mocked(useScopedFilterOptions).mockReturnValue({
+      centrosCusto: mockScopedCentros,
+      linhasNegocio: mockScopedLinhas,
+      loading: false,
+    });
   });
 
   it('persists competencia override in config (DASHC-29)', async () => {
@@ -85,6 +109,55 @@ describe('WidgetConfigPanel', () => {
       target: { value: '10' },
     });
     expect(onChange).toHaveBeenCalledWith({ topN: 10 });
+  });
+
+  it('updates CC/LN filter config scoped to user access (DASHC-33)', async () => {
+    vi.mocked(useScopedFilterOptions).mockReturnValue({
+      centrosCusto: [mockScopedCentros[1]],
+      linhasNegocio: [mockScopedLinhas[1]],
+      loading: false,
+    });
+
+    const onChange = vi.fn();
+    renderWithProviders(
+      <WidgetConfigPanel
+        widgetId="grafico-funcionarios-por-cc"
+        config={null}
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Configurações do widget' }));
+
+    fireEvent.mouseDown(screen.getByLabelText('Centro de Custo'));
+    const listbox = await screen.findByRole('listbox');
+    expect(within(listbox).queryByRole('option', { name: 'TI' })).not.toBeInTheDocument();
+    fireEvent.click(within(listbox).getByRole('option', { name: 'RH' }));
+    expect(onChange).toHaveBeenCalledWith({ centroCustoId: 2 });
+  });
+
+  it('updates linhaNegocioId filter config (DASHC-33)', async () => {
+    vi.mocked(useScopedFilterOptions).mockReturnValue({
+      centrosCusto: [mockScopedCentros[1]],
+      linhasNegocio: [mockScopedLinhas[1]],
+      loading: false,
+    });
+
+    const onChange = vi.fn();
+    renderWithProviders(
+      <WidgetConfigPanel
+        widgetId="grafico-funcionarios-por-cc"
+        config={{ centroCustoId: 2 }}
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Configurações do widget' }));
+    fireEvent.mouseDown(screen.getByLabelText('Linha de Negócio'));
+    const listbox = await screen.findByRole('listbox');
+    expect(within(listbox).queryByRole('option', { name: 'Tecnologia' })).not.toBeInTheDocument();
+    fireEvent.click(within(listbox).getByRole('option', { name: 'Administrativo' }));
+    expect(onChange).toHaveBeenCalledWith({ centroCustoId: 2, linhaNegocioId: 20 });
   });
 
   it('shows validation errors from parent', () => {

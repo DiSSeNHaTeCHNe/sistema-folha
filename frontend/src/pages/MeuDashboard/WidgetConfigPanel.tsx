@@ -15,6 +15,7 @@ import type { SelectChangeEvent } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { resumoFolhaPagamentoService } from '../../services/resumoFolhaPagamentoService';
 import type { WidgetConfig } from './types';
+import { useScopedFilterOptions } from './hooks/useScopedFilterOptions';
 import {
   getConfigFieldsForWidget,
   METRICA_OPTIONS,
@@ -52,6 +53,7 @@ export function WidgetConfigPanel({
 }: WidgetConfigPanelProps) {
   const fields = getConfigFieldsForWidget(widgetId);
   const [competenciaOpcoes, setCompetenciaOpcoes] = useState<string[]>([]);
+  const { centrosCusto, linhasNegocio } = useScopedFilterOptions();
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +122,18 @@ export function WidgetConfigPanel({
         return;
       }
       updateConfig({ [field]: value } as Partial<WidgetConfig>);
+    };
+
+  const handleNumberSelectChange =
+    (field: 'centroCustoId' | 'linhaNegocioId') => (event: SelectChangeEvent<string>) => {
+      const value = event.target.value;
+      if (value === '') {
+        const rest = { ...current };
+        delete rest[field];
+        onChange(Object.keys(rest).length > 0 ? rest : null);
+        return;
+      }
+      updateConfig({ [field]: Number(value) });
     };
 
   return (
@@ -201,6 +215,46 @@ export function WidgetConfigPanel({
                 {TIPO_VISUALIZACAO_OPTIONS.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {fields.includes('centroCustoId') && (
+            <FormControl size="small" fullWidth>
+              <InputLabel id={`centro-custo-${widgetId}-label`}>Centro de Custo</InputLabel>
+              <Select
+                labelId={`centro-custo-${widgetId}-label`}
+                value={current.centroCustoId != null ? String(current.centroCustoId) : ''}
+                label="Centro de Custo"
+                displayEmpty
+                onChange={handleNumberSelectChange('centroCustoId')}
+              >
+                <MenuItem value="">Todos no escopo</MenuItem>
+                {centrosCusto.map((centro) => (
+                  <MenuItem key={centro.id} value={String(centro.id)}>
+                    {centro.descricao}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {fields.includes('linhaNegocioId') && (
+            <FormControl size="small" fullWidth>
+              <InputLabel id={`linha-negocio-${widgetId}-label`}>Linha de Negócio</InputLabel>
+              <Select
+                labelId={`linha-negocio-${widgetId}-label`}
+                value={current.linhaNegocioId != null ? String(current.linhaNegocioId) : ''}
+                label="Linha de Negócio"
+                displayEmpty
+                onChange={handleNumberSelectChange('linhaNegocioId')}
+              >
+                <MenuItem value="">Todas no escopo</MenuItem>
+                {linhasNegocio.map((linha) => (
+                  <MenuItem key={linha.id} value={String(linha.id)}>
+                    {linha.descricao}
                   </MenuItem>
                 ))}
               </Select>

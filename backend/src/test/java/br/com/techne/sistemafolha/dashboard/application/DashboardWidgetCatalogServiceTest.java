@@ -1,6 +1,7 @@
 package br.com.techne.sistemafolha.dashboard.application;
 
 import br.com.techne.sistemafolha.dashboard.api.WidgetCatalogItemDTO;
+import br.com.techne.sistemafolha.dashboard.domain.DashboardAcessoNegadoException;
 import br.com.techne.sistemafolha.dashboard.domain.WidgetCatalog;
 import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,9 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,11 +56,11 @@ class DashboardWidgetCatalogServiceTest {
     }
 
     @Test
-    void listarParaUsuario_acessoNegado_retornaVazio() {
-        when(dashboardAccessGuard.resolve(LOGIN))
-            .thenReturn(DashboardAccessGuard.ResolvedDashboardAccess.accessDenied());
+    void listarParaUsuario_acessoNegado_lanca403() {
+        doThrow(new DashboardAcessoNegadoException()).when(dashboardAccessGuard).assertEscopo(LOGIN);
 
-        assertTrue(catalogService.listarParaUsuario(LOGIN).isEmpty());
+        assertThrows(DashboardAcessoNegadoException.class,
+            () -> catalogService.listarParaUsuario(LOGIN));
     }
 
     @Test

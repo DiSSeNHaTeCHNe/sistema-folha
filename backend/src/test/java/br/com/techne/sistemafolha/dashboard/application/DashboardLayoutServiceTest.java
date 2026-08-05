@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,6 +49,9 @@ class DashboardLayoutServiceTest {
 
     @Mock
     private DashboardWidgetCatalogService dashboardWidgetCatalogService;
+
+    @Mock
+    private DashboardWidgetConfigValidator dashboardWidgetConfigValidator;
 
     @InjectMocks
     private DashboardLayoutService dashboardLayoutService;
@@ -94,6 +98,23 @@ class DashboardLayoutServiceTest {
 
         assertThrows(DashboardAcessoNegadoException.class,
             () -> dashboardLayoutService.obterOuCriarPadrao(LOGIN));
+    }
+
+    @Test
+    void salvar_configTopNInvalido_lanca400() {
+        stubAccess(LOGIN, USUARIO_ID);
+        when(dashboardWidgetCatalogService.widgetIdsValidos(LOGIN)).thenReturn(Set.of("grafico-custo-por-cc"));
+        org.mockito.Mockito.doThrow(new IllegalArgumentException("topN deve estar entre 1 e 50"))
+            .when(dashboardWidgetConfigValidator)
+            .validar(eq("grafico-custo-por-cc"), any(), any());
+
+        DashboardLayoutDTO input = new DashboardLayoutDTO(null, "Meu dashboard", List.of(
+            new WidgetInstanceDTO("grafico-custo-por-cc", "inst1", 0, 3, 2, Map.of("topN", 99))));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> dashboardLayoutService.salvar(LOGIN, input));
+        assertTrue(ex.getMessage().contains("topN"));
+        verify(dashboardLayoutRepository, never()).save(any());
     }
 
     @Test
