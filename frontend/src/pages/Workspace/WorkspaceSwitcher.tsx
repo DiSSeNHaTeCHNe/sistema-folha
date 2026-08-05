@@ -144,7 +144,29 @@ export function WorkspaceSwitcher({
   );
 }
 
-export function WorkspaceEmptyState() {
+interface WorkspaceEmptyStateProps {
+  onCreate?: (nome: string) => Promise<void>;
+}
+
+export function WorkspaceEmptyState({ onCreate }: WorkspaceEmptyStateProps) {
+  const [createOpen, setCreateOpen] = useState(false);
+  const [nome, setNome] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleCreate = async () => {
+    if (!nome.trim() || !onCreate) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await onCreate(nome.trim());
+      setNome('');
+      setCreateOpen(false);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Box
       display="flex"
@@ -158,9 +180,34 @@ export function WorkspaceEmptyState() {
       <Typography variant="h6" gutterBottom>
         Nenhum workspace ainda
       </Typography>
-      <Typography color="text.secondary" align="center">
+      <Typography color="text.secondary" align="center" mb={2}>
         Crie um workspace para organizar widgets personalizados.
       </Typography>
+      {onCreate && (
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+          Criar workspace
+        </Button>
+      )}
+
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} aria-labelledby="empty-create-workspace-title">
+        <DialogTitle id="empty-create-workspace-title">Novo workspace</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nome do workspace"
+            fullWidth
+            value={nome}
+            onChange={(event) => setNome(event.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
+          <Button onClick={() => void handleCreate()} disabled={submitting || !nome.trim()}>
+            Criar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

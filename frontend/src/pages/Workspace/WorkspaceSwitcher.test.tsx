@@ -96,4 +96,9 @@ describe('WorkspaceSwitcher', () => {
     expect(screen.getByRole('status', { name: 'Nenhum workspace configurado' })).toBeInTheDocument();
     expect(screen.getByText(/Nenhum workspace ainda/i)).toBeInTheDocument();
   });
+
+  it('WorkspaceEmptyState shows create button when onCreate provided', () => {
+    renderWithProviders(<WorkspaceEmptyState onCreate={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /Criar workspace/i })).toBeInTheDocument();
+  });
 });

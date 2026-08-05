@@ -11,6 +11,7 @@ vi.mock('../../services/workspaceService', () => ({
   deleteWorkspace: vi.fn(),
   saveWorkspaceLayout: vi.fn(),
   listWidgetDefinitions: vi.fn().mockResolvedValue([]),
+  installOrcamentoTemplate: vi.fn(),
 }));
 
 describe('WorkspacePage', () => {
@@ -50,6 +51,14 @@ describe('WorkspacePage', () => {
   it('shows edit layout button when workspace loaded', async () => {
     renderWithProviders(<WorkspacePage />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Editar layout' })).toBeInTheDocument());
+  });
+
+  it('shows orçamento install and novo widget buttons when workspace loaded', async () => {
+    renderWithProviders(<WorkspacePage />);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Instalar template de orçamento' })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Novo widget' })).toBeInTheDocument();
   });
 
   it('loads workspace with widgets without crash', async () => {

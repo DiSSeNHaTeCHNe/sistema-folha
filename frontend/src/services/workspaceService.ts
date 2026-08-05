@@ -1,4 +1,3 @@
-import axios from 'axios';
 import api from './api';
 import type {
   DatasetDefinition,
@@ -33,11 +32,23 @@ interface ApiErrorBody {
   errors?: FieldErrorItem[];
 }
 
+interface AxiosLikeError {
+  isAxiosError?: boolean;
+  response?: {
+    status?: number;
+    data?: ApiErrorBody;
+  };
+}
+
+function isAxiosLikeError(error: unknown): error is AxiosLikeError {
+  return typeof error === 'object' && error !== null && 'isAxiosError' in error;
+}
+
 function rethrowAsWorkspaceApiError(error: unknown): never {
-  if (axios.isAxiosError(error) && error.response) {
-    const body = error.response.data as ApiErrorBody | undefined;
+  if (isAxiosLikeError(error) && error.response) {
+    const body = error.response.data;
     throw new WorkspaceApiError(
-      body?.status ?? error.response.status,
+      body?.status ?? error.response.status ?? 500,
       body?.message ?? 'Erro na requisição ao workspace',
       body?.errors,
     );

@@ -23,6 +23,8 @@ import TiposBeneficio from '../pages/TiposBeneficio';
 import ApiKeys from '../pages/ApiKeys';
 import MeuDashboard from '../pages/MeuDashboard';
 import WorkspacePage from '../pages/Workspace/WorkspacePage';
+import DatasetListPage from '../pages/Workspace/DatasetListPage';
+import DatasetEditorPage from '../pages/Workspace/DatasetEditorPage';
 import { DashboardCustomRoute } from './DashboardCustomRoute';
 import { WorkspaceRoute } from './WorkspaceRoute';
 
@@ -60,6 +62,8 @@ export function RouterWithAuth() {
               </Route>
               <Route element={<WorkspaceRoute />}>
                 <Route path="/workspace" element={<WorkspacePage />} />
+                <Route path="/workspace/datasets" element={<DatasetListPage />} />
+                <Route path="/workspace/datasets/:id" element={<DatasetEditorPage />} />
               </Route>
               <Route path="/funcionarios" element={<Funcionarios />} />
               <Route path="/folha-pagamento" element={<FolhaPagamento />} />

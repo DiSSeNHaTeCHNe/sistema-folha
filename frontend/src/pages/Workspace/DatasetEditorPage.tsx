@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -11,6 +11,7 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
+  Link,
   Paper,
   Stack,
   Table,
@@ -210,6 +211,11 @@ export function DatasetEditorPage({ datasetId: datasetIdProp }: DatasetEditorPag
 
   return (
     <Box>
+      <Typography variant="body2" color="text.secondary" mb={1}>
+        <Link component={RouterLink} to="/workspace/datasets">
+          Voltar aos datasets
+        </Link>
+      </Typography>
       <Typography variant="h5" gutterBottom>
         Editor: {dataset.nome}
       </Typography>
