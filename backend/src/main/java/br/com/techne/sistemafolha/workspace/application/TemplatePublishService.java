@@ -4,6 +4,9 @@ import br.com.techne.sistemafolha.organograma.acesso.port.AccessContextDTO;
 import br.com.techne.sistemafolha.workspace.api.PublishTemplateRequest;
 import br.com.techne.sistemafolha.workspace.api.TemplateCatalogItemDTO;
 import br.com.techne.sistemafolha.workspace.api.TemplateDTO;
+import br.com.techne.sistemafolha.workspace.api.TemplateStructureResumoDTO;
+import br.com.techne.sistemafolha.workspace.api.TemplateVersionSummaryDTO;
+import br.com.techne.sistemafolha.workspace.domain.DatasetFieldSchema;
 import br.com.techne.sistemafolha.workspace.domain.TemplatePublishException;
 import br.com.techne.sistemafolha.workspace.domain.TemplateStructurePayload;
 import br.com.techne.sistemafolha.workspace.domain.TemplateTipo;
@@ -153,6 +156,14 @@ public class TemplatePublishService {
     }
 
     @Transactional(readOnly = true)
+    public List<TemplateVersionSummaryDTO> listarVersoes(String login, Long templateId) {
+        findVisibleTemplate(login, templateId);
+        return versionRepository.findByTemplateIdOrderByVersaoDesc(templateId).stream()
+            .map(this::toVersionSummary)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
     public WorkspaceTemplate findVisibleTemplate(String login, Long templateId) {
         workspaceAccessGuard.assertEscopo(login);
         var access = workspaceAccessGuard.resolve(login);
@@ -225,6 +236,21 @@ public class TemplatePublishService {
             version.getDataPublicacao(),
             template.getPublicadorUsuarioId(),
             novaVersaoCriada
+        );
+    }
+
+    private TemplateVersionSummaryDTO toVersionSummary(WorkspaceTemplateVersion version) {
+        TemplateStructurePayload estrutura = version.getEstrutura();
+        List<String> campos = estrutura.getSchema() == null ? List.of()
+            : estrutura.getSchema().stream().map(DatasetFieldSchema::nome).toList();
+        List<String> widgets = "WIDGET".equalsIgnoreCase(estrutura.getKind())
+            ? List.of(estrutura.getNome()) : List.of();
+        List<String> formulas = estrutura.getFormula() == null || estrutura.getFormula().isBlank()
+            ? List.of() : List.of(estrutura.getFormula());
+        return new TemplateVersionSummaryDTO(
+            version.getVersao(),
+            version.getDataPublicacao(),
+            new TemplateStructureResumoDTO(campos, widgets, formulas)
         );
     }
 }

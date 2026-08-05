@@ -60,6 +60,46 @@ class TemplateControllerWebMvcTest {
     private ApiKeyService apiKeyService;
 
     @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void listarVersoes_retornaListaOrdenadaDesc() throws Exception {
+        when(templatePublishService.listarVersoes("user-a", 3L)).thenReturn(List.of(
+            new TemplateVersionSummaryDTO(
+                2,
+                LocalDateTime.parse("2026-02-01T10:00:00"),
+                new TemplateStructureResumoDTO(List.of("valor"), List.of(), List.of())),
+            new TemplateVersionSummaryDTO(
+                1,
+                LocalDateTime.parse("2026-01-01T10:00:00"),
+                new TemplateStructureResumoDTO(List.of("qtd"), List.of(), List.of()))));
+
+        mockMvc.perform(get("/workspace/templates/3/versions"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].versao").value(2))
+            .andExpect(jsonPath("$[1].versao").value(1))
+            .andExpect(jsonPath("$[0].estruturaResumo.campos[0]").value("valor"));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void listarVersoes_templateInexistente_retorna404() throws Exception {
+        when(templatePublishService.listarVersoes("user-a", 99L))
+            .thenThrow(new WorkspaceTemplateNotFoundException(99L));
+
+        mockMvc.perform(get("/workspace/templates/99/versions"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void listarVersoes_semEscopo_retorna403() throws Exception {
+        when(templatePublishService.listarVersoes("user-a", 3L))
+            .thenThrow(new WorkspaceAcessoNegadoException());
+
+        mockMvc.perform(get("/workspace/templates/3/versions"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void instalarOrcamento_semAuth_retorna403() throws Exception {
         mockMvc.perform(post("/workspace/templates/orcamento-padrao/install")
                 .contentType(MediaType.APPLICATION_JSON)

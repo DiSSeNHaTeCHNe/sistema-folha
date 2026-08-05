@@ -1,8 +1,5 @@
 package br.com.techne.sistemafolha.workspace.api;
 
-import br.com.techne.sistemafolha.workspace.application.DatasetAuditService;
-import br.com.techne.sistemafolha.workspace.application.DatasetRowService;
-import br.com.techne.sistemafolha.workspace.application.DatasetService;
 import br.com.techne.sistemafolha.workspace.application.OrcamentoTemplateInstaller;
 import br.com.techne.sistemafolha.workspace.application.TemplateInstallService;
 import br.com.techne.sistemafolha.workspace.application.TemplatePublishService;
@@ -55,6 +52,14 @@ public class TemplateController {
     @Operation(summary = "Lista catálogo de templates visíveis na hierarquia (WKS-16)")
     public ResponseEntity<List<TemplateCatalogItemDTO>> listarCatalogo(Authentication authentication) {
         return ResponseEntity.ok(templatePublishService.listarCatalogo(authentication.getName()));
+    }
+
+    @GetMapping("/{id}/versions")
+    @Operation(summary = "Lista versões do template para diff (WKS2-26)")
+    public ResponseEntity<List<TemplateVersionSummaryDTO>> listarVersoes(
+            Authentication authentication,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(templatePublishService.listarVersoes(authentication.getName(), id));
     }
 
     @PostMapping("/{id}/install")
