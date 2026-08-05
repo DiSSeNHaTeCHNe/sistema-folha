@@ -2,8 +2,8 @@ import type {
   CargoStats,
   CentroCustoStats,
   LinhaNegocioStats,
-} from '../../services/dashboardService';
-import type { PieLegendEntry } from './widgets/chartUtils';
+} from '../../../services/dashboardService';
+import type { PieLegendEntry } from './chartUtils';
 
 export function buildPieFromStatsItems(
   items: (CentroCustoStats | LinhaNegocioStats | CargoStats)[] | null | undefined,

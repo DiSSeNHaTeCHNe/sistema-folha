@@ -54,7 +54,7 @@ export function DistribuicaoWidget({
               <ResponsiveContainer width="100%" height={300}>
                 {isBar ? (
                   <BarChart data={data} layout="vertical" margin={{ left: 80 }}>
-                    <XAxis type="number" tickFormatter={(value) => formatLegendValue(Number(value), currency)} />
+                    <XAxis type="number" tickFormatter={(value) => String(formatLegendValue(Number(value), currency))} />
                     <YAxis type="category" dataKey="name" width={80} />
                     <Tooltip
                       formatter={(value) =>
