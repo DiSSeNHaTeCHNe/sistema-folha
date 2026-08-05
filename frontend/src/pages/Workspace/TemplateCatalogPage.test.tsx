@@ -1,23 +1,18 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import TemplateCatalogPage from './TemplateCatalogPage';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import {
   installOrcamentoTemplate,
   installTemplate,
-  listDatasets,
   listTemplateCatalog,
-  listWidgetDefinitions,
   listWorkspaces,
-  publishDatasetTemplate,
   upgradeTemplateInstallation,
 } from '../../services/workspaceService';
 
 vi.mock('../../services/workspaceService', () => ({
   listTemplateCatalog: vi.fn(),
   listWorkspaces: vi.fn(),
-  listDatasets: vi.fn(),
-  listWidgetDefinitions: vi.fn(),
   publishDatasetTemplate: vi.fn(),
   publishWidgetTemplate: vi.fn(),
   installTemplate: vi.fn(),
@@ -42,11 +37,11 @@ const sampleCatalog = [
     nome: 'KPI Folha',
     tipo: 'WIDGET' as const,
     versaoAtual: 3,
-    versaoMaisRecente: 3,
+    versaoMaisRecente: 4,
     atualizacaoDisponivel: true,
     publicadorUsuarioId: 6,
     installationId: 10,
-    versaoInstalada: 1,
+    versaoInstalada: 3,
   },
 ];
 
@@ -63,20 +58,71 @@ describe('TemplateCatalogPage', () => {
     expect(screen.getByLabelText('Carregando catálogo de templates')).toBeInTheDocument();
   });
 
-  it('renders heading and catalog cards for scoped user', async () => {
+  it('renders heading and catalog cards for scoped user (WKS2-21)', async () => {
     renderWithProviders(<TemplateCatalogPage />);
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Catálogo de Templates' })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Catálogo de Templates', level: 1 })).toBeInTheDocument(),
     );
     expect(screen.getByRole('heading', { name: 'Orçamento CC' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'KPI Folha' })).toBeInTheDocument();
+  });
+
+  it('distinguishes native vs user published templates (WKS2-21)', async () => {
+    const nativeCatalog = [
+      {
+        id: 0,
+        nome: 'Orçamento por CC',
+        tipo: 'PACOTE' as const,
+        versaoAtual: 1,
+        versaoMaisRecente: 1,
+        atualizacaoDisponivel: false,
+        publicadorUsuarioId: 0,
+        installationId: null,
+        versaoInstalada: null,
+      },
+      ...sampleCatalog,
+    ];
+    vi.mocked(listTemplateCatalog).mockResolvedValue(nativeCatalog);
+    renderWithProviders(<TemplateCatalogPage />);
+    await waitFor(() => expect(screen.getByText('Nativo')).toBeInTheDocument());
+    expect(screen.getAllByText('Usuário').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows version chip on catalog cards (WKS2-21)', async () => {
+    renderWithProviders(<TemplateCatalogPage />);
+    await waitFor(() => expect(screen.getByText('v2')).toBeInTheDocument());
+    expect(screen.getByText('v3')).toBeInTheDocument();
+  });
+
+  it('shows vN disponível indicator when upgrade available (WKS2-25)', async () => {
+    renderWithProviders(<TemplateCatalogPage />);
+    await waitFor(() => expect(screen.getByText('v4 disponível')).toBeInTheDocument());
+  });
+
+  it('shows Ver diferenças link when upgrade available (WKS2-25)', async () => {
+    renderWithProviders(<TemplateCatalogPage />);
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: 'Ver diferenças de KPI Folha' })).toHaveAttribute(
+        'href',
+        '/workspace/templates/2/upgrade?installationId=10',
+      ),
+    );
+  });
+
+  it('links publish button to dedicated publish page (WKS2-22)', async () => {
+    renderWithProviders(<TemplateCatalogPage />);
+    await waitFor(() => expect(screen.getByRole('link', { name: 'Publicar template' })).toBeInTheDocument());
+    expect(screen.getByRole('link', { name: 'Publicar template' })).toHaveAttribute(
+      'href',
+      '/workspace/templates/publish',
+    );
   });
 
   it('shows empty state when catalog is empty', async () => {
     vi.mocked(listTemplateCatalog).mockResolvedValue([]);
     renderWithProviders(<TemplateCatalogPage />);
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(/Nenhum template visível/i),
+      expect(screen.getByText(/Nenhum template visível/i)).toBeInTheDocument(),
     );
   });
 
@@ -92,30 +138,6 @@ describe('TemplateCatalogPage', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Template KPI Folha já instalado' })).toBeDisabled(),
     );
-  });
-
-  it('opens publish dialog with explicit opt-in flow', async () => {
-    vi.mocked(listDatasets).mockResolvedValue([{ id: 5, nome: 'Vendas', schemaVersion: 1, totalLinhas: 0, totalCampos: 1 }]);
-    vi.mocked(listWidgetDefinitions).mockResolvedValue([]);
-    renderWithProviders(<TemplateCatalogPage />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Publicar template' })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Publicar template' }));
-    expect(screen.getByRole('dialog', { name: 'Publicar template' })).toBeInTheDocument();
-    expect(screen.getByText(/Apenas a estrutura é publicada/i)).toBeInTheDocument();
-  });
-
-  it('requires saved item selection before publish', async () => {
-    vi.mocked(listDatasets).mockResolvedValue([]);
-    vi.mocked(listWidgetDefinitions).mockResolvedValue([]);
-    renderWithProviders(<TemplateCatalogPage />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Publicar template' })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Publicar template' }));
-    const dialog = screen.getByRole('dialog', { name: 'Publicar template' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Publicar' }));
-    await waitFor(() =>
-      expect(screen.getByText('Selecione um dataset ou widget salvo para publicar')).toBeInTheDocument(),
-    );
-    expect(publishDatasetTemplate).not.toHaveBeenCalled();
   });
 
   it('installs native orcamento template via orcamento endpoint', async () => {
@@ -179,13 +201,13 @@ describe('TemplateCatalogPage upgrade banner', () => {
 
   it('triggers optional upgrade without forcing user', async () => {
     vi.mocked(upgradeTemplateInstallation).mockResolvedValue({
-      installationId: 10, templateId: 2, versaoInstalada: 3, workspaceId: 1, datasetId: null, widgetDefinitionIds: [7],
+      installationId: 10, templateId: 2, versaoInstalada: 4, workspaceId: 1, datasetId: null, widgetDefinitionIds: [7],
     });
     renderWithProviders(<TemplateCatalogPage />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Atualizar template KPI Folha para versão 3' })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: 'Atualizar template KPI Folha para versão 4' })).toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Atualizar template KPI Folha para versão 3' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar template KPI Folha para versão 4' }));
     await waitFor(() => expect(upgradeTemplateInstallation).toHaveBeenCalledWith(10));
   });
 });

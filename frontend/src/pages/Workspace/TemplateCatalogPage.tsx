@@ -1,13 +1,10 @@
 import {
-  Alert,
   Box,
   Button,
   Card,
   CardActions,
   CardContent,
-  Chip,
   CircularProgress,
-  Container,
   Dialog,
   DialogActions,
   DialogContent,
@@ -17,6 +14,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Stack,
   Typography,
 } from '@mui/material';
 import {
@@ -29,23 +27,28 @@ import { Link as RouterLink } from 'react-router-dom';
 import {
   installOrcamentoTemplate,
   installTemplate,
-  listDatasets,
   listTemplateCatalog,
-  listWidgetDefinitions,
   listWorkspaces,
-  publishDatasetTemplate,
-  publishWidgetTemplate,
   upgradeTemplateInstallation,
   WorkspaceApiError,
 } from '../../services/workspaceService';
-import type { DatasetSummary, TemplateCatalogItem, UserWidgetDefinition, WorkspaceSummary } from './types';
+import type { TemplateCatalogItem } from './types';
 import { TemplateUpgradeBanner } from './components/TemplateUpgradeBanner';
+import { WorkspacePageShell } from './components/WorkspacePageShell';
+import { StatusChip } from './components/StatusChip';
+import { InfoBanner } from './components/InfoBanner';
+import { colors } from './workspaceTheme';
 
 function tipoLabel(tipo: TemplateCatalogItem['tipo']): string {
   switch (tipo) {
-    case 'DATASET': return 'Dataset';
-    case 'WIDGET': return 'Widget';
-    default: return tipo;
+    case 'DATASET':
+      return 'Dataset';
+    case 'WIDGET':
+      return 'Widget';
+    case 'PACOTE':
+      return 'Pacote';
+    default:
+      return tipo;
   }
 }
 
@@ -53,21 +56,19 @@ function tipoIcon(tipo: TemplateCatalogItem['tipo']) {
   return tipo === 'DATASET' ? <DatasetIcon /> : <WidgetsIcon />;
 }
 
+function isNativeTemplate(item: TemplateCatalogItem): boolean {
+  return item.id === 0 || item.tipo === 'PACOTE' || item.publicadorUsuarioId === 0;
+}
+
 export default function TemplateCatalogPage() {
   const [catalog, setCatalog] = useState<TemplateCatalogItem[]>([]);
-  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
+  const [workspaces, setWorkspaces] = useState<{ id: number; nome: string; totalWidgets: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [installTarget, setInstallTarget] = useState<TemplateCatalogItem | null>(null);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<number | ''>('');
   const [installing, setInstalling] = useState(false);
-  const [publishOpen, setPublishOpen] = useState(false);
-  const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
-  const [widgets, setWidgets] = useState<UserWidgetDefinition[]>([]);
-  const [publishDatasetId, setPublishDatasetId] = useState<number | ''>('');
-  const [publishWidgetId, setPublishWidgetId] = useState<number | ''>('');
-  const [publishing, setPublishing] = useState(false);
   const [upgradingId, setUpgradingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
@@ -90,41 +91,6 @@ export default function TemplateCatalogPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const openPublish = async () => {
-    setPublishOpen(true);
-    setActionError(null);
-    try {
-      const [ds, wd] = await Promise.all([listDatasets(), listWidgetDefinitions()]);
-      setDatasets(ds);
-      setWidgets(wd);
-    } catch {
-      setActionError('Erro ao carregar itens para publicação');
-    }
-  };
-
-  const handlePublish = async () => {
-    setPublishing(true);
-    setActionError(null);
-    try {
-      if (publishDatasetId !== '') {
-        await publishDatasetTemplate(publishDatasetId);
-      } else if (publishWidgetId !== '') {
-        await publishWidgetTemplate(publishWidgetId);
-      } else {
-        setActionError('Selecione um dataset ou widget salvo para publicar');
-        return;
-      }
-      setPublishOpen(false);
-      setPublishDatasetId('');
-      setPublishWidgetId('');
-      await load();
-    } catch (err) {
-      setActionError(err instanceof WorkspaceApiError ? err.message : 'Erro ao publicar template');
-    } finally {
-      setPublishing(false);
-    }
-  };
 
   const handleInstall = async () => {
     if (!installTarget || selectedWorkspaceId === '') return;
@@ -167,40 +133,29 @@ export default function TemplateCatalogPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2} gap={2} flexWrap="wrap">
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Catálogo de Templates
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Publique estruturas salvas ou instale templates compartilhados na sua hierarquia.
-          </Typography>
-        </Box>
+    <WorkspacePageShell
+      title="Catálogo de Templates"
+      subtitle="Publique estruturas salvas ou instale templates compartilhados na sua hierarquia"
+      actions={
         <Button
           variant="contained"
           startIcon={<PublishIcon />}
-          onClick={() => void openPublish()}
+          component={RouterLink}
+          to="/workspace/templates/publish"
           aria-label="Publicar template"
         >
           Publicar template
         </Button>
-      </Box>
-
-      <Typography component={RouterLink} to="/workspace" variant="body2" sx={{ display: 'block', mb: 3 }}>
-        ← Voltar ao Workspace
-      </Typography>
-
-      {error && (
-        <Alert severity="error" role="alert" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      {actionError && (
-        <Alert severity="error" role="alert" sx={{ mb: 2 }}>
-          {actionError}
-        </Alert>
-      )}
+      }
+    >
+      {error ? (
+        <InfoBanner variant="danger">{error}</InfoBanner>
+      ) : null}
+      {actionError ? (
+        <Box mb={2}>
+          <InfoBanner variant="danger">{actionError}</InfoBanner>
+        </Box>
+      ) : null}
 
       {catalog.some((item) => item.atualizacaoDisponivel && item.installationId) && (
         <Box mb={3}>
@@ -220,65 +175,98 @@ export default function TemplateCatalogPage() {
       )}
 
       {catalog.length === 0 ? (
-        <Alert severity="info" role="status">
+        <InfoBanner variant="info" title="Catálogo vazio">
           Nenhum template visível na sua hierarquia. Publique um dataset ou widget salvo para compartilhar.
-        </Alert>
+        </InfoBanner>
       ) : (
         <Grid container spacing={3}>
-          {catalog.map((item) => (
-            <Grid key={item.id} size={{ xs: 12, md: 6 }}>
-              <Card component="article" aria-labelledby={`template-${item.id}-title`}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" gap={2} mb={1}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 48,
-                        height: 48,
-                        borderRadius: 2,
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                      }}
-                      aria-hidden="true"
-                    >
-                      {tipoIcon(item.tipo)}
-                    </Box>
-                    <Box flex={1}>
-                      <Typography id={`template-${item.id}-title`} variant="h6" component="h2">
-                        {item.nome}
-                      </Typography>
-                      <Chip label={tipoLabel(item.tipo)} size="small" sx={{ mt: 0.5 }} />
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Versão {item.versaoAtual} · publicador #{item.publicadorUsuarioId}
-                  </Typography>
-                  {item.versaoInstalada != null && (
-                    <Typography variant="body2" color="text.secondary" mt={1}>
-                      Instalado (v{item.versaoInstalada})
+          {catalog.map((item) => {
+            const native = isNativeTemplate(item);
+            return (
+              <Grid key={item.id} size={{ xs: 12, md: 6 }}>
+                <Card
+                  component="article"
+                  aria-labelledby={`template-${item.id}-title`}
+                  sx={{
+                    border: `1px solid ${colors.border}`,
+                    boxShadow: 'none',
+                    bgcolor: native ? colors.page : 'background.paper',
+                  }}
+                >
+                  <CardContent>
+                    <Stack direction="row" alignItems="flex-start" spacing={2} mb={1}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 48,
+                          height: 48,
+                          borderRadius: 2,
+                          bgcolor: native ? colors.navy : 'primary.main',
+                          color: 'primary.contrastText',
+                        }}
+                        aria-hidden="true"
+                      >
+                        {tipoIcon(item.tipo)}
+                      </Box>
+                      <Box flex={1}>
+                        <Typography id={`template-${item.id}-title`} variant="h6" component="h2">
+                          {item.nome}
+                        </Typography>
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap mt={0.5}>
+                          <StatusChip variant="info" label={tipoLabel(item.tipo)} />
+                          <StatusChip
+                            variant={native ? 'ok' : 'info'}
+                            label={native ? 'Nativo' : 'Usuário'}
+                          />
+                          <StatusChip variant="info" label={`v${item.versaoAtual}`} />
+                          {item.atualizacaoDisponivel ? (
+                            <StatusChip
+                              variant="warn"
+                              label={`v${item.versaoMaisRecente} disponível`}
+                            />
+                          ) : null}
+                        </Stack>
+                      </Box>
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      Escopo hierárquico · publicador #{item.publicadorUsuarioId}
                     </Typography>
-                  )}
-                </CardContent>
-                <CardActions>
-                  {item.installationId == null ? (
-                    <Button
-                      variant="contained"
-                      onClick={() => setInstallTarget(item)}
-                      aria-label={`Instalar template ${item.nome}`}
-                    >
-                      Instalar
-                    </Button>
-                  ) : (
-                    <Button variant="outlined" disabled aria-label={`Template ${item.nome} já instalado`}>
-                      Instalado
-                    </Button>
-                  )}
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
+                    {item.versaoInstalada != null ? (
+                      <Typography variant="body2" color="text.secondary" mt={1}>
+                        Instalado (v{item.versaoInstalada})
+                      </Typography>
+                    ) : null}
+                  </CardContent>
+                  <CardActions>
+                    {item.installationId == null ? (
+                      <Button
+                        variant="contained"
+                        onClick={() => setInstallTarget(item)}
+                        aria-label={`Instalar template ${item.nome}`}
+                      >
+                        Instalar
+                      </Button>
+                    ) : (
+                      <Button variant="outlined" disabled aria-label={`Template ${item.nome} já instalado`}>
+                        Instalado
+                      </Button>
+                    )}
+                    {item.atualizacaoDisponivel && item.installationId != null ? (
+                      <Button
+                        component={RouterLink}
+                        to={`/workspace/templates/${item.id}/upgrade?installationId=${item.installationId}`}
+                        aria-label={`Ver diferenças de ${item.nome}`}
+                      >
+                        Ver diferenças
+                      </Button>
+                    ) : null}
+                  </CardActions>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
 
@@ -311,59 +299,6 @@ export default function TemplateCatalogPage() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Dialog open={publishOpen} onClose={() => setPublishOpen(false)} aria-labelledby="publish-dialog-title">
-        <DialogTitle id="publish-dialog-title">Publicar template</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" mb={2}>
-            Apenas a estrutura é publicada — nenhuma linha de dado será incluída (WKS-15).
-          </Typography>
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="dataset-publish-label">Dataset salvo</InputLabel>
-            <Select
-              labelId="dataset-publish-label"
-              label="Dataset salvo"
-              value={publishDatasetId}
-              onChange={(e) => {
-                setPublishDatasetId(e.target.value as number);
-                setPublishWidgetId('');
-              }}
-            >
-              <MenuItem value="">Nenhum</MenuItem>
-              {datasets.map((ds) => (
-                <MenuItem key={ds.id} value={ds.id}>
-                  {ds.nome}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="widget-publish-label">Widget salvo</InputLabel>
-            <Select
-              labelId="widget-publish-label"
-              label="Widget salvo"
-              value={publishWidgetId}
-              onChange={(e) => {
-                setPublishWidgetId(e.target.value as number);
-                setPublishDatasetId('');
-              }}
-            >
-              <MenuItem value="">Nenhum</MenuItem>
-              {widgets.map((w) => (
-                <MenuItem key={w.id} value={w.id}>
-                  {w.nome}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPublishOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={() => void handlePublish()} disabled={publishing}>
-            {publishing ? 'Publicando…' : 'Publicar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+    </WorkspacePageShell>
   );
 }
