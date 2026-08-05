@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import axios from 'axios';
 import api from './api';
 import {
   WorkspaceApiError,
@@ -156,6 +155,7 @@ describe('workspaceService', () => {
 
   it('throws WorkspaceApiError with field errors on validation failure', async () => {
     const axiosError = {
+      isAxiosError: true,
       response: {
         status: 400,
         data: {
@@ -165,7 +165,6 @@ describe('workspaceService', () => {
         },
       },
     };
-    vi.spyOn(axios, 'isAxiosError').mockReturnValue(true);
     mockedApi.post.mockRejectedValue(axiosError);
 
     await expect(createDatasetRow(1, { qtd: 'texto' })).rejects.toBeInstanceOf(WorkspaceApiError);

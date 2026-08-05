@@ -2,8 +2,8 @@
 
 _Persistent memory across sessions. Updated as decisions are made, blockers surface, and lessons are learned._
 
-**Last Updated:** 2026-08-04  
-**Current Work:** `temas-visuais` — Execute complete on `feat/temas-visuais` (Verifier PASS @ `ab2cf01`); aguardando squash merge
+**Last Updated:** 2026-08-05  
+**Current Work:** `workspace-usuario` — **P1 complete** (T1–T30, Batch 5); release gate green; próximo: P2 Batch 6 (T31–T39 marketplace + audit)
 
 ---
 
@@ -129,6 +129,22 @@ _Persistent memory across sessions. Updated as decisions are made, blockers surf
 **Scope:** `frontend/src/theme/**`, bootstrap `main.tsx`; cinco temas permanecem selecionáveis.  
 **Status:** active
 
+### AD-017: JSONB para preferências estruturadas por usuário (2026-08-04)
+
+**Decision:** Layout de dashboard customizável persiste em `dashboard_layout.widgets JSONB` mapeado via `@JdbcTypeCode(SqlTypes.JSON)` (Hibernate 6 nativo, sem dependência extra). Payload sempre lido/escrito inteiro; `versao_schema` permite normalização lazy.  
+**Reason:** Feature `dashboard-customizavel` — cardinalidade baixa (1 row/usuário), evolução de `config` por widget na Fase 2 sem migration destrutiva; alternativa normalizada não traz benefício no caminho quente.  
+**Trade-off:** Primeiro JSONB do projeto — exige teste de round-trip e validação server-side do array (não confiar só no PG).  
+**Scope:** `dashboard.domain.DashboardLayout`, Flyway `V1.29`; futuras preferências estruturadas por usuário devem reutilizar este padrão antes de inventar outro.  
+**Status:** active
+
+### AD-018: Motor de expressão usuário = AST whitelist, sem scripting (2026-08-04)
+
+**Decision:** Qualquer fórmula/expressão definida por usuário (workspace, templates publicados, propostas IA) SHALL usar parser + AST próprio com whitelist fixa de operadores e funções (`SOMA`, `MÉDIA`, `SE`, `MÍN`, `MÁX`, `CONTAGEM`, aritmética/comparação). **Proibido** SpEL, JSR-223, `eval`, ou bibliotecas genéricas sem sandbox comprovado. Avaliação sempre sobre campos tipados + `BigDecimal`.  
+**Reason:** Feature `workspace-usuario` — fórmulas viajam com templates e rodam em nome de outros usuários; risco inaceitável de execução arbitrária.  
+**Trade-off:** Implementação inicial maior que exp4j/SpEL; ganho em controle e nomenclatura pt-BR.  
+**Scope:** Domínio `workspace.application.FormulaEngine`; futuras features com expressão usuário devem reutilizar ou estender este motor, não introduzir alternativa.  
+**Status:** active (draft design `workspace-usuario`)
+
 ---
 
 ## Handoff
@@ -166,6 +182,9 @@ _None currently._
 - [x] Execute `modular-acl-security-fix` T1–T4 + Verifier PASS + code-review (uncommitted)
 - [x] Commits do usuário (`ajuste-harness` / `modular-monolith` / fix batch) — conteúdo em `main`
 - [x] Feature `modular-boundary-hardening` — Execute T1–T12 done; AD-010 active; ready for Verifier
+- [x] Specificar feature `dashboard-customizavel` (spec + context, Fase 1+2, 44 requisitos) — 2026-08-04
+- [x] Tasks `dashboard-customizavel` — 24 tasks, 4 batches, 44/44 DASHC mapped — 2026-08-04
+- [ ] Execute `dashboard-customizavel` Batch 1 (T1–T6) — backend layout foundation
 - [ ] **Débito técnico `temas-fidelidade-visual`** — 11 itens registrados em `_docs/specs/features/temas-fidelidade-visual/debito-tecnico.md` (2026-08-04). Nenhum quebra funcionalidade. Prioridade: DT-1 foco sem indicador visível (WCAG 2.4.7 AA, pré-existente) · DT-2 rota ativa não indicada no Drawer (`chrome.selecionado` é código morto) · DT-3 `MuiPickersPopper` sem borda no escuro (regressão da quick 014, fix de 1 linha) · DT-4 Alerts perdem cor semântica sob os tints (R-3 materializada, decisão de design)
 - [ ] Deferred concerns (not this fix): `/usuarios` ADMIN privilege escalation; password logging hygiene; N+1 import loops
 - [ ] Feature futura: adequação do código às skills FE target / gaps de segurança do relatório
@@ -214,7 +233,8 @@ _None currently._
 - Adequação do código ao harness (fase 2) — ROADMAP Deferred
 - Mover relatório de conformidade para `diversos/relatorios/` se precisar versionar
 - **Orçamento e Planejamento de Custo de Pessoal** — spec draft criado 2026-08-04 (`_docs/specs/features/orcamento-custo-pessoal/spec.md`); orçado x realizado por centro de custo com consolidação hierárquica via organograma; ADP não cobre isso, é a motivação original da feature; torna-se o primeiro template de `workspace-usuario` (abaixo); aguardando priorização (Design pendente)
-- **Workspace do Usuário — Dados, Widgets e Templates** — spec + context criados 2026-08-04 (`_docs/specs/features/workspace-usuario/`), consolidados no mesmo dia numa plataforma de **dois níveis**: Nível 1 = Dashboard Customizável (`estudo-dashboard-customizavel.md`, movido para dentro desta pasta; catálogo fixo de widgets, sem dataset próprio, para quem não quer complexidade — Fase 1/2 entregue antes) e Nível 2 = Workspace (esta spec; datasets próprios com esquema tipado, widgets com fórmula restrita, múltiplos workspaces, catálogo interno de templates escopado à hierarquia, para quem quer algo mais avançado), com o Nível 2 reaproveitando o registry de widgets e o modelo de layout do Nível 1 em vez de recriá-los; inclui camada de IA via MCP (propor-e-confirmar, permissão dedicada, sob demanda) construída sobre `mcp-agent-tools`; orçamento é o primeiro template nativo; `estudo-dashboard-query-builder.md` (Fase 3 do Nível 1, condicionada a gatilhos) também movido para a mesma pasta; Complex — Design pendente
+- **Workspace do Usuário — Dados, Widgets e Templates** — spec + **design Draft** 2026-08-04 (`_docs/specs/features/workspace-usuario/`); domínio `workspace.*` sibling (Approach A), motor AST whitelist (AD-018), template orçamento híbrido inline; aguardando aprovação do design → Tasks. Plataforma de **dois níveis**: Nível 1 = Dashboard Customizável (`estudo-dashboard-customizavel.md`, movido para dentro desta pasta; catálogo fixo de widgets, sem dataset próprio, para quem não quer complexidade — Fase 1/2 entregue antes) e Nível 2 = Workspace (esta spec; datasets próprios com esquema tipado, widgets com fórmula restrita, múltiplos workspaces, catálogo interno de templates escopado à hierarquia, para quem quer algo mais avançado), com o Nível 2 reaproveitando o registry de widgets e o modelo de layout do Nível 1 em vez de recriá-los; inclui camada de IA via MCP (propor-e-confirmar, permissão dedicada, sob demanda) construída sobre `mcp-agent-tools`; orçamento é o primeiro template nativo; `estudo-dashboard-query-builder.md` (Fase 3 do Nível 1, condicionada a gatilhos) também movido para a mesma pasta; Complex — Design pendente
+- **Dashboard Customizável (Nível 1)** — spec + context criados 2026-08-04 em `_docs/specs/features/dashboard-customizavel/`, promovidos de `workspace-usuario/estudo-dashboard-customizavel.md`; escopo confirmado com o usuário = **Fase 1 + Fase 2** do estudo (layout/seleção de widgets persistido por usuário + widgets parametrizáveis por competência/topN/filtro), com Fase 3 (query builder) e templates por papel fora de escopo; 44 requisitos `DASHC-01…44`; Complex — Design pendente. Decisões-chave: layout padrão = paridade total com o dashboard atual; `/dashboard` clássico preservado com dois itens de menu simultâneos; acesso à tela nova gated por escopo de dados no organograma (sem permissão nova); salvamento explícito; Fase 1 expõe só largura. **Alerta para o Design:** o estudo assumiu convenções que não existem no código — não há JSONB algum no backend (AD-DC-03 seria o primeiro), a validação devolve 400 e não 422, não há `ToastContainer` montado, e `@dnd-kit/sortable` está instalado mas nunca foi importado
 - **Preferência de tema por usuário no backend** — hoje a escolha de tema persiste só em `localStorage`; sync server-side permitiria mesma aparência em múltiplos dispositivos e política corporativa de tema padrão
 
 ---
