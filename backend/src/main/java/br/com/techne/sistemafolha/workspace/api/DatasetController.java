@@ -115,6 +115,14 @@ public class DatasetController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}/audit")
+    @Operation(summary = "Timeline agregada de auditoria do dataset (WKS2-28)")
+    public ResponseEntity<List<DatasetAuditTimelineEntryDTO>> listarAuditoriaDataset(
+            Authentication authentication,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(datasetAuditService.listarHistoricoDataset(authentication.getName(), id));
+    }
+
     @GetMapping("/{id}/rows/{rowId}/audit")
     @Operation(summary = "Histórico de auditoria da linha (WKS-23)")
     public ResponseEntity<List<DatasetRowAuditEntryDTO>> listarAuditoriaLinha(

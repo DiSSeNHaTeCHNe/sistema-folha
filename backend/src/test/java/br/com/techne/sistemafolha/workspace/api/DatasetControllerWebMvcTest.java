@@ -236,6 +236,43 @@ class DatasetControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user-a", roles = "USER")
+    void listarAuditoriaDataset_retornaTimelineCronologica() throws Exception {
+        when(datasetAuditService.listarHistoricoDataset("user-a", 1L)).thenReturn(List.of(
+            new DatasetAuditTimelineEntryDTO(
+                10L, DatasetRowAuditAction.UPDATE, 5L,
+                java.time.LocalDateTime.parse("2026-01-01T11:00:00"), "Campos alterados: valor"),
+            new DatasetAuditTimelineEntryDTO(
+                10L, DatasetRowAuditAction.CREATE, 5L,
+                java.time.LocalDateTime.parse("2026-01-01T10:00:00"), "Linha criada")));
+
+        mockMvc.perform(get("/workspace/datasets/1/audit"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].acao").value("UPDATE"))
+            .andExpect(jsonPath("$[1].acao").value("CREATE"));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void listarAuditoriaDataset_inexistente_retorna404() throws Exception {
+        when(datasetAuditService.listarHistoricoDataset("user-a", 99L))
+            .thenThrow(new WorkspaceDatasetNotFoundException(99L));
+
+        mockMvc.perform(get("/workspace/datasets/99/audit"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
+    void listarAuditoriaDataset_semEscopo_retorna403() throws Exception {
+        when(datasetAuditService.listarHistoricoDataset("user-a", 1L))
+            .thenThrow(new WorkspaceAcessoNegadoException());
+
+        mockMvc.perform(get("/workspace/datasets/1/audit"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
     void listarAuditoriaLinha_retornaHistoricoCronologico() throws Exception {
         when(datasetRowService.obterLinha("user-a", 1L, 10L))
             .thenReturn(new DatasetRowDTO(10L, 1L, Map.of("valor", 5), 0));

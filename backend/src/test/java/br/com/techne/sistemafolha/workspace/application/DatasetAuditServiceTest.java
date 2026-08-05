@@ -26,11 +26,20 @@ class DatasetAuditServiceTest {
     @Mock
     private WorkspaceDatasetRowAuditRepository auditRepository;
 
+    @Mock
+    private br.com.techne.sistemafolha.workspace.infrastructure.WorkspaceDatasetRowRepository rowRepository;
+
+    @Mock
+    private DatasetService datasetService;
+
+    @Mock
+    private WorkspaceAccessGuard workspaceAccessGuard;
+
     private DatasetAuditService service;
 
     @BeforeEach
     void setUp() {
-        service = new DatasetAuditService(auditRepository);
+        service = new DatasetAuditService(auditRepository, rowRepository, datasetService, workspaceAccessGuard);
     }
 
     @Test
