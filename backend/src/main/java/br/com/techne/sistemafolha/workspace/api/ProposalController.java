@@ -45,7 +45,7 @@ public class ProposalController {
     public ResponseEntity<ProposalDTO> confirmar(
             Authentication authentication,
             @PathVariable Long id,
-            @RequestBody(required = false) ConfirmProposalRequest ajustes) {
+            @Valid @RequestBody(required = false) ConfirmProposalRequest ajustes) {
         return ResponseEntity.ok(proposalService.confirmar(authentication.getName(), id, ajustes));
     }
 

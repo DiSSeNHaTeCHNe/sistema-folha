@@ -111,6 +111,30 @@ class ProposalControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "ia-user", roles = "USER")
+    void confirmar_formulaOversized_retorna400() throws Exception {
+        String oversizedFormula = "A".repeat(2001);
+
+        mockMvc.perform(post("/workspace/proposals/2/confirmar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"formula\":\"" + oversizedFormula + "\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("formula")));
+    }
+
+    @Test
+    @WithMockUser(username = "ia-user", roles = "USER")
+    void confirmar_nomeOversized_retorna400() throws Exception {
+        String oversizedNome = "A".repeat(121);
+
+        mockMvc.perform(post("/workspace/proposals/2/confirmar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nome\":\"" + oversizedNome + "\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("nome")));
+    }
+
+    @Test
+    @WithMockUser(username = "ia-user", roles = "USER")
     void confirmar_retorna200() throws Exception {
         ProposalDTO aplicada = new ProposalDTO(
             2L, ProposalStatus.APLICADA, new ProposalPayload(), 10L,

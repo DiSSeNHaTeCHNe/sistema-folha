@@ -92,6 +92,20 @@ class WidgetDefinitionControllerWebMvcTest {
 
     @Test
     @WithMockUser(username = "user-a", roles = "USER")
+    void criar_formulaOversized_retorna400() throws Exception {
+        String oversizedFormula = "A".repeat(2001);
+
+        mockMvc.perform(post("/workspace/widget-definitions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"nome":"KPI","tipo":"KPI","fontes":[{"kind":"SISTEMA","ref":"FOLHA"}],
+                    "formula":"%s"}""".formatted(oversizedFormula)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("formula")));
+    }
+
+    @Test
+    @WithMockUser(username = "user-a", roles = "USER")
     void criar_formulaInvalida_retorna400ComCampoFormula() throws Exception {
         when(widgetDefinitionService.criar(eq("user-a"), any(CreateWidgetDefinitionRequest.class)))
             .thenThrow(new InvalidFormulaException(List.of("Campo inválido: x")));

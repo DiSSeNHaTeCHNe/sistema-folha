@@ -15,6 +15,6 @@ public record CreateWidgetDefinitionRequest(
     @NotBlank @Size(max = 120) String nome,
     @NotBlank String tipo,
     @NotEmpty List<@Valid WidgetSourceRef> fontes,
-    String formula,
+    @Size(max = 2000) String formula,
     Map<String, Object> config
 ) {}

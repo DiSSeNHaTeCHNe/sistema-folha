@@ -14,7 +14,7 @@ public record ConfirmProposalRequest(
     List<@Valid DatasetFieldSchemaDTO> campos,
     @Size(max = 120) String tipoWidget,
     List<@Valid WidgetSourceRef> fontes,
-    String formula,
+    @Size(max = 2000) String formula,
     Map<String, Object> config,
     Long workspaceId
 ) {}
