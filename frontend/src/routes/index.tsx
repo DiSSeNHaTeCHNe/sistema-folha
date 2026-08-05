@@ -22,7 +22,8 @@ import Organograma from '../pages/Organograma';
 import TiposBeneficio from '../pages/TiposBeneficio';
 import ApiKeys from '../pages/ApiKeys';
 import MeuDashboard from '../pages/MeuDashboard';
-import WorkspacePage from '../pages/Workspace/WorkspacePage';
+import WorkspaceHubPage from '../pages/Workspace/WorkspaceHubPage';
+import WorkspaceDetailPage from '../pages/Workspace/WorkspaceDetailPage';
 import DatasetListPage from '../pages/Workspace/DatasetListPage';
 import DatasetEditorPage from '../pages/Workspace/DatasetEditorPage';
 import TemplateCatalogPage from '../pages/Workspace/TemplateCatalogPage';
@@ -62,10 +63,11 @@ export function RouterWithAuth() {
                 <Route path="/meu-dashboard" element={<MeuDashboard />} />
               </Route>
               <Route element={<WorkspaceRoute />}>
-                <Route path="/workspace" element={<WorkspacePage />} />
+                <Route path="/workspace" element={<WorkspaceHubPage />} />
                 <Route path="/workspace/datasets" element={<DatasetListPage />} />
                 <Route path="/workspace/datasets/:id" element={<DatasetEditorPage />} />
                 <Route path="/workspace/templates" element={<TemplateCatalogPage />} />
+                <Route path="/workspace/:workspaceId" element={<WorkspaceDetailPage />} />
               </Route>
               <Route path="/funcionarios" element={<Funcionarios />} />
               <Route path="/folha-pagamento" element={<FolhaPagamento />} />

@@ -1,3 +1,4 @@
+/** @deprecated v2 routes use WorkspaceHubPage + WorkspaceDetailPage — kept for v1 regression tests until T28 */
 import { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
