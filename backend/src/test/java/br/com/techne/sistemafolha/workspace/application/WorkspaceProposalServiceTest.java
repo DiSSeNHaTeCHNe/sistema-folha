@@ -338,6 +338,23 @@ class WorkspaceProposalServiceTest {
         assertEquals(1, captor.getValue().campos().size());
     }
 
+    @Test
+    void confirmar_datasetQuotaExcedida_lancaQuotaComMensagemSpec() {
+        stubAcesso();
+        ProposalPayload payload = contentBuilder.montarDeDescricao("DATASET", "planilha");
+        WorkspaceIaProposal proposal = pendingProposal(14L, payload);
+        when(proposalRepository.findByIdAndSolicitanteUsuarioId(14L, USUARIO_ID)).thenReturn(Optional.of(proposal));
+        when(datasetService.criar(eq(LOGIN), any())).thenThrow(new WorkspaceQuotaExceededException(
+            new DatasetQuotaPolicy().datasetQuotaMessage(WorkspaceLimits.MAX_DATASETS_PER_USER)));
+
+        WorkspaceQuotaExceededException ex = assertThrows(WorkspaceQuotaExceededException.class,
+            () -> service.confirmar(LOGIN, 14L, null));
+
+        assertTrue(ex.getMessage().contains(
+            String.format("Limite de %d datasets", WorkspaceLimits.MAX_DATASETS_PER_USER)));
+        verify(proposalRepository, never()).save(any());
+    }
+
     private void stubPermissaoEAcesso() {
         stubUsuarioComPermissaoIa();
         stubAcesso();
